@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Teste Create User</title>
+</head>
+<body>
+
+    <h2>Teste da Edge Function create-user</h2>
+
+    <button id="testar">Criar funcionário de teste</button>
+
+    <pre id="resultado"></pre>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script>
+        const SUPABASE_URL =
+            'https://dgtyllwfzpiyxkeltxmi.supabase.co';
+
+        const SUPABASE_KEY =
+            'sb_publishable_fDh4lu5aH29N3GWm784KxA_LBLpTcKs';
+
+        const supabase = window.supabase.createClient(
+            SUPABASE_URL,
+            SUPABASE_KEY
+        );
+
+        const resultado = document.getElementById('resultado');
+
+        document.getElementById('testar').addEventListener('click', async () => {
+
+            resultado.textContent = 'Testando...';
+
+            try {
+
+                // Verifica se Julio está logado
+                const {
+                    data: { session },
+                    error: sessionError
+                } = await supabase.auth.getSession();
+
+                if (sessionError || !session) {
+                    throw new Error(
+                        'Nenhuma sessão encontrada. Faça login como administrador.'
+                    );
+                }
+
+                // Chama nossa Edge Function
+                const response = await fetch(
+                    `${SUPABASE_URL}/functions/v1/create-user`,
+                    {
+                        method: 'POST',
+
+                        headers: {
+                            'Authorization': `Bearer ${session.access_token}`,
+                            'Content-Type': 'application/json'
+                        },
+
+                        body: JSON.stringify({
+                            name: 'Funcionário Teste',
+                            email: 'juliodasilva9999999@gmail.com',
+                            password: 'Teste123456'
+                        })
+                    }
+                );
+
+                const data = await response.json();
+
+                console.log('Status:', response.status);
+                console.log('Resposta:', data);
+
+                if (!response.ok) {
+                    throw new Error(
+                        data.error || 'Erro ao criar funcionário.'
+                    );
+                }
+
+                resultado.textContent =
+                    '✅ FUNCIONÁRIO CRIADO COM SUCESSO!\n\n' +
+                    JSON.stringify(data, null, 2);
+
+            } catch (error) {
+
+                console.error(error);
+
+                resultado.textContent =
+                    '❌ ERRO\n\n' +
+                    error.message;
+            }
+        });
+    </script>
+
+</body>
+</html>

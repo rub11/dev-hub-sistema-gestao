@@ -1,0 +1,285 @@
+/* =========================================================
+   DEV HUB · Módulo de Relatórios
+   Reaproveita global.css + dashboard.css + clientes.css.
+   Aqui só o específico.
+   ========================================================= */
+
+/* ---------- Cabeçalho com ações ---------- */
+.page-head--split {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.page-head__main { min-width: 0; flex: 1 1 auto; }
+
+.page-head__actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  flex: 0 0 auto;
+}
+
+/* ---------- Barra de período ---------- */
+.period-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.period-range {
+  margin-left: auto;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ---------- Segmented control (botões) ---------- */
+.segmented {
+  display: inline-flex;
+  gap: 2px;
+  padding: 4px;
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.segmented__btn {
+  height: 34px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-soft);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color var(--transition), color var(--transition),
+              box-shadow var(--transition);
+  white-space: nowrap;
+}
+
+.segmented__btn:hover { color: var(--text); }
+
+.segmented__btn.is-active {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+}
+
+.segmented__btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---------- Período personalizado ---------- */
+.period-custom {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.period-custom__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.period-custom__field label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+}
+
+.period-custom input[type="date"] {
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--surface);
+  font-size: 13.5px;
+  color: var(--text);
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+.period-custom input[type="date"]:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-ring);
+}
+
+.period-custom .btn { height: 36px; padding: 0 14px; font-size: 13px; }
+
+/* ---------- Painel: corpo genérico ---------- */
+.panel__body { padding: 18px 20px; }
+
+/* ---------- Chart ---------- */
+.chart-wrap {
+  position: relative;
+  width: 100%;
+  padding: 20px;
+  height: 340px;
+}
+
+.chart-wrap canvas { width: 100% !important; height: 100% !important; }
+
+.chart-wrap .state-block {
+  position: absolute;
+  inset: 0;
+  padding: 20px;
+}
+
+/* ---------- Formas de pagamento ---------- */
+.payments-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.payment-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+
+.payment-card__label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-soft);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.payment-card__value {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.payment-card__count {
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+/* ---------- Grid de duas colunas ---------- */
+.report-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.report-grid .panel { margin-top: 0; }
+
+/* ---------- Stats com 3 colunas ---------- */
+.stats--three { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 20px; }
+
+/* ---------- Cores dos ícones ---------- */
+.stat__icon--success { background: var(--success-soft); color: var(--success); }
+.stat__icon--warning { background: var(--warning-soft); color: var(--warning); }
+.stat__icon--danger  { background: var(--danger-soft);  color: var(--danger); }
+
+/* ---------- Ajuste fino em paineis com espaçamento ---------- */
+main .panel + .panel,
+main .stats + .panel,
+main .panel + .stats,
+main .stats + .stats,
+main .report-grid + .stats,
+main .report-grid + .panel {
+  margin-top: 20px;
+}
+
+/* ---------- Controle de filtro ---------- */
+.field--inline { flex-direction: row; align-items: center; }
+
+.control-select {
+  height: 40px;
+  min-width: 160px;
+  padding: 0 34px 0 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  font-size: 14px;
+  color: var(--text);
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23667085' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 15px;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+.control-select:hover:not(:focus) { border-color: #b9bfc9; }
+.control-select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-ring);
+}
+
+/* ---------- Badges auxiliares ---------- */
+.badge--neutral { background: #f2f4f7; color: var(--text-soft); }
+
+/* ---------- Estado vazio compacto ---------- */
+.state-block--compact { padding: 32px 20px; }
+
+/* ---------- Tabela: pequenos ajustes ---------- */
+#movements-wrap table { min-width: 900px; }
+#stock-table-wrap table { min-width: 680px; }
+
+.movement-qty { font-variant-numeric: tabular-nums; font-weight: 600; }
+.movement-qty--in  { color: var(--success); }
+.movement-qty--out { color: var(--danger); }
+
+.movement-reason { max-width: 260px; color: var(--text-soft); overflow-wrap: anywhere; }
+
+/* ---------- Responsivo ---------- */
+@media (max-width: 1200px) {
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stats--three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 900px) {
+  .report-grid { grid-template-columns: 1fr; }
+  .stats--three { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 720px) {
+  .page-head--split { flex-direction: column; }
+  .page-head__actions { width: 100%; }
+  .page-head__actions .btn { flex: 1 1 auto; }
+
+  .period-bar { flex-direction: column; align-items: stretch; }
+  .period-range { margin-left: 0; text-align: left; }
+
+  .segmented { overflow-x: auto; flex-wrap: nowrap; }
+  .segmented__btn { flex: 0 0 auto; }
+
+  .chart-wrap { height: 280px; padding: 12px; }
+
+  .stats { grid-template-columns: 1fr; }
+  .stats--three { grid-template-columns: 1fr; }
+  .payments-grid { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 420px) {
+  .payments-grid { grid-template-columns: 1fr; }
+}

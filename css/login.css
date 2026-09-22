@@ -1,0 +1,139 @@
+/* =========================================================
+   DEV HUB · Tela de login
+   ========================================================= */
+
+.login-page {
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+.login {
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  min-height: 100vh;
+}
+
+/* ---------- Painel esquerdo ---------- */
+.login__aside {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 48px;
+  background:
+    radial-gradient(900px 520px at 10% -10%, rgba(99, 102, 241, 0.22) 0%, transparent 62%),
+    radial-gradient(700px 500px at 110% 110%, rgba(16, 185, 129, 0.12) 0%, transparent 58%),
+    #0e1116;
+  color: #ffffff;
+  overflow: hidden;
+}
+
+.login__aside::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(circle at 30% 20%, #000 0%, transparent 78%);
+  -webkit-mask-image: radial-gradient(circle at 30% 20%, #000 0%, transparent 78%);
+  pointer-events: none;
+}
+
+.login__aside-inner {
+  position: relative;
+  z-index: 1;
+}
+
+.login__aside .brand__name { color: #ffffff; }
+
+.login__aside-text {
+  margin-top: 96px;
+  max-width: 380px;
+}
+
+.login__aside-text h2 {
+  font-size: 30px;
+  line-height: 1.24;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.login__aside-text p {
+  margin-top: 14px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #98a2b3;
+}
+
+.login__aside-foot {
+  position: relative;
+  z-index: 1;
+  font-size: 12.5px;
+  letter-spacing: 0.04em;
+  color: #667085;
+}
+
+/* ---------- Painel do formulário ---------- */
+.login__panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 32px;
+  background: var(--surface);
+}
+
+.login__panel-inner {
+  width: 100%;
+  max-width: 400px;
+}
+
+.login__brand-mobile {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 32px;
+}
+
+.login__title {
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.login__subtitle {
+  margin-top: 6px;
+  font-size: 14.5px;
+  color: var(--text-soft);
+}
+
+.login__form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-top: 32px;
+}
+
+.login__form .btn { margin-top: 4px; }
+
+.login__foot {
+  margin-top: 28px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* ---------- Responsivo ---------- */
+@media (max-width: 960px) {
+  .login { grid-template-columns: 1fr; }
+  .login__aside { display: none; }
+  .login__panel { padding: 40px 24px; min-height: 100vh; }
+  .login__brand-mobile { display: flex; }
+}
+
+@media (max-width: 420px) {
+  .login__panel { padding: 32px 18px; }
+  .login__title { font-size: 23px; }
+}

@@ -1,0 +1,119 @@
+/* =========================================================
+   DEV HUB · Módulo de Produtos
+   ---------------------------------------------------------
+   Estilos específicos. Componentes genéricos (modal, toast,
+   toolbar, search, state-block, row-actions) vêm de clientes.css.
+   ========================================================= */
+
+/* ---------- Célula principal (nome) ---------- */
+.cell-product { font-weight: 600; color: var(--text); }
+
+.cell-product small {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-muted);
+  max-width: 320px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---------- Preço ---------- */
+.cell-price {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* ---------- Estoque / mínimo ---------- */
+.cell-stock {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.stock-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  font-size: 13.5px;
+}
+
+.stock-indicator__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+
+.stock-indicator--ok { color: var(--text); }
+.stock-indicator--low { color: var(--warning); }
+.stock-indicator--out { color: var(--danger); }
+
+/* ---------- Toggle "Ativo" (switch) ---------- */
+.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.switch input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  border: 0;
+}
+
+.switch__track {
+  position: relative;
+  display: inline-block;
+  width: 38px;
+  height: 22px;
+  border-radius: 999px;
+  background: #d0d5dd;
+  transition: background-color var(--transition);
+  flex: none;
+}
+
+.switch__thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.22);
+  transition: transform var(--transition);
+}
+
+.switch input:checked + .switch__track { background: var(--accent); }
+.switch input:checked + .switch__track .switch__thumb { transform: translateX(16px); }
+
+.switch input:focus-visible + .switch__track {
+  outline: none;
+  box-shadow: 0 0 0 4px var(--accent-ring);
+}
+
+.switch__label { color: var(--text-soft); }
+
+/* Ajuste no grid do modal: o toggle fica um pouco mais baixo que os inputs */
+.switch { padding-top: 6px; }
+
+/* ---------- Responsivo ---------- */
+@media (max-width: 720px) {
+  .cell-product small { max-width: 200px; }
+}

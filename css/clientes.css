@@ -1,0 +1,395 @@
+/* =========================================================
+   DEV HUB · Módulo de Clientes
+   (reaproveita global.css + dashboard.css)
+   ========================================================= */
+
+/* ---------- Toolbar (busca + novo cliente) ---------- */
+.toolbar {
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.toolbar__info { min-width: 0; }
+
+.toolbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.toolbar__actions .btn {
+  height: 40px;
+  padding: 0 14px;
+}
+
+/* ---------- Campo de busca ---------- */
+.search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 280px;
+  max-width: 100%;
+}
+
+.search__icon {
+  position: absolute;
+  left: 12px;
+  display: grid;
+  place-items: center;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+.search__icon svg { width: 16px; height: 16px; }
+
+.search__input {
+  width: 100%;
+  height: 40px;
+  padding: 0 14px 0 36px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  font-size: 14px;
+  color: var(--text);
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+.search__input::placeholder { color: var(--text-muted); }
+.search__input:hover:not(:focus) { border-color: #b9bfc9; }
+.search__input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-ring);
+}
+
+/* ---------- Estados (loading / vazio) ---------- */
+.state-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 56px 24px;
+  text-align: center;
+  color: var(--text-soft);
+}
+
+.state-block h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.state-block p {
+  font-size: 14px;
+  color: var(--text-soft);
+  max-width: 360px;
+}
+
+.state-block__icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+.state-block__icon svg { width: 22px; height: 22px; }
+
+.state-block .btn { margin-top: 8px; }
+
+.spinner {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2.5px solid var(--border-strong);
+  border-top-color: var(--accent);
+  animation: dh-spin 0.7s linear infinite;
+}
+
+/* ---------- Ações da linha ---------- */
+.row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.row-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-soft);
+  cursor: pointer;
+  transition: background-color var(--transition), border-color var(--transition),
+              color var(--transition);
+}
+.row-action svg { width: 16px; height: 16px; }
+.row-action:hover { background: var(--surface-2); border-color: var(--border); color: var(--text); }
+.row-action--danger:hover {
+  background: var(--danger-soft);
+  border-color: var(--danger-border);
+  color: var(--danger);
+}
+
+/* ---------- Célula principal (nome) ---------- */
+.cell-name { font-weight: 600; color: var(--text); }
+
+/* =========================================================
+   Modais
+   ========================================================= */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(16, 24, 40, 0.5);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  animation: dh-fade 160ms ease-out;
+}
+
+.modal__dialog {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 560px;
+  max-height: calc(100vh - 40px);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: 0 24px 60px rgba(16, 24, 40, 0.25);
+  animation: dh-modal-in 180ms ease-out;
+  overflow: hidden;
+}
+
+.modal__dialog--sm { max-width: 420px; }
+
+@keyframes dh-modal-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.985); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.modal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal__title {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.modal__close { color: var(--text-muted); }
+
+.modal__body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.modal__body textarea {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--text);
+  resize: vertical;
+  min-height: 84px;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+.modal__body textarea:hover:not(:focus) { border-color: #b9bfc9; }
+.modal__body textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-ring);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.modal__foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 6px;
+}
+
+.btn--ghost {
+  background: transparent;
+  color: var(--text-soft);
+  border-color: var(--border-strong);
+}
+.btn--ghost:hover:not(:disabled) {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.btn--danger {
+  background: var(--danger);
+  color: #fff;
+}
+.btn--danger:hover:not(:disabled) { background: #961e14; }
+.btn--danger:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(180, 35, 24, 0.18);
+}
+
+.confirm-text {
+  font-size: 14.5px;
+  color: var(--text-soft);
+  line-height: 1.55;
+}
+
+/* Estado de carregamento no botão Salvar/Excluir */
+#customer-save-btn .btn__spinner,
+#confirm-delete-btn .btn__spinner {
+  display: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+  animation: dh-spin 0.65s linear infinite;
+}
+#customer-save-btn.is-loading .btn__spinner,
+#confirm-delete-btn.is-loading .btn__spinner { display: block; }
+#customer-save-btn.is-loading .btn__label,
+#confirm-delete-btn.is-loading .btn__label { opacity: 0.9; }
+
+/* =========================================================
+   Toasts
+   ========================================================= */
+.toast-region {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(360px, calc(100vw - 32px));
+  pointer-events: none;
+}
+
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+  font-size: 14px;
+  color: var(--text);
+  animation: dh-toast-in 200ms ease-out;
+}
+
+.toast--success { border-color: #abefc6; background: var(--success-soft); color: var(--success); }
+.toast--error   { border-color: var(--danger-border); background: var(--danger-soft); color: var(--danger); }
+.toast--info    { border-color: #c7d2fe; background: var(--accent-soft); color: var(--accent-hover); }
+
+.toast__icon {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+}
+.toast__icon svg { width: 100%; height: 100%; }
+
+.toast__message { flex: 1 1 auto; min-width: 0; }
+
+.toast__close {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  opacity: 0.65;
+  cursor: pointer;
+  transition: opacity var(--transition), background-color var(--transition);
+}
+.toast__close:hover { opacity: 1; background: rgba(0, 0, 0, 0.06); }
+.toast__close svg { width: 14px; height: 14px; }
+
+.toast.is-leaving { animation: dh-toast-out 180ms ease-in forwards; }
+
+@keyframes dh-toast-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes dh-toast-out {
+  to { opacity: 0; transform: translateY(6px); }
+}
+
+/* =========================================================
+   Responsivo
+   ========================================================= */
+@media (max-width: 720px) {
+  .toolbar { align-items: stretch; }
+  .toolbar__actions { width: 100%; }
+  .search { width: 100%; flex: 1 1 auto; }
+  .form-grid { grid-template-columns: 1fr; }
+
+  .modal { padding: 12px; align-items: flex-end; }
+  .modal__dialog {
+    max-height: calc(100vh - 24px);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
+
+  .toast-region {
+    right: 12px;
+    left: 12px;
+    bottom: 12px;
+    width: auto;
+  }
+}
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+/* 👇 Garante que [hidden] sempre esconda o modal,
+      mesmo com display: flex acima */
+.modal[hidden] {
+  display: none;
+}

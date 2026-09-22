@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Notas · DEV HUB</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/global.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/clientes.css" />
+  <link rel="stylesheet" href="css/notas.css" />
+</head>
+<body data-page="notes">
+
+  <a class="skip-link" href="#main">Pular para o conteúdo principal</a>
+
+  <!-- ================= SIDEBAR ================= -->
+  <aside class="sidebar" id="sidebar" aria-label="Menu principal"></aside>
+
+  <div class="sidebar-overlay" id="sidebar-overlay" hidden></div>
+
+  <!-- ================= ÁREA PRINCIPAL ================= -->
+  <div class="app__body">
+
+    <header class="topbar">
+      <button
+        type="button"
+        class="icon-btn menu-toggle"
+        id="menu-toggle"
+        aria-label="Abrir menu"
+        aria-expanded="false"
+        aria-controls="sidebar"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+             stroke-linecap="round" aria-hidden="true">
+          <path d="M3.5 6.5h17M3.5 12h17M3.5 17.5h17" />
+        </svg>
+      </button>
+
+      <span class="topbar__brand">DEV HUB</span>
+
+      <div class="topbar__actions">
+
+        <button
+          type="button"
+          class="icon-btn"
+          id="notifications-btn"
+          aria-label="Notificações (em breve)"
+          title="Em breve"
+          disabled
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M18 8.5a6 6 0 1 0-12 0c0 6.5-2.5 8.5-2.5 8.5h17S18 15 18 8.5" />
+            <path d="M13.7 20.5a2 2 0 0 1-3.4 0" />
+          </svg>
+        </button>
+
+        <div class="user-menu">
+          <button
+            type="button"
+            class="user-menu__trigger"
+            id="user-menu-trigger"
+            aria-haspopup="true"
+            aria-expanded="false"
+            aria-controls="user-menu-panel"
+          >
+            <span class="avatar" id="user-avatar" aria-hidden="true">–</span>
+            <span class="user-menu__meta">
+              <span class="user-menu__name" id="user-name">Carregando…</span>
+              <span class="user-menu__role" id="user-role"></span>
+            </span>
+            <svg class="user-menu__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </button>
+
+          <div class="user-menu__panel" id="user-menu-panel" role="menu" hidden>
+            <button type="button" class="menu-item" role="menuitem" aria-disabled="true">
+              Perfil <span class="menu-item__tag">Em breve</span>
+            </button>
+            <a class="menu-item" role="menuitem" href="configuracoes.html">
+              Configurações
+            </a>
+            <div class="menu-item__sep" role="separator"></div>
+            <button type="button" class="menu-item menu-item--danger" role="menuitem" data-action="logout">
+              Sair
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </header>
+
+    <main class="content" id="main">
+
+      <div id="global-alert" class="alert" role="alert" hidden></div>
+
+      <div class="page-head">
+        <p class="page-head__eyebrow">
+          <span id="greeting-name">Olá</span>
+          <span class="role-badge" id="greeting-role" hidden></span>
+        </p>
+        <h1 class="page-head__title">Notas</h1>
+        <p class="page-head__sub">Documentos internos das vendas registradas no sistema.</p>
+      </div>
+
+      <section class="panel" aria-labelledby="notas-title">
+
+        <!-- Toolbar: busca + filtros -->
+        <div class="panel__head toolbar">
+          <div class="toolbar__info">
+            <h2 class="panel__title" id="notas-title">Documentos de venda</h2>
+            <p class="panel__sub" id="notas-count">Carregando…</p>
+          </div>
+
+          <div class="toolbar__actions">
+            <div class="search">
+              <span class="search__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="11" cy="11" r="7" />
+                  <path d="m20 20-3.5-3.5" />
+                </svg>
+              </span>
+              <input
+                type="search"
+                id="notas-search"
+                class="search__input"
+                placeholder="Buscar por nº, cliente ou CPF/CNPJ..."
+                aria-label="Buscar notas por número, cliente ou CPF/CNPJ"
+                autocomplete="off"
+              />
+            </div>
+
+            <div class="field field--inline">
+              <label for="notas-status-filter" class="sr-only">Filtrar por status</label>
+              <select id="notas-status-filter" class="control-select">
+                <option value="">Todos os status</option>
+                <option value="completed">Concluídas</option>
+                <option value="canceled">Canceladas</option>
+              </select>
+            </div>
+
+            <div class="field field--inline">
+              <label for="notas-period-filter" class="sr-only">Filtrar por período</label>
+              <select id="notas-period-filter" class="control-select">
+                <option value="all">Todas as datas</option>
+                <option value="today">Hoje</option>
+                <option value="7d">Últimos 7 dias</option>
+                <option value="30d">Últimos 30 dias</option>
+                <option value="month">Este mês</option>
+                <option value="custom">Personalizado</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Período personalizado -->
+        <div class="custom-period" id="custom-period" hidden>
+          <div class="custom-period__field">
+            <label for="notas-start">De</label>
+            <input type="date" id="notas-start" />
+          </div>
+          <div class="custom-period__field">
+            <label for="notas-end">Até</label>
+            <input type="date" id="notas-end" />
+          </div>
+          <button type="button" class="btn btn--primary btn--sm" id="notas-apply-period">
+            Aplicar
+          </button>
+        </div>
+
+        <!-- Estado de carregamento -->
+        <div id="notas-loading" class="state-block">
+          <span class="spinner" aria-hidden="true"></span>
+          <p>Carregando notas...</p>
+        </div>
+
+        <!-- Estado vazio -->
+        <div id="notas-empty" class="state-block" hidden>
+          <div class="state-block__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2.5H7A2 2 0 0 0 5 4.5v15a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7.5z" />
+              <path d="M14 2.5v5h5" />
+              <path d="M9 13h6M9 17h4" />
+            </svg>
+          </div>
+          <h3 id="notas-empty-title">Nenhuma nota registrada ainda.</h3>
+          <p id="notas-empty-text">As notas aparecem automaticamente quando você registra vendas.</p>
+        </div>
+
+        <!-- Tabela -->
+        <div class="table-wrap" id="notas-table-wrap" hidden>
+          <table>
+            <caption class="sr-only">Lista de notas de venda</caption>
+            <thead>
+              <tr>
+                <th scope="col">Nº</th>
+                <th scope="col">Cliente</th>
+                <th scope="col">Data</th>
+                <th scope="col" class="cell--num">Valor</th>
+                <th scope="col">Pagamento</th>
+                <th scope="col">Status</th>
+                <th scope="col" class="cell--num">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="notas-body"></tbody>
+          </table>
+        </div>
+
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ================= MODAL: VISUALIZAR NOTA ================= -->
+  <div class="modal" id="nota-modal" hidden>
+    <div class="modal__backdrop" data-close-modal></div>
+
+    <div class="modal__dialog modal__dialog--nota" role="dialog" aria-modal="true" aria-labelledby="nota-modal-title">
+      <header class="modal__head no-print">
+        <h2 class="modal__title" id="nota-modal-title">Documento de venda</h2>
+        <button type="button" class="icon-btn modal__close" aria-label="Fechar" data-close-modal>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+               stroke-linecap="round" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
+      </header>
+
+      <div class="modal__body" id="nota-body">
+        <div class="state-block">
+          <span class="spinner" aria-hidden="true"></span>
+          <p>Carregando documento...</p>
+        </div>
+      </div>
+
+      <footer class="modal__foot no-print">
+        <button type="button" class="btn btn--ghost" data-close-modal>Fechar</button>
+        <button type="button" class="btn btn--primary" id="nota-print-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
+               style="width:16px;height:16px">
+            <path d="M6 9V3h12v6" />
+            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+            <rect x="6" y="14" width="12" height="8" rx="1" />
+          </svg>
+          <span>Imprimir</span>
+        </button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ================= TOASTS ================= -->
+  <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="false"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/nav.js"></script>
+<script src="js/notas.js"></script>
+</body>
+</html>

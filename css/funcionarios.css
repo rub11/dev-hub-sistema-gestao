@@ -1,0 +1,59 @@
+/* =========================================================
+   DEV HUB · Módulo de Funcionários
+   Reaproveita global.css, dashboard.css, clientes.css.
+   Aqui só o específico.
+   ========================================================= */
+
+/* ---------- Stats com 3 colunas ---------- */
+.stats--three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 24px;
+}
+
+.stat__icon--success { background: var(--success-soft); color: var(--success); }
+.stat__icon--danger  { background: var(--danger-soft);  color: var(--danger); }
+
+/* ---------- Tag de perfil (Administrador / Funcionário) ---------- */
+.role-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-soft);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.role-tag--admin {
+  background: var(--accent-soft);
+  border-color: #c7d2fe;
+  color: var(--accent-hover);
+}
+
+/* ---------- Coluna nome: bold + small de "você" ---------- */
+.cell-employee {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.cell-employee small {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+/* ---------- Badges de ação reutilizam .row-action do clientes.css ---------- */
+
+/* ---------- Responsivo ---------- */
+@media (max-width: 900px) {
+  .stats--three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 720px) {
+  .stats--three { grid-template-columns: 1fr; }
+}

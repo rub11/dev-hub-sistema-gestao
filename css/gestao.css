@@ -1,0 +1,90 @@
+/* =========================================================
+   DEV HUB · Área de Gestão
+   Reaproveita global.css, dashboard.css, clientes.css.
+   Aqui só o específico.
+   ========================================================= */
+
+/* ---------- Stats com 3 colunas ---------- */
+.stats--three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 24px;
+}
+
+.stat__icon--success { background: var(--success-soft); color: var(--success); }
+.stat__icon--danger  { background: var(--danger-soft);  color: var(--danger); }
+
+/* ---------- Tag de perfil (Administrador / Líder / Funcionário) ---------- */
+.role-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-soft);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.role-tag--admin {
+  background: var(--accent-soft);
+  border-color: #c7d2fe;
+  color: var(--accent-hover);
+}
+
+.role-tag--leader {
+  background: var(--warning-soft);
+  border-color: var(--warning-border);
+  color: var(--warning);
+}
+
+/* ---------- Coluna nome: bold + small de "você" ---------- */
+.cell-user {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.cell-user small {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+/* ---------- Select no modal (reaproveita .field) ---------- */
+#user-modal select {
+  width: 100%;
+  height: 46px;
+  padding: 0 40px 0 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  font-size: 15px;
+  color: var(--text);
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23667085' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+#user-modal select:hover:not(:focus) { border-color: #b9bfc9; }
+#user-modal select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-ring);
+}
+#user-modal select:disabled { opacity: 0.62; cursor: not-allowed; }
+
+/* ---------- Responsivo ---------- */
+@media (max-width: 900px) {
+  .stats--three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 720px) {
+  .stats--three { grid-template-columns: 1fr; }
+}

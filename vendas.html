@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Vendas · DEV HUB</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+    <link rel="stylesheet" href="css/global.css" />
+    <link rel="stylesheet" href="css/dashboard.css" />
+    <link rel="stylesheet" href="css/clientes.css" />
+    <link rel="stylesheet" href="css/vendas.css" />
+</head>
+
+<body data-page="sales">
+
+    <a class="skip-link" href="#main">Pular para o conteúdo principal</a>
+
+    <!-- ================= SIDEBAR ================= -->
+    <aside class="sidebar" id="sidebar" aria-label="Menu principal">
+
+        <div class="sidebar__brand">
+            <span class="brand__mark" aria-hidden="true">DH</span>
+            <span class="brand__name">DEV HUB</span>
+        </div>
+
+        <nav class="nav" aria-label="Módulos">
+            <p class="nav__label">Operação</p>
+
+            <a class="nav__item" href="dashboard.html">
+                <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect x="3" y="3" width="7.5" height="7.5" rx="1.8" />
+                    <rect x="13.5" y="3" width="7.5" height="7.5" rx="1.8" />
+                    <rect x="3" y="13.5" width="7.5" height="7.5" rx="1.8" />
+                    <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.8" />
+                </svg>
+                <span>Dashboard</span>
+            </a>
+
+            <a class="nav__item is-active" href="vendas.html" aria-current="page">
+                <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="9" cy="20" r="1.4" />
+                    <circle cx="18" cy="20" r="1.4" />
+                    <path d="M2.5 3.5h2.3l2.3 11.6a1.8 1.8 0 0 0 1.8 1.4h8.8a1.8 1.8 0 0 0 1.8-1.4L21 7.5H6" />
+                </svg>
+                <span>Vendas</span>
+            </a>
+
+            <a class="nav__item" href="notas.html">
+                <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M14 2.5H7A2 2 0 0 0 5 4.5v15a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7.5z" />
+                    <path d="M14 2.5v5h5" />
+                    <path d="M9 13h6M9 17h4" />
+                </svg>
+                <span>Notas</span>
+            </a>
+
+            <a class="nav__item" href="clientes.html">
+                <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M16 20v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20" />
+                    <circle cx="9" cy="7.5" r="3.5" />
+                    <path d="M22 20v-1.5a4 4 0 0 0-3-3.87" />
+                    <path d="M16.5 4.13a4 4 0 0 1 0 7.75" />
+                </svg>
+                <span>Clientes</span>
+            </a>
+
+            <a class="nav__item" href="produtos.html">
+                <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="m21 8-9-5-9 5v8l9 5 9-5z" />
+                    <path d="m3 8 9 5 9-5" />
+                    <path d="M12 21v-8" />
+                </svg>
+                <span>Produtos</span>
+            </a>
+
+            <a class="nav__item" href="estoque.html">
+                <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="m12 2.5 9 5-9 5-9-5z" />
+                    <path d="m3 12.5 9 5 9-5" />
+                    <path d="m3 17.5 9 5 9-5" />
+                </svg>
+                <span>Estoque</span>
+            </a>
+
+            <a class="nav__item" href="relatorios.html">
+                <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M3 3v16a2 2 0 0 0 2 2h16" />
+                    <path d="m7 15 3.5-4 3 2.5L20 7" />
+                </svg>
+                <span>Relatórios</span>
+            </a>
+        </nav>
+
+        <div class="sidebar__spacer"></div>
+
+        <nav class="nav" aria-label="Sistema">
+            <div class="nav__sep" role="presentation"></div>
+
+            <a class="nav__item" href="configuracoes.html">
+                <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M20 7h-9" />
+                    <path d="M14 17H5" />
+                    <circle cx="17" cy="17" r="3" />
+                    <circle cx="7" cy="7" r="3" />
+                </svg>
+                <span>Configurações</span>
+            </a>
+
+            <button type="button" class="nav__item nav__item--danger" data-action="logout">
+                <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <path d="m16 17 5-5-5-5" />
+                    <path d="M21 12H9" />
+                </svg>
+                <span>Sair</span>
+            </button>
+        </nav>
+    </aside>
+
+    <div class="sidebar-overlay" id="sidebar-overlay" hidden></div>
+
+    <!-- ================= ÁREA PRINCIPAL ================= -->
+    <div class="app__body">
+
+        <header class="topbar">
+            <button type="button" class="icon-btn menu-toggle" id="menu-toggle" aria-label="Abrir menu"
+                aria-expanded="false" aria-controls="sidebar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"
+                    aria-hidden="true">
+                    <path d="M3.5 6.5h17M3.5 12h17M3.5 17.5h17" />
+                </svg>
+            </button>
+
+            <span class="topbar__brand">DEV HUB</span>
+
+            <div class="topbar__actions">
+
+                <button type="button" class="icon-btn" id="notifications-btn" aria-label="Notificações (em breve)"
+                    title="Em breve" disabled>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M18 8.5a6 6 0 1 0-12 0c0 6.5-2.5 8.5-2.5 8.5h17S18 15 18 8.5" />
+                        <path d="M13.7 20.5a2 2 0 0 1-3.4 0" />
+                    </svg>
+                </button>
+
+                <div class="user-menu">
+                    <button type="button" class="user-menu__trigger" id="user-menu-trigger" aria-haspopup="true"
+                        aria-expanded="false" aria-controls="user-menu-panel">
+                        <span class="avatar" id="user-avatar" aria-hidden="true">–</span>
+                        <span class="user-menu__meta">
+                            <span class="user-menu__name" id="user-name">Carregando…</span>
+                            <span class="user-menu__role" id="user-role"></span>
+                        </span>
+                        <svg class="user-menu__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="m6 9 6 6 6-6" />
+                        </svg>
+                    </button>
+
+                    <div class="user-menu__panel" id="user-menu-panel" role="menu" hidden>
+                        <button type="button" class="menu-item" role="menuitem" aria-disabled="true">
+                            Perfil <span class="menu-item__tag">Em breve</span>
+                        </button>
+                        <a class="menu-item" role="menuitem" href="configuracoes.html">
+                            Configurações
+                        </a>
+                        <div class="menu-item__sep" role="separator"></div>
+                        <button type="button" class="menu-item menu-item--danger" role="menuitem" data-action="logout">
+                            Sair
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </header>
+
+        <main class="content" id="main">
+
+            <div id="global-alert" class="alert" role="alert" hidden></div>
+
+            <!-- =========================================================
+           VIEW: LISTA DE VENDAS
+           ========================================================= -->
+            <div id="view-list">
+
+                <div class="page-head">
+                    <p class="page-head__eyebrow">
+                        <span id="greeting-name">Olá</span>
+                        <span class="role-badge" id="greeting-role" hidden></span>
+                    </p>
+                    <h1 class="page-head__title">Vendas</h1>
+                    <p class="page-head__sub">Acompanhe e registre as vendas do seu negócio.</p>
+                </div>
+
+                <section class="panel" aria-labelledby="sales-title">
+
+                    <div class="panel__head toolbar">
+                        <div class="toolbar__info">
+                            <h2 class="panel__title" id="sales-title">Todas as vendas</h2>
+                            <p class="panel__sub" id="sales-count">Carregando…</p>
+                        </div>
+
+                        <div class="toolbar__actions">
+                            <div class="search">
+                                <span class="search__icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="11" cy="11" r="7" />
+                                        <path d="m20 20-3.5-3.5" />
+                                    </svg>
+                                </span>
+                                <input type="search" id="search-input" class="search__input"
+                                    placeholder="Buscar vendas..."
+                                    aria-label="Buscar vendas por número, cliente ou forma de pagamento"
+                                    autocomplete="off" />
+                            </div>
+
+                            <button type="button" class="btn btn--primary" id="new-sale-btn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
+                                    style="width:16px;height:16px">
+                                    <path d="M12 5v14M5 12h14" />
+                                </svg>
+                                <span>Nova venda</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="sales-loading" class="state-block">
+                        <span class="spinner" aria-hidden="true"></span>
+                        <p>Carregando vendas...</p>
+                    </div>
+
+                    <div id="sales-empty" class="state-block" hidden>
+                        <div class="state-block__icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="9" cy="20" r="1.4" />
+                                <circle cx="18" cy="20" r="1.4" />
+                                <path
+                                    d="M2.5 3.5h2.3l2.3 11.6a1.8 1.8 0 0 0 1.8 1.4h8.8a1.8 1.8 0 0 0 1.8-1.4L21 7.5H6" />
+                            </svg>
+                        </div>
+                        <h3 id="sales-empty-title">Nenhuma venda registrada ainda.</h3>
+                        <p id="sales-empty-text">Comece registrando sua primeira venda.</p>
+                        <button type="button" class="btn btn--primary" id="empty-new-btn">
+                            Criar primeira venda
+                        </button>
+                    </div>
+
+                    <div class="table-wrap" id="sales-table-wrap" hidden>
+                        <table>
+                            <caption class="sr-only">Lista de vendas registradas</caption>
+                            <thead>
+                                <tr>
+                                    <th scope="col">Nº</th>
+                                    <th scope="col">Cliente</th>
+                                    <th scope="col">Data</th>
+                                    <th scope="col" class="cell--num">Subtotal</th>
+                                    <th scope="col" class="cell--num">Desconto</th>
+                                    <th scope="col" class="cell--num">Total</th>
+                                    <th scope="col">Pagamento</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col" class="cell--num">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sales-body"></tbody>
+                        </table>
+                    </div>
+
+                </section>
+            </div>
+
+            <!-- =========================================================
+           VIEW: FORMULÁRIO DE NOVA VENDA
+           ========================================================= -->
+            <div id="view-form" hidden>
+
+                <div class="page-head page-head--with-back">
+                    <button type="button" class="btn btn--ghost btn--back" id="back-to-list">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+                            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
+                            style="width:16px;height:16px">
+                            <path d="m15 18-6-6 6-6" />
+                        </svg>
+                        <span>Voltar</span>
+                    </button>
+
+                    <div>
+                        <h1 class="page-head__title">Nova venda</h1>
+                        <p class="page-head__sub">Selecione o cliente, adicione produtos e finalize.</p>
+                    </div>
+                </div>
+
+                <form id="sale-form" class="sale-form" novalidate>
+
+                    <div class="sale-form__main">
+
+                        <!-- Cliente -->
+                        <section class="card">
+                            <header class="card__head">
+                                <h2 class="card__title">Cliente</h2>
+                            </header>
+                            <div class="card__body">
+                                <div class="field">
+                                    <label for="sale-customer">Selecione o cliente</label>
+                                    <select id="sale-customer">
+                                        <option value="">Cliente não informado</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Adicionar produto -->
+                        <section class="card">
+                            <header class="card__head">
+                                <h2 class="card__title">Adicionar produto</h2>
+                            </header>
+
+                            <div class="card__body">
+                                <div class="field">
+                                    <label for="sale-product">Produto</label>
+                                    <select id="sale-product">
+                                        <option value="">Selecione um produto</option>
+                                    </select>
+                                </div>
+
+                                <p class="product-info" id="product-info">
+                                    Selecione um produto para ver o preço e o estoque.
+                                </p>
+
+                                <div class="add-grid">
+                                    <div class="field">
+                                        <label for="product-price-preview">Preço unitário</label>
+                                        <input type="text" id="product-price-preview" value="R$ 0,00" readonly />
+                                    </div>
+
+                                    <div class="field">
+                                        <label for="product-quantity">Quantidade</label>
+                                        <input type="number" id="product-quantity" value="1" min="1" step="1"
+                                            inputmode="numeric" />
+                                    </div>
+
+                                    <div class="field">
+                                        <label for="product-subtotal-preview">Subtotal</label>
+                                        <input type="text" id="product-subtotal-preview" value="R$ 0,00" readonly />
+                                    </div>
+
+                                    <div class="field field--action">
+                                        <label aria-hidden="true">&nbsp;</label>
+                                        <button type="button" class="btn btn--primary" id="add-product-btn" disabled>
+                                            Adicionar
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Carrinho -->
+                        <section class="card">
+                            <header class="card__head">
+                                <h2 class="card__title">Produtos da venda</h2>
+                            </header>
+
+                            <div class="card__body card__body--flush">
+                                <div id="cart-empty" class="state-block state-block--compact">
+                                    <p>Nenhum produto adicionado.</p>
+                                </div>
+
+                                <div class="table-wrap" id="cart-wrap" hidden>
+                                    <table class="cart-table">
+                                        <caption class="sr-only">Produtos adicionados à venda</caption>
+                                        <thead>
+                                            <tr>
+                                                <th scope="col">Produto</th>
+                                                <th scope="col" class="cell--num">Preço unit.</th>
+                                                <th scope="col" class="cell--num">Quantidade</th>
+                                                <th scope="col" class="cell--num">Subtotal</th>
+                                                <th scope="col" class="cell--num">Ações</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="cart-body"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </section>
+
+                    </div>
+
+                    <!-- Coluna lateral: resumo + pagamento -->
+                    <aside class="sale-form__side">
+
+                        <section class="card card--sticky">
+                            <header class="card__head">
+                                <h2 class="card__title">Resumo</h2>
+                            </header>
+
+                            <div class="card__body">
+                                <div class="totals">
+                                    <div class="totals__row">
+                                        <span class="totals__label">Subtotal</span>
+                                        <span class="totals__value" id="total-subtotal">R$ 0,00</span>
+                                    </div>
+
+                                    <div class="totals__row totals__row--field">
+                                        <label for="sale-discount" class="totals__label">Desconto (R$)</label>
+                                        <input type="number" id="sale-discount" value="0" min="0" step="0.01"
+                                            inputmode="decimal" />
+                                    </div>
+
+                                    <div class="totals__sep" role="presentation"></div>
+
+                                    <div class="totals__row totals__row--grand">
+                                        <span class="totals__label">Total</span>
+                                        <span class="totals__value totals__value--grand" id="total-total">R$ 0,00</span>
+                                    </div>
+                                </div>
+
+                                <div class="field">
+                                    <label for="sale-payment">Forma de pagamento</label>
+                                    <select id="sale-payment">
+                                        <option value="">Não informado</option>
+                                        <option value="cash">Dinheiro</option>
+                                        <option value="pix">Pix</option>
+                                        <option value="debit_card">Cartão de débito</option>
+                                        <option value="credit_card">Cartão de crédito</option>
+                                        <option value="boleto">Boleto</option>
+                                        <option value="other">Outro</option>
+                                    </select>
+                                </div>
+
+                                <div class="field">
+                                    <label for="sale-notes">Observações</label>
+                                    <textarea id="sale-notes" rows="3" maxlength="500"></textarea>
+                                </div>
+
+                                <p id="sale-form-feedback" class="feedback feedback--error" role="alert"
+                                    aria-live="polite" hidden></p>
+
+                                <div class="sale-form__actions">
+                                    <button type="button" class="btn btn--ghost" id="cancel-sale">Cancelar</button>
+                                    <button type="submit" class="btn btn--primary" id="submit-sale-btn">
+                                        <span class="btn__label">Finalizar venda</span>
+                                        <span class="btn__spinner" aria-hidden="true"></span>
+                                    </button>
+                                </div>
+                            </div>
+                        </section>
+
+                    </aside>
+                </form>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- ================= MODAL: DETALHES DA VENDA ================= -->
+    <div class="modal" id="detail-modal" hidden>
+        <div class="modal__backdrop" data-close-modal></div>
+
+        <div class="modal__dialog modal__dialog--lg" role="dialog" aria-modal="true" aria-labelledby="detail-title">
+            <header class="modal__head">
+                <div class="detail-head">
+                    <h2 class="modal__title" id="detail-title">Detalhes da venda</h2>
+                    <span id="detail-status"></span>
+                </div>
+                <button type="button" class="icon-btn modal__close" aria-label="Fechar" data-close-modal>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"
+                        aria-hidden="true">
+                        <path d="M6 6l12 12M18 6L6 18" />
+                    </svg>
+                </button>
+            </header>
+
+            <div class="modal__body" id="detail-body">
+                <div class="state-block">
+                    <span class="spinner" aria-hidden="true"></span>
+                    <p>Carregando detalhes...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= TOASTS ================= -->
+    <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="false"></div>
+
+   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/nav.js"></script>
+<script src="js/vendas.js"></script>
+</body>
+
+</html>

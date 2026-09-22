@@ -1,0 +1,396 @@
+/* =========================================================
+   DEV HUB · Módulo de Notas
+   Reaproveita global.css, dashboard.css e clientes.css.
+   Aqui só o específico: layout do documento e impressão.
+   ========================================================= */
+
+/* ---------- Modal mais largo para o documento ---------- */
+.modal__dialog--nota {
+  max-width: 760px;
+}
+
+/* ---------- Período personalizado ---------- */
+.custom-period {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+}
+
+.custom-period__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.custom-period__field label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+}
+
+.custom-period__field input[type="date"] {
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--surface);
+  font-size: 13.5px;
+  color: var(--text);
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+.custom-period__field input[type="date"]:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-ring);
+}
+
+.btn--sm {
+  height: 36px;
+  padding: 0 14px;
+  font-size: 13px;
+}
+
+/* ---------- Select do toolbar ---------- */
+.field--inline { flex-direction: row; align-items: center; }
+
+.control-select {
+  height: 40px;
+  min-width: 170px;
+  padding: 0 34px 0 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  font-size: 14px;
+  color: var(--text);
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23667085' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 15px;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+.control-select:hover:not(:focus) { border-color: #b9bfc9; }
+.control-select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-ring);
+}
+
+/* =========================================================
+   Documento (dentro do modal)
+   ========================================================= */
+.nota-doc {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 8px 4px;
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.nota-doc__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--border-strong);
+}
+
+.nota-doc__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nota-doc__brand-mark {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  flex: none;
+}
+
+.nota-doc__brand-name {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.nota-doc__doc-type {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.nota-doc__meta {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.nota-doc__meta-line {
+  display: block;
+  font-size: 13px;
+  color: var(--text-soft);
+}
+
+.nota-doc__meta-line strong {
+  color: var(--text);
+  font-weight: 600;
+  margin-left: 6px;
+}
+
+.nota-doc__meta-number {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.nota-doc__section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.nota-doc__section-title {
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+.nota-doc__info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 24px;
+}
+
+.nota-doc__info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nota-doc__info-label {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.nota-doc__info-value {
+  font-size: 14px;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.nota-doc__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+.nota-doc__table th {
+  padding: 8px 10px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  text-align: left;
+}
+
+.nota-doc__table td {
+  padding: 10px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.nota-doc__table tr:last-child td { border-bottom: 0; }
+.nota-doc__table .cell--num { text-align: right; font-variant-numeric: tabular-nums; }
+.nota-doc__table th.cell--num { text-align: right; }
+
+.nota-doc__totals {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-self: flex-end;
+  min-width: 240px;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+
+.nota-doc__total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  font-size: 13.5px;
+  color: var(--text-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.nota-doc__total-row--grand {
+  padding-top: 8px;
+  margin-top: 4px;
+  border-top: 1px solid var(--border);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.nota-doc__notes {
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.6;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.nota-doc__footer {
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  font-size: 11.5px;
+  color: var(--text-muted);
+  letter-spacing: 0.03em;
+}
+
+/* =========================================================
+   Impressão
+   ========================================================= */
+@media print {
+  /* Esconde tudo do app */
+  body.printing-nota .sidebar,
+  body.printing-nota .sidebar-overlay,
+  body.printing-nota .topbar,
+  body.printing-nota .app__body,
+  body.printing-nota .toast-region,
+  body.printing-nota .no-print,
+  body.printing-nota .modal__backdrop {
+    display: none !important;
+  }
+
+  body.printing-nota {
+    background: #ffffff !important;
+  }
+
+  body.printing-nota .modal {
+    position: static !important;
+    inset: auto !important;
+    padding: 0 !important;
+    background: transparent !important;
+    display: block !important;
+  }
+
+  body.printing-nota .modal__dialog {
+    position: static !important;
+    max-width: 100% !important;
+    max-height: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+    animation: none !important;
+    display: block !important;
+  }
+
+  body.printing-nota .modal__body {
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  body.printing-nota .nota-doc {
+    padding: 0;
+    gap: 16px;
+    color: #000;
+  }
+
+  body.printing-nota .nota-doc__header {
+    border-bottom-color: #000;
+  }
+
+  body.printing-nota .nota-doc__brand-mark {
+    background: #000 !important;
+    color: #fff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  body.printing-nota .nota-doc__section-title {
+    color: #000;
+    border-bottom-color: #999;
+  }
+
+  body.printing-nota .nota-doc__table th {
+    background: #f2f2f2 !important;
+    color: #000 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  body.printing-nota .nota-doc__table td {
+    border-bottom-color: #ddd;
+  }
+
+  body.printing-nota .nota-doc__totals,
+  body.printing-nota .nota-doc__notes {
+    background: #fafafa !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  body.printing-nota .nota-doc__info-label,
+  body.printing-nota .nota-doc__doc-type,
+  body.printing-nota .nota-doc__footer {
+    color: #555;
+  }
+
+  @page {
+    margin: 14mm;
+  }
+}
+
+/* =========================================================
+   Responsivo
+   ========================================================= */
+@media (max-width: 720px) {
+  .toolbar__actions { width: 100%; flex-direction: column; align-items: stretch; }
+  .toolbar__actions .search { width: 100%; }
+  .field--inline { width: 100%; }
+  .control-select { width: 100%; min-width: 0; }
+
+  .nota-doc__header { flex-direction: column; align-items: flex-start; }
+  .nota-doc__meta { text-align: left; }
+
+  .nota-doc__info-grid { grid-template-columns: 1fr; }
+
+  .nota-doc__totals { min-width: 0; width: 100%; }
+}

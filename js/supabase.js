@@ -1,0 +1,63 @@
+// =========================================================
+// DEV HUB — Configuração central do Supabase
+// =========================================================
+
+const SUPABASE_URL =
+    'https://dgtyllwfzpiyxkeltxmi.supabase.co';
+
+const SUPABASE_PUBLISHABLE_KEY =
+    'sb_publishable_fDh4lu5aH29N3GWm784KxA_LBLpTcKs';
+
+// Verifica se o SDK foi carregado
+if (
+    !window.supabase ||
+    typeof window.supabase.createClient !== 'function'
+) {
+    console.error(
+        '[DEV HUB] SDK do Supabase não foi carregado.'
+    );
+
+    window.db = null;
+    window.devHubSupabase = null;
+} else {
+
+    try {
+
+        const client = window.supabase.createClient(
+            SUPABASE_URL,
+            SUPABASE_PUBLISHABLE_KEY,
+            {
+                auth: {
+                    persistSession: true,
+                    autoRefreshToken: true,
+                    detectSessionInUrl: true,
+                    storageKey: 'dev-hub-auth'
+                }
+            }
+        );
+
+        // Nome principal usado pelos módulos
+        window.db = client;
+
+        // Compatibilidade com o auth.js
+        window.devHubSupabase = client;
+
+        // Indicador global
+        window.DEV_HUB_CONFIGURED = true;
+
+        console.log(
+            '[DEV HUB] Supabase conectado com sucesso.'
+        );
+
+    } catch (error) {
+
+        console.error(
+            '[DEV HUB] Erro ao inicializar Supabase:',
+            error
+        );
+
+        window.db = null;
+        window.devHubSupabase = null;
+        window.DEV_HUB_CONFIGURED = false;
+    }
+}

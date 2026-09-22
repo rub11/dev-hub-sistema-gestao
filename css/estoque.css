@@ -1,0 +1,142 @@
+/* =========================================================
+   DEV HUB · Módulo de Estoque
+   ---------------------------------------------------------
+   Reaproveita global.css, dashboard.css, clientes.css e
+   produtos.css. Aqui só o específico de estoque.
+   ========================================================= */
+
+/* ---------- Cards: variações de cor dos ícones ---------- */
+.stat__icon--success {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.stat__icon--warning {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.stat__icon--danger {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+/* ---------- Filtros inline no header do painel ---------- */
+.field--inline {
+  flex-direction: row;
+  align-items: center;
+}
+
+.control-select {
+  height: 40px;
+  min-width: 170px;
+  padding: 0 34px 0 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  font-size: 14px;
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color var(--transition), box-shadow var(--transition);
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23667085' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 15px;
+}
+
+.control-select:hover:not(:focus) { border-color: #b9bfc9; }
+.control-select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-ring);
+}
+
+/* ---------- Segmented control (Entrada / Saída / Ajuste) ---------- */
+.segmented {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  padding: 4px;
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+
+.segmented__option {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 38px;
+  border-radius: 7px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text-soft);
+  cursor: pointer;
+  user-select: none;
+  transition: background-color var(--transition), color var(--transition),
+              box-shadow var(--transition);
+}
+
+.segmented__option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.segmented__option:hover { color: var(--text); }
+
+.segmented__option:has(input:checked) {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+}
+
+.segmented__option:has(input:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---------- Hint abaixo dos campos ---------- */
+.field__hint {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  margin-top: -2px;
+}
+
+/* ---------- Campo label (não-input) ---------- */
+.field__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-soft);
+}
+
+/* ---------- Tabela: indicador de movimentação ---------- */
+.movement-qty {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.movement-qty--in  { color: var(--success); }
+.movement-qty--out { color: var(--danger); }
+
+.movement-reason {
+  max-width: 260px;
+  color: var(--text-soft);
+  overflow-wrap: anywhere;
+}
+
+/* ---------- Tabela: densidade menor no histórico ---------- */
+#movements-table-wrap table { min-width: 900px; }
+
+/* ---------- Responsivo ---------- */
+@media (max-width: 720px) {
+  .field--inline { width: 100%; }
+  .control-select { width: 100%; min-width: 0; }
+  .toolbar__actions { width: 100%; flex-direction: column; }
+  .toolbar__actions .field--inline { flex: 1 1 auto; }
+  .toolbar__actions .search { width: 100%; }
+  .movement-reason { max-width: 160px; }
+}

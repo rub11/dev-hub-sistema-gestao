@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Estoque · DEV HUB</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/global.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/clientes.css" />
+  <link rel="stylesheet" href="css/produtos.css" />
+  <link rel="stylesheet" href="css/estoque.css" />
+</head>
+<body data-page="stock">
+
+  <a class="skip-link" href="#main">Pular para o conteúdo principal</a>
+
+  <!-- ================= SIDEBAR ================= -->
+  
+
+<aside class="sidebar" id="sidebar" aria-label="Menu principal"></aside>
+
+
+  <div class="sidebar-overlay" id="sidebar-overlay" hidden></div>
+
+  <!-- ================= ÁREA PRINCIPAL ================= -->
+  <div class="app__body">
+
+    <header class="topbar">
+      <button
+        type="button"
+        class="icon-btn menu-toggle"
+        id="menu-toggle"
+        aria-label="Abrir menu"
+        aria-expanded="false"
+        aria-controls="sidebar"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+             stroke-linecap="round" aria-hidden="true">
+          <path d="M3.5 6.5h17M3.5 12h17M3.5 17.5h17" />
+        </svg>
+      </button>
+
+      <span class="topbar__brand">DEV HUB</span>
+
+      <div class="topbar__actions">
+
+        <button
+          type="button"
+          class="icon-btn"
+          id="notifications-btn"
+          aria-label="Notificações (em breve)"
+          title="Em breve"
+          disabled
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M18 8.5a6 6 0 1 0-12 0c0 6.5-2.5 8.5-2.5 8.5h17S18 15 18 8.5" />
+            <path d="M13.7 20.5a2 2 0 0 1-3.4 0" />
+          </svg>
+        </button>
+
+        <div class="user-menu">
+          <button
+            type="button"
+            class="user-menu__trigger"
+            id="user-menu-trigger"
+            aria-haspopup="true"
+            aria-expanded="false"
+            aria-controls="user-menu-panel"
+          >
+            <span class="avatar" id="user-avatar" aria-hidden="true">–</span>
+            <span class="user-menu__meta">
+              <span class="user-menu__name" id="user-name">Carregando…</span>
+              <span class="user-menu__role" id="user-role"></span>
+            </span>
+            <svg class="user-menu__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </button>
+
+          <div class="user-menu__panel" id="user-menu-panel" role="menu" hidden>
+            <button type="button" class="menu-item" role="menuitem" aria-disabled="true">
+              Perfil <span class="menu-item__tag">Em breve</span>
+            </button>
+            <button type="button" class="menu-item" role="menuitem" aria-disabled="true">
+              Configurações <span class="menu-item__tag">Em breve</span>
+            </button>
+            <div class="menu-item__sep" role="separator"></div>
+            <button type="button" class="menu-item menu-item--danger" role="menuitem" data-action="logout">
+              Sair
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </header>
+
+    <main class="content" id="main">
+
+      <div id="global-alert" class="alert" role="alert" hidden></div>
+
+      <div class="page-head">
+        <p class="page-head__eyebrow">
+          <span id="greeting-name">Olá</span>
+          <span class="role-badge" id="greeting-role" hidden></span>
+        </p>
+        <h1 class="page-head__title">Estoque</h1>
+        <p class="page-head__sub">Acompanhe o estoque e registre movimentações.</p>
+      </div>
+
+      <!-- ---------- Cards de resumo ---------- -->
+      <section class="stats" aria-label="Resumo do estoque">
+
+        <article class="stat">
+          <div class="stat__top">
+            <span class="stat__label">Total de produtos</span>
+            <span class="stat__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <path d="m21 8-9-5-9 5v8l9 5 9-5z" />
+                <path d="m3 8 9 5 9-5" />
+                <path d="M12 21v-8" />
+              </svg>
+            </span>
+          </div>
+          <p class="stat__value" id="stat-total">—</p>
+        </article>
+
+        <article class="stat">
+          <div class="stat__top">
+            <span class="stat__label">Com estoque</span>
+            <span class="stat__icon stat__icon--success" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 6 9 17l-5-5" />
+              </svg>
+            </span>
+          </div>
+          <p class="stat__value" id="stat-with-stock">—</p>
+        </article>
+
+        <article class="stat">
+          <div class="stat__top">
+            <span class="stat__label">Estoque baixo</span>
+            <span class="stat__icon stat__icon--warning" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10.3 3.6 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0Z" />
+                <path d="M12 9v4M12 17h.01" />
+              </svg>
+            </span>
+          </div>
+          <p class="stat__value" id="stat-low">—</p>
+        </article>
+
+        <article class="stat">
+          <div class="stat__top">
+            <span class="stat__label">Sem estoque</span>
+            <span class="stat__icon stat__icon--danger" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M15 9l-6 6M9 9l6 6" />
+              </svg>
+            </span>
+          </div>
+          <p class="stat__value" id="stat-out">—</p>
+        </article>
+
+      </section>
+
+      <!-- ---------- Produtos ---------- -->
+      <section class="panel" aria-labelledby="stock-products-title">
+
+        <div class="panel__head toolbar">
+          <div class="toolbar__info">
+            <h2 class="panel__title" id="stock-products-title">Produtos em estoque</h2>
+            <p class="panel__sub" id="products-count">Carregando…</p>
+          </div>
+
+          <div class="toolbar__actions">
+            <div class="search">
+              <span class="search__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="11" cy="11" r="7" />
+                  <path d="m20 20-3.5-3.5" />
+                </svg>
+              </span>
+              <input
+                type="search"
+                id="product-search"
+                class="search__input"
+                placeholder="Buscar produto..."
+                aria-label="Buscar produto por nome ou código"
+                autocomplete="off"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div id="products-loading" class="state-block">
+          <span class="spinner" aria-hidden="true"></span>
+          <p>Carregando produtos...</p>
+        </div>
+
+        <div id="products-empty" class="state-block" hidden>
+          <div class="state-block__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <path d="m21 8-9-5-9 5v8l9 5 9-5z" />
+              <path d="m3 8 9 5 9-5" />
+              <path d="M12 21v-8" />
+            </svg>
+          </div>
+          <h3 id="products-empty-title">Nenhum produto cadastrado.</h3>
+          <p id="products-empty-text">Cadastre produtos para começar a controlar o estoque.</p>
+        </div>
+
+        <div class="table-wrap" id="products-table-wrap" hidden>
+          <table>
+            <caption class="sr-only">Produtos e seus estoques</caption>
+            <thead>
+              <tr>
+                <th scope="col">Produto</th>
+                <th scope="col">Código</th>
+                <th scope="col" class="cell--num">Estoque</th>
+                <th scope="col" class="cell--num">Mínimo</th>
+                <th scope="col">Status</th>
+                <th scope="col" class="cell--num">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="products-body"></tbody>
+          </table>
+        </div>
+
+      </section>
+
+      <!-- ---------- Histórico ---------- -->
+      <section class="panel" aria-labelledby="movements-title">
+
+        <div class="panel__head toolbar">
+          <div class="toolbar__info">
+            <h2 class="panel__title" id="movements-title">Histórico de movimentações</h2>
+            <p class="panel__sub" id="movements-count">Carregando…</p>
+          </div>
+
+          <div class="toolbar__actions">
+            <div class="field field--inline">
+              <label for="movement-filter-product" class="sr-only">Filtrar por produto</label>
+              <select id="movement-filter-product" class="control-select">
+                <option value="">Todos os produtos</option>
+              </select>
+            </div>
+
+            <div class="field field--inline">
+              <label for="movement-filter-type" class="sr-only">Filtrar por tipo</label>
+              <select id="movement-filter-type" class="control-select">
+                <option value="">Todos os tipos</option>
+                <option value="entrada">Entrada</option>
+                <option value="saida">Saída</option>
+                <option value="ajuste">Ajuste</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div id="movements-loading" class="state-block">
+          <span class="spinner" aria-hidden="true"></span>
+          <p>Carregando movimentações...</p>
+        </div>
+
+        <div id="movements-empty" class="state-block" hidden>
+          <div class="state-block__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 3v16a2 2 0 0 0 2 2h16" />
+              <path d="m7 15 3.5-4 3 2.5L20 7" />
+            </svg>
+          </div>
+          <h3 id="movements-empty-title">Nenhuma movimentação registrada.</h3>
+          <p id="movements-empty-text">As movimentações de estoque aparecerão aqui.</p>
+        </div>
+
+        <div class="table-wrap" id="movements-table-wrap" hidden>
+          <table>
+            <caption class="sr-only">Histórico de movimentações de estoque</caption>
+            <thead>
+              <tr>
+                <th scope="col">Data</th>
+                <th scope="col">Produto</th>
+                <th scope="col">Tipo</th>
+                <th scope="col" class="cell--num">Qtd.</th>
+                <th scope="col" class="cell--num">Estoque anterior</th>
+                <th scope="col" class="cell--num">Novo estoque</th>
+                <th scope="col">Motivo</th>
+              </tr>
+            </thead>
+            <tbody id="movements-body"></tbody>
+          </table>
+        </div>
+
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ================= MODAL: MOVIMENTAR ESTOQUE ================= -->
+  <div class="modal" id="movement-modal" hidden>
+    <div class="modal__backdrop" data-close-modal></div>
+
+    <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="movement-modal-title">
+      <header class="modal__head">
+        <h2 class="modal__title" id="movement-modal-title">Movimentar estoque</h2>
+        <button type="button" class="icon-btn modal__close" aria-label="Fechar" data-close-modal>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+               stroke-linecap="round" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
+      </header>
+
+      <form id="movement-form" class="modal__body" novalidate>
+        <input type="hidden" id="movement-product-id" />
+
+        <div class="field">
+          <label for="movement-product-name">Produto</label>
+          <input type="text" id="movement-product-name" readonly />
+        </div>
+
+        <div class="field">
+          <label for="movement-current-stock">Estoque atual</label>
+          <input type="text" id="movement-current-stock" readonly />
+        </div>
+
+        <div class="field">
+          <span class="field__label">Tipo de movimentação</span>
+          <div class="segmented" role="radiogroup" aria-label="Tipo de movimentação">
+            <label class="segmented__option">
+              <input type="radio" name="movement-type" value="entrada" checked />
+              <span>Entrada</span>
+            </label>
+            <label class="segmented__option">
+              <input type="radio" name="movement-type" value="saida" />
+              <span>Saída</span>
+            </label>
+            <label class="segmented__option">
+              <input type="radio" name="movement-type" value="ajuste" />
+              <span>Ajuste</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="movement-quantity" id="movement-quantity-label">Quantidade</label>
+          <input type="number" id="movement-quantity" min="0" step="1" inputmode="numeric" />
+          <p class="field__hint" id="movement-quantity-hint">
+            Quantidade a adicionar ao estoque.
+          </p>
+        </div>
+
+        <div class="field">
+          <label for="movement-reason">Motivo (opcional)</label>
+          <input type="text" id="movement-reason" maxlength="200" placeholder="Ex.: Compra de fornecedor" />
+        </div>
+
+        <p id="movement-feedback" class="feedback feedback--error" role="alert" aria-live="polite" hidden></p>
+
+        <footer class="modal__foot">
+          <button type="button" class="btn btn--ghost" data-close-modal>Cancelar</button>
+          <button type="submit" class="btn btn--primary" id="movement-save-btn">
+            <span class="btn__label">Salvar</span>
+            <span class="btn__spinner" aria-hidden="true"></span>
+          </button>
+        </footer>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= TOASTS ================= -->
+  <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="false"></div>
+
+ <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/nav.js"></script>
+<script src="js/estoque.js"></script>
+</body>
+</html>

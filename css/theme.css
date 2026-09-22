@@ -1,0 +1,62 @@
+/* =========================================================
+   DEV HUB · Overrides do tema escuro
+   Carregar DEPOIS de global.css e dashboard.css.
+   ========================================================= */
+
+[data-theme="dark"] {
+  --bg: #0b0d10;
+  --surface: #14171b;
+  --surface-2: #1a1e23;
+  --border: #24292f;
+  --border-strong: #343a42;
+
+  --text: #eef1f5;
+  --text-soft: #a8b0ba;
+  --text-muted: #6f7780;
+
+  --accent: #6366f1;
+  --accent-hover: #7d7ff2;
+  --accent-soft: rgba(99, 102, 241, 0.14);
+  --accent-ring: rgba(99, 102, 241, 0.3);
+
+  --danger: #f97066;
+  --danger-soft: rgba(249, 112, 102, 0.12);
+  --danger-border: rgba(249, 112, 102, 0.28);
+
+  --warning: #fdb022;
+  --warning-soft: rgba(253, 176, 34, 0.12);
+  --warning-border: rgba(253, 176, 34, 0.28);
+
+  --success: #4ade80;
+  --success-soft: rgba(74, 222, 128, 0.12);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 6px 20px -6px rgba(0, 0, 0, 0.55),
+               0 2px 6px -2px rgba(0, 0, 0, 0.35);
+}
+
+/* Topbar com fundo escuro translúcido */
+[data-theme="dark"] .topbar {
+  background: rgba(20, 23, 27, 0.86);
+}
+
+/* Overlay do sidebar mais escuro */
+[data-theme="dark"] .sidebar-overlay {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+/* Badges/etiquetas que usavam fundo claro fixo */
+[data-theme="dark"] .badge,
+[data-theme="dark"] .menu-item__tag,
+[data-theme="dark"] .badge--neutral {
+  background: #1f242a;
+  color: var(--text-soft);
+}
+
+[data-theme="dark"] .badge--success { background: var(--success-soft); color: var(--success); }
+[data-theme="dark"] .badge--warning { background: var(--warning-soft); color: var(--warning); }
+[data-theme="dark"] .badge--danger  { background: var(--danger-soft);  color: var(--danger); }
+
+/* Inputs e superfícies herdam via variáveis — nada extra aqui. */
+
+/* Sidebar permanece escura nos dois temas (não mexe). */
