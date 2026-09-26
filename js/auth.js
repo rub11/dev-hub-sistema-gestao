@@ -80,7 +80,7 @@
 
       if (authError) {
         console.error('[DEV HUB] Erro no login:', authError);
-        throw new Error('E-mail ou senha incorretos.');
+        throw new Error(this._mapAuthError(authError));
       }
 
       const user = authData?.user;
@@ -164,6 +164,52 @@
     /* =====================================================
        HELPERS INTERNOS
        ===================================================== */
+
+    /**
+     * Traduz o erro retornado por signInWithPassword em uma
+     * mensagem precisa para o usuário. Antes, qualquer erro
+     * (rede fora do ar, e-mail não confirmado, limite de
+     * tentativas, etc.) virava "E-mail ou senha incorretos.",
+     * o que confundia o usuário e escondia o problema real.
+     */
+    _mapAuthError(authError) {
+      const status = authError?.status;
+      const code = String(authError?.code || '').toLowerCase();
+      const message = String(authError?.message || '').toLowerCase();
+
+      if (
+        message.includes('failed to fetch') ||
+        message.includes('network') ||
+        message.includes('load failed')
+      ) {
+        return 'Não foi possível conectar ao servidor. Verifique sua internet e tente novamente.';
+      }
+
+      if (code === 'email_not_confirmed' || message.includes('email not confirmed')) {
+        return 'Confirme seu e-mail antes de entrar. Verifique sua caixa de entrada.';
+      }
+
+      if (
+        status === 429 ||
+        code === 'over_request_rate_limit' ||
+        message.includes('rate limit') ||
+        message.includes('too many requests') ||
+        message.includes('for security purposes')
+      ) {
+        return 'Muitas tentativas em pouco tempo. Aguarde alguns instantes e tente novamente.';
+      }
+
+      if (code === 'user_banned' || message.includes('banned')) {
+        return 'Este acesso foi bloqueado. Entre em contato com o administrador.';
+      }
+
+      if (code === 'invalid_credentials' || message.includes('invalid login credentials')) {
+        return 'E-mail ou senha incorretos.';
+      }
+
+      // Erro não identificado: não inventa uma causa, apenas informa que falhou.
+      return 'Não foi possível realizar o login. Tente novamente em instantes.';
+    },
 
     async _fetchPlatformAdminFlag(supabase, userId) {
       if (!supabase || !userId) return false;

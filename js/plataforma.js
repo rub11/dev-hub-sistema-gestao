@@ -2,8 +2,8 @@
    DEV HUB · Administração da Plataforma
    ---------------------------------------------------------
    Apenas para platform_admin (profiles.is_platform_admin = true).
-   Cria empresas via RPC `create_organization_with_admin`
-   (atômica: cria org + vincula o platform_admin como admin dela).
+   Cria/edita empresas via RPC `create_organization_with_admin`
+   ou update direto em `organizations` (RLS protege).
    ========================================================= */
 
 (function () {
@@ -379,6 +379,21 @@
     const wrap = document.createElement('div');
     wrap.className = 'row-actions';
 
+    // ---------- Editar ----------
+    const editBtn = document.createElement('button');
+    editBtn.type = 'button';
+    editBtn.className = 'row-action';
+    editBtn.title = 'Editar';
+    editBtn.setAttribute('aria-label', 'Editar ' + (org.name || ''));
+    editBtn.innerHTML =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"' +
+      ' stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<path d="M12 20h9"/>' +
+      '<path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
+    editBtn.addEventListener('click', function () { openEditOrgModal(org); });
+    wrap.appendChild(editBtn);
+
+    // ---------- Ativar / Desativar ----------
     const toggleBtn = document.createElement('button');
     toggleBtn.type = 'button';
     toggleBtn.className = 'row-action';
@@ -392,9 +407,7 @@
       : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"' +
         ' stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
         '<path d="M20 6 9 17l-5-5"/></svg>';
-    toggleBtn.addEventListener('click', function () {
-      confirmToggle(org);
-    });
+    toggleBtn.addEventListener('click', function () { confirmToggle(org); });
     wrap.appendChild(toggleBtn);
 
     cell.appendChild(wrap);
@@ -475,13 +488,15 @@
   }
 
   /* =========================================================
-     Modal: nova empresa
+     Modal: nova empresa / editar empresa
      ========================================================= */
   const modalEls = {};
 
   function setupOrgModal() {
     modalEls.modal    = document.getElementById('org-modal');
     modalEls.form     = document.getElementById('org-form');
+    modalEls.id       = document.getElementById('org-id');      // hidden
+    modalEls.title    = document.getElementById('org-modal-title');
     modalEls.name     = document.getElementById('org-name');
     modalEls.code     = document.getElementById('org-code');
     modalEls.active   = document.getElementById('org-active');
@@ -496,7 +511,7 @@
     }
 
     modalEls.modal.querySelectorAll('[data-close-modal]').forEach(function (el) {
-      el.addEventListener('click', closeCreateModal);
+      el.addEventListener('click', closeOrgModal);
     });
 
     // Normaliza código: UPPERCASE, só A-Z 0-9 -
@@ -510,15 +525,29 @@
     }
 
     document.addEventListener('keydown', function (event) {
-      if (event.key === 'Escape' && !modalEls.modal.hidden) closeCreateModal();
+      if (event.key === 'Escape' && !modalEls.modal.hidden) closeOrgModal();
     });
 
-    modalEls.form.addEventListener('submit', onSubmitCreate);
+    modalEls.form.addEventListener('submit', onSubmitOrg);
+  }
+
+  function setModalMode(mode) {
+    const isEdit = mode === 'edit';
+    if (modalEls.title) {
+      modalEls.title.textContent = isEdit ? 'Editar empresa' : 'Nova empresa';
+    }
+    if (modalEls.saveBtn) {
+      const label = modalEls.saveBtn.querySelector('.btn__label');
+      if (label) label.textContent = isEdit ? 'Salvar alterações' : 'Criar empresa';
+    }
   }
 
   function openCreateModal() {
     modalEls.form.reset();
+    if (modalEls.id) modalEls.id.value = '';
     if (modalEls.active) modalEls.active.value = 'true';
+
+    setModalMode('create');
     clearFormFeedback();
     setFormBusy(false);
 
@@ -527,20 +556,37 @@
     modalEls.name.focus();
   }
 
-  function closeCreateModal() {
+  function openEditOrgModal(org) {
+    modalEls.form.reset();
+    if (modalEls.id)     modalEls.id.value     = org.id || '';
+    if (modalEls.name)   modalEls.name.value   = org.name || '';
+    if (modalEls.code)   modalEls.code.value   = org.code || '';
+    if (modalEls.active) modalEls.active.value = org.active === false ? 'false' : 'true';
+
+    setModalMode('edit');
+    clearFormFeedback();
+    setFormBusy(false);
+
+    modalEls.modal.hidden = false;
+    document.body.style.overflow = 'hidden';
+    modalEls.name.focus();
+  }
+
+  function closeOrgModal() {
     if (state.creating) return;
     modalEls.modal.hidden = true;
     document.body.style.overflow = '';
   }
 
-  async function onSubmitCreate(event) {
+  async function onSubmitOrg(event) {
     event.preventDefault();
     if (state.creating) return;
 
     clearFormFeedback();
 
-    const name = modalEls.name.value.trim();
-    const code = modalEls.code.value.trim().toUpperCase();
+    const id     = modalEls.id ? modalEls.id.value : '';
+    const name   = modalEls.name.value.trim();
+    const code   = modalEls.code.value.trim().toUpperCase();
     const active = modalEls.active.value !== 'false';
 
     if (!name) {
@@ -562,20 +608,34 @@
     setFormBusy(true);
 
     try {
-      const { data, error } = await window.db.rpc('create_organization_with_admin', {
-        p_name: name,
-        p_code: code,
-        p_active: active
-      });
+      if (id) {
+        // -------- Editar empresa existente --------
+        const { error } = await window.db
+          .from('organizations')
+          .update({ name: name, code: code, active: active })
+          .eq('id', id);
 
-      if (error) throw error;
+        if (error) throw error;
 
-      closeCreateModal();
-      showToast('Empresa criada com sucesso.', 'success');
+        closeOrgModal();
+        showToast('Empresa atualizada com sucesso.', 'success');
+      } else {
+        // -------- Criar nova empresa --------
+        const { error } = await window.db.rpc('create_organization_with_admin', {
+          p_name: name,
+          p_code: code,
+          p_active: active
+        });
+
+        if (error) throw error;
+
+        closeOrgModal();
+        showToast('Empresa criada com sucesso.', 'success');
+      }
 
       await loadOrganizations();
     } catch (error) {
-      console.error('[DEV HUB] Falha ao criar empresa:', error);
+      console.error('[DEV HUB] Falha ao salvar empresa:', error);
       showFormFeedback(mapCreateError(error));
     } finally {
       setFormBusy(false);
@@ -590,7 +650,11 @@
       modalEls.saveBtn.classList.toggle('is-loading', busy);
       modalEls.saveBtn.setAttribute('aria-busy', String(busy));
       const label = modalEls.saveBtn.querySelector('.btn__label');
-      if (label) label.textContent = busy ? 'Criando...' : 'Criar empresa';
+      if (label) {
+        const isEdit = modalEls.id && modalEls.id.value;
+        if (busy) label.textContent = isEdit ? 'Salvando...' : 'Criando...';
+        else      label.textContent = isEdit ? 'Salvar alterações' : 'Criar empresa';
+      }
     }
 
     [modalEls.name, modalEls.code, modalEls.active]
@@ -610,7 +674,7 @@
   }
 
   function mapCreateError(error) {
-    if (!error) return 'Não foi possível criar a empresa. Tente novamente.';
+    if (!error) return 'Não foi possível salvar a empresa. Tente novamente.';
     const msg = String(error.message || '');
     const lower = msg.toLowerCase();
 
@@ -621,15 +685,15 @@
       return 'Este código de empresa já está em uso.';
     }
     if (lower.includes('row-level security') || lower.includes('permission denied')) {
-      return 'Você não tem permissão para criar empresas.';
+      return 'Você não tem permissão para executar esta ação.';
     }
     if (lower.includes('apenas administradores da plataforma')) {
-      return 'Apenas administradores da plataforma podem criar empresas.';
+      return 'Apenas administradores da plataforma podem executar esta ação.';
     }
     if (lower.includes('failed to fetch') || lower.includes('network')) {
       return 'Não foi possível conectar ao servidor.';
     }
-    return msg || 'Não foi possível criar a empresa. Tente novamente.';
+    return msg || 'Não foi possível salvar a empresa. Tente novamente.';
   }
 
   /* =========================================================

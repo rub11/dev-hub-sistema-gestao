@@ -22,6 +22,7 @@
     currentRole: '',
     loading: false,
     creating: false,
+    editingMember: null,
     action: null,
     acting: false
   };
@@ -334,6 +335,37 @@
     wrap.className = 'row-actions';
 
     if (!meta.isSelf) {
+      const editBtn = document.createElement('button');
+      editBtn.type = 'button';
+      editBtn.className = 'row-action';
+      editBtn.title = 'Editar';
+      editBtn.setAttribute('aria-label', 'Editar ' + (member.name || ''));
+      editBtn.innerHTML =
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"' +
+        ' stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+        '<path d="M12 20h9"/>' +
+        '<path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
+      editBtn.addEventListener('click', function () {
+        openUserModal(member);
+      });
+      wrap.appendChild(editBtn);
+
+      const resetBtn = document.createElement('button');
+      resetBtn.type = 'button';
+      resetBtn.className = 'row-action';
+      resetBtn.title = 'Redefinir senha';
+      resetBtn.setAttribute('aria-label', 'Redefinir senha de ' + (member.name || ''));
+      resetBtn.innerHTML =
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"' +
+        ' stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+        '<circle cx="7.5" cy="15.5" r="5.5"/>' +
+        '<path d="m21 2-9.6 9.6"/>' +
+        '<path d="m15.5 7.5 3 3L22 7l-3-3"/></svg>';
+      resetBtn.addEventListener('click', function () {
+        confirmAction('reset', member);
+      });
+      wrap.appendChild(resetBtn);
+
       const toggleBtn = document.createElement('button');
       toggleBtn.type = 'button';
       toggleBtn.className = 'row-action';
@@ -470,7 +502,7 @@
     if (!modalEls.modal || !modalEls.form) return;
 
     if (modalEls.openBtn) {
-      modalEls.openBtn.addEventListener('click', openCreateModal);
+      modalEls.openBtn.addEventListener('click', function () { openUserModal(null); });
     }
 
     modalEls.modal.querySelectorAll('[data-close-modal]').forEach(function (el) {
@@ -494,14 +526,34 @@
       if (event.key === 'Escape' && !modalEls.modal.hidden) closeCreateModal();
     });
 
-    modalEls.form.addEventListener('submit', onSubmitCreate);
+    modalEls.form.addEventListener('submit', onSubmitUser);
   }
 
-  function openCreateModal() {
+  /**
+   * Abre o modal de usuário em modo criação (member = null/undefined)
+   * ou edição (member = registro de organization_members).
+   * O mesmo formulário é reaproveitado nos dois casos.
+   */
+  function openUserModal(member) {
+    state.editingMember = member || null;
+    const isEdit = Boolean(state.editingMember);
+
     modalEls.form.reset();
-    if (modalEls.role) modalEls.role.value = 'user';
     clearFormFeedback();
     setFormBusy(false);
+    ensureAdminOption(isEdit);
+
+    if (isEdit) {
+      modalEls.name.value = state.editingMember.name || '';
+      modalEls.email.value = state.editingMember.email || '';
+      if (modalEls.role) modalEls.role.value = normalizeRoleForForm(state.editingMember.role);
+      togglePasswordField(false);
+    } else {
+      if (modalEls.role) modalEls.role.value = 'user';
+      togglePasswordField(true);
+    }
+
+    setModalMode(isEdit ? 'edit' : 'create');
 
     modalEls.modal.hidden = false;
     document.body.style.overflow = 'hidden';
@@ -510,19 +562,69 @@
 
   function closeCreateModal() {
     if (state.creating) return;
+    state.editingMember = null;
     modalEls.modal.hidden = true;
     document.body.style.overflow = '';
   }
 
-  async function onSubmitCreate(event) {
+  /**
+   * Ajusta título e texto do botão do modal para refletir o modo atual.
+   * Feito com verificações defensivas: se o HTML não tiver esses
+   * elementos (ex.: título do modal), a função simplesmente não faz nada.
+   */
+  function setModalMode(mode) {
+    const title = modalEls.modal.querySelector('[data-modal-title]') ||
+      modalEls.modal.querySelector('.modal__title, .modal-title, h2, h3');
+    if (title) title.textContent = mode === 'edit' ? 'Editar usuário' : 'Novo usuário';
+
+    if (modalEls.saveBtn) {
+      const label = modalEls.saveBtn.querySelector('.btn__label');
+      if (label) label.textContent = mode === 'edit' ? 'Salvar alterações' : 'Criar usuário';
+    }
+  }
+
+  /** Mostra ou esconde a opção "Administrador" no select de perfil. */
+  function ensureAdminOption(show) {
+    if (!modalEls.role) return;
+    let opt = modalEls.role.querySelector('option[value="admin"]');
+    if (show) {
+      if (!opt) {
+        opt = document.createElement('option');
+        opt.value = 'admin';
+        opt.textContent = 'Administrador';
+        modalEls.role.appendChild(opt);
+      }
+    } else if (opt) {
+      opt.remove();
+    }
+  }
+
+  /** Mostra/esconde e (des)obriga o campo de senha inicial. */
+  function togglePasswordField(show) {
+    if (!modalEls.password) return;
+    modalEls.password.required = show;
+    modalEls.password.value = '';
+    const container = modalEls.password.closest('.field, .form-group, .input-group, label') ||
+      modalEls.password.parentElement;
+    if (container) container.hidden = !show;
+  }
+
+  function normalizeRoleForForm(role) {
+    const key = String(role || '').toLowerCase();
+    if (key === 'admin' || key === 'leader') return key;
+    return 'user';
+  }
+
+  async function onSubmitUser(event) {
     event.preventDefault();
     if (state.creating) return;
 
     clearFormFeedback();
 
+    const isEdit = Boolean(state.editingMember);
     const name = modalEls.name.value.trim();
     const email = modalEls.email.value.trim();
-    const password = modalEls.password.value;
+    const password = modalEls.password ? modalEls.password.value : '';
     const role = (modalEls.role && modalEls.role.value) || 'user';
 
     if (!name) {
@@ -540,19 +642,27 @@
       modalEls.email.focus();
       return;
     }
-    if (!password) {
-      showFormFeedback('Informe a senha inicial.');
-      modalEls.password.focus();
-      return;
-    }
-    if (password.length < 6) {
-      showFormFeedback('A senha precisa ter pelo menos 6 caracteres.');
-      modalEls.password.focus();
-      return;
+
+    if (!isEdit) {
+      if (!password) {
+        showFormFeedback('Informe a senha inicial.');
+        modalEls.password.focus();
+        return;
+      }
+      if (password.length < 6) {
+        showFormFeedback('A senha precisa ter pelo menos 6 caracteres.');
+        modalEls.password.focus();
+        return;
+      }
     }
 
-    // Nunca enviamos 'admin' pelo frontend — o backend rejeitaria
-    // de todo modo, mas mantemos a barreira dupla.
+    if (isEdit) {
+      return onSubmitEditMember(name, email, role);
+    }
+
+    // Nunca enviamos 'admin' pelo frontend na criação — o backend
+    // rejeitaria de todo modo, mas mantemos a barreira dupla.
+    // (Promover alguém a admin é feito depois, via "Editar".)
     const safeRole = (role === 'leader') ? 'leader' : 'user';
 
     setFormBusy(true);
@@ -596,6 +706,65 @@
     } catch (error) {
       console.error('[DEV HUB] Falha ao criar usuário:', error);
       showFormFeedback(mapCreateError(error));
+    } finally {
+      setFormBusy(false);
+    }
+  }
+
+  /**
+   * Salva as alterações de um usuário existente (nome, e-mail, perfil).
+   * Feito via update direto em organization_members (mesma tabela já
+   * usada por ativar/desativar/excluir), respeitando a RLS da própria
+   * organização — sem depender de nenhuma Edge Function nova.
+   */
+  async function onSubmitEditMember(name, email, role) {
+    const member = state.editingMember;
+
+    // Proteção: não deixa a empresa ficar sem nenhum administrador.
+    const wasAdmin = String(member.role || '').toLowerCase() === 'admin';
+    const willBeAdmin = role === 'admin';
+    if (wasAdmin && !willBeAdmin) {
+      const adminCount = state.members.filter(function (m) {
+        return String(m.role || '').toLowerCase() === 'admin';
+      }).length;
+      if (adminCount <= 1) {
+        showFormFeedback(
+          'Este é o único administrador da empresa. Promova outro usuário a ' +
+          'administrador antes de rebaixar este.'
+        );
+        return;
+      }
+    }
+
+    setFormBusy(true);
+
+    try {
+      const { error } = await window.db
+        .from('organization_members')
+        .update({ name: name, email: email, role: role })
+        .eq('id', member.id);
+
+      if (error) throw error;
+
+      // Sincroniza profiles (best-effort — não bloqueia o fluxo se falhar).
+      try {
+        await window.db
+          .from('profiles')
+          .update({ name: name, role: role })
+          .eq('id', member.user_id);
+      } catch (syncError) {
+        console.warn('[DEV HUB] Não foi possível sincronizar profiles:', syncError);
+      }
+
+      modalEls.modal.hidden = true;
+      document.body.style.overflow = '';
+      state.editingMember = null;
+      showToast('Usuário atualizado com sucesso.', 'success');
+
+      await loadMembers();
+    } catch (error) {
+      console.error('[DEV HUB] Falha ao editar usuário:', error);
+      showFormFeedback(mapActionError(error));
     } finally {
       setFormBusy(false);
     }
@@ -696,6 +865,12 @@
         'Excluir "' + name + '"? Essa ação removerá o acesso do usuário ao Dev Hub. ' +
         'Os dados operacionais (clientes, produtos, vendas) não são afetados.';
       setConfirmButton('Excluir acesso', 'danger');
+    } else if (type === 'reset') {
+      confirmEls.text.textContent =
+        'Enviar e-mail de redefinição de senha para "' + name + '"' +
+        (member.email ? ' (' + member.email + ')' : '') + '? ' +
+        'Ele(a) receberá um link para criar uma nova senha.';
+      setConfirmButton('Enviar e-mail', 'primary');
     }
 
     confirmEls.modal.hidden = false;
@@ -745,6 +920,20 @@
         if (error) throw error;
 
         showToast('Acesso do usuário removido.', 'success');
+      } else if (type === 'reset') {
+        if (!member.email) throw new Error('Este usuário não possui e-mail cadastrado.');
+
+        const redirectTo = window.location.origin +
+          window.location.pathname.replace(/[^/]*$/, 'index.html');
+
+        const { error } = await window.db.auth.resetPasswordForEmail(
+          member.email,
+          { redirectTo: redirectTo }
+        );
+
+        if (error) throw error;
+
+        showToast('E-mail de redefinição enviado para ' + member.email + '.', 'success');
       }
 
       confirmEls.modal.hidden = true;
@@ -780,6 +969,9 @@
     }
     if (lower.includes('row-level security') || lower.includes('permission denied')) {
       return 'Você não tem permissão para executar esta ação.';
+    }
+    if (lower.includes('rate limit') || lower.includes('too many requests') || lower.includes('for security purposes')) {
+      return 'Muitos e-mails de redefinição enviados recentemente. Aguarde alguns instantes e tente novamente.';
     }
     if (lower.includes('failed to fetch') || lower.includes('network')) {
       return 'Não foi possível conectar ao servidor.';

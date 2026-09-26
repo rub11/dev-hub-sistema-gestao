@@ -120,14 +120,13 @@
       section: 'Administração',
       capability: 'management',
       items: [
-        { id: 'gestao', label: 'Gestão', href: 'gestao.html', icon: 'gestao' },
-        {
-          id: 'configuracoes',
-          label: 'Configurações da Empresa',
-          href: 'configuracoes.html',
-          icon: 'configuracoes',
-          requiresCapability: 'admin_settings'
-        }
+        { id: 'gestao', label: 'Gestão', href: 'gestao.html', icon: 'gestao' }
+        /* Removido: item "Configurações da Empresa" apontava para
+           configuracoes.html, que é a mesma página de "Minha Conta"
+           (perfil pessoal / senha / tema) já disponível a todos os
+           usuários — não existe hoje um módulo real de configurações
+           da empresa. Quando esse módulo existir, adicione o item
+           aqui novamente com requiresCapability: 'admin_settings'. */
       ]
     },
     {

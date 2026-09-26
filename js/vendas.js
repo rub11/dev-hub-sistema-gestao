@@ -539,7 +539,7 @@
 
     const [customersRes, productsRes] = await Promise.all([
       window.db.from('customers').select('id, name').order('name', { ascending: true }),
-      window.db.from('products').select('id, name, price, stock, active')
+      window.db.from('products').select('id, name, price, stock, minimum_stock, active')
         .eq('active', true)
         .order('name', { ascending: true })
     ]);
@@ -639,6 +639,7 @@
     }
 
     const stock = toInteger(product.stock, 0);
+    const minimumStock = toInteger(product.minimum_stock, 0);
     const price = toNumber(product.price, 0);
 
     formEls.pricePreview.value = formatMoney(price);
@@ -650,8 +651,9 @@
     if (stock === 0) {
       cls += ' product-info--stock-out';
       extra = ' — sem estoque';
-    } else if (stock <= 0) {
+    } else if (stock <= minimumStock) {
       cls += ' product-info--stock-low';
+      extra = ' — estoque baixo';
     }
     formEls.productInfo.className = cls;
     formEls.productInfo.innerHTML =

@@ -298,8 +298,6 @@
      Últimas vendas
      ========================================================= */
   async function loadLatestSales() {
-    const query = 'id, created_at, status, *';
-
     let response = await window.db
       .from('sales')
       .select('*, customers(name)')
