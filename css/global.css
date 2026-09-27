@@ -346,3 +346,39 @@ a { color: inherit; text-decoration: none; }
 .badge--success { background: var(--success-soft); color: var(--success); }
 .badge--warning { background: var(--warning-soft); color: var(--warning); }
 .badge--danger  { background: var(--danger-soft);  color: var(--danger); }
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  overflow: hidden;              /* 👈 garante o crop redondo */
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
+
+.avatar {
+  /* ... o que já existe ... */
+  overflow: hidden;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}

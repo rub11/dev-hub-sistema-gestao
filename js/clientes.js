@@ -1,43 +1,46 @@
 /* =========================================================
-   DEV HUB · Módulo de Clientes
+   DEV HUB · Módulo de Clientes (completo)
    ---------------------------------------------------------
-   Usa apenas window.db (cliente já criado em js/supabase.js)
+   - Lista com tipo PF/PJ, telefone/e-mail/cidade principais
+   - Modal com abas
+   - Formulário dinâmico PF/PJ
+   - Repetíveis: telefone, e-mail, endereço, contato
+   - Persistência atômica via RPC upsert_customer_full
+   - Carga completa via RPC get_customer_full
    ========================================================= */
 
 (function () {
   'use strict';
 
-  /* ---------- Formatadores ---------- */
   const dateFormatter = new Intl.DateTimeFormat('pt-BR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric'
+    day: '2-digit', month: '2-digit', year: 'numeric'
   });
 
-  /* ---------- Estado interno ---------- */
   const state = {
-    all: [],          // registros carregados do Supabase
-    filtered: [],     // após filtro de busca
+    all: [],
+    filtered: [],
     search: '',
     editingId: null,
     deletingId: null,
     saving: false,
-    deleting: false
+    deleting: false,
+    // dados do cliente em edição
+    phones: [],
+    emails: [],
+    addresses: [],
+    contacts: []
   };
 
   document.addEventListener('DOMContentLoaded', init);
 
   /* =========================================================
-     Inicialização
+     Init
      ========================================================= */
   async function init() {
     const Auth = window.Auth;
 
     if (!Auth || !Auth.isConfigured() || !window.db) {
-      showGlobalAlert(
-        'Não foi possível conectar ao Supabase. Verifique as credenciais em js/supabase.js.',
-        'error'
-      );
+      showGlobalAlert('Não foi possível conectar ao Supabase.', 'error');
       return;
     }
 
@@ -60,9 +63,6 @@
     await loadCustomers();
   }
 
-  /* =========================================================
-     Sessão
-     ========================================================= */
   function watchAuthChanges() {
     window.db.auth.onAuthStateChange(function (event) {
       if (event === 'SIGNED_OUT' && !window.Auth.isSigningOut()) {
@@ -72,18 +72,12 @@
   }
 
   /* =========================================================
-     Usuário (topbar)
+     Topbar / sidebar / logout
      ========================================================= */
   function renderUser(user, profile) {
     const meta = user.user_metadata || {};
-
-    const fullName =
-      (profile && profile.name) ||
-      meta.name ||
-      meta.full_name ||
-      (user.email ? user.email.split('@')[0] : '') ||
-      'Usuário';
-
+    const fullName = (profile && profile.name) || meta.name || meta.full_name ||
+      (user.email ? user.email.split('@')[0] : '') || 'Usuário';
     const roleText = window.Auth.roleLabel((profile && profile.role) || meta.role || '');
     const firstName = String(fullName).trim().split(/\s+/)[0] || 'Usuário';
     const initial = firstName.charAt(0).toUpperCase() || '?';
@@ -95,18 +89,11 @@
 
     const roleBadge = document.getElementById('greeting-role');
     if (roleBadge) {
-      if (roleText) {
-        roleBadge.textContent = roleText;
-        roleBadge.hidden = false;
-      } else {
-        roleBadge.hidden = true;
-      }
+      if (roleText) { roleBadge.textContent = roleText; roleBadge.hidden = false; }
+      else { roleBadge.hidden = true; }
     }
   }
 
-  /* =========================================================
-     Sidebar (mobile)
-     ========================================================= */
   function setupSidebar() {
     const toggle = document.getElementById('menu-toggle');
     const overlay = document.getElementById('sidebar-overlay');
@@ -131,19 +118,10 @@
       document.body.classList.contains('sidebar-open') ? close() : open();
     });
     overlay.addEventListener('click', close);
-
-    document.addEventListener('keydown', function (event) {
-      if (event.key === 'Escape') close();
-    });
-
-    window.addEventListener('resize', function () {
-      if (window.innerWidth >= 1024) close();
-    });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+    window.addEventListener('resize', function () { if (window.innerWidth >= 1024) close(); });
   }
 
-  /* =========================================================
-     Menu do usuário
-     ========================================================= */
   function setupUserMenu() {
     const trigger = document.getElementById('user-menu-trigger');
     const panel = document.getElementById('user-menu-panel');
@@ -155,62 +133,45 @@
       const first = panel.querySelector('.menu-item:not([aria-disabled="true"])');
       if (first) first.focus();
     }
-    function close() {
-      panel.hidden = true;
-      trigger.setAttribute('aria-expanded', 'false');
-    }
+    function close() { panel.hidden = true; trigger.setAttribute('aria-expanded', 'false'); }
 
-    trigger.addEventListener('click', function (event) {
-      event.stopPropagation();
-      panel.hidden ? open() : close();
+    trigger.addEventListener('click', function (e) {
+      e.stopPropagation(); panel.hidden ? open() : close();
     });
-
-    document.addEventListener('click', function (event) {
+    document.addEventListener('click', function (e) {
       if (panel.hidden) return;
-      if (panel.contains(event.target) || trigger.contains(event.target)) return;
+      if (panel.contains(e.target) || trigger.contains(e.target)) return;
       close();
     });
-
-    document.addEventListener('keydown', function (event) {
-      if (event.key === 'Escape' && !panel.hidden) {
-        close();
-        trigger.focus();
-      }
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !panel.hidden) { close(); trigger.focus(); }
     });
   }
 
-  /* =========================================================
-     Logout
-     ========================================================= */
   function setupLogout() {
-    document.querySelectorAll('[data-action="logout"]').forEach(function (button) {
-      button.addEventListener('click', async function () {
-        if (button.disabled) return;
-        button.disabled = true;
-        button.setAttribute('aria-busy', 'true');
+    document.querySelectorAll('[data-action="logout"]').forEach(function (b) {
+      b.addEventListener('click', async function () {
+        if (b.disabled) return;
+        b.disabled = true;
+        b.setAttribute('aria-busy', 'true');
         await window.Auth.signOut();
       });
     });
   }
 
   /* =========================================================
-     Toolbar (novo cliente / botão do estado vazio)
+     Toolbar / busca
      ========================================================= */
   function setupToolbar() {
-    const newBtn = document.getElementById('new-customer-btn');
-    const emptyNewBtn = document.getElementById('empty-new-btn');
-
-    if (newBtn) newBtn.addEventListener('click', openCreateModal);
-    if (emptyNewBtn) emptyNewBtn.addEventListener('click', openCreateModal);
+    document.getElementById('new-customer-btn')
+      ?.addEventListener('click', openCreateModal);
+    document.getElementById('empty-new-btn')
+      ?.addEventListener('click', openCreateModal);
   }
 
-  /* =========================================================
-     Busca (filtragem em frontend)
-     ========================================================= */
   function setupSearch() {
     const input = document.getElementById('search-input');
     if (!input) return;
-
     input.addEventListener('input', function () {
       state.search = input.value.trim().toLowerCase();
       applyFilter();
@@ -221,31 +182,37 @@
     if (!state.search) {
       state.filtered = state.all.slice();
     } else {
-      const term = state.search;
-      state.filtered = state.all.filter(function (customer) {
-        return matchesTerm(customer.name, term) ||
-               matchesTerm(customer.cpf_cnpj, term) ||
-               matchesTerm(customer.phone, term) ||
-               matchesTerm(customer.email, term);
+      const t = state.search;
+      state.filtered = state.all.filter(function (c) {
+        return matches(c.name, t) ||
+               matches(c.company_name, t) ||
+               matches(c.trade_name, t) ||
+               matches(c.cpf_cnpj, t) ||
+               matches(c.phone, t) ||
+               matches(c.email, t);
       });
     }
     renderCustomers();
   }
 
-  function matchesTerm(value, term) {
-    if (!value) return false;
-    return String(value).toLowerCase().includes(term);
-  }
+  function matches(v, t) { return v && String(v).toLowerCase().includes(t); }
 
   /* =========================================================
-     Carregamento dos clientes
+     Carregar clientes
      ========================================================= */
   async function loadCustomers() {
     showLoading(true);
 
+    // Junta com telefones/emails/endereços para mostrar no resumo da lista
     const { data, error } = await window.db
       .from('customers')
-      .select('*')
+      .select(`
+        id, organization_id, type, name, company_name, trade_name, cpf_cnpj,
+        phone, email, address, status, category, segment, created_at,
+        customer_phones(phone, is_primary),
+        customer_emails(email, is_primary),
+        customer_addresses(city, state, is_primary)
+      `)
       .order('created_at', { ascending: false });
 
     showLoading(false);
@@ -254,11 +221,8 @@
       console.error('[DEV HUB] Falha ao carregar clientes:', error);
       state.all = [];
       state.filtered = [];
-      showEmptyState(
-        'Não foi possível carregar os clientes.',
-        'Tente novamente em alguns instantes.',
-        false
-      );
+      showEmptyState('Não foi possível carregar os clientes.',
+                     'Tente novamente em alguns instantes.', false);
       updateCountLabel();
       showToast('Não foi possível carregar os clientes.', 'error');
       return;
@@ -273,313 +237,868 @@
     const total = state.all.length;
     const label = document.getElementById('customers-count');
     if (!label) return;
-
-    if (total === 0) {
-      label.textContent = 'Nenhum cliente cadastrado';
-      return;
-    }
-    label.textContent = total === 1
-      ? '1 cliente cadastrado'
-      : total + ' clientes cadastrados';
+    label.textContent = total === 0
+      ? 'Nenhum cliente cadastrado'
+      : (total === 1 ? '1 cliente cadastrado' : total + ' clientes cadastrados');
   }
 
   /* =========================================================
-     Renderização da tabela
+     Render da lista
      ========================================================= */
   function renderCustomers() {
     const tbody = document.getElementById('customers-body');
     const tableWrap = document.getElementById('customers-table-wrap');
     if (!tbody || !tableWrap) return;
 
-    // Nada cadastrado (não é filtro de busca vazio)
     if (state.all.length === 0) {
       tableWrap.hidden = true;
-      showEmptyState(
-        'Nenhum cliente cadastrado ainda.',
-        'Comece adicionando o primeiro cliente ao sistema.',
-        true
-      );
+      showEmptyState('Nenhum cliente cadastrado ainda.',
+                     'Comece adicionando o primeiro cliente ao sistema.', true);
       return;
     }
-
-    // Existem registros, mas o filtro não retornou nada
     if (state.filtered.length === 0) {
       tableWrap.hidden = true;
-      showEmptyState(
-        'Nenhum cliente encontrado.',
-        'Ajuste a busca para encontrar o cliente desejado.',
-        false
-      );
+      showEmptyState('Nenhum cliente encontrado.',
+                     'Ajuste a busca para encontrar o cliente desejado.', false);
       return;
     }
 
     hideEmptyState();
     tableWrap.hidden = false;
-
     tbody.innerHTML = '';
 
-    const fragment = document.createDocumentFragment();
-    state.filtered.forEach(function (customer) {
-      fragment.appendChild(buildRow(customer));
-    });
-    tbody.appendChild(fragment);
+    const frag = document.createDocumentFragment();
+    state.filtered.forEach(function (c) { frag.appendChild(buildRow(c)); });
+    tbody.appendChild(frag);
   }
 
-  function buildRow(customer) {
+  function buildRow(c) {
     const row = document.createElement('tr');
-    row.dataset.id = customer.id || '';
+    row.dataset.id = c.id;
 
-    row.appendChild(createCell(customer.name || '—', 'cell-name'));
-    row.appendChild(createCell(customer.cpf_cnpj || '—', 'cell--muted'));
-    row.appendChild(createCell(formatPhone(customer.phone), 'cell--muted'));
-    row.appendChild(createCell(customer.email || '—', 'cell--muted'));
-    row.appendChild(createCell(formatDate(customer.created_at), 'cell--muted'));
-    row.appendChild(buildActionsCell(customer));
+    // Nome + razão/fantasia
+    const nameCell = document.createElement('td');
+    nameCell.className = 'cell-customer';
+    const name = document.createElement('span');
+    name.className = 'cell-customer__name';
+    name.textContent = c.name || c.company_name || '—';
+    nameCell.appendChild(name);
+    const sub = c.type === 'PJ'
+      ? (c.trade_name || c.company_name || '')
+      : '';
+    if (sub && sub !== name.textContent) {
+      const meta = document.createElement('span');
+      meta.className = 'cell-customer__meta';
+      meta.textContent = sub;
+      nameCell.appendChild(meta);
+    }
+    row.appendChild(nameCell);
 
-    return row;
-  }
+    // CPF/CNPJ
+    row.appendChild(createCell(c.cpf_cnpj || '—', 'cell--muted'));
 
-  function createCell(text, className) {
-    const cell = document.createElement('td');
-    cell.textContent = text;
-    if (className) cell.className = className;
-    return cell;
-  }
+    // Tipo
+    const typeCell = document.createElement('td');
+    const tag = document.createElement('span');
+    tag.className = c.type === 'PJ' ? 'tag-pj' : 'tag-pf';
+    tag.textContent = c.type || 'PF';
+    typeCell.appendChild(tag);
+    row.appendChild(typeCell);
 
-  function buildActionsCell(customer) {
-    const cell = document.createElement('td');
-    cell.className = 'cell--num';
+    // Telefone principal
+    row.appendChild(createCell(primaryPhone(c), 'cell--muted'));
 
+    // E-mail principal
+    row.appendChild(createCell(primaryEmail(c), 'cell--muted'));
+
+    // Cidade
+    row.appendChild(createCell(primaryCity(c), 'cell--muted'));
+
+    // Status
+    const statusCell = document.createElement('td');
+    const badge = document.createElement('span');
+    const st = String(c.status || 'active').toLowerCase();
+    badge.className = 'badge ' + (st === 'active' ? 'badge--success' : 'badge--danger');
+    badge.textContent = st === 'active' ? 'Ativo' : (st === 'blocked' ? 'Bloqueado' : 'Inativo');
+    statusCell.appendChild(badge);
+    row.appendChild(statusCell);
+
+    // Ações
+    const actionsCell = document.createElement('td');
+    actionsCell.className = 'cell--num';
     const wrap = document.createElement('div');
     wrap.className = 'row-actions';
 
     const editBtn = document.createElement('button');
     editBtn.type = 'button';
     editBtn.className = 'row-action';
-    editBtn.setAttribute('aria-label', 'Editar cliente ' + (customer.name || ''));
+    editBtn.setAttribute('aria-label', 'Editar cliente ' + (c.name || ''));
     editBtn.title = 'Editar';
-    editBtn.innerHTML =
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"' +
-      ' stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-      '<path d="M12 20h9"/>' +
-      '<path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/>' +
-      '</svg>';
-    editBtn.addEventListener('click', function () { openEditModal(customer); });
+    editBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
+    editBtn.addEventListener('click', function () { openEditModal(c); });
 
     const delBtn = document.createElement('button');
     delBtn.type = 'button';
     delBtn.className = 'row-action row-action--danger';
-    delBtn.setAttribute('aria-label', 'Excluir cliente ' + (customer.name || ''));
+    delBtn.setAttribute('aria-label', 'Excluir cliente ' + (c.name || ''));
     delBtn.title = 'Excluir';
-    delBtn.innerHTML =
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"' +
-      ' stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-      '<path d="M3 6h18"/>' +
-      '<path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>' +
-      '<path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>' +
-      '<path d="M10 11v6M14 11v6"/>' +
-      '</svg>';
-    delBtn.addEventListener('click', function () { openConfirmModal(customer); });
+    delBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6M14 11v6"/></svg>';
+    delBtn.addEventListener('click', function () { openConfirmModal(c); });
 
     wrap.appendChild(editBtn);
     wrap.appendChild(delBtn);
-    cell.appendChild(wrap);
+    actionsCell.appendChild(wrap);
+    row.appendChild(actionsCell);
 
-    return cell;
+    return row;
+  }
+
+  function createCell(text, className) {
+    const c = document.createElement('td');
+    c.textContent = text;
+    if (className) c.className = className;
+    return c;
+  }
+
+  function primaryPhone(c) {
+    const list = c.customer_phones || [];
+    const p = list.find(function (x) { return x.is_primary; }) || list[0];
+    if (p && p.phone) return formatPhone(p.phone);
+    return c.phone ? formatPhone(c.phone) : '—';
+  }
+  function primaryEmail(c) {
+    const list = c.customer_emails || [];
+    const e = list.find(function (x) { return x.is_primary; }) || list[0];
+    return (e && e.email) || c.email || '—';
+  }
+  function primaryCity(c) {
+    const list = c.customer_addresses || [];
+    const a = list.find(function (x) { return x.is_primary; }) || list[0];
+    if (!a || !a.city) return '—';
+    return a.city + (a.state ? ' - ' + a.state : '');
   }
 
   /* =========================================================
      Estados visuais
      ========================================================= */
   function showLoading(isLoading) {
-    const loading = document.getElementById('customers-loading');
-    const wrap = document.getElementById('customers-table-wrap');
-    const empty = document.getElementById('customers-empty');
-    if (!loading) return;
-
-    if (isLoading) {
-      loading.hidden = false;
-      if (wrap) wrap.hidden = true;
-      if (empty) empty.hidden = true;
-    } else {
-      loading.hidden = true;
-    }
+    const l = document.getElementById('customers-loading');
+    const w = document.getElementById('customers-table-wrap');
+    const e = document.getElementById('customers-empty');
+    if (!l) return;
+    if (isLoading) { l.hidden = false; if (w) w.hidden = true; if (e) e.hidden = true; }
+    else { l.hidden = true; }
   }
 
   function showEmptyState(title, text, showCta) {
     const empty = document.getElementById('customers-empty');
-    const titleEl = document.getElementById('customers-empty-title');
-    const textEl = document.getElementById('customers-empty-text');
+    const t = document.getElementById('customers-empty-title');
+    const x = document.getElementById('customers-empty-text');
     const cta = document.getElementById('empty-new-btn');
     if (!empty) return;
-
-    if (titleEl) titleEl.textContent = title;
-    if (textEl) textEl.textContent = text;
+    if (t) t.textContent = title;
+    if (x) x.textContent = text;
     if (cta) cta.hidden = !showCta;
-
     empty.hidden = false;
   }
-
   function hideEmptyState() {
-    const empty = document.getElementById('customers-empty');
-    if (empty) empty.hidden = true;
+    const e = document.getElementById('customers-empty');
+    if (e) e.hidden = true;
   }
 
   function showGlobalAlert(message, type) {
-    const alert = document.getElementById('global-alert');
-    if (!alert) return;
-    alert.textContent = message;
-    alert.className = 'alert alert--' + (type || 'error');
-    alert.hidden = false;
+    const el = document.getElementById('global-alert');
+    if (!el) return;
+    el.textContent = message;
+    el.className = 'alert alert--' + (type || 'error');
+    el.hidden = false;
   }
 
   /* =========================================================
-     Modal: cliente (criar/editar)
+     Modal: cliente (novo / editar)
      ========================================================= */
-  const modalEls = {};
+  const els = {};
 
   function setupCustomerForm() {
-    modalEls.modal      = document.getElementById('customer-modal');
-    modalEls.title      = document.getElementById('customer-modal-title');
-    modalEls.form       = document.getElementById('customer-form');
-    modalEls.id         = document.getElementById('customer-id');
-    modalEls.name       = document.getElementById('customer-name');
-    modalEls.document   = document.getElementById('customer-document');
-    modalEls.phone      = document.getElementById('customer-phone');
-    modalEls.email      = document.getElementById('customer-email');
-    modalEls.address    = document.getElementById('customer-address');
-    modalEls.notes      = document.getElementById('customer-notes');
-    modalEls.feedback   = document.getElementById('customer-form-feedback');
-    modalEls.saveBtn    = document.getElementById('customer-save-btn');
+    els.modal = document.getElementById('customer-modal');
+    els.form  = document.getElementById('customer-form');
+    els.id    = document.getElementById('customer-id');
+    els.title = document.getElementById('customer-modal-title');
 
-    if (!modalEls.modal || !modalEls.form) return;
+    els.type   = document.getElementById('customer-type');
+    els.status = document.getElementById('customer-status');
+
+    // PF
+    els.name         = document.getElementById('customer-name');
+    els.document     = document.getElementById('customer-document');
+    els.rg           = document.getElementById('customer-rg');
+    els.birth        = document.getElementById('customer-birth');
+    els.profession   = document.getElementById('customer-profession');
+
+    // PJ
+    els.company      = document.getElementById('customer-company');
+    els.trade        = document.getElementById('customer-trade');
+    els.documentPJ   = document.getElementById('customer-document-pj');
+    els.ie           = document.getElementById('customer-ie');
+    els.im           = document.getElementById('customer-im');
+    els.cnae         = document.getElementById('customer-cnae');
+    els.taxRegime    = document.getElementById('customer-tax-regime');
+
+    // comercial
+    els.category     = document.getElementById('customer-category');
+    els.segment      = document.getElementById('customer-segment');
+    els.origin       = document.getElementById('customer-origin');
+    els.priceTable   = document.getElementById('customer-price-table');
+    els.payCondition = document.getElementById('customer-payment-condition');
+    els.payPreferred = document.getElementById('customer-preferred-payment');
+    els.creditLimit  = document.getElementById('customer-credit-limit');
+    els.defaultDisc  = document.getElementById('customer-default-discount');
+
+    // entrega
+    els.delContact   = document.getElementById('customer-delivery-contact');
+    els.delPhone     = document.getElementById('customer-delivery-phone');
+    els.delHours     = document.getElementById('customer-delivery-hours');
+    els.delCarrier   = document.getElementById('customer-delivery-carrier');
+    els.delReference = document.getElementById('customer-delivery-reference');
+    els.delNotes     = document.getElementById('customer-delivery-notes');
+
+    // observações
+    els.commNotes    = document.getElementById('customer-commercial-notes');
+    els.notes        = document.getElementById('customer-notes');
+
+    els.feedback = document.getElementById('customer-form-feedback');
+    els.saveBtn  = document.getElementById('customer-save-btn');
+
+    if (!els.modal || !els.form) return;
 
     // Fechar
-    modalEls.modal.querySelectorAll('[data-close-modal]').forEach(function (el) {
+    els.modal.querySelectorAll('[data-close-modal]').forEach(function (el) {
       el.addEventListener('click', closeCustomerModal);
     });
-
-    // Máscara leve para telefone
-    modalEls.phone.addEventListener('input', function () {
-      modalEls.phone.value = formatPhoneInput(modalEls.phone.value);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !els.modal.hidden) closeCustomerModal();
     });
 
-    // Escape fecha
-    document.addEventListener('keydown', function (event) {
-      if (event.key === 'Escape' && !modalEls.modal.hidden) closeCustomerModal();
+    // Tipo PF/PJ
+    els.type.addEventListener('change', onTypeChange);
+
+    // Abas
+    els.modal.querySelectorAll('.tab-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        const tab = btn.dataset.tab;
+        els.modal.querySelectorAll('.tab-btn').forEach(function (b) {
+          b.classList.toggle('is-active', b === btn);
+        });
+        els.modal.querySelectorAll('.tab-panel').forEach(function (p) {
+          p.classList.toggle('is-active', p.dataset.panel === tab);
+        });
+      });
     });
 
-    modalEls.form.addEventListener('submit', onSubmitCustomer);
+    // Botões de adicionar linha
+    els.modal.querySelectorAll('[data-add-row]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        const kind = btn.dataset.addRow;
+        addRow(kind, {});
+      });
+    });
+
+    // Máscaras
+    bindMask(els.document, maskCPF);
+    bindMask(els.documentPJ, maskCNPJ);
+    bindMask(els.delPhone, maskPhone);
+
+    els.form.addEventListener('submit', onSubmitCustomer);
+  }
+
+  function onTypeChange() {
+    const isPJ = els.type.value === 'PJ';
+    els.modal.classList.toggle('customer-type-PJ', isPJ);
+
+    // Aba de contatos só faz sentido em PJ
+    const contactTab = els.modal.querySelector('.tab-btn[data-tab="contacts"]');
+    if (contactTab) contactTab.hidden = !isPJ;
+
+    // Ajusta required
+    if (els.name) els.name.required = !isPJ;
+    if (els.company) els.company.required = isPJ;
+  }
+
+  /* =========================================================
+     Linhas repetíveis
+     ========================================================= */
+  const FIELDS = {
+    phones: {
+      container: 'phones-rows',
+      state: 'phones',
+      template: function (d) {
+        return {
+          type:      d.type      || 'Celular',
+          phone:     d.phone     || '',
+          is_primary:d.is_primary === true
+        };
+      },
+      render: renderPhoneRow
+    },
+    emails: {
+      container: 'emails-rows',
+      state: 'emails',
+      template: function (d) {
+        return {
+          type:      d.type      || 'Principal',
+          email:     d.email     || '',
+          is_primary:d.is_primary === true
+        };
+      },
+      render: renderEmailRow
+    },
+    addresses: {
+      container: 'addresses-rows',
+      state: 'addresses',
+      template: function (d) {
+        return {
+          type:      d.type || 'Residencial',
+          zip_code:  d.zip_code || '',
+          state:     d.state || '',
+          city:      d.city || '',
+          neighborhood: d.neighborhood || '',
+          street:    d.street || '',
+          number:    d.number || '',
+          complement:d.complement || '',
+          reference: d.reference || '',
+          is_primary:d.is_primary === true
+        };
+      },
+      render: renderAddressRow
+    },
+    contacts: {
+      container: 'contacts-rows',
+      state: 'contacts',
+      template: function (d) {
+        return {
+          name:      d.name || '',
+          department:d.department || '',
+          position:  d.position || '',
+          phone:     d.phone || '',
+          email:     d.email || '',
+          is_primary:d.is_primary === true,
+          notes:     d.notes || ''
+        };
+      },
+      render: renderContactRow
+    }
+  };
+
+  function addRow(kind, data) {
+    const cfg = FIELDS[kind];
+    if (!cfg) return;
+    const normalized = cfg.template(data);
+    state[cfg.state].push(normalized);
+    renderRows(kind);
+  }
+
+  function renderRows(kind) {
+    const cfg = FIELDS[kind];
+    const wrap = document.getElementById(cfg.container);
+    if (!wrap) return;
+    wrap.innerHTML = '';
+    state[cfg.state].forEach(function (item, idx) {
+      wrap.appendChild(cfg.render(item, idx, kind));
+    });
+    const block = wrap.closest('.repeatable');
+    if (block) block.classList.toggle('repeatable--empty', state[cfg.state].length === 0);
+  }
+
+  function removeRow(kind, idx) {
+    const cfg = FIELDS[kind];
+    state[cfg.state].splice(idx, 1);
+    renderRows(kind);
+  }
+
+  function updateRow(kind, idx, field, value) {
+    const cfg = FIELDS[kind];
+    state[cfg.state][idx][field] = value;
+  }
+
+  function renderPhoneRow(item, idx) {
+    const row = document.createElement('div');
+    row.className = 'repeatable-row repeatable-row--phone';
+
+    row.appendChild(selectField(
+      ['Celular','WhatsApp','Comercial','Residencial','Recado','Outro'],
+      item.type,
+      function (v) { updateRow('phones', idx, 'type', v); }
+    ));
+    row.appendChild(inputField('tel', item.phone, '(00) 00000-0000', function (v) {
+      updateRow('phones', idx, 'phone', v);
+    }, maskPhone));
+
+    row.appendChild(primaryToggle(item.is_primary, function (v) {
+      updateRow('phones', idx, 'is_primary', v);
+    }));
+    row.appendChild(removeBtn(function () { removeRow('phones', idx); }));
+
+    return row;
+  }
+
+  function renderEmailRow(item, idx) {
+    const row = document.createElement('div');
+    row.className = 'repeatable-row repeatable-row--email';
+
+    row.appendChild(selectField(
+      ['Principal','Comercial','Financeiro','Pessoal','Outro'],
+      item.type,
+      function (v) { updateRow('emails', idx, 'type', v); }
+    ));
+    row.appendChild(inputField('email', item.email, 'cliente@empresa.com', function (v) {
+      updateRow('emails', idx, 'email', v);
+    }));
+    row.appendChild(primaryToggle(item.is_primary, function (v) {
+      updateRow('emails', idx, 'is_primary', v);
+    }));
+    row.appendChild(removeBtn(function () { removeRow('emails', idx); }));
+    return row;
+  }
+
+  function renderAddressRow(item, idx) {
+    const row = document.createElement('div');
+    row.className = 'repeatable-row repeatable-row--address';
+
+    row.appendChild(selectField(
+      ['Residencial','Comercial','Entrega','Cobrança','Outro'],
+      item.type,
+      function (v) { updateRow('addresses', idx, 'type', v); }
+    ));
+    row.appendChild(inputField('text', item.zip_code, 'CEP', function (v) {
+      updateRow('addresses', idx, 'zip_code', v);
+    }, maskCEP));
+    row.appendChild(inputField('text', item.city, 'Cidade', function (v) {
+      updateRow('addresses', idx, 'city', v);
+    }));
+    row.appendChild(inputField('text', item.state, 'UF', function (v) {
+      updateRow('addresses', idx, 'state', v.toUpperCase().slice(0,2));
+    }));
+    row.appendChild(removeBtn(function () { removeRow('addresses', idx); }));
+
+    const line2 = document.createElement('div');
+    line2.className = 'repeatable-row__line2';
+    line2.appendChild(inputField('text', item.street, 'Rua', function (v) {
+      updateRow('addresses', idx, 'street', v);
+    }));
+    line2.appendChild(inputField('text', item.number, 'Nº', function (v) {
+      updateRow('addresses', idx, 'number', v);
+    }));
+    line2.appendChild(inputField('text', item.complement, 'Complemento', function (v) {
+      updateRow('addresses', idx, 'complement', v);
+    }));
+    line2.appendChild(inputField('text', item.neighborhood, 'Bairro', function (v) {
+      updateRow('addresses', idx, 'neighborhood', v);
+    }));
+    line2.appendChild(primaryToggle(item.is_primary, function (v) {
+      updateRow('addresses', idx, 'is_primary', v);
+    }));
+
+    row.appendChild(line2);
+    return row;
+  }
+
+  function renderContactRow(item, idx) {
+    const row = document.createElement('div');
+    row.className = 'repeatable-row repeatable-row--contact';
+
+    row.appendChild(inputField('text', item.name, 'Nome *', function (v) {
+      updateRow('contacts', idx, 'name', v);
+    }));
+    row.appendChild(inputField('text', item.department, 'Setor', function (v) {
+      updateRow('contacts', idx, 'department', v);
+    }));
+    row.appendChild(inputField('text', item.position, 'Cargo', function (v) {
+      updateRow('contacts', idx, 'position', v);
+    }));
+    row.appendChild(inputField('tel', item.phone, 'Telefone', function (v) {
+      updateRow('contacts', idx, 'phone', v);
+    }, maskPhone));
+    row.appendChild(inputField('email', item.email, 'E-mail', function (v) {
+      updateRow('contacts', idx, 'email', v);
+    }));
+    row.appendChild(primaryToggle(item.is_primary, function (v) {
+      updateRow('contacts', idx, 'is_primary', v);
+    }));
+    row.appendChild(removeBtn(function () { removeRow('contacts', idx); }));
+    return row;
+  }
+
+  /* ---------- Helpers de linha ---------- */
+  function inputField(type, value, placeholder, onChange, mask) {
+    const input = document.createElement('input');
+    input.type = type;
+    input.value = value || '';
+    if (placeholder) input.placeholder = placeholder;
+    if (mask) {
+      bindMask(input, mask);
+    }
+    input.addEventListener('input', function () {
+      onChange(input.value);
+    });
+    return input;
+  }
+
+  function selectField(options, value, onChange) {
+    const select = document.createElement('select');
+    options.forEach(function (opt) {
+      const o = document.createElement('option');
+      o.value = opt;
+      o.textContent = opt;
+      select.appendChild(o);
+    });
+    select.value = value || options[0];
+    select.addEventListener('change', function () { onChange(select.value); });
+    return select;
+  }
+
+  function primaryToggle(checked, onChange) {
+    const wrap = document.createElement('label');
+    wrap.className = 'repeatable-row__primary';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = !!checked;
+    cb.addEventListener('change', function () { onChange(cb.checked); });
+    const txt = document.createElement('span');
+    txt.textContent = 'Principal';
+    wrap.appendChild(cb);
+    wrap.appendChild(txt);
+    return wrap;
+  }
+
+  function removeBtn(onClick) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'repeatable-row__remove';
+    b.setAttribute('aria-label', 'Remover linha');
+    b.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+    b.addEventListener('click', onClick);
+    return b;
+  }
+
+  /* =========================================================
+     Máscaras
+     ========================================================= */
+  function bindMask(input, maskFn) {
+    if (!input) return;
+    input.addEventListener('input', function () {
+      const pos = input.selectionStart;
+      input.value = maskFn(input.value);
+    });
+  }
+
+  function maskCPF(v) {
+    return String(v || '')
+      .replace(/\D/g, '').slice(0, 11)
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+  }
+
+  function maskCNPJ(v) {
+    return String(v || '')
+      .replace(/\D/g, '').slice(0, 14)
+      .replace(/(\d{2})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1/$2')
+      .replace(/(\d{4})(\d{1,2})$/, '$1-$2');
+  }
+
+  function maskCEP(v) {
+    return String(v || '').replace(/\D/g, '').slice(0, 8)
+      .replace(/(\d{5})(\d)/, '$1-$2');
+  }
+
+  function maskPhone(v) {
+    const d = String(v || '').replace(/\D/g, '').slice(0, 11);
+    if (d.length <= 2) return '(' + d;
+    if (d.length <= 6) return '(' + d.slice(0, 2) + ') ' + d.slice(2);
+    if (d.length <= 10) return '(' + d.slice(0, 2) + ') ' + d.slice(2, 6) + '-' + d.slice(6);
+    return '(' + d.slice(0, 2) + ') ' + d.slice(2, 7) + '-' + d.slice(7);
+  }
+
+  function formatPhone(v) {
+    return maskPhone(v);
+  }
+
+  /* =========================================================
+     Abrir/fechar modal
+     ========================================================= */
+  function resetModal() {
+    els.form.reset();
+    els.id.value = '';
+    els.type.value = 'PF';
+    els.status.value = 'active';
+    state.phones = [];
+    state.emails = [];
+    state.addresses = [];
+    state.contacts = [];
+    renderRows('phones');
+    renderRows('emails');
+    renderRows('addresses');
+    renderRows('contacts');
+    // Aba básica
+    els.modal.querySelectorAll('.tab-btn').forEach(function (b, i) {
+      b.classList.toggle('is-active', i === 0);
+    });
+    els.modal.querySelectorAll('.tab-panel').forEach(function (p, i) {
+      p.classList.toggle('is-active', i === 0);
+    });
+    clearFeedback();
+    onTypeChange();
   }
 
   function openCreateModal() {
     state.editingId = null;
-    modalEls.title.textContent = 'Novo cliente';
-    modalEls.form.reset();
-    modalEls.id.value = '';
-    clearFormFeedback();
-    openModal(modalEls.modal);
-    modalEls.name.focus();
+    els.title.textContent = 'Novo cliente';
+    resetModal();
+    els.modal.hidden = false;
+    document.body.style.overflow = 'hidden';
+    els.name.focus();
   }
 
-  function openEditModal(customer) {
-    state.editingId = customer.id;
-    modalEls.title.textContent = 'Editar cliente';
-    modalEls.id.value = customer.id || '';
-    modalEls.name.value = customer.name || '';
-    modalEls.document.value = customer.cpf_cnpj || '';
-    modalEls.phone.value = formatPhoneInput(customer.phone || '');
-    modalEls.email.value = customer.email || '';
-    modalEls.address.value = customer.address || '';
-    modalEls.notes.value = customer.notes || '';
-    clearFormFeedback();
-    openModal(modalEls.modal);
-    modalEls.name.focus();
+  async function openEditModal(rowSummary) {
+    state.editingId = rowSummary.id;
+    els.title.textContent = 'Editar cliente';
+
+    // Feedback de carregamento
+    els.modal.hidden = false;
+    document.body.style.overflow = 'hidden';
+    clearFeedback();
+    showFeedback('Carregando dados do cliente…', 'info');
+
+    try {
+      const { data, error } = await window.db.rpc('get_customer_full', {
+        p_customer_id: rowSummary.id
+      });
+      if (error) throw error;
+
+      const c = data && data.customer ? data.customer : {};
+      const phones    = data && Array.isArray(data.phones)    ? data.phones    : [];
+      const emails    = data && Array.isArray(data.emails)    ? data.emails    : [];
+      const addresses = data && Array.isArray(data.addresses) ? data.addresses : [];
+      const contacts  = data && Array.isArray(data.contacts)  ? data.contacts  : [];
+
+      // Estado
+      state.phones    = phones.map(function (p) { return {
+        type: p.type, phone: p.phone, is_primary: !!p.is_primary
+      }; });
+      state.emails    = emails.map(function (e) { return {
+        type: e.type, email: e.email, is_primary: !!e.is_primary
+      }; });
+      state.addresses = addresses.map(function (a) { return {
+        type: a.type, zip_code: a.zip_code || '', state: a.state || '',
+        city: a.city || '', neighborhood: a.neighborhood || '',
+        street: a.street || '', number: a.number || '',
+        complement: a.complement || '', reference: a.reference || '',
+        is_primary: !!a.is_primary
+      }; });
+      state.contacts  = contacts.map(function (k) { return {
+        name: k.name || '', department: k.department || '',
+        position: k.position || '', phone: k.phone || '',
+        email: k.email || '', is_primary: !!k.is_primary, notes: k.notes || ''
+      }; });
+
+      // Cabeçalho
+      els.id.value = c.id || '';
+      els.type.value = c.type || 'PF';
+      els.status.value = c.status || 'active';
+
+      els.name.value       = c.name || '';
+      els.document.value   = c.cpf_cnpj || '';
+      els.rg.value         = c.rg || '';
+      els.birth.value      = c.birth_date ? String(c.birth_date).slice(0,10) : '';
+      els.profession.value = c.profession || '';
+
+      els.company.value    = c.company_name || '';
+      els.trade.value      = c.trade_name || '';
+      els.documentPJ.value = c.type === 'PJ' ? (c.cpf_cnpj || '') : '';
+      els.ie.value         = c.state_registration || '';
+      els.im.value         = c.municipal_registration || '';
+      els.cnae.value       = c.cnae || '';
+      els.taxRegime.value  = c.tax_regime || '';
+
+      els.category.value     = c.category || '';
+      els.segment.value      = c.segment || '';
+      els.origin.value       = c.origin || '';
+      els.priceTable.value   = c.price_table || '';
+      els.payCondition.value = c.payment_condition || '';
+      els.payPreferred.value = c.preferred_payment_method || '';
+      els.creditLimit.value  = c.credit_limit != null ? c.credit_limit : 0;
+      els.defaultDisc.value  = c.default_discount != null ? c.default_discount : 0;
+
+      els.delContact.value   = c.delivery_contact || '';
+      els.delPhone.value     = c.delivery_phone || '';
+      els.delHours.value     = c.delivery_hours || '';
+      els.delCarrier.value   = c.delivery_carrier || '';
+      els.delReference.value = c.delivery_reference || '';
+      els.delNotes.value     = c.delivery_notes || '';
+
+      els.commNotes.value = c.commercial_notes || '';
+      els.notes.value     = c.notes || '';
+
+      // Renderiza repetíveis
+      renderRows('phones');
+      renderRows('emails');
+      renderRows('addresses');
+      renderRows('contacts');
+
+      onTypeChange();
+      clearFeedback();
+      els.name.focus();
+    } catch (error) {
+      console.error('[DEV HUB] Falha ao carregar cliente:', error);
+      showFeedback(mapDbError(error));
+    }
   }
 
   function closeCustomerModal() {
     if (state.saving) return;
-    closeModal(modalEls.modal);
+    els.modal.hidden = true;
+    document.body.style.overflow = '';
   }
 
+  /* =========================================================
+     Submit
+     ========================================================= */
   async function onSubmitCustomer(event) {
     event.preventDefault();
     if (state.saving) return;
 
-    clearFormFeedback();
+    clearFeedback();
 
-    const payload = {
-      name: modalEls.name.value.trim(),
-      cpf_cnpj: modalEls.document.value.trim() || null,
-      phone: stripPhone(modalEls.phone.value) || null,
-      email: modalEls.email.value.trim() || null,
-      address: modalEls.address.value.trim() || null,
-      notes: modalEls.notes.value.trim() || null
-    };
+    const isPJ = els.type.value === 'PJ';
 
-    if (!payload.name) {
-      showFormFeedback('Informe o nome do cliente.');
-      modalEls.name.focus();
+    const name = isPJ
+      ? (els.company.value.trim() || els.name.value.trim())
+      : els.name.value.trim();
+
+    if (!name) {
+      showFeedback(isPJ ? 'Informe a Razão Social.' : 'Informe o nome do cliente.');
+      (isPJ ? els.company : els.name).focus();
       return;
     }
+
+    const documentValue = isPJ ? els.documentPJ.value : els.document.value;
+    const documentClean = String(documentValue || '').replace(/\D/g, '');
+
+    if (isPJ && documentClean && documentClean.length !== 14) {
+      showFeedback('CNPJ incompleto.'); els.documentPJ.focus(); return;
+    }
+    if (!isPJ && documentClean && documentClean.length !== 11) {
+      showFeedback('CPF incompleto.'); els.document.focus(); return;
+    }
+
+    // Limpa linhas vazias
+    const phones = state.phones.filter(function (p) { return p.phone && p.phone.replace(/\D/g,'') !== ''; });
+    const emails = state.emails.filter(function (e) { return e.email && e.email.trim() !== ''; });
+    const addresses = state.addresses.filter(function (a) {
+      return (a.street && a.street.trim()) || (a.zip_code && a.zip_code.trim()) || (a.city && a.city.trim());
+    });
+    const contacts = isPJ ? state.contacts.filter(function (k) { return k.name && k.name.trim() !== ''; }) : [];
+
+    // Valida e-mail
+    for (let i = 0; i < emails.length; i++) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emails[i].email)) {
+        showFeedback('E-mail inválido: ' + emails[i].email); return;
+      }
+    }
+
+    // Payload
+    const customer = {
+      type: isPJ ? 'PJ' : 'PF',
+      name: isPJ ? (els.name.value.trim() || els.company.value.trim()) : name,
+      cpf_cnpj: documentValue || null,
+      rg: els.rg.value.trim() || null,
+      birth_date: els.birth.value || null,
+      profession: els.profession.value.trim() || null,
+      company_name: isPJ ? (els.company.value.trim() || null) : null,
+      trade_name: isPJ ? (els.trade.value.trim() || null) : null,
+      state_registration: isPJ ? (els.ie.value.trim() || null) : null,
+      municipal_registration: isPJ ? (els.im.value.trim() || null) : null,
+      cnae: isPJ ? (els.cnae.value.trim() || null) : null,
+      tax_regime: isPJ ? (els.taxRegime.value || null) : null,
+      category: els.category.value.trim() || null,
+      segment: els.segment.value.trim() || null,
+      origin: els.origin.value || null,
+      price_table: els.priceTable.value.trim() || null,
+      payment_condition: els.payCondition.value.trim() || null,
+      preferred_payment_method: els.payPreferred.value || null,
+      credit_limit: numberOrNull(els.creditLimit.value),
+      default_discount: numberOrNull(els.defaultDisc.value),
+      delivery_contact: els.delContact.value.trim() || null,
+      delivery_phone: els.delPhone.value.trim() || null,
+      delivery_hours: els.delHours.value.trim() || null,
+      delivery_carrier: els.delCarrier.value.trim() || null,
+      delivery_reference: els.delReference.value.trim() || null,
+      delivery_notes: els.delNotes.value.trim() || null,
+      commercial_notes: els.commNotes.value.trim() || null,
+      notes: els.notes.value.trim() || null,
+      status: els.status.value || 'active',
+      // legados (mantém 1º)
+      phone: phones[0] ? phones[0].phone : null,
+      email: emails[0] ? emails[0].email : null,
+      address: addresses[0] ? [addresses[0].street, addresses[0].number].filter(Boolean).join(', ') : null
+    };
 
     setSaving(true);
 
     try {
-      if (state.editingId) {
-        const { error } = await window.db
-          .from('customers')
-          .update(payload)
-          .eq('id', state.editingId);
+      const { data, error } = await window.db.rpc('upsert_customer_full', {
+        p_customer_id: state.editingId,
+        p_organization_id: null,
+        p_customer: customer,
+        p_phones: phones,
+        p_emails: emails,
+        p_addresses: addresses,
+        p_contacts: contacts
+      });
 
-        if (error) throw error;
-        showToast('Cliente atualizado com sucesso.', 'success');
-      } else {
-        const { error } = await window.db
-          .from('customers')
-          .insert(payload);
+      if (error) throw error;
 
-        if (error) throw error;
-        showToast('Cliente cadastrado com sucesso.', 'success');
-      }
-
-      closeModal(modalEls.modal);
+      closeCustomerModal();
+      showToast(state.editingId ? 'Cliente atualizado com sucesso.' : 'Cliente cadastrado com sucesso.', 'success');
       await loadCustomers();
     } catch (error) {
       console.error('[DEV HUB] Falha ao salvar cliente:', error);
-      showFormFeedback(mapDbError(error));
+      showFeedback(mapDbError(error));
     } finally {
       setSaving(false);
     }
   }
 
+  function numberOrNull(v) {
+    if (v === '' || v === null || v === undefined) return null;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  }
+
   function setSaving(isSaving) {
     state.saving = isSaving;
-
-    if (modalEls.saveBtn) {
-      modalEls.saveBtn.disabled = isSaving;
-      modalEls.saveBtn.classList.toggle('is-loading', isSaving);
-      modalEls.saveBtn.setAttribute('aria-busy', String(isSaving));
-      const label = modalEls.saveBtn.querySelector('.btn__label');
-      if (label) label.textContent = isSaving ? 'Salvando…' : 'Salvar';
+    if (els.saveBtn) {
+      els.saveBtn.disabled = isSaving;
+      els.saveBtn.classList.toggle('is-loading', isSaving);
+      els.saveBtn.setAttribute('aria-busy', String(isSaving));
+      const l = els.saveBtn.querySelector('.btn__label');
+      if (l) l.textContent = isSaving ? 'Salvando…' : 'Salvar';
     }
-
-    // Bloqueia campos enquanto salva
-    ['name', 'document', 'phone', 'email', 'address', 'notes'].forEach(function (key) {
-      if (modalEls[key]) modalEls[key].readOnly = isSaving;
-    });
   }
 
-  function showFormFeedback(message) {
-    if (!modalEls.feedback) return;
-    modalEls.feedback.textContent = message;
-    modalEls.feedback.hidden = false;
+  function showFeedback(msg, type) {
+    if (!els.feedback) return;
+    els.feedback.textContent = msg;
+    els.feedback.className = 'feedback feedback--' + (type || 'error');
+    els.feedback.hidden = false;
   }
-
-  function clearFormFeedback() {
-    if (!modalEls.feedback) return;
-    modalEls.feedback.textContent = '';
-    modalEls.feedback.hidden = true;
+  function clearFeedback() {
+    if (!els.feedback) return;
+    els.feedback.textContent = '';
+    els.feedback.className = 'feedback feedback--error';
+    els.feedback.hidden = true;
   }
 
   /* =========================================================
@@ -596,42 +1115,40 @@
     confirmEls.modal.querySelectorAll('[data-close-modal]').forEach(function (el) {
       el.addEventListener('click', closeConfirmModal);
     });
-
-    document.addEventListener('keydown', function (event) {
-      if (event.key === 'Escape' && !confirmEls.modal.hidden) closeConfirmModal();
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !confirmEls.modal.hidden) closeConfirmModal();
     });
-
     confirmEls.btn.addEventListener('click', onConfirmDelete);
   }
 
   function openConfirmModal(customer) {
     state.deletingId = customer.id;
     confirmEls.text.textContent =
-      'Tem certeza que deseja excluir "' + (customer.name || 'este cliente') +
-      '"? Esta ação não pode ser desfeita.';
-    openModal(confirmEls.modal);
+      'Excluir "' + (customer.name || customer.company_name || 'este cliente') +
+      '"? Os telefones, e-mails, endereços e contatos vinculados também serão removidos. ' +
+      'Esta ação não pode ser desfeita.';
+    confirmEls.modal.hidden = false;
+    document.body.style.overflow = 'hidden';
     confirmEls.btn.focus();
   }
 
   function closeConfirmModal() {
     if (state.deleting) return;
-    closeModal(confirmEls.modal);
+    confirmEls.modal.hidden = true;
+    document.body.style.overflow = '';
+    state.deletingId = null;
   }
 
   async function onConfirmDelete() {
     if (state.deleting || !state.deletingId) return;
-
     setDeleting(true);
 
     try {
       const { error } = await window.db
-        .from('customers')
-        .delete()
-        .eq('id', state.deletingId);
-
+        .from('customers').delete().eq('id', state.deletingId);
       if (error) throw error;
 
-      closeModal(confirmEls.modal);
+      closeConfirmModal();
       state.deletingId = null;
       showToast('Cliente excluído com sucesso.', 'success');
       await loadCustomers();
@@ -643,61 +1160,52 @@
     }
   }
 
-  function setDeleting(isDeleting) {
-    state.deleting = isDeleting;
+  function setDeleting(v) {
+    state.deleting = v;
     if (!confirmEls.btn) return;
-
-    confirmEls.btn.disabled = isDeleting;
-    confirmEls.btn.classList.toggle('is-loading', isDeleting);
-    confirmEls.btn.setAttribute('aria-busy', String(isDeleting));
-
-    const label = confirmEls.btn.querySelector('.btn__label');
-    if (label) label.textContent = isDeleting ? 'Excluindo…' : 'Excluir';
+    confirmEls.btn.disabled = v;
+    confirmEls.btn.classList.toggle('is-loading', v);
+    const l = confirmEls.btn.querySelector('.btn__label');
+    if (l) l.textContent = v ? 'Excluindo…' : 'Excluir';
   }
 
   /* =========================================================
-     Helpers de modal
+     Erros amigáveis
      ========================================================= */
-  function openModal(modal) {
-    if (!modal) return;
-    modal.hidden = false;
-    document.body.style.overflow = 'hidden';
-  }
+  function mapDbError(error) {
+    if (!error) return 'Não foi possível concluir. Tente novamente.';
+    const msg = String(error.message || '').toLowerCase();
 
-  function closeModal(modal) {
-    if (!modal) return;
-    modal.hidden = true;
-
-    // Só libera o scroll se nenhum outro modal estiver aberto
-    const anyOpen = Array.from(document.querySelectorAll('.modal'))
-      .some(function (m) { return !m.hidden; });
-    if (!anyOpen) document.body.style.overflow = '';
+    if (msg.includes('failed to fetch') || msg.includes('network')) {
+      return 'Não foi possível conectar ao servidor.';
+    }
+    if (msg.includes('row-level security') || msg.includes('permission denied')) {
+      return 'Você não tem permissão para executar esta ação.';
+    }
+    if (msg.includes('duplicate') || msg.includes('unique')) {
+      return 'Já existe um cliente com esse documento.';
+    }
+    if (msg.includes('cliente não pertence')) return 'Cliente não encontrado.';
+    if (msg.includes('function') && msg.includes('does not exist')) {
+      return 'Recurso indisponível. Verifique se o SQL foi aplicado.';
+    }
+    if (msg.includes('violates not-null')) return 'Preencha os campos obrigatórios.';
+    return 'Não foi possível concluir. Tente novamente.';
   }
 
   /* =========================================================
      Toasts
      ========================================================= */
   const TOAST_ICONS = {
-    success:
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"' +
-      ' stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-      '<path d="M20 6 9 17l-5-5"/></svg>',
-    error:
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"' +
-      ' stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-      '<circle cx="12" cy="12" r="9"/><path d="M12 8v5"/><path d="M12 16h.01"/></svg>',
-    info:
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"' +
-      ' stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-      '<circle cx="12" cy="12" r="9"/><path d="M12 16v-5"/><path d="M12 8h.01"/></svg>'
+    success: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+    error:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5"/><path d="M12 16h.01"/></svg>',
+    info:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 16v-5"/><path d="M12 8h.01"/></svg>'
   };
 
   function showToast(message, type) {
     const region = document.getElementById('toast-region');
     if (!region) return;
-
     const kind = type === 'success' || type === 'error' || type === 'info' ? type : 'info';
-
     const toast = document.createElement('div');
     toast.className = 'toast toast--' + kind;
     toast.setAttribute('role', kind === 'error' ? 'alert' : 'status');
@@ -714,10 +1222,7 @@
     close.type = 'button';
     close.className = 'toast__close';
     close.setAttribute('aria-label', 'Fechar notificação');
-    close.innerHTML =
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"' +
-      ' stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
-
+    close.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
     close.addEventListener('click', function () { dismissToast(toast); });
 
     toast.appendChild(icon);
@@ -725,103 +1230,23 @@
     toast.appendChild(close);
     region.appendChild(toast);
 
-    const timer = setTimeout(function () { dismissToast(toast); }, 4200);
-    toast.addEventListener('mouseenter', function () { clearTimeout(timer); });
+    const t = setTimeout(function () { dismissToast(toast); }, 4200);
+    toast.addEventListener('mouseenter', function () { clearTimeout(t); });
   }
 
-  function dismissToast(toast) {
-    if (!toast || toast.classList.contains('is-leaving')) return;
-    toast.classList.add('is-leaving');
-    toast.addEventListener('animationend', function () {
-      if (toast.parentNode) toast.parentNode.removeChild(toast);
+  function dismissToast(t) {
+    if (!t || t.classList.contains('is-leaving')) return;
+    t.classList.add('is-leaving');
+    t.addEventListener('animationend', function () {
+      if (t.parentNode) t.parentNode.removeChild(t);
     });
-  }
-
-  /* =========================================================
-     Formatação / máscaras
-     ========================================================= */
-  function formatDate(value) {
-    if (!value) return '—';
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return '—';
-    return dateFormatter.format(date);
-  }
-
-  /** Formata telefone brasileiro (fixo ou celular) para exibição. */
-  function formatPhone(value) {
-    if (!value) return '—';
-    const digits = stripPhone(value);
-    if (!digits) return '—';
-
-    if (digits.length === 11) {
-      return '(' + digits.slice(0, 2) + ') ' +
-             digits.slice(2, 7) + '-' + digits.slice(7);
-    }
-    if (digits.length === 10) {
-      return '(' + digits.slice(0, 2) + ') ' +
-             digits.slice(2, 6) + '-' + digits.slice(6);
-    }
-    if (digits.length === 9) {
-      return digits.slice(0, 5) + '-' + digits.slice(5);
-    }
-    if (digits.length === 8) {
-      return digits.slice(0, 4) + '-' + digits.slice(4);
-    }
-    return value;
-  }
-
-  /** Aplica máscara enquanto o usuário digita. */
-  function formatPhoneInput(value) {
-    const digits = stripPhone(value).slice(0, 11);
-    if (!digits) return '';
-
-    if (digits.length <= 2) return '(' + digits;
-    if (digits.length <= 6) {
-      return '(' + digits.slice(0, 2) + ') ' + digits.slice(2);
-    }
-    if (digits.length <= 10) {
-      return '(' + digits.slice(0, 2) + ') ' +
-             digits.slice(2, 6) + '-' + digits.slice(6);
-    }
-    return '(' + digits.slice(0, 2) + ') ' +
-           digits.slice(2, 7) + '-' + digits.slice(7);
-  }
-
-  function stripPhone(value) {
-    return String(value || '').replace(/\D/g, '');
-  }
-
-  /* =========================================================
-     Erros de banco (mensagens amigáveis)
-     ========================================================= */
-  function mapDbError(error) {
-    console.error('[DEV HUB] Erro do Supabase:', error);
-
-    if (!error) return 'Não foi possível salvar. Tente novamente.';
-
-    const message = String(error.message || '').toLowerCase();
-
-    if (message.includes('failed to fetch') || message.includes('network')) {
-      return 'Não foi possível conectar ao servidor.';
-    }
-    if (message.includes('row-level security') || message.includes('permission denied')) {
-      return 'Você não tem permissão para executar esta ação.';
-    }
-    if (message.includes('duplicate') || message.includes('unique')) {
-      return 'Já existe um registro com essas informações.';
-    }
-    if (message.includes('violates not-null')) {
-      return 'Preencha todos os campos obrigatórios.';
-    }
-
-    return 'Não foi possível concluir a operação. Tente novamente.';
   }
 
   /* =========================================================
      Utilidades
      ========================================================= */
-  function setText(elementId, text) {
-    const el = document.getElementById(elementId);
+  function setText(id, text) {
+    const el = document.getElementById(id);
     if (el) el.textContent = text;
   }
 })();

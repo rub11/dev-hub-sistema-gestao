@@ -121,12 +121,6 @@
       capability: 'management',
       items: [
         { id: 'gestao', label: 'Gestão', href: 'gestao.html', icon: 'gestao' }
-        /* Removido: item "Configurações da Empresa" apontava para
-           configuracoes.html, que é a mesma página de "Minha Conta"
-           (perfil pessoal / senha / tema) já disponível a todos os
-           usuários — não existe hoje um módulo real de configurações
-           da empresa. Quando esse módulo existir, adicione o item
-           aqui novamente com requiresCapability: 'admin_settings'. */
       ]
     },
     {
@@ -250,7 +244,6 @@
   function buildUserMenuHTML(caps) {
     const parts = [];
 
-    // Item pessoal — sempre presente para roles operacionais
     if (caps.indexOf('operations') !== -1) {
       parts.push(
         '<a class="menu-item" role="menuitem" href="configuracoes.html">' +
@@ -259,7 +252,6 @@
       );
     }
 
-    // Platform admin — atalho para Configurações da Plataforma
     if (caps.indexOf('platform') !== -1) {
       parts.push(
         '<a class="menu-item" role="menuitem" href="plataforma-configuracoes.html">' +
@@ -268,12 +260,10 @@
       );
     }
 
-    // Divisor antes de Sair (se houver itens acima)
     if (parts.length > 0) {
       parts.push('<div class="menu-item__sep" role="separator"></div>');
     }
 
-    // Sair — sempre
     parts.push(
       '<button type="button" class="menu-item menu-item--danger" role="menuitem" data-action="logout">' +
       '<span>Sair</span>' +
@@ -297,7 +287,6 @@
 
   function bindLogout(scope) {
     scope.querySelectorAll('[data-action="logout"]').forEach(function (btn) {
-      // Evita re-bind se já foi ligado
       if (btn.dataset.logoutBound === '1') return;
       btn.dataset.logoutBound = '1';
 
@@ -314,6 +303,105 @@
     });
   }
 
+  /* ---------------------------------------------------------
+     Foto do perfil na topbar
+     - Primeiro tenta sessionStorage (rápido).
+     - Se vazio, consulta o banco.
+     - Reaplica em vários intervalos para vencer o timing dos
+       módulos que sobrescrevem #user-avatar com a inicial.
+     --------------------------------------------------------- */
+  function renderTopbarAvatar(url) {
+    const el = document.getElementById('user-avatar');
+    if (!el) return;
+
+    if (el.dataset.avatarUrl === (url || '')) return;
+
+    el.innerHTML = '';
+    el.dataset.avatarUrl = url || '';
+
+    if (url) {
+      el.style.background = 'none';
+      const img = document.createElement('img');
+      img.src = url;
+      img.alt = '';
+      img.onerror = function () {
+        el.innerHTML = '';
+        el.style.background = '';
+        el.dataset.avatarUrl = '';
+      };
+      el.appendChild(img);
+    } else {
+      el.style.background = '';
+      // deixa o módulo cuidar de preencher a inicial
+    }
+  }
+
+  function readCachedAvatar() {
+    try {
+      const raw = sessionStorage.getItem('devhub_user');
+      if (!raw) return null;
+      const ctx = JSON.parse(raw);
+      return ctx && ctx.avatar_url ? ctx.avatar_url : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  async function fetchAvatarFromDb() {
+    if (!window.db) return null;
+    try {
+      const { data: sess } = await window.db.auth.getSession();
+      const uid = sess?.session?.user?.id;
+      if (!uid) return null;
+
+      const { data, error } = await window.db
+        .from('profiles')
+        .select('avatar_url')
+        .eq('id', uid)
+        .maybeSingle();
+
+      if (error) return null;
+      return data && data.avatar_url ? data.avatar_url : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  async function applyTopbarAvatar() {
+    const el = document.getElementById('user-avatar');
+    if (!el) return;
+
+    // 1) Cache
+    const cached = readCachedAvatar();
+    if (cached) {
+      renderTopbarAvatar(cached);
+      return;
+    }
+
+    // 2) Banco
+    const url = await fetchAvatarFromDb();
+    if (!url) return;
+
+    renderTopbarAvatar(url);
+
+    // Atualiza cache para a próxima navegação
+    try {
+      const raw = sessionStorage.getItem('devhub_user');
+      const ctx = raw ? JSON.parse(raw) : {};
+      ctx.avatar_url = url;
+      sessionStorage.setItem('devhub_user', JSON.stringify(ctx));
+    } catch (e) { /* ignora */ }
+  }
+
+  function scheduleAvatarRefresh() {
+    [0, 100, 300, 800, 1500].forEach(function (ms) {
+      setTimeout(applyTopbarAvatar, ms);
+    });
+  }
+
+  /* ---------------------------------------------------------
+     Renderização da sidebar
+     --------------------------------------------------------- */
   function renderSidebar() {
     const aside = document.getElementById('sidebar');
     if (!aside) return;
@@ -342,5 +430,32 @@
     );
   }
 
-  renderSidebar();
+  /* ---------------------------------------------------------
+     Bootstrap
+     --------------------------------------------------------- */
+  function bootstrap() {
+    renderSidebar();
+    scheduleAvatarRefresh();
+  }
+
+  // A sidebar depende do elemento #sidebar estar no DOM.
+  // Como este script é carregado no fim do <body>, ele já existe.
+  // Mas usamos DOMContentLoaded como cinto de segurança.
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bootstrap);
+  } else {
+    bootstrap();
+  }
+
+  window.addEventListener('load', scheduleAvatarRefresh);
+
+  // Se a sessão mudar (login/logout), reaplica avatar
+  if (window.db && window.db.auth && window.db.auth.onAuthStateChange) {
+    window.db.auth.onAuthStateChange(function (event) {
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        scheduleAvatarRefresh();
+      }
+    });
+  }
+
 })();

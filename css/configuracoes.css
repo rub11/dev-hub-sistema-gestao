@@ -247,3 +247,99 @@
   .settings-card__actions { flex-direction: column; }
   .settings-card__actions .btn { width: 100%; }
 }
+
+/* ---------- Foto do perfil ---------- */
+.avatar-uploader {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.avatar-uploader__preview {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  flex: none;
+  border-radius: 50%;
+  overflow: hidden;
+  background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
+  color: #ffffff;
+  display: grid;
+  place-items: center;
+  font-size: 34px;
+  font-weight: 600;
+  text-transform: uppercase;
+  user-select: none;
+}
+
+.avatar-uploader__preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.avatar-uploader__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 180px;
+}
+
+@media (max-width: 720px) {
+  .avatar-uploader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .avatar-uploader__actions { width: 100%; }
+  .avatar-uploader__actions .btn { width: 100%; }
+}
+
+/* ---------- Foto do perfil ---------- */
+.avatar-uploader {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.avatar-uploader__preview {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  flex: none;
+  border-radius: 50%;
+  overflow: hidden;
+  background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
+  color: #ffffff;
+  display: grid;
+  place-items: center;
+  font-size: 34px;
+  font-weight: 600;
+  text-transform: uppercase;
+  user-select: none;
+}
+
+.avatar-uploader__preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.avatar-uploader__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 180px;
+}
+
+@media (max-width: 720px) {
+  .avatar-uploader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .avatar-uploader__actions { width: 100%; }
+  .avatar-uploader__actions .btn { width: 100%; }
+}

@@ -1,25 +1,31 @@
 /* =========================================================
    DEV HUB · Área de Gestão
    ---------------------------------------------------------
-   Apenas admin da organização (via DHRoles.canAccessManagement).
-   Multi-tenant via RLS. Criação via Edge Function `create-user`.
+   - Admin / Gestor criam usuários (regras por papel)
+   - Alterar senha do funcionário direto no modal de edição
+     (exige informar a senha atual do funcionário)
+   - Sem botão de "enviar e-mail de redefinição"
    ========================================================= */
 
 (function () {
   'use strict';
 
-  /* ---------- Formatadores ---------- */
   const dateFormatter = new Intl.DateTimeFormat('pt-BR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric'
+    day: '2-digit', month: '2-digit', year: 'numeric'
   });
 
-  /* ---------- Estado ---------- */
+  const HIDDEN_SELF_EMAIL = 'juliodasilva0101@gmail.com';
+
+  const ROLE_ADMIN   = ['admin', 'administrador'];
+  const ROLE_MANAGER = ['gestor', 'manager'];
+
   const state = {
     members: [],
+    roleTypes: [],
     currentUserId: null,
+    currentUserEmail: '',
     currentRole: '',
+    currentOrgId: null,
     loading: false,
     creating: false,
     editingMember: null,
@@ -47,18 +53,20 @@
     setupUserMenu();
     setupLogout();
     setupUserModal();
+    setupRoleTypesModal();
     setupConfirmModal();
 
     const session = await Auth.requireSession();
     if (!session) return;
     state.currentUserId = session.user.id;
+    state.currentUserEmail = String(session.user.email || '').toLowerCase();
 
     const profile = await Auth.getProfile(session.user.id);
     renderUser(session.user, profile);
 
     state.currentRole = String((profile && profile.role) || '').toLowerCase();
+    state.currentOrgId = profile && profile.organization_id ? profile.organization_id : null;
 
-    // Bloqueio de acesso: quem não pode gerenciar sai
     const canManage = window.DHRoles && typeof window.DHRoles.canAccessManagement === 'function'
       ? window.DHRoles.canAccessManagement(state.currentRole)
       : state.currentRole === 'admin';
@@ -69,7 +77,45 @@
     }
 
     watchAuthChanges();
-    await loadMembers();
+    await Promise.all([loadMembers(), loadRoleTypes()]);
+  }
+
+  /* =========================================================
+     Permissões (helpers)
+     ========================================================= */
+  function callerIsAdmin() {
+    return ROLE_ADMIN.indexOf(state.currentRole) !== -1;
+  }
+
+  function visibleRoleTypes() {
+    if (callerIsAdmin()) return state.roleTypes.slice();
+    return state.roleTypes.filter(function (rt) {
+      return String(rt.base_role || '').toLowerCase() === 'user';
+    });
+  }
+
+  /**
+   * Pode editar este membro?
+   * - Nunca a si mesmo
+   * - Admin: todos
+   * - Gestor: apenas quem tem papel base 'user'
+   */
+  function canEditMember(member) {
+    if (member.user_id === state.currentUserId) return false;
+
+    const baseRole = String(member.role || '').toLowerCase();
+    const memberSlug = String(member.role_slug || '').toLowerCase();
+    const memberType = memberSlug
+      ? state.roleTypes.find(function (r) { return r.slug === memberSlug; })
+      : null;
+    const effectiveBase = memberType ? String(memberType.base_role || 'user') : baseRole;
+
+    if (callerIsAdmin()) return true;
+    return effectiveBase === 'user';
+  }
+
+  function canManageMember(member) {
+    return canEditMember(member);
   }
 
   /* =========================================================
@@ -202,7 +248,7 @@
   }
 
   /* =========================================================
-     Carregar usuários da organização
+     Carregar usuários
      ========================================================= */
   async function loadMembers() {
     if (state.loading) return;
@@ -213,12 +259,20 @@
     try {
       const { data, error } = await window.db
         .from('organization_members')
-        .select('id, user_id, organization_id, role, active, name, email, created_at')
+        .select('id, user_id, organization_id, role, role_slug, active, name, email, created_at')
         .order('created_at', { ascending: true });
 
       if (error) throw error;
 
-      state.members = data || [];
+      let rows = data || [];
+
+      if (state.currentUserEmail !== HIDDEN_SELF_EMAIL) {
+        rows = rows.filter(function (m) {
+          return String(m.email || '').toLowerCase() !== HIDDEN_SELF_EMAIL;
+        });
+      }
+
+      state.members = rows;
       renderMembers();
       recomputeStats();
       updateCountLabel();
@@ -267,13 +321,12 @@
 
   function buildRow(member) {
     const isSelf = member.user_id === state.currentUserId;
-    const roleKey = String(member.role || '').toLowerCase();
+    const baseRole = String(member.role || '').toLowerCase();
     const isActive = member.active !== false;
 
     const row = document.createElement('tr');
     row.dataset.id = member.id;
 
-    // Nome
     const nameCell = document.createElement('td');
     nameCell.className = 'cell-user';
     const nameSpan = document.createElement('span');
@@ -286,18 +339,15 @@
     }
     row.appendChild(nameCell);
 
-    // E-mail
     row.appendChild(createCell(member.email || '—', 'cell--muted'));
 
-    // Perfil
     const roleCell = document.createElement('td');
     const roleTag = document.createElement('span');
-    roleTag.className = 'role-tag' + roleModifier(roleKey);
-    roleTag.textContent = roleLabel(roleKey);
+    roleTag.className = 'role-tag' + roleModifier(baseRole);
+    roleTag.textContent = displayRoleLabel(member);
     roleCell.appendChild(roleTag);
     row.appendChild(roleCell);
 
-    // Status
     const statusCell = document.createElement('td');
     const statusBadge = document.createElement('span');
     statusBadge.className = 'badge ' + (isActive ? 'badge--success' : 'badge--danger');
@@ -305,10 +355,8 @@
     statusCell.appendChild(statusBadge);
     row.appendChild(statusCell);
 
-    // Data
     row.appendChild(createCell(formatDate(member.created_at), 'cell--muted'));
 
-    // Ações
     row.appendChild(buildActionsCell(member, { isSelf: isSelf, isActive: isActive }));
 
     return row;
@@ -316,15 +364,29 @@
 
   function roleModifier(roleKey) {
     if (roleKey === 'admin' || roleKey === 'administrador') return ' role-tag--admin';
-    if (roleKey === 'leader' || roleKey === 'lider') return ' role-tag--leader';
+    if (roleKey === 'gestor' || roleKey === 'manager' || roleKey === 'leader' || roleKey === 'lider') {
+      return ' role-tag--leader';
+    }
     return '';
   }
 
   function roleLabel(roleKey) {
     if (window.DHRoles) return window.DHRoles.label(roleKey) || 'Funcionário';
     if (roleKey === 'admin') return 'Administrador';
+    if (roleKey === 'gestor') return 'Gestor';
     if (roleKey === 'leader') return 'Líder';
     return 'Funcionário';
+  }
+
+  function displayRoleLabel(member) {
+    const slug = String(member.role_slug || '').toLowerCase();
+    if (slug) {
+      const rt = state.roleTypes.find(function (r) {
+        return String(r.slug || '').toLowerCase() === slug;
+      });
+      if (rt) return rt.label;
+    }
+    return roleLabel(String(member.role || '').toLowerCase());
   }
 
   function buildActionsCell(member, meta) {
@@ -335,73 +397,58 @@
     wrap.className = 'row-actions';
 
     if (!meta.isSelf) {
-      const editBtn = document.createElement('button');
-      editBtn.type = 'button';
-      editBtn.className = 'row-action';
-      editBtn.title = 'Editar';
-      editBtn.setAttribute('aria-label', 'Editar ' + (member.name || ''));
-      editBtn.innerHTML =
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"' +
-        ' stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-        '<path d="M12 20h9"/>' +
-        '<path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
-      editBtn.addEventListener('click', function () {
-        openUserModal(member);
-      });
-      wrap.appendChild(editBtn);
+      const canEdit = canEditMember(member);
+      const canManage = canManageMember(member);
 
-      const resetBtn = document.createElement('button');
-      resetBtn.type = 'button';
-      resetBtn.className = 'row-action';
-      resetBtn.title = 'Redefinir senha';
-      resetBtn.setAttribute('aria-label', 'Redefinir senha de ' + (member.name || ''));
-      resetBtn.innerHTML =
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"' +
-        ' stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-        '<circle cx="7.5" cy="15.5" r="5.5"/>' +
-        '<path d="m21 2-9.6 9.6"/>' +
-        '<path d="m15.5 7.5 3 3L22 7l-3-3"/></svg>';
-      resetBtn.addEventListener('click', function () {
-        confirmAction('reset', member);
-      });
-      wrap.appendChild(resetBtn);
-
-      const toggleBtn = document.createElement('button');
-      toggleBtn.type = 'button';
-      toggleBtn.className = 'row-action';
-      toggleBtn.title = meta.isActive ? 'Desativar' : 'Ativar';
-      toggleBtn.setAttribute('aria-label',
-        (meta.isActive ? 'Desativar ' : 'Ativar ') + (member.name || ''));
-      toggleBtn.innerHTML = meta.isActive
-        ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"' +
+      if (canEdit) {
+        const editBtn = document.createElement('button');
+        editBtn.type = 'button';
+        editBtn.className = 'row-action';
+        editBtn.title = 'Editar';
+        editBtn.setAttribute('aria-label', 'Editar ' + (member.name || ''));
+        editBtn.innerHTML =
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"' +
           ' stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-          '<path d="M18.36 6.64A9 9 0 1 1 5.64 6.64"/>' +
-          '<path d="M12 2v10"/></svg>'
-        : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"' +
-          ' stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-          '<path d="M20 6 9 17l-5-5"/></svg>';
-      toggleBtn.addEventListener('click', function () {
-        confirmAction('toggle', member);
-      });
-      wrap.appendChild(toggleBtn);
+          '<path d="M12 20h9"/>' +
+          '<path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
+        editBtn.addEventListener('click', function () { openUserModal(member); });
+        wrap.appendChild(editBtn);
+      }
 
-      const delBtn = document.createElement('button');
-      delBtn.type = 'button';
-      delBtn.className = 'row-action row-action--danger';
-      delBtn.title = 'Excluir acesso';
-      delBtn.setAttribute('aria-label', 'Excluir acesso de ' + (member.name || ''));
-      delBtn.innerHTML =
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"' +
-        ' stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-        '<path d="M3 6h18"/>' +
-        '<path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>' +
-        '<path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>' +
-        '<path d="M10 11v6M14 11v6"/>' +
-        '</svg>';
-      delBtn.addEventListener('click', function () {
-        confirmAction('delete', member);
-      });
-      wrap.appendChild(delBtn);
+      if (canManage) {
+        const toggleBtn = document.createElement('button');
+        toggleBtn.type = 'button';
+        toggleBtn.className = 'row-action';
+        toggleBtn.title = meta.isActive ? 'Desativar' : 'Ativar';
+        toggleBtn.setAttribute('aria-label',
+          (meta.isActive ? 'Desativar ' : 'Ativar ') + (member.name || ''));
+        toggleBtn.innerHTML = meta.isActive
+          ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"' +
+            ' stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+            '<path d="M18.36 6.64A9 9 0 1 1 5.64 6.64"/>' +
+            '<path d="M12 2v10"/></svg>'
+          : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"' +
+            ' stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+            '<path d="M20 6 9 17l-5-5"/></svg>';
+        toggleBtn.addEventListener('click', function () { confirmAction('toggle', member); });
+        wrap.appendChild(toggleBtn);
+
+        const delBtn = document.createElement('button');
+        delBtn.type = 'button';
+        delBtn.className = 'row-action row-action--danger';
+        delBtn.title = 'Excluir acesso';
+        delBtn.setAttribute('aria-label', 'Excluir acesso de ' + (member.name || ''));
+        delBtn.innerHTML =
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"' +
+          ' stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+          '<path d="M3 6h18"/>' +
+          '<path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>' +
+          '<path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>' +
+          '<path d="M10 11v6M14 11v6"/>' +
+          '</svg>';
+        delBtn.addEventListener('click', function () { confirmAction('delete', member); });
+        wrap.appendChild(delBtn);
+      }
     }
 
     if (wrap.childNodes.length === 0) {
@@ -416,7 +463,7 @@
   }
 
   /* =========================================================
-     Estatísticas / estados
+     Stats / estados
      ========================================================= */
   function recomputeStats() {
     let active = 0;
@@ -484,20 +531,25 @@
   }
 
   /* =========================================================
-     Modal: novo usuário
+     Modal: usuário
      ========================================================= */
   const modalEls = {};
 
   function setupUserModal() {
     modalEls.modal    = document.getElementById('user-modal');
     modalEls.form     = document.getElementById('user-form');
-    modalEls.name     = document.getElementById('user-name');
+    modalEls.name     = document.getElementById('user-form-name');
     modalEls.email    = document.getElementById('user-email');
     modalEls.password = document.getElementById('user-password');
-    modalEls.role     = document.getElementById('user-role');
+    modalEls.role     = document.getElementById('user-form-role');
     modalEls.feedback = document.getElementById('user-form-feedback');
     modalEls.saveBtn  = document.getElementById('user-save-btn');
     modalEls.openBtn  = document.getElementById('new-user-btn');
+
+    // Novo bloco de troca de senha
+    modalEls.passwordChangeBlock = document.getElementById('user-password-change-block');
+    modalEls.currentPassword     = document.getElementById('user-current-password');
+    modalEls.newPassword         = document.getElementById('user-new-password');
 
     if (!modalEls.modal || !modalEls.form) return;
 
@@ -529,11 +581,6 @@
     modalEls.form.addEventListener('submit', onSubmitUser);
   }
 
-  /**
-   * Abre o modal de usuário em modo criação (member = null/undefined)
-   * ou edição (member = registro de organization_members).
-   * O mesmo formulário é reaproveitado nos dois casos.
-   */
   function openUserModal(member) {
     state.editingMember = member || null;
     const isEdit = Boolean(state.editingMember);
@@ -541,16 +588,21 @@
     modalEls.form.reset();
     clearFormFeedback();
     setFormBusy(false);
-    ensureAdminOption(isEdit);
+
+    if (modalEls.passwordChangeBlock) {
+      modalEls.passwordChangeBlock.hidden = !isEdit;
+    }
 
     if (isEdit) {
       modalEls.name.value = state.editingMember.name || '';
       modalEls.email.value = state.editingMember.email || '';
-      if (modalEls.role) modalEls.role.value = normalizeRoleForForm(state.editingMember.role);
-      togglePasswordField(false);
+      togglePasswordField(false); // campo de senha da criação, sempre escondido em edit
+      populateRoleSelect(state.editingMember.role_slug, state.editingMember.role);
     } else {
-      if (modalEls.role) modalEls.role.value = 'user';
       togglePasswordField(true);
+      populateRoleSelect(null, 'user');
+      if (modalEls.currentPassword) modalEls.currentPassword.value = '';
+      if (modalEls.newPassword) modalEls.newPassword.value = '';
     }
 
     setModalMode(isEdit ? 'edit' : 'create');
@@ -567,15 +619,10 @@
     document.body.style.overflow = '';
   }
 
-  /**
-   * Ajusta título e texto do botão do modal para refletir o modo atual.
-   * Feito com verificações defensivas: se o HTML não tiver esses
-   * elementos (ex.: título do modal), a função simplesmente não faz nada.
-   */
   function setModalMode(mode) {
     const title = modalEls.modal.querySelector('[data-modal-title]') ||
       modalEls.modal.querySelector('.modal__title, .modal-title, h2, h3');
-    if (title) title.textContent = mode === 'edit' ? 'Editar usuário' : 'Novo usuário';
+    if (title) title.textContent = mode === 'edit' ? 'Editar usuário' : 'Criar novo usuário';
 
     if (modalEls.saveBtn) {
       const label = modalEls.saveBtn.querySelector('.btn__label');
@@ -583,23 +630,6 @@
     }
   }
 
-  /** Mostra ou esconde a opção "Administrador" no select de perfil. */
-  function ensureAdminOption(show) {
-    if (!modalEls.role) return;
-    let opt = modalEls.role.querySelector('option[value="admin"]');
-    if (show) {
-      if (!opt) {
-        opt = document.createElement('option');
-        opt.value = 'admin';
-        opt.textContent = 'Administrador';
-        modalEls.role.appendChild(opt);
-      }
-    } else if (opt) {
-      opt.remove();
-    }
-  }
-
-  /** Mostra/esconde e (des)obriga o campo de senha inicial. */
   function togglePasswordField(show) {
     if (!modalEls.password) return;
     modalEls.password.required = show;
@@ -609,12 +639,68 @@
     if (container) container.hidden = !show;
   }
 
-  function normalizeRoleForForm(role) {
-    const key = String(role || '').toLowerCase();
-    if (key === 'admin' || key === 'leader') return key;
-    return 'user';
+  /* =========================================================
+     Select de perfil
+     ========================================================= */
+  function populateRoleSelect(currentSlug, currentBaseRole) {
+    if (!modalEls.role) return;
+
+    modalEls.role.innerHTML = '';
+
+    const iAmAdmin = callerIsAdmin();
+
+    const baseOptions = [['user', 'Funcionário']];
+    if (iAmAdmin) baseOptions.push(['gestor', 'Gestor']);
+
+    baseOptions.forEach(function (pair) {
+      const opt = document.createElement('option');
+      opt.value = pair[0];
+      opt.dataset.baseRole = pair[0];
+      opt.dataset.slug = '';
+      opt.textContent = pair[1];
+      modalEls.role.appendChild(opt);
+    });
+
+    if (state.editingMember && iAmAdmin) {
+      const opt = document.createElement('option');
+      opt.value = 'admin';
+      opt.dataset.baseRole = 'admin';
+      opt.dataset.slug = '';
+      opt.textContent = 'Administrador';
+      modalEls.role.appendChild(opt);
+    }
+
+    const tipos = visibleRoleTypes();
+    if (tipos.length > 0) {
+      const sep = document.createElement('option');
+      sep.disabled = true;
+      sep.textContent = '──── Tipos personalizados ────';
+      modalEls.role.appendChild(sep);
+
+      tipos.forEach(function (rt) {
+        const opt = document.createElement('option');
+        opt.value = rt.slug;
+        opt.dataset.baseRole = rt.base_role;
+        opt.dataset.slug = rt.slug;
+        opt.textContent = rt.label;
+        modalEls.role.appendChild(opt);
+      });
+    }
+
+    if (currentSlug) {
+      modalEls.role.value = currentSlug;
+    } else if (currentBaseRole) {
+      modalEls.role.value = currentBaseRole;
+    } else {
+      modalEls.role.value = 'user';
+    }
+
+    if (!modalEls.role.value) modalEls.role.value = 'user';
   }
 
+  /* =========================================================
+     Submit
+     ========================================================= */
   async function onSubmitUser(event) {
     event.preventDefault();
     if (state.creating) return;
@@ -623,9 +709,12 @@
 
     const isEdit = Boolean(state.editingMember);
     const name = modalEls.name.value.trim();
-    const email = modalEls.email.value.trim();
+    const email = modalEls.email.value.trim().toLowerCase();
     const password = modalEls.password ? modalEls.password.value : '';
-    const role = (modalEls.role && modalEls.role.value) || 'user';
+
+    const selectedOpt = modalEls.role.options[modalEls.role.selectedIndex];
+    const baseRole = (selectedOpt && selectedOpt.dataset && selectedOpt.dataset.baseRole) || 'user';
+    const slug     = (selectedOpt && selectedOpt.dataset && selectedOpt.dataset.slug) || null;
 
     if (!name) {
       showFormFeedback('Informe o nome do usuário.');
@@ -654,48 +743,39 @@
         modalEls.password.focus();
         return;
       }
+      if (baseRole === 'admin') {
+        showFormFeedback('Administradores não podem ser criados por esta tela.');
+        return;
+      }
+      if (baseRole === 'gestor' && !callerIsAdmin()) {
+        showFormFeedback('Apenas administradores podem criar gestores.');
+        return;
+      }
     }
 
     if (isEdit) {
-      return onSubmitEditMember(name, email, role);
+      return onSubmitEditMember(name, email, baseRole, slug);
     }
 
-    // Nunca enviamos 'admin' pelo frontend na criação — o backend
-    // rejeitaria de todo modo, mas mantemos a barreira dupla.
-    // (Promover alguém a admin é feito depois, via "Editar".)
-    const safeRole = (role === 'leader') ? 'leader' : 'user';
+    const safeRole = (baseRole === 'gestor') ? 'gestor' : 'user';
+    const safeSlug = (baseRole === 'admin') ? null : slug;
 
     setFormBusy(true);
 
     try {
-      const session = await window.Auth.getSession();
-      if (!session || !session.access_token) {
-        throw new Error('Sessão inválida.');
-      }
-
-      const baseUrl = (window.db && window.db.supabaseUrl) || '';
-      const url = baseUrl.replace(/\/$/, '') + '/functions/v1/create-user';
-
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Authorization': 'Bearer ' + session.access_token,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          name: name,
-          email: email,
-          password: password,
-          role: safeRole
-        })
+      const { data, error } = await window.db.rpc('admin_create_user', {
+        p_name: name,
+        p_email: email,
+        p_password: password,
+        p_role: safeRole,
+        p_role_slug: safeSlug
       });
 
-      let payload = null;
-      try { payload = await res.json(); } catch (e) { payload = null; }
+      if (error) throw error;
 
-      if (!res.ok) {
-        const msg = (payload && (payload.error || payload.message)) || '';
-        throw new Error(msg || ('Falha na criação (HTTP ' + res.status + ')'));
+      const row = Array.isArray(data) ? data[0] : data;
+      if (!row || !row.user_id) {
+        throw new Error('Usuário criado, mas não foi possível confirmar o vínculo.');
       }
 
       modalEls.modal.hidden = true;
@@ -711,18 +791,17 @@
     }
   }
 
-  /**
-   * Salva as alterações de um usuário existente (nome, e-mail, perfil).
-   * Feito via update direto em organization_members (mesma tabela já
-   * usada por ativar/desativar/excluir), respeitando a RLS da própria
-   * organização — sem depender de nenhuma Edge Function nova.
-   */
-  async function onSubmitEditMember(name, email, role) {
+  async function onSubmitEditMember(name, email, baseRole, slug) {
     const member = state.editingMember;
 
-    // Proteção: não deixa a empresa ficar sem nenhum administrador.
+    if (baseRole === 'gestor' && !callerIsAdmin()) {
+      showFormFeedback('Apenas administradores podem definir o perfil Gestor.');
+      return;
+    }
+
+    // Proteção: único admin
     const wasAdmin = String(member.role || '').toLowerCase() === 'admin';
-    const willBeAdmin = role === 'admin';
+    const willBeAdmin = baseRole === 'admin';
     if (wasAdmin && !willBeAdmin) {
       const adminCount = state.members.filter(function (m) {
         return String(m.role || '').toLowerCase() === 'admin';
@@ -736,30 +815,75 @@
       }
     }
 
+    // Lê campos de senha
+    const currentPw = modalEls.currentPassword ? modalEls.currentPassword.value : '';
+    const newPw     = modalEls.newPassword ? modalEls.newPassword.value : '';
+
+    const wantsPasswordChange = (currentPw.trim() !== '') || (newPw.trim() !== '');
+
+    if (wantsPasswordChange) {
+      if (!currentPw.trim()) {
+        showFormFeedback('Informe a senha atual do funcionário para poder trocá-la.');
+        modalEls.currentPassword.focus();
+        return;
+      }
+      if (!newPw.trim()) {
+        showFormFeedback('Informe a nova senha.');
+        modalEls.newPassword.focus();
+        return;
+      }
+      if (newPw.length < 6) {
+        showFormFeedback('A nova senha precisa ter pelo menos 6 caracteres.');
+        modalEls.newPassword.focus();
+        return;
+      }
+    }
+
     setFormBusy(true);
 
     try {
+      // 1) Atualiza dados básicos
       const { error } = await window.db
         .from('organization_members')
-        .update({ name: name, email: email, role: role })
+        .update({
+          name: name,
+          email: email,
+          role: baseRole,
+          role_slug: slug
+        })
         .eq('id', member.id);
 
       if (error) throw error;
 
-      // Sincroniza profiles (best-effort — não bloqueia o fluxo se falhar).
+      // Sync profiles (best-effort)
       try {
         await window.db
           .from('profiles')
-          .update({ name: name, role: role })
+          .update({ name: name, role: baseRole })
           .eq('id', member.user_id);
       } catch (syncError) {
-        console.warn('[DEV HUB] Não foi possível sincronizar profiles:', syncError);
+        console.warn('[DEV HUB] profiles não sincronizado:', syncError);
+      }
+
+      // 2) Troca a senha (se o admin preencheu os campos)
+      if (wantsPasswordChange) {
+        const { error: pwErr } = await window.db.rpc('admin_change_user_password', {
+          p_user_id: member.user_id,
+          p_current_password: currentPw,
+          p_new_password: newPw
+        });
+        if (pwErr) throw pwErr;
       }
 
       modalEls.modal.hidden = true;
       document.body.style.overflow = '';
       state.editingMember = null;
-      showToast('Usuário atualizado com sucesso.', 'success');
+      showToast(
+        wantsPasswordChange
+          ? 'Usuário atualizado e senha alterada.'
+          : 'Usuário atualizado com sucesso.',
+        'success'
+      );
 
       await loadMembers();
     } catch (error) {
@@ -778,10 +902,18 @@
       modalEls.saveBtn.classList.toggle('is-loading', busy);
       modalEls.saveBtn.setAttribute('aria-busy', String(busy));
       const label = modalEls.saveBtn.querySelector('.btn__label');
-      if (label) label.textContent = busy ? 'Criando...' : 'Criar usuário';
+      if (label) {
+        const isEdit = Boolean(state.editingMember);
+        if (busy) {
+          label.textContent = isEdit ? 'Salvando...' : 'Criando...';
+        } else {
+          label.textContent = isEdit ? 'Salvar alterações' : 'Criar usuário';
+        }
+      }
     }
 
-    [modalEls.name, modalEls.email, modalEls.password, modalEls.role]
+    [modalEls.name, modalEls.email, modalEls.password, modalEls.role,
+     modalEls.currentPassword, modalEls.newPassword]
       .forEach(function (input) { if (input) input.disabled = busy; });
   }
 
@@ -802,17 +934,29 @@
     const msg = String(error.message || '');
     const lower = msg.toLowerCase();
 
-    if (lower.includes('already') || lower.includes('duplicate') || lower.includes('registered')) {
+    if (lower.includes('apenas administradores')) {
+      return 'Apenas administradores podem executar esta ação.';
+    }
+    if (lower.includes('apenas o administrador da plataforma')) {
+      return 'Apenas o administrador da plataforma pode criar administradores.';
+    }
+    if (lower.includes('already') ||
+        lower.includes('duplicate') ||
+        lower.includes('registered') ||
+        lower.includes('já está sendo utilizado')) {
       return 'Este e-mail já está sendo utilizado.';
     }
-    if (lower.includes('admin')) {
-      return 'Apenas administradores podem criar usuários.';
-    }
-    if (lower.includes('session') || lower.includes('auth') || lower.includes('401')) {
+    if (lower.includes('sessão') || lower.includes('session') || lower.includes('401')) {
       return 'Sua sessão expirou. Faça login novamente.';
     }
-    if (lower.includes('password')) {
+    if (lower.includes('senha') || lower.includes('password')) {
       return 'A senha informada não é aceita. Use pelo menos 6 caracteres.';
+    }
+    if (lower.includes('could not find') && lower.includes('function')) {
+      return 'A função de criação não está instalada no banco. Contate o suporte.';
+    }
+    if (lower.includes('function') && lower.includes('does not exist')) {
+      return 'A função de criação não está instalada no banco. Contate o suporte.';
     }
     if (lower.includes('failed to fetch') || lower.includes('network')) {
       return 'Não foi possível conectar ao servidor.';
@@ -821,7 +965,329 @@
   }
 
   /* =========================================================
-     Modal: confirmar ação
+     TIPOS DE PERFIL (role_types)
+     ========================================================= */
+  const roleTypeEls = {};
+
+  function setupRoleTypesModal() {
+    roleTypeEls.modal     = document.getElementById('role-types-modal');
+    roleTypeEls.form      = document.getElementById('role-type-form');
+    roleTypeEls.id        = document.getElementById('role-type-id');
+    roleTypeEls.label     = document.getElementById('role-type-label');
+    roleTypeEls.base      = document.getElementById('role-type-base');
+    roleTypeEls.slug      = document.getElementById('role-type-slug');
+    roleTypeEls.feedback  = document.getElementById('role-type-feedback');
+    roleTypeEls.saveBtn   = document.getElementById('role-type-save-btn');
+    roleTypeEls.cancelBtn = document.getElementById('role-type-cancel-btn');
+    roleTypeEls.list      = document.getElementById('role-types-list');
+    roleTypeEls.openBtn   = document.getElementById('role-types-open-btn');
+
+    if (!roleTypeEls.modal) return;
+
+    if (roleTypeEls.openBtn) {
+      roleTypeEls.openBtn.addEventListener('click', openRoleTypesModal);
+    }
+
+    roleTypeEls.modal.querySelectorAll('[data-close-modal]').forEach(function (el) {
+      el.addEventListener('click', closeRoleTypesModal);
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !roleTypeEls.modal.hidden) closeRoleTypesModal();
+    });
+
+    roleTypeEls.form.addEventListener('submit', onSubmitRoleType);
+    roleTypeEls.cancelBtn.addEventListener('click', resetRoleTypeForm);
+
+    roleTypeEls.label.addEventListener('input', function () {
+      if (roleTypeEls.id.value) return;
+      roleTypeEls.slug.value = slugify(roleTypeEls.label.value);
+    });
+
+    applyRoleTypeBaseRestrictions();
+  }
+
+  function applyRoleTypeBaseRestrictions() {
+    if (!roleTypeEls.base) return;
+    const iAmAdmin = callerIsAdmin();
+
+    Array.from(roleTypeEls.base.options).forEach(function (opt) {
+      const v = String(opt.value || '').toLowerCase();
+      if (!iAmAdmin && v !== 'user') { opt.remove(); return; }
+      if (iAmAdmin && v === 'admin') { opt.remove(); }
+    });
+
+    if (!roleTypeEls.base.value) roleTypeEls.base.value = 'user';
+  }
+
+  function slugify(text) {
+    return String(text || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 40);
+  }
+
+  async function loadRoleTypes() {
+    try {
+      const { data, error } = await window.db
+        .from('role_types')
+        .select('id, slug, label, base_role, active, created_at')
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      state.roleTypes = data || [];
+      if (roleTypeEls.list) renderRoleTypesList();
+    } catch (error) {
+      console.error('[DEV HUB] Falha ao carregar tipos de perfil:', error);
+      state.roleTypes = [];
+    }
+  }
+
+  function openRoleTypesModal() {
+    resetRoleTypeForm();
+    renderRoleTypesList();
+    roleTypeEls.modal.hidden = false;
+    document.body.style.overflow = 'hidden';
+    setTimeout(function () { roleTypeEls.label.focus(); }, 60);
+  }
+
+  function closeRoleTypesModal() {
+    roleTypeEls.modal.hidden = true;
+    document.body.style.overflow = '';
+  }
+
+  function resetRoleTypeForm() {
+    roleTypeEls.form.reset();
+    roleTypeEls.id.value = '';
+    roleTypeEls.cancelBtn.hidden = true;
+    const lbl = roleTypeEls.saveBtn.querySelector('.btn__label');
+    if (lbl) lbl.textContent = 'Adicionar';
+    clearRoleTypeFeedback();
+  }
+
+  function renderRoleTypesList() {
+    if (!roleTypeEls.list) return;
+
+    const lista = callerIsAdmin()
+      ? state.roleTypes
+      : state.roleTypes.filter(function (rt) {
+          return String(rt.base_role || '').toLowerCase() === 'user';
+        });
+
+    roleTypeEls.list.innerHTML = '';
+
+    if (lista.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'state-block state-block--compact';
+      empty.innerHTML = '<p>Nenhum tipo cadastrado ainda.</p>';
+      roleTypeEls.list.appendChild(empty);
+      return;
+    }
+
+    lista.forEach(function (rt) {
+      roleTypeEls.list.appendChild(buildRoleTypeRow(rt));
+    });
+  }
+
+  function buildRoleTypeRow(rt) {
+    const row = document.createElement('div');
+    row.className = 'role-type-item role-type-item--custom';
+
+    const info = document.createElement('div');
+    info.className = 'role-type-item__info';
+
+    const label = document.createElement('div');
+    label.className = 'role-type-item__label';
+    label.textContent = rt.label;
+
+    const meta = document.createElement('div');
+    meta.className = 'role-type-item__meta';
+    meta.textContent = rt.slug + ' · base: ' + roleLabel(rt.base_role);
+
+    info.appendChild(label);
+    info.appendChild(meta);
+
+    const actions = document.createElement('div');
+    actions.className = 'role-type-item__actions';
+
+    const editBtn = document.createElement('button');
+    editBtn.type = 'button';
+    editBtn.className = 'row-action';
+    editBtn.title = 'Editar';
+    editBtn.setAttribute('aria-label', 'Editar ' + rt.label);
+    editBtn.innerHTML =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"' +
+      ' stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
+    editBtn.addEventListener('click', function () { editRoleType(rt); });
+
+    const delBtn = document.createElement('button');
+    delBtn.type = 'button';
+    delBtn.className = 'row-action row-action--danger';
+    delBtn.title = 'Excluir';
+    delBtn.setAttribute('aria-label', 'Excluir ' + rt.label);
+    delBtn.innerHTML =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"' +
+      ' stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>' +
+      '<path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>' +
+      '<path d="M10 11v6M14 11v6"/></svg>';
+    delBtn.addEventListener('click', function () { deleteRoleType(rt); });
+
+    actions.appendChild(editBtn);
+    actions.appendChild(delBtn);
+
+    row.appendChild(info);
+    row.appendChild(actions);
+    return row;
+  }
+
+  function editRoleType(rt) {
+    roleTypeEls.id.value = rt.id;
+    roleTypeEls.label.value = rt.label;
+    roleTypeEls.slug.value = rt.slug;
+
+    const wanted = String(rt.base_role || 'user').toLowerCase();
+    const exists = Array.from(roleTypeEls.base.options).some(function (o) {
+      return String(o.value).toLowerCase() === wanted;
+    });
+    roleTypeEls.base.value = exists ? wanted : 'user';
+
+    roleTypeEls.cancelBtn.hidden = false;
+    const lbl = roleTypeEls.saveBtn.querySelector('.btn__label');
+    if (lbl) lbl.textContent = 'Salvar alterações';
+    roleTypeEls.label.focus();
+  }
+
+  async function onSubmitRoleType(event) {
+    event.preventDefault();
+    clearRoleTypeFeedback();
+
+    const id    = roleTypeEls.id.value;
+    const label = roleTypeEls.label.value.trim();
+    const base  = roleTypeEls.base.value;
+    let   slug  = roleTypeEls.slug.value.trim() || slugify(label);
+
+    if (!label) {
+      showRoleTypeFeedback('Informe o nome exibido.');
+      roleTypeEls.label.focus();
+      return;
+    }
+    if (!slug) {
+      showRoleTypeFeedback('O identificador interno não pode ficar vazio.');
+      roleTypeEls.slug.focus();
+      return;
+    }
+    if (['admin', 'gestor', 'user'].indexOf(base) === -1) {
+      showRoleTypeFeedback('Papel base inválido.');
+      return;
+    }
+
+    if (!callerIsAdmin() && base !== 'user') {
+      showRoleTypeFeedback('Apenas administradores podem criar tipos com esse papel base.');
+      return;
+    }
+    if (base === 'admin') {
+      showRoleTypeFeedback('Não é permitido criar tipos com papel base Administrador.');
+      return;
+    }
+
+    if (!state.currentOrgId) {
+      showRoleTypeFeedback('Não foi possível identificar sua empresa.');
+      return;
+    }
+
+    setRoleTypeBusy(true);
+
+    try {
+      if (id) {
+        const { error } = await window.db
+          .from('role_types')
+          .update({ slug: slug, label: label, base_role: base })
+          .eq('id', id);
+        if (error) throw error;
+        showToast('Tipo atualizado.', 'success');
+      } else {
+        const { error } = await window.db
+          .from('role_types')
+          .insert({
+            organization_id: state.currentOrgId,
+            slug: slug,
+            label: label,
+            base_role: base,
+            active: true
+          });
+        if (error) throw error;
+        showToast('Tipo criado.', 'success');
+      }
+
+      resetRoleTypeForm();
+      await loadRoleTypes();
+    } catch (error) {
+      console.error('[DEV HUB] Falha ao salvar tipo de perfil:', error);
+      const msg = String(error.message || '').toLowerCase();
+      if (msg.includes('duplicate') || msg.includes('unique')) {
+        showRoleTypeFeedback('Já existe um tipo com este identificador.');
+      } else if (msg.includes('row-level security') || msg.includes('permission')) {
+        showRoleTypeFeedback('Você não tem permissão para criar este tipo.');
+      } else {
+        showRoleTypeFeedback(error.message || 'Não foi possível salvar.');
+      }
+    } finally {
+      setRoleTypeBusy(false);
+    }
+  }
+
+  async function deleteRoleType(rt) {
+    if (!window.confirm(
+      'Excluir o tipo "' + rt.label + '"?\n\n' +
+      'Usuários já vinculados a ele continuarão existindo, mas o nome exibido ' +
+      'cairá para o papel base.'
+    )) return;
+
+    setRoleTypeBusy(true);
+    try {
+      const { error } = await window.db
+        .from('role_types')
+        .delete()
+        .eq('id', rt.id);
+      if (error) throw error;
+
+      showToast('Tipo excluído.', 'success');
+      await loadRoleTypes();
+      await loadMembers();
+    } catch (error) {
+      console.error('[DEV HUB] Falha ao excluir tipo:', error);
+      showToast('Não foi possível excluir o tipo.', 'error');
+    } finally {
+      setRoleTypeBusy(false);
+    }
+  }
+
+  function setRoleTypeBusy(busy) {
+    if (roleTypeEls.saveBtn) {
+      roleTypeEls.saveBtn.disabled = busy;
+      roleTypeEls.saveBtn.classList.toggle('is-loading', busy);
+      roleTypeEls.saveBtn.setAttribute('aria-busy', String(busy));
+    }
+  }
+
+  function showRoleTypeFeedback(msg) {
+    if (!roleTypeEls.feedback) return;
+    roleTypeEls.feedback.textContent = msg;
+    roleTypeEls.feedback.hidden = false;
+  }
+  function clearRoleTypeFeedback() {
+    if (!roleTypeEls.feedback) return;
+    roleTypeEls.feedback.textContent = '';
+    roleTypeEls.feedback.hidden = true;
+  }
+
+  /* =========================================================
+     Modal: confirmar ação (toggle / delete)
      ========================================================= */
   const confirmEls = {};
 
@@ -865,12 +1331,6 @@
         'Excluir "' + name + '"? Essa ação removerá o acesso do usuário ao Dev Hub. ' +
         'Os dados operacionais (clientes, produtos, vendas) não são afetados.';
       setConfirmButton('Excluir acesso', 'danger');
-    } else if (type === 'reset') {
-      confirmEls.text.textContent =
-        'Enviar e-mail de redefinição de senha para "' + name + '"' +
-        (member.email ? ' (' + member.email + ')' : '') + '? ' +
-        'Ele(a) receberá um link para criar uma nova senha.';
-      setConfirmButton('Enviar e-mail', 'primary');
     }
 
     confirmEls.modal.hidden = false;
@@ -907,10 +1367,7 @@
 
         if (error) throw error;
 
-        showToast(
-          newActive ? 'Usuário ativado.' : 'Usuário desativado.',
-          'success'
-        );
+        showToast(newActive ? 'Usuário ativado.' : 'Usuário desativado.', 'success');
       } else if (type === 'delete') {
         const { error } = await window.db
           .from('organization_members')
@@ -920,20 +1377,6 @@
         if (error) throw error;
 
         showToast('Acesso do usuário removido.', 'success');
-      } else if (type === 'reset') {
-        if (!member.email) throw new Error('Este usuário não possui e-mail cadastrado.');
-
-        const redirectTo = window.location.origin +
-          window.location.pathname.replace(/[^/]*$/, 'index.html');
-
-        const { error } = await window.db.auth.resetPasswordForEmail(
-          member.email,
-          { redirectTo: redirectTo }
-        );
-
-        if (error) throw error;
-
-        showToast('E-mail de redefinição enviado para ' + member.email + '.', 'success');
       }
 
       confirmEls.modal.hidden = true;
@@ -964,14 +1407,21 @@
     const msg = String(error.message || '');
     const lower = msg.toLowerCase();
 
+    if (lower.includes('senha atual do funcionário está incorreta')) {
+      return 'A senha atual do funcionário está incorreta. Confira e tente novamente.';
+    }
+    if (lower.includes('nova senha precisa')) return msg;
+    if (lower.includes('não pode alterar a senha de um administrador')) return msg;
+    if (lower.includes('apenas administradores podem alterar senhas de gestores')) return msg;
+    if (lower.includes('não pertence à sua empresa')) return msg;
     if (lower.includes('prevent_self_removal') || lower.includes('próprio')) {
       return 'Você não pode remover seu próprio acesso.';
     }
+    if (lower.includes('apenas administradores')) {
+      return 'Apenas administradores podem executar esta ação.';
+    }
     if (lower.includes('row-level security') || lower.includes('permission denied')) {
       return 'Você não tem permissão para executar esta ação.';
-    }
-    if (lower.includes('rate limit') || lower.includes('too many requests') || lower.includes('for security purposes')) {
-      return 'Muitos e-mails de redefinição enviados recentemente. Aguarde alguns instantes e tente novamente.';
     }
     if (lower.includes('failed to fetch') || lower.includes('network')) {
       return 'Não foi possível conectar ao servidor.';

@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Gestão · DEV HUB</title>
 
+  <script src="js/theme.js"></script>
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -12,139 +14,16 @@
   <link rel="stylesheet" href="css/global.css" />
   <link rel="stylesheet" href="css/dashboard.css" />
   <link rel="stylesheet" href="css/clientes.css" />
+  <link rel="stylesheet" href="css/theme.css" />
   <link rel="stylesheet" href="css/gestao.css" />
 </head>
 <body data-page="management">
 
   <a class="skip-link" href="#main">Pular para o conteúdo principal</a>
 
-  <!-- ================= SIDEBAR ================= -->
-  <aside class="sidebar" id="sidebar" aria-label="Menu principal">
-
-    <div class="sidebar__brand">
-      <span class="brand__mark" aria-hidden="true">DH</span>
-      <span class="brand__name">DEV HUB</span>
-    </div>
-
-    <nav class="nav" aria-label="Módulos">
-      <p class="nav__label">Operação</p>
-
-      <a class="nav__item" href="dashboard.html">
-        <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <rect x="3" y="3" width="7.5" height="7.5" rx="1.8" />
-          <rect x="13.5" y="3" width="7.5" height="7.5" rx="1.8" />
-          <rect x="3" y="13.5" width="7.5" height="7.5" rx="1.8" />
-          <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.8" />
-        </svg>
-        <span>Dashboard</span>
-      </a>
-
-      <a class="nav__item" href="vendas.html">
-        <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <circle cx="9" cy="20" r="1.4" />
-          <circle cx="18" cy="20" r="1.4" />
-          <path d="M2.5 3.5h2.3l2.3 11.6a1.8 1.8 0 0 0 1.8 1.4h8.8a1.8 1.8 0 0 0 1.8-1.4L21 7.5H6" />
-        </svg>
-        <span>Vendas</span>
-      </a>
-
-      <a class="nav__item" href="notas.html">
-        <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M14 2.5H7A2 2 0 0 0 5 4.5v15a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7.5z" />
-          <path d="M14 2.5v5h5" />
-          <path d="M9 13h6M9 17h4" />
-        </svg>
-        <span>Notas</span>
-      </a>
-
-      <a class="nav__item" href="clientes.html">
-        <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M16 20v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20" />
-          <circle cx="9" cy="7.5" r="3.5" />
-          <path d="M22 20v-1.5a4 4 0 0 0-3-3.87" />
-          <path d="M16.5 4.13a4 4 0 0 1 0 7.75" />
-        </svg>
-        <span>Clientes</span>
-      </a>
-
-      <a class="nav__item" href="produtos.html">
-        <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="m21 8-9-5-9 5v8l9 5 9-5z" />
-          <path d="m3 8 9 5 9-5" />
-          <path d="M12 21v-8" />
-        </svg>
-        <span>Produtos</span>
-      </a>
-
-      <a class="nav__item" href="estoque.html">
-        <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="m12 2.5 9 5-9 5-9-5z" />
-          <path d="m3 12.5 9 5 9-5" />
-          <path d="m3 17.5 9 5 9-5" />
-        </svg>
-        <span>Estoque</span>
-      </a>
-
-      <a class="nav__item" href="relatorios.html">
-        <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M3 3v16a2 2 0 0 0 2 2h16" />
-          <path d="m7 15 3.5-4 3 2.5L20 7" />
-        </svg>
-        <span>Relatórios</span>
-      </a>
-    </nav>
-
-    <div class="sidebar__spacer"></div>
-
-    <nav class="nav" aria-label="Sistema">
-      <div class="nav__sep" role="presentation"></div>
-
-      <!-- Gestão: aparece para admin (e futuramente leader via capability) -->
-      <a class="nav__item is-active" href="gestao.html" aria-current="page"
-         data-require-capability="management">
-        <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M16 20v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20" />
-          <circle cx="9" cy="7.5" r="3.5" />
-          <path d="M22 20v-1.5a4 4 0 0 0-3-3.87" />
-          <path d="M16.5 4.13a4 4 0 0 1 0 7.75" />
-        </svg>
-        <span>Gestão</span>
-      </a>
-
-      <a class="nav__item" href="configuracoes.html">
-        <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M20 7h-9" />
-          <path d="M14 17H5" />
-          <circle cx="17" cy="17" r="3" />
-          <circle cx="7" cy="7" r="3" />
-        </svg>
-        <span>Configurações</span>
-      </a>
-
-      <button type="button" class="nav__item nav__item--danger" data-action="logout">
-        <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-          <path d="m16 17 5-5-5-5" />
-          <path d="M21 12H9" />
-        </svg>
-        <span>Sair</span>
-      </button>
-    </nav>
-  </aside>
-
+  <aside class="sidebar" id="sidebar" aria-label="Menu principal"></aside>
   <div class="sidebar-overlay" id="sidebar-overlay" hidden></div>
 
-  <!-- ================= ÁREA PRINCIPAL ================= -->
   <div class="app__body">
 
     <header class="topbar">
@@ -184,9 +63,6 @@
           </button>
 
           <div class="user-menu__panel" id="user-menu-panel" role="menu" hidden>
-            <button type="button" class="menu-item" role="menuitem" aria-disabled="true">
-              Perfil <span class="menu-item__tag">Em breve</span>
-            </button>
             <a class="menu-item" role="menuitem" href="configuracoes.html">
               Configurações
             </a>
@@ -269,6 +145,17 @@
           </div>
 
           <div class="toolbar__actions">
+            <button type="button" class="btn btn--ghost" id="role-types-open-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+                   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
+                   style="width:16px;height:16px">
+                <path d="M12 2 2 7l10 5 10-5z"/>
+                <path d="m2 17 10 5 10-5"/>
+                <path d="m2 12 10 5 10-5"/>
+              </svg>
+              <span>Tipos de perfil</span>
+            </button>
+
             <button type="button" class="btn btn--primary" id="new-user-btn">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
@@ -321,7 +208,7 @@
     </main>
   </div>
 
-  <!-- ================= MODAL: NOVO USUÁRIO ================= -->
+  <!-- ================= MODAL: NOVO USUÁRIO / EDITAR ================= -->
   <div class="modal" id="user-modal" hidden>
     <div class="modal__backdrop" data-close-modal></div>
 
@@ -339,8 +226,8 @@
       <form id="user-form" class="modal__body" novalidate>
 
         <div class="field">
-          <label for="user-name">Nome completo *</label>
-          <input type="text" id="user-name" autocomplete="name" required maxlength="150" />
+          <label for="user-form-name">Nome completo *</label>
+          <input type="text" id="user-form-name" autocomplete="name" required maxlength="150" />
         </div>
 
         <div class="field">
@@ -374,14 +261,70 @@
         </div>
 
         <div class="field">
-          <label for="user-role">Perfil *</label>
-          <select id="user-role" required>
-            <option value="user" selected>Funcionário</option>
-            <option value="leader" disabled>Líder (em breve)</option>
-          </select>
+          <label for="user-form-role">Perfil *</label>
+          <select id="user-form-role" required></select>
           <p class="field__hint">
-            Administradores não podem ser criados por esta tela.
+            O perfil define as permissões. Tipos personalizados herdam o papel base.
           </p>
+        </div>
+
+        <!-- ===== Troca de senha (só em modo edição) ===== -->
+        <div id="user-password-change-block" hidden>
+
+          <div class="field" style="margin-top:14px;">
+            <label for="user-current-password">Senha atual do funcionário</label>
+            <div class="field__control">
+              <input type="password" id="user-current-password"
+                     autocomplete="off" maxlength="72" />
+              <button type="button" class="pw-toggle"
+                      data-pw-toggle="user-current-password"
+                      aria-label="Mostrar senha" aria-pressed="false">
+                <svg class="pw-toggle__icon pw-toggle__icon--show" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="1.75" stroke-linecap="round"
+                     stroke-linejoin="round" aria-hidden="true">
+                  <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+                <svg class="pw-toggle__icon pw-toggle__icon--hide" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="1.75" stroke-linecap="round"
+                     stroke-linejoin="round" aria-hidden="true">
+                  <path d="M9.9 5.7A9.6 9.6 0 0 1 12 5.5c6 0 9.5 6.5 9.5 6.5a17 17 0 0 1-3.2 4.1" />
+                  <path d="M6.3 6.3A17 17 0 0 0 2.5 12S6 18.5 12 18.5a9.4 9.4 0 0 0 4.2-.95" />
+                  <path d="m3 3 18 18" />
+                </svg>
+              </button>
+            </div>
+            <p class="field__hint">
+              Digite a senha atual do usuário para poder trocá-la. Deixe em branco
+              para manter a senha atual.
+            </p>
+          </div>
+
+          <div class="field">
+            <label for="user-new-password">Nova senha</label>
+            <div class="field__control">
+              <input type="password" id="user-new-password"
+                     autocomplete="new-password" minlength="6" maxlength="72" />
+              <button type="button" class="pw-toggle"
+                      data-pw-toggle="user-new-password"
+                      aria-label="Mostrar senha" aria-pressed="false">
+                <svg class="pw-toggle__icon pw-toggle__icon--show" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="1.75" stroke-linecap="round"
+                     stroke-linejoin="round" aria-hidden="true">
+                  <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+                <svg class="pw-toggle__icon pw-toggle__icon--hide" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="1.75" stroke-linecap="round"
+                     stroke-linejoin="round" aria-hidden="true">
+                  <path d="M9.9 5.7A9.6 9.6 0 0 1 12 5.5c6 0 9.5 6.5 9.5 6.5a17 17 0 0 1-3.2 4.1" />
+                  <path d="M6.3 6.3A17 17 0 0 0 2.5 12S6 18.5 12 18.5a9.4 9.4 0 0 0 4.2-.95" />
+                  <path d="m3 3 18 18" />
+                </svg>
+              </button>
+            </div>
+            <p class="field__hint">Mínimo de 6 caracteres.</p>
+          </div>
         </div>
 
         <p id="user-form-feedback" class="feedback feedback--error" role="alert" aria-live="polite" hidden></p>
@@ -394,6 +337,88 @@
           </button>
         </footer>
       </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: TIPOS DE PERFIL ================= -->
+  <div class="modal" id="role-types-modal" hidden>
+    <div class="modal__backdrop" data-close-modal></div>
+
+    <div class="modal__dialog modal__dialog--lg" role="dialog" aria-modal="true"
+         aria-labelledby="role-types-title">
+      <header class="modal__head">
+        <h2 class="modal__title" id="role-types-title">Tipos de perfil</h2>
+        <button type="button" class="icon-btn modal__close" aria-label="Fechar" data-close-modal>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+               stroke-linecap="round" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
+      </header>
+
+      <div class="modal__body">
+
+        <p class="confirm-text">
+          Crie tipos como <strong>Líder</strong>, <strong>Encarregado</strong> ou
+          <strong>Supervisor</strong>. Cada tipo herda as permissões de um papel base
+          (Funcionário, Gestor ou Administrador) — só muda o nome exibido.
+        </p>
+
+        <form id="role-type-form" class="role-type-form" novalidate>
+          <input type="hidden" id="role-type-id" />
+
+          <div class="form-grid">
+            <div class="field">
+              <label for="role-type-label">Nome exibido *</label>
+              <input type="text" id="role-type-label" maxlength="40" required
+                     placeholder="Ex.: Líder de turno" />
+            </div>
+
+            <div class="field">
+              <label for="role-type-base">Permissões (papel base) *</label>
+              <select id="role-type-base" required>
+                <option value="user">Funcionário</option>
+                <option value="gestor">Gestor</option>
+                <option value="admin">Administrador</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="role-type-slug">Identificador interno</label>
+            <input type="text" id="role-type-slug" maxlength="40"
+                   placeholder="Ex.: lider-turno"
+                   style="text-transform: lowercase;" />
+            <p class="field__hint">
+              Gerado automaticamente a partir do nome. Use apenas letras, números e hífen.
+            </p>
+          </div>
+
+          <p id="role-type-feedback" class="feedback feedback--error"
+             role="alert" aria-live="polite" hidden></p>
+
+          <div class="role-type-form__actions">
+            <button type="button" class="btn btn--ghost" id="role-type-cancel-btn" hidden>
+              Cancelar edição
+            </button>
+            <button type="submit" class="btn btn--primary" id="role-type-save-btn">
+              <span class="btn__label">Adicionar</span>
+              <span class="btn__spinner" aria-hidden="true"></span>
+            </button>
+          </div>
+        </form>
+
+        <div class="role-types-list" id="role-types-list">
+          <div class="state-block state-block--compact">
+            <span class="spinner" aria-hidden="true"></span>
+            <p>Carregando tipos…</p>
+          </div>
+        </div>
+
+        <footer class="modal__foot">
+          <button type="button" class="btn btn--ghost" data-close-modal>Fechar</button>
+        </footer>
+      </div>
     </div>
   </div>
 
@@ -429,7 +454,6 @@
     </div>
   </div>
 
-  <!-- ================= TOASTS ================= -->
   <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="false"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

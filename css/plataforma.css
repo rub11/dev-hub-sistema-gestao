@@ -63,3 +63,88 @@
 @media (max-width: 720px) {
   .cell-org small { max-width: 200px; }
 }
+
+.modal__foot--split {
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.modal__foot-actions {
+  display: flex;
+  gap: 10px;
+}
+@media (max-width: 520px) {
+  .modal__foot--split { flex-direction: column; align-items: stretch; }
+  .modal__foot-actions { flex-direction: column-reverse; }
+  .modal__foot-actions .btn { width: 100%; }
+}
+
+/* =========================================================
+   Super admin · gerenciar empresas do usuário
+   ========================================================= */
+.org-manage__user {
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  margin-bottom: 14px;
+}
+.org-manage__user strong { display: block; font-size: 14px; color: var(--text); }
+.org-manage__user small  { display: block; font-size: 12.5px; color: var(--text-muted); margin-top: 2px; }
+
+.org-manage__list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 360px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.org-manage__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  transition: border-color var(--transition), background-color var(--transition);
+}
+.org-manage__row:hover { border-color: var(--border-strong); }
+.org-manage__row.is-member {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.org-manage__row input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.org-manage__row-info { flex: 1 1 auto; min-width: 0; }
+.org-manage__row-name { font-size: 14px; font-weight: 600; color: var(--text); }
+.org-manage__row-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+.org-manage__row select {
+  flex: none;
+  height: 36px;
+  padding: 0 30px 0 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--surface);
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23667085' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 14px;
+}
+.org-manage__row select:disabled { opacity: 0.4; cursor: not-allowed; }

@@ -18,136 +18,14 @@
 
   <a class="skip-link" href="#main">Pular para o conteúdo principal</a>
 
-  <!-- ================= SIDEBAR ================= -->
-  
-
-<aside class="sidebar" id="sidebar" aria-label="Menu principal">
-
-  <div class="sidebar__brand">
-    <span class="brand__mark" aria-hidden="true">DH</span>
-    <span class="brand__name">DEV HUB</span>
-  </div>
-
-  <nav class="nav" aria-label="Módulos">
-    <p class="nav__label">Operação</p>
-
-    <a class="nav__item" href="dashboard.html">
-      <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <rect x="3" y="3" width="7.5" height="7.5" rx="1.8" />
-        <rect x="13.5" y="3" width="7.5" height="7.5" rx="1.8" />
-        <rect x="3" y="13.5" width="7.5" height="7.5" rx="1.8" />
-        <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.8" />
-      </svg>
-      <span>Dashboard</span>
-    </a>
-
-    <a class="nav__item" href="vendas.html">
-      <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <circle cx="9" cy="20" r="1.4" />
-        <circle cx="18" cy="20" r="1.4" />
-        <path d="M2.5 3.5h2.3l2.3 11.6a1.8 1.8 0 0 0 1.8 1.4h8.8a1.8 1.8 0 0 0 1.8-1.4L21 7.5H6" />
-      </svg>
-      <span>Vendas</span>
-    </a>
-
-   <a class="nav__item" href="notas.html">
-  <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-       stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-    <path d="M14 2.5H7A2 2 0 0 0 5 4.5v15a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7.5z" />
-    <path d="M14 2.5v5h5" />
-    <path d="M9 13h6M9 17h4" />
-  </svg>
-  <span>Notas</span>
-</a>
-
-    <a class="nav__item" href="clientes.html">
-      <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M16 20v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20" />
-        <circle cx="9" cy="7.5" r="3.5" />
-        <path d="M22 20v-1.5a4 4 0 0 0-3-3.87" />
-        <path d="M16.5 4.13a4 4 0 0 1 0 7.75" />
-      </svg>
-      <span>Clientes</span>
-    </a>
-
-    <a class="nav__item is-active" href="produtos.html" aria-current="page">
-      <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="m21 8-9-5-9 5v8l9 5 9-5z" />
-        <path d="m3 8 9 5 9-5" />
-        <path d="M12 21v-8" />
-      </svg>
-      <span>Produtos</span>
-    </a>
-
-    <a class="nav__item" href="estoque.html">
-      <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="m12 2.5 9 5-9 5-9-5z" />
-        <path d="m3 12.5 9 5 9-5" />
-        <path d="m3 17.5 9 5 9-5" />
-      </svg>
-      <span>Estoque</span>
-    </a>
-
-    <a class="nav__item" href="relatorios.html">
-      <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M3 3v16a2 2 0 0 0 2 2h16" />
-        <path d="m7 15 3.5-4 3 2.5L20 7" />
-      </svg>
-      <span>Relatórios</span>
-    </a>
-  </nav>
-
-  <div class="sidebar__spacer"></div>
-
-  <nav class="nav" aria-label="Sistema">
-    <div class="nav__sep" role="presentation"></div>
-
-    <a class="nav__item" href="configuracoes.html">
-      <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M20 7h-9" />
-        <path d="M14 17H5" />
-        <circle cx="17" cy="17" r="3" />
-        <circle cx="7" cy="7" r="3" />
-      </svg>
-      <span>Configurações</span>
-    </a>
-
-    <button type="button" class="nav__item nav__item--danger" data-action="logout">
-      <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-        <path d="m16 17 5-5-5-5" />
-        <path d="M21 12H9" />
-      </svg>
-      <span>Sair</span>
-    </button>
-  </nav>
-</aside>
-
-
-
-
+  <aside class="sidebar" id="sidebar" aria-label="Menu principal"></aside>
   <div class="sidebar-overlay" id="sidebar-overlay" hidden></div>
 
-  <!-- ================= ÁREA PRINCIPAL ================= -->
   <div class="app__body">
 
     <header class="topbar">
-      <button
-        type="button"
-        class="icon-btn menu-toggle"
-        id="menu-toggle"
-        aria-label="Abrir menu"
-        aria-expanded="false"
-        aria-controls="sidebar"
-      >
+      <button type="button" class="icon-btn menu-toggle" id="menu-toggle"
+              aria-label="Abrir menu" aria-expanded="false" aria-controls="sidebar">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
              stroke-linecap="round" aria-hidden="true">
           <path d="M3.5 6.5h17M3.5 12h17M3.5 17.5h17" />
@@ -157,15 +35,8 @@
       <span class="topbar__brand">DEV HUB</span>
 
       <div class="topbar__actions">
-
-        <button
-          type="button"
-          class="icon-btn"
-          id="notifications-btn"
-          aria-label="Notificações (em breve)"
-          title="Em breve"
-          disabled
-        >
+        <button type="button" class="icon-btn" id="notifications-btn"
+                aria-label="Notificações (em breve)" title="Em breve" disabled>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M18 8.5a6 6 0 1 0-12 0c0 6.5-2.5 8.5-2.5 8.5h17S18 15 18 8.5" />
@@ -174,14 +45,8 @@
         </button>
 
         <div class="user-menu">
-          <button
-            type="button"
-            class="user-menu__trigger"
-            id="user-menu-trigger"
-            aria-haspopup="true"
-            aria-expanded="false"
-            aria-controls="user-menu-panel"
-          >
+          <button type="button" class="user-menu__trigger" id="user-menu-trigger"
+                  aria-haspopup="true" aria-expanded="false" aria-controls="user-menu-panel">
             <span class="avatar" id="user-avatar" aria-hidden="true">–</span>
             <span class="user-menu__meta">
               <span class="user-menu__name" id="user-name">Carregando…</span>
@@ -197,16 +62,13 @@
             <button type="button" class="menu-item" role="menuitem" aria-disabled="true">
               Perfil <span class="menu-item__tag">Em breve</span>
             </button>
-            <button type="button" class="menu-item" role="menuitem" aria-disabled="true">
-              Configurações <span class="menu-item__tag">Em breve</span>
-            </button>
+            <a class="menu-item" role="menuitem" href="configuracoes.html">Configurações</a>
             <div class="menu-item__sep" role="separator"></div>
             <button type="button" class="menu-item menu-item--danger" role="menuitem" data-action="logout">
               Sair
             </button>
           </div>
         </div>
-
       </div>
     </header>
 
@@ -225,7 +87,6 @@
 
       <section class="panel" aria-labelledby="products-title">
 
-        <!-- Toolbar: busca + botão novo -->
         <div class="panel__head toolbar">
           <div class="toolbar__info">
             <h2 class="panel__title" id="products-title">Lista de produtos</h2>
@@ -241,14 +102,10 @@
                   <path d="m20 20-3.5-3.5" />
                 </svg>
               </span>
-              <input
-                type="search"
-                id="search-input"
-                class="search__input"
-                placeholder="Buscar produtos..."
-                aria-label="Buscar produtos por nome, código ou descrição"
-                autocomplete="off"
-              />
+              <input type="search" id="search-input" class="search__input"
+                     placeholder="Buscar produtos..."
+                     aria-label="Buscar produtos por nome, código ou descrição"
+                     autocomplete="off" />
             </div>
 
             <button type="button" class="btn btn--primary" id="new-product-btn">
@@ -262,13 +119,11 @@
           </div>
         </div>
 
-        <!-- Estado de carregamento -->
         <div id="products-loading" class="state-block">
           <span class="spinner" aria-hidden="true"></span>
           <p>Carregando produtos...</p>
         </div>
 
-        <!-- Estado vazio -->
         <div id="products-empty" class="state-block" hidden>
           <div class="state-block__icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
@@ -285,7 +140,6 @@
           </button>
         </div>
 
-        <!-- Tabela -->
         <div class="table-wrap" id="products-table-wrap" hidden>
           <table>
             <caption class="sr-only">Lista de produtos cadastrados</caption>
@@ -313,7 +167,8 @@
   <div class="modal" id="product-modal" hidden>
     <div class="modal__backdrop" data-close-modal></div>
 
-    <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="product-modal-title">
+    <div class="modal__dialog modal__dialog--lg" role="dialog" aria-modal="true"
+         aria-labelledby="product-modal-title">
       <header class="modal__head">
         <h2 class="modal__title" id="product-modal-title">Novo produto</h2>
         <button type="button" class="icon-btn modal__close" aria-label="Fechar" data-close-modal>
@@ -327,43 +182,61 @@
       <form id="product-form" class="modal__body" novalidate>
         <input type="hidden" id="product-id" />
 
+        <!-- Fotos -->
         <div class="field">
-          <label for="product-name">Nome *</label>
-          <input type="text" id="product-name" name="name" autocomplete="off" required maxlength="150" />
+          <label>Fotos do produto</label>
+          <div class="product-photos" id="product-photos">
+            <!-- 3 slots gerados por JS -->
+          </div>
+          <p class="field__hint">Até 3 imagens. JPG, PNG ou WEBP, máx. 2 MB cada.</p>
         </div>
 
         <div class="field">
-          <label for="product-code">Código</label>
-          <input type="text" id="product-code" name="code" autocomplete="off" maxlength="60" />
+          <label for="product-name">Nome *</label>
+          <input type="text" id="product-name" autocomplete="off" required maxlength="150" />
+        </div>
+
+        <div class="form-grid">
+          <div class="field">
+            <label for="product-code">Código interno</label>
+            <input type="text" id="product-code" autocomplete="off" maxlength="60" />
+          </div>
+
+          <div class="field">
+            <label for="product-barcode">Código de barras (EAN)</label>
+            <input type="text" id="product-barcode" autocomplete="off" inputmode="numeric"
+                   maxlength="40" placeholder="Ex.: 7891234567890" />
+          </div>
         </div>
 
         <div class="field">
           <label for="product-description">Descrição</label>
-          <textarea id="product-description" name="description" rows="3" maxlength="500"></textarea>
+          <textarea id="product-description" rows="3" maxlength="500"></textarea>
         </div>
 
         <div class="form-grid">
           <div class="field">
             <label for="product-price">Preço (R$) *</label>
-            <input type="number" id="product-price" name="price" step="0.01" min="0" inputmode="decimal" required />
+            <input type="number" id="product-price" step="0.01" min="0"
+                   inputmode="decimal" required />
           </div>
 
           <div class="field">
             <label for="product-stock">Estoque inicial</label>
-            <input type="number" id="product-stock" name="stock" step="1" min="0" inputmode="numeric" />
+            <input type="number" id="product-stock" step="1" min="0" inputmode="numeric" />
           </div>
         </div>
 
         <div class="form-grid">
           <div class="field">
             <label for="product-minimum-stock">Estoque mínimo</label>
-            <input type="number" id="product-minimum-stock" name="minimum_stock" step="1" min="0" inputmode="numeric" />
+            <input type="number" id="product-minimum-stock" step="1" min="0" inputmode="numeric" />
           </div>
 
           <div class="field">
             <label for="product-active">Situação</label>
             <label class="switch" for="product-active">
-              <input type="checkbox" id="product-active" name="active" />
+              <input type="checkbox" id="product-active" />
               <span class="switch__track" aria-hidden="true">
                 <span class="switch__thumb"></span>
               </span>
@@ -372,7 +245,8 @@
           </div>
         </div>
 
-        <p id="product-form-feedback" class="feedback feedback--error" role="alert" aria-live="polite" hidden></p>
+        <p id="product-form-feedback" class="feedback feedback--error"
+           role="alert" aria-live="polite" hidden></p>
 
         <footer class="modal__foot">
           <button type="button" class="btn btn--ghost" data-close-modal>Cancelar</button>
@@ -417,13 +291,12 @@
     </div>
   </div>
 
-  <!-- ================= TOASTS ================= -->
   <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="false"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/supabase.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/nav.js"></script>
-<script src="js/produtos.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/nav.js"></script>
+  <script src="js/produtos.js"></script>
 </body>
 </html>

@@ -1,19 +1,22 @@
 /* =========================================================
    DEV HUB · Módulo de Produtos
    ---------------------------------------------------------
-   Usa apenas window.db (cliente já criado em js/supabase.js)
+   - CRUD de produtos
+   - Até 3 fotos (Supabase Storage: bucket `product-images`)
+   - Código interno + código de barras (EAN)
    ========================================================= */
 
 (function () {
   'use strict';
 
-  /* ---------- Formatadores ---------- */
   const currencyFormatter = new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL'
+    style: 'currency', currency: 'BRL'
   });
 
-  /* ---------- Estado interno ---------- */
+  const MAX_PHOTOS = 3;
+  const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+  const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
   const state = {
     all: [],
     filtered: [],
@@ -21,22 +24,25 @@
     editingId: null,
     deletingId: null,
     saving: false,
-    deleting: false
+    deleting: false,
+
+    // Fotos: array de até 3 slots.
+    // Cada slot: { url: string|null, file: File|null, uploading: boolean, removing: boolean }
+    // url = URL já persistida no banco
+    // file = arquivo novo ainda não upado
+    photos: []
   };
 
   document.addEventListener('DOMContentLoaded', init);
 
   /* =========================================================
-     Inicialização
+     Init
      ========================================================= */
   async function init() {
     const Auth = window.Auth;
 
     if (!Auth || !Auth.isConfigured() || !window.db) {
-      showGlobalAlert(
-        'Não foi possível conectar ao Supabase. Verifique as credenciais em js/supabase.js.',
-        'error'
-      );
+      showGlobalAlert('Não foi possível conectar ao Supabase.', 'error');
       return;
     }
 
@@ -46,6 +52,7 @@
     setupSearch();
     setupToolbar();
     setupProductForm();
+    setupPhotoSlots();
     setupConfirmModal();
 
     const session = await Auth.requireSession();
@@ -60,7 +67,7 @@
   }
 
   /* =========================================================
-     Sessão
+     Sessão / usuário
      ========================================================= */
   function watchAuthChanges() {
     window.db.auth.onAuthStateChange(function (event) {
@@ -70,16 +77,11 @@
     });
   }
 
-  /* =========================================================
-     Usuário (topbar)
-     ========================================================= */
   function renderUser(user, profile) {
     const meta = user.user_metadata || {};
-
     const fullName =
       (profile && profile.name) ||
-      meta.name ||
-      meta.full_name ||
+      meta.name || meta.full_name ||
       (user.email ? user.email.split('@')[0] : '') ||
       'Usuário';
 
@@ -94,17 +96,13 @@
 
     const roleBadge = document.getElementById('greeting-role');
     if (roleBadge) {
-      if (roleText) {
-        roleBadge.textContent = roleText;
-        roleBadge.hidden = false;
-      } else {
-        roleBadge.hidden = true;
-      }
+      if (roleText) { roleBadge.textContent = roleText; roleBadge.hidden = false; }
+      else { roleBadge.hidden = true; }
     }
   }
 
   /* =========================================================
-     Sidebar (mobile)
+     Sidebar / user menu / logout
      ========================================================= */
   function setupSidebar() {
     const toggle = document.getElementById('menu-toggle');
@@ -130,57 +128,32 @@
       document.body.classList.contains('sidebar-open') ? close() : open();
     });
     overlay.addEventListener('click', close);
-
-    document.addEventListener('keydown', function (event) {
-      if (event.key === 'Escape') close();
-    });
-
-    window.addEventListener('resize', function () {
-      if (window.innerWidth >= 1024) close();
-    });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+    window.addEventListener('resize', function () { if (window.innerWidth >= 1024) close(); });
   }
 
-  /* =========================================================
-     Menu do usuário
-     ========================================================= */
   function setupUserMenu() {
     const trigger = document.getElementById('user-menu-trigger');
     const panel = document.getElementById('user-menu-panel');
     if (!trigger || !panel) return;
 
-    function open() {
-      panel.hidden = false;
-      trigger.setAttribute('aria-expanded', 'true');
-      const first = panel.querySelector('.menu-item:not([aria-disabled="true"])');
-      if (first) first.focus();
-    }
-    function close() {
-      panel.hidden = true;
-      trigger.setAttribute('aria-expanded', 'false');
-    }
+    function open() { panel.hidden = false; trigger.setAttribute('aria-expanded', 'true'); }
+    function close() { panel.hidden = true; trigger.setAttribute('aria-expanded', 'false'); }
 
-    trigger.addEventListener('click', function (event) {
-      event.stopPropagation();
+    trigger.addEventListener('click', function (e) {
+      e.stopPropagation();
       panel.hidden ? open() : close();
     });
-
-    document.addEventListener('click', function (event) {
+    document.addEventListener('click', function (e) {
       if (panel.hidden) return;
-      if (panel.contains(event.target) || trigger.contains(event.target)) return;
+      if (panel.contains(e.target) || trigger.contains(e.target)) return;
       close();
     });
-
-    document.addEventListener('keydown', function (event) {
-      if (event.key === 'Escape' && !panel.hidden) {
-        close();
-        trigger.focus();
-      }
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !panel.hidden) { close(); trigger.focus(); }
     });
   }
 
-  /* =========================================================
-     Logout
-     ========================================================= */
   function setupLogout() {
     document.querySelectorAll('[data-action="logout"]').forEach(function (button) {
       button.addEventListener('click', async function () {
@@ -193,23 +166,18 @@
   }
 
   /* =========================================================
-     Toolbar (novo produto / botão do estado vazio)
+     Toolbar / busca
      ========================================================= */
   function setupToolbar() {
     const newBtn = document.getElementById('new-product-btn');
     const emptyNewBtn = document.getElementById('empty-new-btn');
-
     if (newBtn) newBtn.addEventListener('click', openCreateModal);
     if (emptyNewBtn) emptyNewBtn.addEventListener('click', openCreateModal);
   }
 
-  /* =========================================================
-     Busca (filtragem em frontend)
-     ========================================================= */
   function setupSearch() {
     const input = document.getElementById('search-input');
     if (!input) return;
-
     input.addEventListener('input', function () {
       state.search = input.value.trim().toLowerCase();
       applyFilter();
@@ -221,10 +189,11 @@
       state.filtered = state.all.slice();
     } else {
       const term = state.search;
-      state.filtered = state.all.filter(function (product) {
-        return matchesTerm(product.name, term) ||
-               matchesTerm(product.code, term) ||
-               matchesTerm(product.description, term);
+      state.filtered = state.all.filter(function (p) {
+        return matchesTerm(p.name, term) ||
+               matchesTerm(p.code, term) ||
+               matchesTerm(p.barcode, term) ||
+               matchesTerm(p.description, term);
       });
     }
     renderProducts();
@@ -236,7 +205,7 @@
   }
 
   /* =========================================================
-     Carregamento
+     Carregar produtos
      ========================================================= */
   async function loadProducts() {
     showLoading(true);
@@ -252,11 +221,8 @@
       console.error('[DEV HUB] Falha ao carregar produtos:', error);
       state.all = [];
       state.filtered = [];
-      showEmptyState(
-        'Não foi possível carregar os produtos.',
-        'Tente novamente em alguns instantes.',
-        false
-      );
+      showEmptyState('Não foi possível carregar os produtos.',
+                     'Tente novamente em alguns instantes.', false);
       updateCountLabel();
       showToast('Não foi possível carregar os produtos.', 'error');
       return;
@@ -272,10 +238,7 @@
     const label = document.getElementById('products-count');
     if (!label) return;
 
-    if (total === 0) {
-      label.textContent = 'Nenhum produto cadastrado';
-      return;
-    }
+    if (total === 0) { label.textContent = 'Nenhum produto cadastrado'; return; }
     label.textContent = total === 1
       ? '1 produto cadastrado'
       : total + ' produtos cadastrados';
@@ -291,27 +254,19 @@
 
     if (state.all.length === 0) {
       tableWrap.hidden = true;
-      showEmptyState(
-        'Nenhum produto cadastrado ainda.',
-        'Comece adicionando o primeiro produto ao catálogo.',
-        true
-      );
+      showEmptyState('Nenhum produto cadastrado ainda.',
+                     'Comece adicionando o primeiro produto ao catálogo.', true);
       return;
     }
-
     if (state.filtered.length === 0) {
       tableWrap.hidden = true;
-      showEmptyState(
-        'Nenhum produto encontrado.',
-        'Ajuste a busca para encontrar o produto desejado.',
-        false
-      );
+      showEmptyState('Nenhum produto encontrado.',
+                     'Ajuste a busca para encontrar o produto desejado.', false);
       return;
     }
 
     hideEmptyState();
     tableWrap.hidden = false;
-
     tbody.innerHTML = '';
 
     const fragment = document.createDocumentFragment();
@@ -340,15 +295,44 @@
     const cell = document.createElement('td');
     cell.className = 'cell-product';
 
+    // Thumb
+    const thumb = document.createElement('span');
+    thumb.className = 'cell-product__thumb';
+
+    const firstImage = getFirstImage(product);
+    if (firstImage) {
+      const img = document.createElement('img');
+      img.src = firstImage;
+      img.alt = '';
+      img.loading = 'lazy';
+      thumb.appendChild(img);
+    } else {
+      thumb.innerHTML =
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"' +
+        ' stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+        '<path d="m21 8-9-5-9 5v8l9 5 9-5z"/><path d="m3 8 9 5 9-5"/><path d="M12 21v-8"/></svg>';
+    }
+
+    // Info
+    const info = document.createElement('div');
+    info.className = 'cell-product__info';
+
     const name = document.createElement('span');
     name.textContent = product.name || '—';
-    cell.appendChild(name);
+    info.appendChild(name);
 
-    if (product.description) {
-      const desc = document.createElement('small');
-      desc.textContent = product.description;
-      cell.appendChild(desc);
+    const parts = [];
+    if (product.barcode) parts.push('EAN ' + product.barcode);
+    if (product.description) parts.push(product.description);
+
+    if (parts.length > 0) {
+      const small = document.createElement('small');
+      small.textContent = parts.join(' · ');
+      info.appendChild(small);
     }
+
+    cell.appendChild(thumb);
+    cell.appendChild(info);
 
     return cell;
   }
@@ -426,8 +410,7 @@
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"' +
       ' stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
       '<path d="M12 20h9"/>' +
-      '<path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/>' +
-      '</svg>';
+      '<path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
     editBtn.addEventListener('click', function () { openEditModal(product); });
 
     const delBtn = document.createElement('button');
@@ -441,14 +424,12 @@
       '<path d="M3 6h18"/>' +
       '<path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>' +
       '<path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>' +
-      '<path d="M10 11v6M14 11v6"/>' +
-      '</svg>';
+      '<path d="M10 11v6M14 11v6"/></svg>';
     delBtn.addEventListener('click', function () { openConfirmModal(product); });
 
     wrap.appendChild(editBtn);
     wrap.appendChild(delBtn);
     cell.appendChild(wrap);
-
     return cell;
   }
 
@@ -498,7 +479,176 @@
   }
 
   /* =========================================================
-     Modal: produto (criar/editar)
+     Fotos: setup dos 3 slots
+     ========================================================= */
+  const photoEls = {};
+
+  function setupPhotoSlots() {
+    photoEls.container = document.getElementById('product-photos');
+    if (!photoEls.container) return;
+
+    photoEls.container.innerHTML = '';
+
+    // Cria 3 slots vazios
+    for (let i = 0; i < MAX_PHOTOS; i += 1) {
+      const slot = document.createElement('div');
+      slot.className = 'product-photo';
+      slot.dataset.index = String(i);
+      photoEls.container.appendChild(slot);
+    }
+  }
+
+  function resetPhotos() {
+    state.photos = [];
+    for (let i = 0; i < MAX_PHOTOS; i += 1) {
+      state.photos.push({ url: null, file: null, uploading: false, removing: false });
+    }
+    renderPhotoSlots();
+  }
+
+  function renderPhotoSlots() {
+    if (!photoEls.container) return;
+
+    Array.prototype.forEach.call(photoEls.container.children, function (slotEl, i) {
+      const slot = state.photos[i];
+      slotEl.innerHTML = '';
+      slotEl.classList.toggle('product-photo--filled', Boolean(slot && (slot.url || slot.file)));
+
+      // Está vazio?
+      if (!slot || (!slot.url && !slot.file)) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'product-photo__empty';
+        btn.setAttribute('aria-label', 'Adicionar foto ' + (i + 1));
+        btn.innerHTML =
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"' +
+          ' stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+          '<path d="M12 5v14M5 12h14"/></svg>' +
+          '<span>Foto ' + (i + 1) + '</span>';
+
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = ALLOWED_TYPES.join(',');
+        input.className = 'product-photo__input';
+        input.setAttribute('aria-hidden', 'true');
+
+        btn.addEventListener('click', function () { input.click(); });
+        input.addEventListener('change', function (e) {
+          onPhotoSelected(i, e.target.files[0]);
+          e.target.value = '';
+        });
+
+        slotEl.appendChild(btn);
+        slotEl.appendChild(input);
+        return;
+      }
+
+      // Preenchido
+      const url = slot.url || (slot.file ? URL.createObjectURL(slot.file) : null);
+
+      const img = document.createElement('img');
+      img.className = 'product-photo__img';
+      img.src = url;
+      img.alt = '';
+      slotEl.appendChild(img);
+
+      // Badge "principal" no primeiro slot
+      if (i === 0) {
+        const badge = document.createElement('span');
+        badge.className = 'product-photo__badge';
+        badge.textContent = 'Principal';
+        slotEl.appendChild(badge);
+      }
+
+      // Botão remover
+      const remove = document.createElement('button');
+      remove.type = 'button';
+      remove.className = 'product-photo__remove';
+      remove.setAttribute('aria-label', 'Remover foto ' + (i + 1));
+      remove.innerHTML =
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"' +
+        ' stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+      remove.addEventListener('click', function () { onPhotoRemove(i); });
+      slotEl.appendChild(remove);
+
+      // Estado de upload
+      if (slot.uploading) {
+        const overlay = document.createElement('div');
+        overlay.className = 'product-photo__progress';
+        overlay.textContent = 'Enviando...';
+        slotEl.appendChild(overlay);
+      }
+    });
+  }
+
+  function onPhotoSelected(index, file) {
+    if (!file) return;
+
+    if (ALLOWED_TYPES.indexOf(file.type) === -1) {
+      showFormFeedback('Formato inválido. Use JPG, PNG ou WEBP.');
+      return;
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      showFormFeedback('A imagem precisa ter no máximo 2 MB.');
+      return;
+    }
+
+    clearFormFeedback();
+    state.photos[index] = { url: null, file: file, uploading: false, removing: false };
+    renderPhotoSlots();
+  }
+
+  function onPhotoRemove(index) {
+    if (state.saving) return;
+    state.photos[index] = { url: null, file: null, uploading: false, removing: false };
+    renderPhotoSlots();
+  }
+
+  /* =========================================================
+     Fotos: upload para o Storage
+     ========================================================= */
+  async function uploadPhoto(file, userId, order) {
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+    const path = userId + '/product-' + Date.now() + '-' + order + '.' + ext;
+
+    const { error } = await window.db.storage
+      .from('product-images')
+      .upload(path, file, {
+        cacheControl: '3600',
+        upsert: false,
+        contentType: file.type
+      });
+    if (error) throw error;
+
+    const { data } = window.db.storage
+      .from('product-images')
+      .getPublicUrl(path);
+
+    return data && data.publicUrl ? data.publicUrl : null;
+  }
+
+  /**
+   * Sobe todos os arquivos novos e devolve o array final de URLs
+   * (persistidas + novas, na ordem dos slots).
+   */
+  async function uploadAllPhotos(userId) {
+    const urls = [];
+    for (let i = 0; i < state.photos.length; i += 1) {
+      const slot = state.photos[i];
+      if (!slot) continue;
+
+      if (slot.file) {
+        const url = await uploadPhoto(slot.file, userId, i);
+        if (url) urls.push(url);
+      } else if (slot.url) {
+        urls.push(slot.url);
+      }
+    }
+    return urls;
+  }
+
+  /* =========================================================
+     Modal: produto
      ========================================================= */
   const modalEls = {};
 
@@ -509,6 +659,7 @@
     modalEls.id             = document.getElementById('product-id');
     modalEls.name           = document.getElementById('product-name');
     modalEls.code           = document.getElementById('product-code');
+    modalEls.barcode        = document.getElementById('product-barcode');
     modalEls.description    = document.getElementById('product-description');
     modalEls.price          = document.getElementById('product-price');
     modalEls.stock          = document.getElementById('product-stock');
@@ -524,7 +675,6 @@
       el.addEventListener('click', closeProductModal);
     });
 
-    // Atualiza o rótulo "Ativo / Inativo" do switch
     modalEls.active.addEventListener('change', function () {
       modalEls.activeLabel.textContent = modalEls.active.checked ? 'Ativo' : 'Inativo';
     });
@@ -547,6 +697,7 @@
     modalEls.active.checked = true;
     modalEls.activeLabel.textContent = 'Ativo';
     clearFormFeedback();
+    resetPhotos();
     openModal(modalEls.modal);
     modalEls.name.focus();
   }
@@ -557,6 +708,7 @@
     modalEls.id.value = product.id || '';
     modalEls.name.value = product.name || '';
     modalEls.code.value = product.code || '';
+    modalEls.barcode.value = product.barcode || '';
     modalEls.description.value = product.description || '';
     modalEls.price.value = normalizeNumberInput(product.price);
     modalEls.stock.value = normalizeIntegerInput(product.stock);
@@ -564,6 +716,20 @@
     modalEls.active.checked = product.active === true;
     modalEls.activeLabel.textContent = modalEls.active.checked ? 'Ativo' : 'Inativo';
     clearFormFeedback();
+
+    // Carrega fotos existentes nos slots
+    const existing = getProductImageUrls(product);
+    state.photos = [];
+    for (let i = 0; i < MAX_PHOTOS; i += 1) {
+      state.photos.push({
+        url: existing[i] || null,
+        file: null,
+        uploading: false,
+        removing: false
+      });
+    }
+    renderPhotoSlots();
+
     openModal(modalEls.modal);
     modalEls.name.focus();
   }
@@ -604,32 +770,41 @@
       return;
     }
 
-    const payload = {
-      name: name,
-      code: modalEls.code.value.trim() || null,
-      description: modalEls.description.value.trim() || null,
-      price: price,
-      stock: stock,
-      minimum_stock: minimumStock,
-      active: modalEls.active.checked === true
-    };
+    const barcode = modalEls.barcode.value.trim();
 
     setSaving(true);
 
     try {
+      const session = await window.db.auth.getSession();
+      const userId = session?.data?.session?.user?.id;
+      if (!userId) throw new Error('Sessão expirada.');
+
+      // Upload das fotos novas
+      const imageUrls = await uploadAllPhotos(userId);
+
+      const payload = {
+        name: name,
+        code: modalEls.code.value.trim() || null,
+        barcode: barcode || null,
+        description: modalEls.description.value.trim() || null,
+        price: price,
+        stock: stock,
+        minimum_stock: minimumStock,
+        active: modalEls.active.checked === true,
+        image_urls: imageUrls
+      };
+
       if (state.editingId) {
         const { error } = await window.db
           .from('products')
           .update(payload)
           .eq('id', state.editingId);
-
         if (error) throw error;
         showToast('Produto atualizado com sucesso.', 'success');
       } else {
         const { error } = await window.db
           .from('products')
           .insert(payload);
-
         if (error) throw error;
         showToast('Produto cadastrado com sucesso.', 'success');
       }
@@ -655,7 +830,7 @@
       if (label) label.textContent = isSaving ? 'Salvando...' : 'Salvar';
     }
 
-    ['name', 'code', 'description', 'price', 'stock', 'minimumStock', 'active']
+    ['name', 'code', 'barcode', 'description', 'price', 'stock', 'minimumStock', 'active']
       .forEach(function (key) {
         if (modalEls[key]) modalEls[key].readOnly = isSaving;
       });
@@ -729,7 +904,6 @@
     } catch (error) {
       console.error('[DEV HUB] Falha ao excluir produto:', error);
 
-      // Produto vinculado a vendas (FK): mensagem amigável, sem detalhe técnico
       if (isForeignKeyError(error)) {
         closeModal(confirmEls.modal);
         state.deletingId = null;
@@ -776,6 +950,28 @@
   }
 
   /* =========================================================
+     Helpers de imagens
+     ========================================================= */
+  function getProductImageUrls(product) {
+    const urls = [];
+
+    if (Array.isArray(product.image_urls)) {
+      product.image_urls.forEach(function (u) {
+        if (u && typeof u === 'string') urls.push(u);
+      });
+    }
+    // Fallback para image_url antigo
+    if (urls.length === 0 && product.image_url) urls.push(product.image_url);
+
+    return urls.slice(0, MAX_PHOTOS);
+  }
+
+  function getFirstImage(product) {
+    const urls = getProductImageUrls(product);
+    return urls[0] || null;
+  }
+
+  /* =========================================================
      Toasts
      ========================================================= */
   const TOAST_ICONS = {
@@ -818,7 +1014,6 @@
     close.innerHTML =
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"' +
       ' stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
-
     close.addEventListener('click', function () { dismissToast(toast); });
 
     toast.appendChild(icon);
@@ -848,19 +1043,16 @@
   }
 
   function formatInteger(value) {
-    const number = toInteger(value);
-    return String(number);
+    return String(toInteger(value));
   }
 
   function toInteger(value) {
-    const number = parseInteger(value, 0);
-    return number;
+    return parseInteger(value, 0);
   }
 
   function parseNumber(value) {
     if (value === null || value === undefined || value === '') return null;
     if (typeof value === 'number') return Number.isFinite(value) ? value : null;
-
     const normalized = String(value).replace(',', '.').trim();
     const parsed = Number(normalized);
     return Number.isFinite(parsed) ? parsed : null;
@@ -878,12 +1070,11 @@
   }
 
   function normalizeIntegerInput(value) {
-    const number = parseInteger(value, 0);
-    return String(number);
+    return String(parseInteger(value, 0));
   }
 
   /* =========================================================
-     Erros de banco (mensagens amigáveis)
+     Erros
      ========================================================= */
   function isForeignKeyError(error) {
     if (!error) return false;
@@ -909,8 +1100,17 @@
     if (message.includes('failed to fetch') || message.includes('network')) {
       return 'Não foi possível conectar ao servidor.';
     }
+    if (message.includes('payload too large') || message.includes('maximum allowed size')) {
+      return 'A imagem é muito grande. Use no máximo 2 MB.';
+    }
+    if (message.includes('bucket') && message.includes('not found')) {
+      return 'Bucket de imagens não configurado. Contate o suporte.';
+    }
     if (code === '23503' || message.includes('foreign key')) {
       return 'Este produto está vinculado a outros registros e não pode ser excluído.';
+    }
+    if (code === '23505' || message.includes('duplicate') || message.includes('unique')) {
+      return 'Já existe um produto com este código ou código de barras.';
     }
     if (code === '23502' || message.includes('violates not-null')) {
       return 'Preencha todos os campos obrigatórios.';

@@ -1,13 +1,16 @@
 /* =========================================================
    DEV HUB · Autenticação
    ---------------------------------------------------------
-   Login: código da empresa + e-mail + senha
+   Login: código da empresa (OPCIONAL) + e-mail + senha.
    Fluxo:
      1. signInWithPassword (email, senha)
-     2. validate_company_login (código da empresa)
-     3. Verifica organization_active, user_active, user_id
-     4. Salva contexto em sessionStorage.devhub_user
-     5. Inclui is_platform_admin quando aplicável
+     2. Resolve empresa:
+          - com code → validate_company_login
+          - sem code → list_my_memberships
+             • 0 → erro
+             • 1 → aplica
+             • N → pede para escolher (completeSignIn)
+     3. Aplica contexto (org, role, is_platform_admin, avatar_url)
    Guard de autorização centralizado: requireRole().
    ========================================================= */
 
@@ -19,7 +22,6 @@
     /* =====================================================
        CONFIGURAÇÃO
        ===================================================== */
-
     isConfigured() {
       return (
         !!window.devHubSupabase &&
@@ -31,10 +33,6 @@
       return sessionStorage.getItem('devhub_signing_out') === '1';
     },
 
-    /* =====================================================
-       CLIENTE SUPABASE
-       ===================================================== */
-
     getClient() {
       return window.devHubSupabase || window.db || null;
     },
@@ -42,7 +40,6 @@
     /* =====================================================
        SESSÃO
        ===================================================== */
-
     async getSession() {
       const supabase = this.getClient();
       if (!supabase) return null;
@@ -57,8 +54,12 @@
 
     /* =====================================================
        LOGIN
+       Retornos:
+         { ...contexto }                      → sucesso
+         { needsCompanyChoice: true,
+           user: <User>,
+           memberships: [...] }               → precisa escolher
        ===================================================== */
-
     async signIn(companyCode, email, password) {
       const supabase = this.getClient();
       if (!supabase) throw new Error('Supabase não está configurado.');
@@ -67,11 +68,10 @@
       const normalizedEmail = String(email || '').trim().toLowerCase();
       const normalizedPassword = String(password || '');
 
-      if (!code) throw new Error('Informe o código da empresa.');
       if (!normalizedEmail) throw new Error('Informe seu e-mail.');
       if (!normalizedPassword) throw new Error('Informe sua senha.');
 
-      /* ----- 1. Autenticação do usuário ----- */
+      /* ----- 1. Autenticação ----- */
       const { data: authData, error: authError } =
         await supabase.auth.signInWithPassword({
           email: normalizedEmail,
@@ -89,53 +89,118 @@
         throw new Error('Não foi possível identificar o usuário.');
       }
 
-      /* ----- 2. Valida empresa + vínculo ----- */
-      const { data: companyData, error: companyError } =
-        await supabase.rpc('validate_company_login', { p_company_code: code });
+      /* ----- 2. Com código: caminho direto ----- */
+      if (code) {
+        const { data: companyData, error: companyError } =
+          await supabase.rpc('validate_company_login', { p_company_code: code });
 
-      if (companyError) {
-        console.error('[DEV HUB] Erro ao validar empresa:', companyError);
-        await supabase.auth.signOut();
-        throw new Error('Não foi possível validar a empresa.');
+        if (companyError) {
+          console.error('[DEV HUB] Erro ao validar empresa:', companyError);
+          await supabase.auth.signOut();
+          throw new Error('Não foi possível validar a empresa.');
+        }
+
+        const membership = Array.isArray(companyData) ? companyData[0] : companyData;
+        if (!membership) {
+          await supabase.auth.signOut();
+          throw new Error('O código da empresa não corresponde ao seu acesso.');
+        }
+
+        return this._applyMembership(supabase, user, membership);
       }
 
-      const membership = Array.isArray(companyData)
-        ? companyData[0]
-        : companyData;
+      /* ----- 3. Sem código: descobre empresas ----- */
+      const { data: list, error: listError } =
+        await supabase.rpc('list_my_memberships');
 
-      if (!membership) {
+      if (listError) {
+        console.error('[DEV HUB] Erro ao listar empresas:', listError);
         await supabase.auth.signOut();
-        throw new Error('O código da empresa não corresponde ao seu acesso.');
+        throw new Error('Não foi possível identificar suas empresas.');
       }
 
-      /* ----- 3. Empresa ativa? ----- */
+      const memberships = Array.isArray(list) ? list : (list ? [list] : []);
+
+      if (memberships.length === 0) {
+        await supabase.auth.signOut();
+        throw new Error(
+          'Sua conta não está vinculada a nenhuma empresa. Contate o administrador.'
+        );
+      }
+
+      // 1 empresa → aplica direto
+      if (memberships.length === 1) {
+        return this._applyMembership(supabase, user, memberships[0]);
+      }
+
+      // 2+ empresas → devolve para o form pedir a escolha
+      // (sessão do Supabase já está ativa; nada gravado ainda)
+      return {
+        needsCompanyChoice: true,
+        user: user,
+        memberships: memberships
+      };
+    },
+
+    /* =====================================================
+       CONTINUAÇÃO: aplica a empresa escolhida
+       ===================================================== */
+    async completeSignIn(membership) {
+      const supabase = this.getClient();
+      const session = await this.getSession();
+      if (!supabase || !session?.user) {
+        throw new Error('Sessão expirada. Faça login novamente.');
+      }
+      return this._applyMembership(supabase, session.user, membership);
+    },
+
+    /* =====================================================
+       INTERNO: valida + grava contexto (inclui avatar_url)
+       ===================================================== */
+    async _applyMembership(supabase, user, membership) {
+      if (!membership) throw new Error('Empresa inválida.');
+
       if (!membership.organization_active) {
         await supabase.auth.signOut();
         throw new Error('Esta empresa está desativada.');
       }
-
-      /* ----- 4. Usuário ativo? ----- */
       if (!membership.user_active) {
         await supabase.auth.signOut();
         throw new Error(
           'Seu acesso está desativado. Entre em contato com o administrador da empresa.'
         );
       }
-
-      /* ----- 5. Consistência de identidade ----- */
-      if (membership.user_id !== user.id) {
+      if (membership.user_id && membership.user_id !== user.id) {
         console.error('[DEV HUB] Inconsistência de usuário na validação.');
         await supabase.auth.signOut();
         throw new Error('Não foi possível validar seu acesso.');
       }
 
-      /* ----- 6. Flag de platform_admin (best effort) ----- */
+      /* ----- Busca avatar_url + is_platform_admin de uma vez ----- */
+      let avatarUrl = null;
       let isPlatformAdmin = Boolean(membership.is_platform_admin);
+
+      try {
+        const { data: profileRow, error: profileErr } = await supabase
+          .from('profiles')
+          .select('avatar_url, is_platform_admin')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        if (!profileErr && profileRow) {
+          avatarUrl = profileRow.avatar_url || null;
+          if (!isPlatformAdmin) {
+            isPlatformAdmin = profileRow.is_platform_admin === true;
+          }
+        }
+      } catch (e) {
+        console.warn('[DEV HUB] Não foi possível ler perfil no login:', e);
+      }
+
       if (!isPlatformAdmin) {
         isPlatformAdmin = await this._fetchPlatformAdminFlag(supabase, user.id);
       }
 
-      /* ----- 7. Salva contexto da sessão ----- */
       const sessionUser = {
         user_id: user.id,
         organization_id: membership.organization_id || null,
@@ -149,7 +214,8 @@
           membership.user_email ||
           user.email ||
           '',
-        is_platform_admin: isPlatformAdmin
+        is_platform_admin: isPlatformAdmin,
+        avatar_url: avatarUrl
       };
 
       try {
@@ -164,14 +230,6 @@
     /* =====================================================
        HELPERS INTERNOS
        ===================================================== */
-
-    /**
-     * Traduz o erro retornado por signInWithPassword em uma
-     * mensagem precisa para o usuário. Antes, qualquer erro
-     * (rede fora do ar, e-mail não confirmado, limite de
-     * tentativas, etc.) virava "E-mail ou senha incorretos.",
-     * o que confundia o usuário e escondia o problema real.
-     */
     _mapAuthError(authError) {
       const status = authError?.status;
       const code = String(authError?.code || '').toLowerCase();
@@ -207,7 +265,6 @@
         return 'E-mail ou senha incorretos.';
       }
 
-      // Erro não identificado: não inventa uma causa, apenas informa que falhou.
       return 'Não foi possível realizar o login. Tente novamente em instantes.';
     },
 
@@ -232,9 +289,8 @@
     },
 
     /* =====================================================
-       REQUIRE SESSION
+       SESSÃO OBRIGATÓRIA
        ===================================================== */
-
     async requireSession() {
       const session = await this.getSession();
       if (!session) {
@@ -245,10 +301,6 @@
       }
       return session;
     },
-
-    /* =====================================================
-       REDIRECT SE JÁ ESTIVER LOGADO
-       ===================================================== */
 
     async redirectIfAuthenticated() {
       const session = await this.getSession();
@@ -262,7 +314,6 @@
     /* =====================================================
        CONTEXTO LOCAL
        ===================================================== */
-
     getStoredUser() {
       try {
         const raw = sessionStorage.getItem('devhub_user');
@@ -274,18 +325,6 @@
       }
     },
 
-    /**
-     * Retorna o contexto do usuário atual.
-     * Ordem:
-     *   1. sessionStorage (rápido)
-     *   2. reconstrói via organization_members + profiles
-     *      (útil quando a sessão persiste em localStorage mas
-     *       o sessionStorage está vazio — ex.: nova aba)
-     *   3. fallback mínimo (user_id + email)
-     *
-     * Aceita um `userId` opcional por compatibilidade com os
-     * módulos (eles passam `session.user.id`), mas não é obrigatório.
-     */
     async getProfile(userId) {
       const stored = this.getStoredUser();
       if (stored && (!userId || stored.user_id === userId)) {
@@ -321,16 +360,30 @@
         role: String(membership?.role || 'user').toLowerCase(),
         name: membership?.name || session.user.user_metadata?.name || '',
         email: membership?.email || session.user.email || '',
-        is_platform_admin: false
+        is_platform_admin: false,
+        avatar_url: null
       };
 
-      context.is_platform_admin = await this._fetchPlatformAdminFlag(supabase, uid);
+      // Busca avatar + flag
+      try {
+        const { data: profileRow } = await supabase
+          .from('profiles')
+          .select('avatar_url, is_platform_admin')
+          .eq('id', uid)
+          .maybeSingle();
+
+        if (profileRow) {
+          context.avatar_url = profileRow.avatar_url || null;
+          context.is_platform_admin = profileRow.is_platform_admin === true;
+        }
+      } catch (e) {
+        console.warn('[DEV HUB] getProfile: falha ao ler profiles.', e);
+        context.is_platform_admin = await this._fetchPlatformAdminFlag(supabase, uid);
+      }
 
       try {
         sessionStorage.setItem('devhub_user', JSON.stringify(context));
-      } catch (e) {
-        /* storage indisponível — ignora */
-      }
+      } catch (e) { /* storage indisponível — ignora */ }
 
       return context;
     },
@@ -338,22 +391,12 @@
     /* =====================================================
        ROLE
        ===================================================== */
-
-    /**
-     * Lê o role atual direto do contexto local (rápido, sem Promise).
-     * Retorna string vazia se não houver contexto.
-     */
     getCurrentRole() {
       const stored = this.getStoredUser();
       if (!stored) return '';
       return String(stored.role || '').toLowerCase();
     },
 
-    /**
-     * Verifica se o role atual está entre os roles passados.
-     * hasRole(['admin'])          → true se for admin
-     * hasRole(['admin', 'gestor']) → true se for admin OU gestor
-     */
     hasRole(roles) {
       if (!Array.isArray(roles) || roles.length === 0) return false;
 
@@ -367,27 +410,10 @@
       return normalized.indexOf(current) !== -1;
     },
 
-    /**
-     * Guard centralizado de autorização de página.
-     *
-     * Uso típico no início do init() de cada módulo:
-     *
-     *   const context = await Auth.requireRole(['admin', 'gestor']);
-     *   if (!context) return; // foi redirecionado
-     *
-     * Comportamento:
-     *   - Sem sessão → redireciona para index.html
-     *   - Com sessão mas sem o role exigido → redireciona para dashboard.html
-     *   - Com permissão → retorna o contexto do usuário
-     *
-     * @param {string[]} roles Lista de roles permitidos
-     * @returns {Promise<object|null>} Contexto do usuário ou null se redirecionou
-     */
     async requireRole(roles) {
       const session = await this.requireSession();
       if (!session) return null;
 
-      // Reconstrói contexto se o sessionStorage estiver vazio (ex.: nova aba)
       let context = this.getStoredUser();
       if (!context || !context.role) {
         context = await this.getProfile(session.user.id);
@@ -414,13 +440,9 @@
       return key.charAt(0).toUpperCase() + key.slice(1);
     },
 
-
     /* =====================================================
        GUARD: PLATFORM ADMIN
-       Diferente de requireRole: o platform_admin é um FLAG
-       (is_platform_admin), não um role.
        ===================================================== */
-
     isPlatformAdmin() {
       const stored = this.getStoredUser();
       return Boolean(stored && stored.is_platform_admin === true);
@@ -439,11 +461,9 @@
       return stored;
     },
 
-
     /* =====================================================
        LOGOUT
        ===================================================== */
-
     async signOut() {
       const supabase = this.getClient();
 
@@ -466,17 +486,23 @@
   /* =========================================================
      FORMULÁRIO DE LOGIN
      ========================================================= */
-
   document.addEventListener('DOMContentLoaded', function () {
     const form = document.getElementById('login-form');
     if (!form) return;
 
+    const fieldsWrap     = document.getElementById('login-fields');
     const companyCodeInput = document.getElementById('company-code');
-    const emailInput = document.getElementById('email');
-    const passwordInput = document.getElementById('password');
-    const submitButton = document.getElementById('login-submit');
-    const feedback = document.getElementById('login-feedback');
+    const emailInput     = document.getElementById('email');
+    const passwordInput  = document.getElementById('password');
+    const pickerWrap     = document.getElementById('company-picker');
+    const companySelect  = document.getElementById('company-select');
+    const backBtn        = document.getElementById('back-to-login');
+    const submitButton   = document.getElementById('login-submit');
+    const feedback       = document.getElementById('login-feedback');
     const togglePassword = document.getElementById('toggle-password');
+
+    // Estado do fluxo "escolher empresa"
+    let pendingMemberships = null;
 
     /* ---------- Feedback ---------- */
     function showFeedback(message, type) {
@@ -503,11 +529,67 @@
 
       const buttonLabel = submitButton.querySelector('.btn__label');
       if (buttonLabel) {
-        buttonLabel.textContent = loading ? 'ENTRANDO...' : 'ENTRAR';
+        if (pendingMemberships) {
+          buttonLabel.textContent = loading ? 'ENTRANDO...' : 'ENTRAR NESTA EMPRESA';
+        } else {
+          buttonLabel.textContent = loading ? 'ENTRANDO...' : 'ENTRAR';
+        }
       }
     }
 
-    /* ---------- Máscara do código da empresa ---------- */
+    /* ---------- Modo "escolher empresa" ---------- */
+    function enterChoiceMode(memberships) {
+      pendingMemberships = memberships;
+
+      if (fieldsWrap) fieldsWrap.hidden = true;
+      if (pickerWrap) pickerWrap.hidden = false;
+
+      if (companySelect) {
+        companySelect.innerHTML = '';
+        memberships.forEach(function (m) {
+          const opt = document.createElement('option');
+          opt.value = m.organization_id;
+          opt.textContent =
+            (m.organization_name || 'Empresa') +
+            (m.organization_code ? ' (' + m.organization_code + ')' : '');
+          companySelect.appendChild(opt);
+        });
+      }
+
+      if (backBtn) backBtn.hidden = false;
+
+      const label = submitButton.querySelector('.btn__label');
+      if (label) label.textContent = 'ENTRAR NESTA EMPRESA';
+
+      companySelect?.focus();
+    }
+
+    function exitChoiceMode() {
+      pendingMemberships = null;
+
+      if (fieldsWrap) fieldsWrap.hidden = false;
+      if (pickerWrap) pickerWrap.hidden = true;
+      if (backBtn) backBtn.hidden = true;
+
+      const label = submitButton.querySelector('.btn__label');
+      if (label) label.textContent = 'ENTRAR';
+
+      hideFeedback();
+    }
+
+    /* ---------- Botão "voltar" ---------- */
+    if (backBtn) {
+      backBtn.addEventListener('click', async function () {
+        const supabase = Auth.getClient();
+        if (supabase) {
+          try { await supabase.auth.signOut(); } catch (e) { /* ignora */ }
+        }
+        exitChoiceMode();
+        emailInput?.focus();
+      });
+    }
+
+    /* ---------- Máscara do código ---------- */
     if (companyCodeInput) {
       companyCodeInput.addEventListener('input', function () {
         companyCodeInput.value = companyCodeInput.value
@@ -537,12 +619,40 @@
       event.preventDefault();
       hideFeedback();
 
+      /* ============ MODO ESCOLHA ============ */
+      if (pendingMemberships) {
+        const orgId = companySelect?.value;
+        const membership = pendingMemberships.find(function (m) {
+          return m.organization_id === orgId;
+        });
+
+        if (!membership) {
+          showFeedback('Escolha uma empresa válida.');
+          return;
+        }
+
+        setLoading(true);
+        try {
+          await Auth.completeSignIn(membership);
+          sessionStorage.removeItem('devhub_signing_out');
+          window.location.href = 'dashboard.html';
+        } catch (error) {
+          console.error('[DEV HUB] Falha ao entrar na empresa:', error);
+          showFeedback(error?.message || 'Não foi possível entrar nesta empresa.');
+        } finally {
+          setLoading(false);
+        }
+        return;
+      }
+
+      /* ============ MODO NORMAL ============ */
       const companyCode = (companyCodeInput?.value || '').trim().toUpperCase();
       const email = (emailInput?.value || '').trim().toLowerCase();
       const password = passwordInput?.value || '';
 
-      if (!companyCode) {
-        showFeedback('Informe o código da empresa.');
+      // Código é opcional — só valida formato se digitado
+      if (companyCode && !/^[A-Z0-9-]{2,40}$/.test(companyCode)) {
+        showFeedback('O código da empresa é inválido.');
         companyCodeInput?.focus();
         return;
       }
@@ -565,9 +675,14 @@
       setLoading(true);
 
       try {
-        await Auth.signIn(companyCode, email, password);
+        const result = await Auth.signIn(companyCode, email, password);
 
-        // Limpa flag de logout e redireciona
+        if (result && result.needsCompanyChoice) {
+          enterChoiceMode(result.memberships);
+          hideFeedback();
+          return;
+        }
+
         sessionStorage.removeItem('devhub_signing_out');
         window.location.href = 'dashboard.html';
 
@@ -593,7 +708,6 @@
   /* =========================================================
      API GLOBAL
      ========================================================= */
-
   window.Auth = Auth;
 
 })();

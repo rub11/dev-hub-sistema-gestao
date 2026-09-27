@@ -3,25 +3,19 @@
    (reaproveita global.css + dashboard.css)
    ========================================================= */
 
-/* ---------- Toolbar (busca + novo cliente) ---------- */
-.toolbar {
-  flex-wrap: wrap;
-  gap: 14px;
-}
+/* =========================================================
+   1. TOOLBAR / BUSCA / ESTADOS / AÇÕES DE LINHA
+   ========================================================= */
 
+.toolbar { flex-wrap: wrap; gap: 14px; }
 .toolbar__info { min-width: 0; }
-
 .toolbar__actions {
   display: flex;
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
 }
-
-.toolbar__actions .btn {
-  height: 40px;
-  padding: 0 14px;
-}
+.toolbar__actions .btn { height: 40px; padding: 0 14px; }
 
 /* ---------- Campo de busca ---------- */
 .search {
@@ -31,7 +25,6 @@
   width: 280px;
   max-width: 100%;
 }
-
 .search__icon {
   position: absolute;
   left: 12px;
@@ -41,7 +34,6 @@
   pointer-events: none;
 }
 .search__icon svg { width: 16px; height: 16px; }
-
 .search__input {
   width: 100%;
   height: 40px;
@@ -61,7 +53,7 @@
   box-shadow: 0 0 0 4px var(--accent-ring);
 }
 
-/* ---------- Estados (loading / vazio) ---------- */
+/* ---------- Estados ---------- */
 .state-block {
   display: flex;
   flex-direction: column;
@@ -72,36 +64,23 @@
   text-align: center;
   color: var(--text-soft);
 }
-
-.state-block h3 {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text);
-}
-
-.state-block p {
-  font-size: 14px;
-  color: var(--text-soft);
-  max-width: 360px;
-}
-
+.state-block h3 { font-size: 16px; font-weight: 600; color: var(--text); }
+.state-block p { font-size: 14px; color: var(--text-soft); max-width: 360px; }
 .state-block__icon {
   display: grid;
   place-items: center;
-  width: 48px;
-  height: 48px;
+  width: 48px; height: 48px;
   border-radius: 12px;
   background: var(--accent-soft);
   color: var(--accent);
   margin-bottom: 4px;
 }
 .state-block__icon svg { width: 22px; height: 22px; }
-
 .state-block .btn { margin-top: 8px; }
+.state-block--compact { padding: 32px 20px; }
 
 .spinner {
-  width: 22px;
-  height: 22px;
+  width: 22px; height: 22px;
   border-radius: 50%;
   border: 2.5px solid var(--border-strong);
   border-top-color: var(--accent);
@@ -115,20 +94,17 @@
   justify-content: flex-end;
   gap: 6px;
 }
-
 .row-action {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 32px; height: 32px;
   border: 1px solid transparent;
   border-radius: 8px;
   background: transparent;
   color: var(--text-soft);
   cursor: pointer;
-  transition: background-color var(--transition), border-color var(--transition),
-              color var(--transition);
+  transition: background-color var(--transition), border-color var(--transition), color var(--transition);
 }
 .row-action svg { width: 16px; height: 16px; }
 .row-action:hover { background: var(--surface-2); border-color: var(--border); color: var(--text); }
@@ -138,11 +114,8 @@
   color: var(--danger);
 }
 
-/* ---------- Célula principal (nome) ---------- */
-.cell-name { font-weight: 600; color: var(--text); }
-
 /* =========================================================
-   Modais
+   2. MODAIS (base)
    ========================================================= */
 .modal {
   position: fixed;
@@ -153,6 +126,7 @@
   justify-content: center;
   padding: 20px;
 }
+.modal[hidden] { display: none; }
 
 .modal__backdrop {
   position: absolute;
@@ -177,7 +151,6 @@
   animation: dh-modal-in 180ms ease-out;
   overflow: hidden;
 }
-
 .modal__dialog--sm { max-width: 420px; }
 
 @keyframes dh-modal-in {
@@ -192,14 +165,13 @@
   gap: 12px;
   padding: 18px 20px;
   border-bottom: 1px solid var(--border);
+  flex: 0 0 auto;
 }
-
 .modal__title {
   font-size: 16px;
   font-weight: 600;
   letter-spacing: -0.01em;
 }
-
 .modal__close { color: var(--text-muted); }
 
 .modal__body {
@@ -258,10 +230,6 @@
   color: #fff;
 }
 .btn--danger:hover:not(:disabled) { background: #961e14; }
-.btn--danger:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 4px rgba(180, 35, 24, 0.18);
-}
 
 .confirm-text {
   font-size: 14.5px;
@@ -269,12 +237,11 @@
   line-height: 1.55;
 }
 
-/* Estado de carregamento no botão Salvar/Excluir */
+/* botão spinner */
 #customer-save-btn .btn__spinner,
 #confirm-delete-btn .btn__spinner {
   display: none;
-  width: 16px;
-  height: 16px;
+  width: 16px; height: 16px;
   border-radius: 50%;
   border: 2px solid rgba(255, 255, 255, 0.4);
   border-top-color: #fff;
@@ -282,16 +249,13 @@
 }
 #customer-save-btn.is-loading .btn__spinner,
 #confirm-delete-btn.is-loading .btn__spinner { display: block; }
-#customer-save-btn.is-loading .btn__label,
-#confirm-delete-btn.is-loading .btn__label { opacity: 0.9; }
 
 /* =========================================================
-   Toasts
+   3. TOASTS
    ========================================================= */
 .toast-region {
   position: fixed;
-  right: 20px;
-  bottom: 20px;
+  right: 20px; bottom: 20px;
   z-index: 200;
   display: flex;
   flex-direction: column;
@@ -299,7 +263,6 @@
   width: min(360px, calc(100vw - 32px));
   pointer-events: none;
 }
-
 .toast {
   pointer-events: auto;
   display: flex;
@@ -314,27 +277,18 @@
   color: var(--text);
   animation: dh-toast-in 200ms ease-out;
 }
-
 .toast--success { border-color: #abefc6; background: var(--success-soft); color: var(--success); }
 .toast--error   { border-color: var(--danger-border); background: var(--danger-soft); color: var(--danger); }
 .toast--info    { border-color: #c7d2fe; background: var(--accent-soft); color: var(--accent-hover); }
 
-.toast__icon {
-  flex: none;
-  width: 18px;
-  height: 18px;
-  margin-top: 1px;
-}
+.toast__icon { flex: none; width: 18px; height: 18px; margin-top: 1px; }
 .toast__icon svg { width: 100%; height: 100%; }
-
 .toast__message { flex: 1 1 auto; min-width: 0; }
-
 .toast__close {
   flex: none;
   display: grid;
   place-items: center;
-  width: 22px;
-  height: 22px;
+  width: 22px; height: 22px;
   border: 0;
   border-radius: 6px;
   background: transparent;
@@ -345,7 +299,6 @@
 }
 .toast__close:hover { opacity: 1; background: rgba(0, 0, 0, 0.06); }
 .toast__close svg { width: 14px; height: 14px; }
-
 .toast.is-leaving { animation: dh-toast-out 180ms ease-in forwards; }
 
 @keyframes dh-toast-in {
@@ -357,7 +310,293 @@
 }
 
 /* =========================================================
-   Responsivo
+   4. CADASTRO COMPLETO DE CLIENTES (abas + PF/PJ + repetíveis)
+   ========================================================= */
+
+/* ---------- Modal grande ---------- */
+.modal__dialog--customer {
+  max-width: 880px;
+  width: 100%;
+}
+
+/* ---------- Abas ---------- */
+.tabs {
+  display: flex;
+  gap: 2px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  background: var(--surface);
+  flex: 0 0 auto;
+  scrollbar-width: thin;
+}
+.tabs::-webkit-scrollbar { height: 3px; }
+.tabs::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 2px; }
+
+.tab-btn {
+  flex: 0 0 auto;
+  padding: 13px 14px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color var(--transition), border-color var(--transition);
+}
+.tab-btn:hover { color: var(--text); }
+.tab-btn.is-active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+
+/* ---------- Painéis ---------- */
+#customer-form {
+  padding: 0;
+  gap: 0;
+}
+.tab-panel {
+  display: none;
+  padding: 22px 24px 8px;
+  overflow-y: auto;
+}
+.tab-panel.is-active { display: block; }
+
+/* ---------- Grupos de campos ---------- */
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 22px;
+}
+.field-group:last-child { margin-bottom: 0; }
+
+.field-group__title {
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* =========================================================
+   PF x PJ  (correção principal)
+   ========================================================= */
+/* Por padrão (PF): mostra PF, esconde PJ */
+.pf-only { display: flex; flex-direction: column; gap: 14px; }
+.pj-only { display: none; }
+
+/* Quando o modal estiver com a classe .customer-type-PJ: */
+.customer-type-PJ .pf-only { display: none; }
+.customer-type-PJ .pj-only { display: flex; flex-direction: column; gap: 14px; }
+
+/* Aba "Contatos" some quando o tipo é PF */
+.customer-type-PJ .tab-btn.pj-only-tab { display: inline-flex; }
+
+/* =========================================================
+   Repetíveis (telefone / email / endereço / contato)
+   ========================================================= */
+.repeatable {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+.repeatable--empty {
+  border-style: dashed;
+  background: var(--surface);
+}
+
+.repeatable__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.repeatable__title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text);
+}
+.repeatable__hint {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.repeatable__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.repeatable-row {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  align-items: center;
+  transition: border-color var(--transition);
+}
+.repeatable-row:hover { border-color: var(--border-strong); }
+
+.repeatable-row--phone   { grid-template-columns: 140px 1fr auto auto; }
+.repeatable-row--email   { grid-template-columns: 140px 1fr auto auto; }
+.repeatable-row--address { grid-template-columns: 130px 130px 1fr 1fr auto; }
+
+.repeatable-row--address .repeatable-row__line2 {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr 90px 1fr 1fr auto;
+  gap: 8px;
+}
+
+.repeatable-row--contact {
+  grid-template-columns: 1fr 130px 1fr 1fr 1fr auto auto;
+}
+
+.repeatable-row input,
+.repeatable-row select {
+  width: 100%;
+  height: 40px;
+  padding: 0 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--surface);
+  font-size: 13.5px;
+  color: var(--text);
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+.repeatable-row select {
+  padding-right: 30px;
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23667085' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 14px;
+  cursor: pointer;
+}
+.repeatable-row input:hover,
+.repeatable-row select:hover { border-color: #b9bfc9; }
+.repeatable-row input:focus,
+.repeatable-row select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+
+.repeatable-row__primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-soft);
+  user-select: none;
+  white-space: nowrap;
+  padding: 0 4px;
+}
+.repeatable-row__primary input {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.repeatable-row__remove {
+  display: grid;
+  place-items: center;
+  width: 34px; height: 34px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background-color var(--transition), color var(--transition), border-color var(--transition);
+}
+.repeatable-row__remove:hover {
+  background: var(--danger-soft);
+  border-color: var(--danger-border);
+  color: var(--danger);
+}
+.repeatable-row__remove svg { width: 15px; height: 15px; }
+
+.btn--add-row {
+  align-self: flex-start;
+  height: 34px;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--surface);
+}
+.btn--add-row:hover:not(:disabled) {
+  background: var(--accent-soft);
+  color: var(--accent-hover);
+}
+
+/* =========================================================
+   5. Feedback (validação)
+   ========================================================= */
+#customer-form-feedback {
+  margin: 0 24px;
+  padding: 11px 14px;
+  border-radius: var(--radius);
+}
+
+/* =========================================================
+   6. Rodapé do modal de cliente
+   ========================================================= */
+.modal__dialog--customer .modal__foot {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  flex: 0 0 auto;
+}
+
+/* =========================================================
+   7. Células da lista
+   ========================================================= */
+.cell-name { font-weight: 600; color: var(--text); }
+
+.cell-customer { min-width: 200px; }
+.cell-customer__name { font-weight: 600; color: var(--text); }
+.cell-customer__meta {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* Tags PF/PJ */
+.tag-pf, .tag-pj {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.tag-pf { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+.tag-pj { background: #fdf2f8; color: #be185d; border: 1px solid #fbcfe8; }
+
+/* =========================================================
+   8. Responsivo
    ========================================================= */
 @media (max-width: 720px) {
   .toolbar { align-items: stretch; }
@@ -370,26 +609,67 @@
     max-height: calc(100vh - 24px);
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   }
+  .modal__dialog--customer { max-width: 100%; }
 
-  .toast-region {
-    right: 12px;
-    left: 12px;
-    bottom: 12px;
-    width: auto;
+  .tabs { padding: 0 10px; }
+  .tab-panel { padding: 16px 16px 6px; }
+  #customer-form-feedback { margin: 0 16px; }
+  .modal__dialog--customer .modal__foot { padding: 14px 16px; }
+
+  .repeatable-row--phone,
+  .repeatable-row--email {
+    grid-template-columns: 1fr auto auto;
+    grid-template-areas:
+      "type type type"
+      "phone primary remove";
   }
-}
-.modal {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
+  .repeatable-row--phone > *:nth-child(1),
+  .repeatable-row--email > *:nth-child(1) { grid-area: type; }
+  .repeatable-row--phone > *:nth-child(2),
+  .repeatable-row--email > *:nth-child(2) { grid-area: phone; }
+  .repeatable-row--phone > *:nth-child(3),
+  .repeatable-row--email > *:nth-child(3) { grid-area: primary; }
+  .repeatable-row--phone > *:nth-child(4),
+  .repeatable-row--email > *:nth-child(4) { grid-area: remove; }
+
+  .repeatable-row--address {
+    grid-template-columns: 1fr 1fr auto;
+    grid-template-areas:
+      "type type remove"
+      "cep  uf   uf"
+      "city city city";
+  }
+  .repeatable-row--address > *:nth-child(1) { grid-area: type; }
+  .repeatable-row--address > *:nth-child(2) { grid-area: cep; }
+  .repeatable-row--address > *:nth-child(3) { grid-area: city; }
+  .repeatable-row--address > *:nth-child(4) { grid-area: uf; }
+  .repeatable-row--address > *:nth-child(5) { grid-area: remove; }
+  .repeatable-row--address .repeatable-row__line2 {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .repeatable-row--contact {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "name remove"
+      "dept dept"
+      "pos  pos"
+      "phone phone"
+      "email email"
+      "prim prim";
+  }
+  .repeatable-row--contact > *:nth-child(1) { grid-area: name; }
+  .repeatable-row--contact > *:nth-child(2) { grid-area: dept; }
+  .repeatable-row--contact > *:nth-child(3) { grid-area: pos; }
+  .repeatable-row--contact > *:nth-child(4) { grid-area: phone; }
+  .repeatable-row--contact > *:nth-child(5) { grid-area: email; }
+  .repeatable-row--contact > *:nth-child(6) { grid-area: prim; }
+  .repeatable-row--contact > *:nth-child(7) { grid-area: remove; }
+
+  .toast-region { right: 12px; left: 12px; bottom: 12px; width: auto; }
 }
 
-/* 👇 Garante que [hidden] sempre esconda o modal,
-      mesmo com display: flex acima */
-.modal[hidden] {
-  display: none;
-}
+/* =========================================================
+   9. Correção do [hidden] garantida
+   ========================================================= */
+.modal[hidden] { display: none; }

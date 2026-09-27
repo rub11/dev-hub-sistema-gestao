@@ -43,6 +43,7 @@
     setupProfileForm();
     setupPasswordModal();
     setupThemeControls();
+    setupAvatar();
     setupSignOut();
 
     // Verificação de sessão via getUser (como pedido)
@@ -70,6 +71,9 @@
     renderProfileForm();
     renderAccountInfo();
 
+    // Renderiza a foto no card de avatar
+    renderAvatarPreview((state.profile && state.profile.avatar_url) || null);
+
     showLoading(false);
   }
 
@@ -93,7 +97,7 @@
 
     const { data, error } = await window.db
       .from('profiles')
-      .select('id, name, email, role, created_at')
+      .select('id, name, email, role, created_at, avatar_url')
       .eq('id', userId)
       .maybeSingle();
 
@@ -409,6 +413,251 @@
       return 'Muitas tentativas. Aguarde alguns minutos.';
     }
     return 'Não foi possível alterar a senha. Tente novamente.';
+  }
+
+  /* =========================================================
+     Foto do perfil
+     ========================================================= */
+  const avatarEls = {};
+
+  function setupAvatar() {
+    avatarEls.preview  = document.getElementById('avatar-preview');
+    avatarEls.input    = document.getElementById('avatar-input');
+    avatarEls.upload   = document.getElementById('avatar-upload-btn');
+    avatarEls.remove   = document.getElementById('avatar-remove-btn');
+    avatarEls.feedback = document.getElementById('avatar-feedback');
+
+    if (!avatarEls.preview || !avatarEls.input) return;
+
+    if (avatarEls.upload) {
+      avatarEls.upload.addEventListener('click', function () {
+        avatarEls.input.click();
+      });
+    }
+
+    avatarEls.input.addEventListener('change', onAvatarPick);
+
+    if (avatarEls.remove) {
+      avatarEls.remove.addEventListener('click', onAvatarRemove);
+    }
+  }
+
+  function getUserInitial() {
+    const name =
+      (state.profile && state.profile.name) ||
+      (state.user && state.user.user_metadata && state.user.user_metadata.name) ||
+      (state.user && state.user.email ? state.user.email.split('@')[0] : '') ||
+      '';
+    const first = String(name).trim().split(/\s+/)[0] || '';
+    return first.charAt(0).toUpperCase() || '?';
+  }
+
+  function renderAvatarPreview(url) {
+    if (!avatarEls.preview) return;
+    avatarEls.preview.innerHTML = '';
+
+    if (url) {
+      const img = document.createElement('img');
+      img.src = url;
+      img.alt = '';
+      avatarEls.preview.appendChild(img);
+      if (avatarEls.remove) avatarEls.remove.hidden = false;
+    } else {
+      const span = document.createElement('span');
+      span.textContent = getUserInitial();
+      avatarEls.preview.appendChild(span);
+      if (avatarEls.remove) avatarEls.remove.hidden = true;
+    }
+  }
+
+  async function onAvatarPick(event) {
+    const file = event.target.files && event.target.files[0];
+    event.target.value = '';
+    if (!file) return;
+
+    clearAvatarFeedback();
+
+    if (!file.type || file.type.indexOf('image/') !== 0) {
+      showAvatarFeedback('Selecione uma imagem (JPG, PNG ou WEBP).');
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      showAvatarFeedback('A imagem precisa ter no máximo 2 MB.');
+      return;
+    }
+
+    setAvatarBusy(true);
+
+    try {
+      const userId = state.user.id;
+      const ext = (file.name.split('.').pop() || 'png').toLowerCase();
+      const path = userId + '/avatar-' + Date.now() + '.' + ext;
+
+      // Upload
+      const { error: upErr } = await window.db.storage
+        .from('avatars')
+        .upload(path, file, {
+          cacheControl: '3600',
+          upsert: false,
+          contentType: file.type
+        });
+      if (upErr) throw upErr;
+
+      // URL pública
+      const { data: urlData } = window.db.storage
+        .from('avatars')
+        .getPublicUrl(path);
+
+      const publicUrl = urlData && urlData.publicUrl;
+      if (!publicUrl) throw new Error('Não foi possível gerar a URL pública.');
+
+      // Persiste em profiles
+      const { error: dbErr } = await window.db
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('id', userId);
+      if (dbErr) throw dbErr;
+
+      // Estado local
+      state.profile = Object.assign({}, state.profile || {}, { avatar_url: publicUrl });
+
+      try {
+        const raw = sessionStorage.getItem('devhub_user');
+        if (raw) {
+          const u = JSON.parse(raw);
+          u.avatar_url = publicUrl;
+          sessionStorage.setItem('devhub_user', JSON.stringify(u));
+        }
+      } catch (e) { /* ignora */ }
+
+      renderAvatarPreview(publicUrl);
+      applyTopbarAvatar(publicUrl);
+
+      showToast('Foto atualizada com sucesso.', 'success');
+    } catch (error) {
+      console.error('[DEV HUB] Falha no upload da foto:', error);
+      showAvatarFeedback(mapAvatarError(error));
+    } finally {
+      setAvatarBusy(false);
+    }
+  }
+
+  async function onAvatarRemove() {
+    if (!state.user || !state.user.id) return;
+
+    clearAvatarFeedback();
+
+    if (!window.confirm('Remover sua foto de perfil?')) return;
+
+    setAvatarBusy(true);
+
+    try {
+      const userId = state.user.id;
+
+      // Limpa no banco
+      const { error: dbErr } = await window.db
+        .from('profiles')
+        .update({ avatar_url: null })
+        .eq('id', userId);
+      if (dbErr) throw dbErr;
+
+      // Remove do Storage (best-effort)
+      try {
+        const { data: files } = await window.db.storage
+          .from('avatars')
+          .list(userId);
+
+        if (files && files.length > 0) {
+          const paths = files.map(function (f) { return userId + '/' + f.name; });
+          await window.db.storage.from('avatars').remove(paths);
+        }
+      } catch (e) {
+        console.warn('[DEV HUB] Falha ao remover arquivos antigos:', e);
+      }
+
+      // Estado local
+      state.profile = Object.assign({}, state.profile || {}, { avatar_url: null });
+
+      try {
+        const raw = sessionStorage.getItem('devhub_user');
+        if (raw) {
+          const u = JSON.parse(raw);
+          delete u.avatar_url;
+          sessionStorage.setItem('devhub_user', JSON.stringify(u));
+        }
+      } catch (e) { /* ignora */ }
+
+      renderAvatarPreview(null);
+      applyTopbarAvatar(null);
+
+      showToast('Foto removida.', 'success');
+    } catch (error) {
+      console.error('[DEV HUB] Falha ao remover foto:', error);
+      showAvatarFeedback('Não foi possível remover a foto.');
+    } finally {
+      setAvatarBusy(false);
+    }
+  }
+
+  function applyTopbarAvatar(url) {
+    const el = document.getElementById('user-avatar');
+    if (!el) return;
+
+    el.innerHTML = '';
+
+    if (url) {
+      el.style.background = 'none';
+      const img = document.createElement('img');
+      img.src = url;
+      img.alt = '';
+      el.appendChild(img);
+    } else {
+      el.style.background = '';
+      el.textContent = getUserInitial();
+    }
+  }
+
+  function setAvatarBusy(busy) {
+    if (avatarEls.upload) {
+      avatarEls.upload.disabled = busy;
+      avatarEls.upload.classList.toggle('is-loading', busy);
+      avatarEls.upload.setAttribute('aria-busy', String(busy));
+      const lbl = avatarEls.upload.querySelector('.btn__label');
+      if (lbl) lbl.textContent = busy ? 'Enviando...' : 'Escolher imagem';
+    }
+    if (avatarEls.remove) avatarEls.remove.disabled = busy;
+    if (avatarEls.input)  avatarEls.input.disabled  = busy;
+  }
+
+  function showAvatarFeedback(msg) {
+    if (!avatarEls.feedback) return;
+    avatarEls.feedback.textContent = msg;
+    avatarEls.feedback.hidden = false;
+  }
+
+  function clearAvatarFeedback() {
+    if (!avatarEls.feedback) return;
+    avatarEls.feedback.textContent = '';
+    avatarEls.feedback.hidden = true;
+  }
+
+  function mapAvatarError(error) {
+    if (!error) return 'Não foi possível enviar a foto. Tente novamente.';
+    const msg = String(error.message || '').toLowerCase();
+
+    if (msg.includes('payload too large') || msg.includes('maximum allowed size')) {
+      return 'A imagem é muito grande. Use no máximo 2 MB.';
+    }
+    if (msg.includes('row-level security') || msg.includes('permission denied')) {
+      return 'Você não tem permissão para enviar imagens.';
+    }
+    if (msg.includes('bucket') && msg.includes('not found')) {
+      return 'Bucket de avatares não configurado. Contate o suporte.';
+    }
+    if (msg.includes('failed to fetch') || msg.includes('network')) {
+      return 'Não foi possível conectar ao servidor.';
+    }
+    return 'Não foi possível enviar a foto. Tente novamente.';
   }
 
   /* =========================================================

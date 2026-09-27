@@ -2,8 +2,8 @@
    DEV HUB · Usuários da Plataforma
    ---------------------------------------------------------
    Apenas platform_admin. Lista TODOS os usuários de TODAS
-   as empresas. Cria, edita, move entre empresas,
-   ativa/desativa, reseta senha e exclui.
+   as empresas. Permite editar, mover, ativar/desativar,
+   resetar senha e excluir.
    ========================================================= */
 
 (function () {
@@ -13,19 +13,27 @@
     day: '2-digit', month: '2-digit', year: 'numeric'
   });
 
+  const SUPER_ADMIN_EMAIL = 'juliodasilva0101@gmail.com';
+
   const state = {
     users: [],
     filtered: [],
-    organizations: {},          // id -> { id, name, code }
+    organizations: {},
     search: '',
     filterOrg: '',
     filterRole: '',
     currentUserId: null,
+    currentUserEmail: '',
     loading: false,
     creating: false,
     editing: false,
     action: null,
-    acting: false
+    acting: false,
+    // Super admin: gerenciar empresas do usuário
+    manageUser: null,
+    manageOrgs: [],       // [{ organization_id, name, code, is_member, member_role }]
+    manageSearch: '',
+    manageBusy: false
   };
 
   document.addEventListener('DOMContentLoaded', init);
@@ -46,13 +54,18 @@
     setupLogout();
     setupSearch();
     setupFilters();
-    setupCreateUserModal();
-    setupEditModal();
     setupConfirmModal();
+    setupEditModal();
+    setupCreateModal();
+    setupOrgManageModal();
 
     const session = await Auth.requireSession();
     if (!session) return;
     state.currentUserId = session.user.id;
+    state.currentUserEmail = String(session.user.email || '').toLowerCase();
+
+    const ctx = Auth.getStoredUser && Auth.getStoredUser();
+    state.currentOrganizationId = (ctx && ctx.organization_id) || null;
 
     const profile = await Auth.getProfile(session.user.id);
     renderUser(session.user, profile);
@@ -95,7 +108,7 @@
   }
 
   /* =========================================================
-     Topbar
+     Usuário topbar
      ========================================================= */
   function renderUser(user, profile) {
     const meta = user.user_metadata || {};
@@ -159,8 +172,14 @@
     const panel = document.getElementById('user-menu-panel');
     if (!trigger || !panel) return;
 
-    function open() { panel.hidden = false; trigger.setAttribute('aria-expanded', 'true'); }
-    function close() { panel.hidden = true; trigger.setAttribute('aria-expanded', 'false'); }
+    function open() {
+      panel.hidden = false;
+      trigger.setAttribute('aria-expanded', 'true');
+    }
+    function close() {
+      panel.hidden = true;
+      trigger.setAttribute('aria-expanded', 'false');
+    }
 
     trigger.addEventListener('click', function (e) {
       e.stopPropagation();
@@ -241,7 +260,7 @@
   }
 
   /* =========================================================
-     Carregar dados
+     Carregar
      ========================================================= */
   async function loadAll() {
     if (state.loading) return;
@@ -315,7 +334,7 @@
       wrap.hidden = true;
       showEmptyState(
         'Nenhum usuário cadastrado.',
-        'Use o botão acima para criar o primeiro usuário.'
+        'Os usuários aparecem aqui quando são criados nas empresas.'
       );
       return;
     }
@@ -340,7 +359,8 @@
   }
 
   function buildRow(user) {
-    const isSelf = user.user_id === state.currentUserId;
+    const isSelf = user.user_id === state.currentUserId &&
+      user.organization_id === state.currentOrganizationId;
     const roleKey = String(user.role || '').toLowerCase();
     const isActive = user.active !== false;
     const org = state.organizations[user.organization_id];
@@ -429,7 +449,26 @@
     const wrap = document.createElement('div');
     wrap.className = 'row-actions';
 
-    if (!meta.isSelf) {
+       if (!meta.isSelf) {
+
+      // ---------- Gerenciar empresas (só super admin) ----------
+      if (state.currentUserEmail === SUPER_ADMIN_EMAIL) {
+        const orgBtn = document.createElement('button');
+        orgBtn.type = 'button';
+        orgBtn.className = 'row-action';
+        orgBtn.title = 'Gerenciar empresas';
+        orgBtn.setAttribute('aria-label', 'Gerenciar empresas de ' + (user.name || ''));
+        orgBtn.innerHTML =
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"' +
+          ' stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+          '<path d="M3 21h18"/>' +
+          '<path d="M5 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16"/>' +
+          '<path d="M15 21V9h4a2 2 0 0 1 2 2v10"/>' +
+          '<path d="M9 7h2M9 11h2M9 15h2"/></svg>';
+        orgBtn.addEventListener('click', function () { openOrgManageModal(user); });
+        wrap.appendChild(orgBtn);
+      }
+
       // Editar
       const editBtn = document.createElement('button');
       editBtn.type = 'button';
@@ -499,6 +538,276 @@
     return cell;
   }
 
+
+
+  /* =========================================================
+     Super admin · gerenciar empresas do usuário
+     ========================================================= */
+  const orgManageEls = {};
+
+  function setupOrgManageModal() {
+    orgManageEls.modal    = document.getElementById('org-manage-modal');
+    orgManageEls.userBox  = document.getElementById('org-manage-user');
+    orgManageEls.search   = document.getElementById('org-manage-search');
+    orgManageEls.list     = document.getElementById('org-manage-list');
+    orgManageEls.feedback = document.getElementById('org-manage-feedback');
+
+    if (!orgManageEls.modal) return;
+
+    orgManageEls.modal.querySelectorAll('[data-close-modal]').forEach(function (el) {
+      el.addEventListener('click', closeOrgManageModal);
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !orgManageEls.modal.hidden) closeOrgManageModal();
+    });
+
+    if (orgManageEls.search) {
+      orgManageEls.search.addEventListener('input', function () {
+        state.manageSearch = orgManageEls.search.value.trim().toLowerCase();
+        renderOrgManageList();
+      });
+    }
+  }
+
+  async function openOrgManageModal(user) {
+    state.manageUser = user;
+    state.manageOrgs = [];
+    state.manageSearch = '';
+
+    // Cabeçalho
+    if (orgManageEls.userBox) {
+      orgManageEls.userBox.innerHTML = '';
+      const strong = document.createElement('strong');
+      strong.textContent = user.name || '—';
+      const small = document.createElement('small');
+      small.textContent = user.email || '—';
+      orgManageEls.userBox.appendChild(strong);
+      orgManageEls.userBox.appendChild(small);
+    }
+
+    if (orgManageEls.search) orgManageEls.search.value = '';
+    clearOrgManageFeedback();
+
+    // Loading
+    orgManageEls.list.innerHTML =
+      '<div class="state-block state-block--compact">' +
+      '<span class="spinner" aria-hidden="true"></span>' +
+      '<p>Carregando empresas…</p></div>';
+
+    orgManageEls.modal.hidden = false;
+    document.body.style.overflow = 'hidden';
+
+    // Busca
+    try {
+      const { data, error } = await window.db.rpc('super_admin_list_user_orgs', {
+        p_user_id: user.user_id
+      });
+      if (error) throw error;
+
+      state.manageOrgs = (data || []).map(function (row) {
+        return {
+          organization_id: row.organization_id,
+          name: row.name,
+          code: row.code,
+          active: row.active !== false,
+          is_member: row.is_member === true,
+          member_role: row.member_role || 'user'
+        };
+      });
+
+      renderOrgManageList();
+    } catch (error) {
+      console.error('[DEV HUB] Falha ao carregar empresas do usuário:', error);
+      orgManageEls.list.innerHTML = '';
+      showOrgManageFeedback(mapManageError(error, 'edit'));
+    }
+  }
+
+  function closeOrgManageModal() {
+    if (state.manageBusy) return;
+    orgManageEls.modal.hidden = true;
+    document.body.style.overflow = '';
+    state.manageUser = null;
+    state.manageOrgs = [];
+  }
+
+  function renderOrgManageList() {
+    if (!orgManageEls.list) return;
+
+    const term = state.manageSearch;
+    const list = term
+      ? state.manageOrgs.filter(function (o) {
+          return matches(o.name, term) || matches(o.code, term);
+        })
+      : state.manageOrgs.slice();
+
+    orgManageEls.list.innerHTML = '';
+
+    if (list.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'state-block state-block--compact';
+      empty.innerHTML = '<p>Nenhuma empresa encontrada.</p>';
+      orgManageEls.list.appendChild(empty);
+      return;
+    }
+
+    // Ordena: membros primeiro
+    list.sort(function (a, b) {
+      if (a.is_member !== b.is_member) return a.is_member ? -1 : 1;
+      return String(a.name || '').localeCompare(String(b.name || ''));
+    });
+
+    list.forEach(function (org) {
+      orgManageEls.list.appendChild(buildOrgManageRow(org));
+    });
+  }
+
+  function buildOrgManageRow(org) {
+    const row = document.createElement('div');
+    row.className = 'org-manage__row' + (org.is_member ? ' is-member' : '');
+    row.dataset.id = org.organization_id;
+
+    // Checkbox
+    const check = document.createElement('input');
+    check.type = 'checkbox';
+    check.checked = org.is_member;
+    check.setAttribute('aria-label', 'Vincular a ' + (org.name || 'empresa'));
+
+    // Info
+    const info = document.createElement('div');
+    info.className = 'org-manage__row-info';
+
+    const name = document.createElement('div');
+    name.className = 'org-manage__row-name';
+    name.textContent = org.name || '—';
+
+    const meta = document.createElement('div');
+    meta.className = 'org-manage__row-meta';
+    const parts = [];
+    if (org.code) parts.push(org.code);
+    if (!org.active) parts.push('empresa inativa');
+    if (org.is_member && org.member_role) parts.push('perfil: ' + roleLabel(org.member_role));
+    meta.textContent = parts.join(' · ') || '—';
+
+    info.appendChild(name);
+    info.appendChild(meta);
+
+    // Select de role (só aparece quando membro)
+    const roleSelect = document.createElement('select');
+    roleSelect.setAttribute('aria-label', 'Perfil na empresa ' + (org.name || ''));
+    [['user', 'Funcionário'], ['gestor', 'Gestor'], ['admin', 'Administrador']]
+      .forEach(function (pair) {
+        const opt = document.createElement('option');
+        opt.value = pair[0];
+        opt.textContent = pair[1];
+        roleSelect.appendChild(opt);
+      });
+    roleSelect.value = org.member_role || 'user';
+    roleSelect.disabled = !org.is_member;
+
+    // Eventos
+    check.addEventListener('change', function () {
+      if (check.checked) {
+        assignOrgMembership(org, roleSelect.value, check, roleSelect);
+      } else {
+        removeOrgMembership(org, check, roleSelect);
+      }
+    });
+
+    roleSelect.addEventListener('change', function () {
+      if (!org.is_member) return;
+      assignOrgMembership(org, roleSelect.value, check, roleSelect);
+    });
+
+    row.appendChild(check);
+    row.appendChild(info);
+    row.appendChild(roleSelect);
+    return row;
+  }
+
+  async function assignOrgMembership(org, role, checkEl, selectEl) {
+    if (state.manageBusy) return;
+    state.manageBusy = true;
+    setOrgRowBusy(checkEl, selectEl, true);
+    clearOrgManageFeedback();
+
+    try {
+      const { error } = await window.db.rpc('super_admin_assign_user_org', {
+        p_user_id: state.manageUser.user_id,
+        p_organization_id: org.organization_id,
+        p_role: role
+      });
+      if (error) throw error;
+
+      org.is_member = true;
+      org.member_role = role;
+
+      showToast('Vínculo atualizado.', 'success');
+      renderOrgManageList();
+    } catch (error) {
+      console.error('[DEV HUB] Falha ao atribuir empresa:', error);
+      if (checkEl) checkEl.checked = org.is_member;
+      showOrgManageFeedback(mapManageError(error, 'edit'));
+    } finally {
+      state.manageBusy = false;
+      setOrgRowBusy(checkEl, selectEl, false);
+    }
+  }
+
+  async function removeOrgMembership(org, checkEl, selectEl) {
+    if (state.manageBusy) return;
+
+    if (!window.confirm('Remover "' + (state.manageUser.name || 'este usuário') +
+                        '" de "' + (org.name || 'esta empresa') + '"?')) {
+      if (checkEl) checkEl.checked = true;
+      return;
+    }
+
+    state.manageBusy = true;
+    setOrgRowBusy(checkEl, selectEl, true);
+    clearOrgManageFeedback();
+
+    try {
+      const { error } = await window.db.rpc('super_admin_remove_user_org', {
+        p_user_id: state.manageUser.user_id,
+        p_organization_id: org.organization_id
+      });
+      if (error) throw error;
+
+      org.is_member = false;
+      org.member_role = 'user';
+
+      showToast('Vínculo removido.', 'success');
+      renderOrgManageList();
+    } catch (error) {
+      console.error('[DEV HUB] Falha ao remover vínculo:', error);
+      if (checkEl) checkEl.checked = true;
+      showOrgManageFeedback(mapManageError(error, 'edit'));
+    } finally {
+      state.manageBusy = false;
+      setOrgRowBusy(checkEl, selectEl, false);
+    }
+  }
+
+  function setOrgRowBusy(checkEl, selectEl, busy) {
+    if (checkEl) checkEl.disabled = busy;
+    if (selectEl) selectEl.disabled = busy || !checkEl.checked;
+  }
+
+  function showOrgManageFeedback(msg) {
+    if (!orgManageEls.feedback) return;
+    orgManageEls.feedback.textContent = msg;
+    orgManageEls.feedback.hidden = false;
+  }
+  function clearOrgManageFeedback() {
+    if (!orgManageEls.feedback) return;
+    orgManageEls.feedback.textContent = '';
+    orgManageEls.feedback.hidden = true;
+  }
+
+
+
   /* =========================================================
      Stats / estados
      ========================================================= */
@@ -567,189 +876,148 @@
   }
 
   /* =========================================================
-     Modal: NOVO usuário (plataforma)
+     Modal: confirmar ação
      ========================================================= */
-  const createEls = {};
+  const confirmEls = {};
 
-  function setupCreateUserModal() {
-    createEls.modal    = document.getElementById('create-user-modal');
-    createEls.form     = document.getElementById('create-user-form');
-    createEls.name     = document.getElementById('create-name');
-    createEls.email    = document.getElementById('create-email');
-    createEls.password = document.getElementById('create-password');
-    createEls.role     = document.getElementById('create-role');
-    createEls.org      = document.getElementById('create-org');
-    createEls.feedback = document.getElementById('create-user-feedback');
-    createEls.saveBtn  = document.getElementById('create-user-save-btn');
-    createEls.openBtn  = document.getElementById('new-user-btn');
+  function setupConfirmModal() {
+    confirmEls.modal = document.getElementById('confirm-modal');
+    confirmEls.text = document.getElementById('confirm-text');
+    confirmEls.btn = document.getElementById('confirm-action-btn');
+    if (!confirmEls.modal || !confirmEls.btn) return;
 
-    if (!createEls.modal || !createEls.form) return;
-
-    if (createEls.openBtn) {
-      createEls.openBtn.addEventListener('click', openCreateUserModal);
-    }
-
-    createEls.modal.querySelectorAll('[data-close-modal]').forEach(function (el) {
-      el.addEventListener('click', closeCreateUserModal);
+    confirmEls.modal.querySelectorAll('[data-close-modal]').forEach(function (el) {
+      el.addEventListener('click', closeConfirmModal);
     });
-
-    createEls.modal.querySelectorAll('[data-pw-toggle]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        const input = document.getElementById(btn.getAttribute('data-pw-toggle'));
-        if (!input) return;
-        const visible = input.type === 'text';
-        input.type = visible ? 'password' : 'text';
-        btn.setAttribute('aria-pressed', String(!visible));
-        btn.setAttribute('aria-label', visible ? 'Mostrar senha' : 'Ocultar senha');
-        input.focus({ preventScroll: true });
-      });
-    });
-
     document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape' && !createEls.modal.hidden) closeCreateUserModal();
+      if (e.key === 'Escape' && !confirmEls.modal.hidden) closeConfirmModal();
     });
-
-    createEls.form.addEventListener('submit', onSubmitCreateUser);
+    confirmEls.btn.addEventListener('click', onConfirmAction);
   }
 
-  function populateCreateOrgSelect() {
-    if (!createEls.org) return;
-    while (createEls.org.options.length > 0) createEls.org.remove(0);
+  function confirmToggle(user) {
+    state.action = { type: 'toggle', user: user };
+    const isActive = user.active !== false;
+    const name = user.name || 'este usuário';
 
-    const placeholder = document.createElement('option');
-    placeholder.value = '';
-    placeholder.textContent = 'Selecione uma empresa';
-    createEls.org.appendChild(placeholder);
-
-    Object.keys(state.organizations).forEach(function (id) {
-      const o = state.organizations[id];
-      const opt = document.createElement('option');
-      opt.value = id;
-      opt.textContent = o.name + (o.code ? ' (' + o.code + ')' : '');
-      createEls.org.appendChild(opt);
-    });
-  }
-
-  function openCreateUserModal() {
-    if (Object.keys(state.organizations).length === 0) {
-      showToast('Crie uma empresa antes de cadastrar usuários.', 'error');
-      return;
+    if (isActive) {
+      confirmEls.text.textContent =
+        'Desativar "' + name + '"? ' +
+        'Ele não conseguirá fazer login até ser reativado.';
+      setConfirmButton('Desativar', 'danger');
+    } else {
+      confirmEls.text.textContent = 'Ativar "' + name + '" novamente?';
+      setConfirmButton('Ativar', 'primary');
     }
 
-    createEls.form.reset();
-    populateCreateOrgSelect();
-    clearCreateFeedback();
-    setCreateBusy(false);
-
-    createEls.modal.hidden = false;
+    confirmEls.modal.hidden = false;
     document.body.style.overflow = 'hidden';
-    createEls.name.focus();
+    confirmEls.btn.focus();
   }
 
-  function closeCreateUserModal() {
-    if (state.creating) return;
-    createEls.modal.hidden = true;
+  function confirmResetPassword(user) {
+    state.action = { type: 'reset', user: user };
+    const name = user.name || 'este usuário';
+
+    confirmEls.text.textContent =
+      'Enviar link de redefinição de senha para "' + name + '"? ' +
+      'O usuário receberá um e-mail para criar uma nova senha.';
+    setConfirmButton('Enviar e-mail', 'primary');
+
+    confirmEls.modal.hidden = false;
+    document.body.style.overflow = 'hidden';
+    confirmEls.btn.focus();
+  }
+
+  function confirmDelete(user) {
+    state.action = { type: 'delete', user: user };
+    const name = user.name || 'este usuário';
+
+    confirmEls.text.textContent =
+      'Excluir "' + name + '"? ' +
+      'A conta de login, o perfil e o vínculo com a empresa serão removidos. ' +
+      'Esta ação não pode ser desfeita.';
+    setConfirmButton('Excluir conta', 'danger');
+
+    confirmEls.modal.hidden = false;
+    document.body.style.overflow = 'hidden';
+    confirmEls.btn.focus();
+  }
+
+  function setConfirmButton(label, variant) {
+    confirmEls.btn.className = 'btn btn--' + variant;
+    const lbl = confirmEls.btn.querySelector('.btn__label');
+    if (lbl) lbl.textContent = label;
+  }
+
+  function closeConfirmModal() {
+    if (state.acting) return;
+    confirmEls.modal.hidden = true;
     document.body.style.overflow = '';
+    state.action = null;
   }
 
-  async function onSubmitCreateUser(event) {
-    event.preventDefault();
-    if (state.creating) return;
-
-    clearCreateFeedback();
-
-    const name     = createEls.name.value.trim();
-    const email    = createEls.email.value.trim().toLowerCase();
-    const password = createEls.password.value;
-    const role     = createEls.role.value || 'user';
-    const orgId    = createEls.org.value;
-
-    if (!name) { showCreateFeedback('Informe o nome.'); createEls.name.focus(); return; }
-    if (!email) { showCreateFeedback('Informe o e-mail.'); createEls.email.focus(); return; }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      showCreateFeedback('E-mail inválido.'); createEls.email.focus(); return;
-    }
-    if (!password) { showCreateFeedback('Informe a senha inicial.'); createEls.password.focus(); return; }
-    if (password.length < 6) {
-      showCreateFeedback('A senha precisa ter ao menos 6 caracteres.');
-      createEls.password.focus(); return;
-    }
-    if (!orgId) {
-      showCreateFeedback('Selecione a empresa do usuário.');
-      createEls.org.focus(); return;
-    }
-
-    setCreateBusy(true);
+  async function onConfirmAction() {
+    if (state.acting || !state.action) return;
+    const { type, user } = state.action;
+    setConfirmBusy(true);
 
     try {
-      // Preferência: RPC única (mais segura, atômica, recomendada)
-      const { data, error } = await window.db.rpc('platform_create_user', {
-        p_name: name,
-        p_email: email,
-        p_password: password,
-        p_role: role,
-        p_organization_id: orgId
-      });
+      if (type === 'toggle') {
+        const newActive = user.active === false;
+        const { error } = await window.db
+          .from('organization_members')
+          .update({ active: newActive })
+          .eq('id', user.id);
+        if (error) throw error;
+        showToast(newActive ? 'Usuário ativado.' : 'Usuário desativado.', 'success');
 
-      if (error) throw error;
+      } else if (type === 'reset') {
+        await callManageUser('reset_password', { user_id: user.user_id });
+        showToast('E-mail de redefinição enviado.', 'success');
 
-      const row = Array.isArray(data) ? data[0] : data;
-      if (!row || !row.user_id) {
-        throw new Error('Usuário criado, mas não foi possível confirmar o vínculo.');
+      } else if (type === 'delete') {
+        await callManageUser('delete', { user_id: user.user_id });
+        showToast('Usuário excluído com sucesso.', 'success');
       }
 
-      closeCreateUserModal();
-      showToast('Usuário criado com sucesso.', 'success');
+      confirmEls.modal.hidden = true;
+      document.body.style.overflow = '';
+      state.action = null;
       await loadAll();
     } catch (error) {
-      console.error('[DEV HUB] Falha ao criar usuário:', error);
-      showCreateFeedback(mapManageError(error, 'create'));
+      console.error('[DEV HUB] Falha na operação:', error);
+      showToast(mapActionError(error), 'error');
     } finally {
-      setCreateBusy(false);
+      setConfirmBusy(false);
     }
   }
 
-  function setCreateBusy(busy) {
-    state.creating = busy;
-    if (createEls.saveBtn) {
-      createEls.saveBtn.disabled = busy;
-      createEls.saveBtn.classList.toggle('is-loading', busy);
-      createEls.saveBtn.setAttribute('aria-busy', String(busy));
-      const label = createEls.saveBtn.querySelector('.btn__label');
-      if (label) label.textContent = busy ? 'Criando...' : 'Criar usuário';
+  function setConfirmBusy(busy) {
+    state.acting = busy;
+    if (confirmEls.btn) {
+      confirmEls.btn.disabled = busy;
+      confirmEls.btn.classList.toggle('is-loading', busy);
+      confirmEls.btn.setAttribute('aria-busy', String(busy));
     }
-    [createEls.name, createEls.email, createEls.password, createEls.role, createEls.org]
-      .forEach(function (i) { if (i) i.disabled = busy; });
-  }
-
-  function showCreateFeedback(message) {
-    if (!createEls.feedback) return;
-    createEls.feedback.textContent = message;
-    createEls.feedback.hidden = false;
-  }
-  function clearCreateFeedback() {
-    if (!createEls.feedback) return;
-    createEls.feedback.textContent = '';
-    createEls.feedback.hidden = true;
   }
 
   /* =========================================================
-     Modal: EDITAR usuário
+     Modal: editar usuário
      ========================================================= */
   const editEls = {};
 
   function setupEditModal() {
-    editEls.modal    = document.getElementById('edit-modal');
-    editEls.form     = document.getElementById('edit-form');
-    editEls.userId   = document.getElementById('edit-user-id');
-    editEls.memberId = document.getElementById('edit-member-id');
-    editEls.name     = document.getElementById('edit-name');
-    editEls.email    = document.getElementById('edit-email');
-    editEls.role     = document.getElementById('edit-role');
-    editEls.active   = document.getElementById('edit-active');
-    editEls.org      = document.getElementById('edit-org');
+    editEls.modal = document.getElementById('edit-modal');
+    editEls.form = document.getElementById('edit-form');
+    editEls.userId = document.getElementById('edit-user-id');
+    editEls.name = document.getElementById('edit-name');
+    editEls.email = document.getElementById('edit-email');
+    editEls.role = document.getElementById('edit-role');
+    editEls.active = document.getElementById('edit-active');
+    editEls.org = document.getElementById('edit-org');
     editEls.feedback = document.getElementById('edit-form-feedback');
-    editEls.saveBtn  = document.getElementById('edit-save-btn');
+    editEls.saveBtn = document.getElementById('edit-save-btn');
 
     if (!editEls.modal || !editEls.form) return;
 
@@ -779,14 +1047,12 @@
   function openEditModal(user) {
     populateEditOrgSelect();
 
-    editEls.userId.value   = user.user_id || '';
-    editEls.memberId.value = user.id || '';
-
-    editEls.name.value   = user.name || '';
-    editEls.email.value  = user.email || '';
-    editEls.role.value   = String(user.role || 'user').toLowerCase();
+    editEls.userId.value = user.user_id || '';
+    editEls.name.value = user.name || '';
+    editEls.email.value = user.email || '';
+    editEls.role.value = String(user.role || 'user').toLowerCase();
     editEls.active.value = user.active === false ? 'false' : 'true';
-    editEls.org.value    = user.organization_id || '';
+    editEls.org.value = user.organization_id || '';
 
     clearEditFeedback();
     setEditBusy(false);
@@ -808,55 +1074,49 @@
 
     clearEditFeedback();
 
-    const memberId = editEls.memberId.value;
-    const userId   = editEls.userId.value;
-    const name     = editEls.name.value.trim();
-    const email    = editEls.email.value.trim().toLowerCase();
-    const role     = editEls.role.value;
-    const active   = editEls.active.value === 'true';
-    const orgId    = editEls.org.value;
+    const targetId = editEls.userId.value;
+    const name = editEls.name.value.trim();
+    const email = editEls.email.value.trim().toLowerCase();
+    const role = editEls.role.value;
+    const active = editEls.active.value === 'true';
+    const organizationId = editEls.org.value;
 
-    if (!memberId) { showEditFeedback('Registro inválido.'); return; }
     if (!name) { showEditFeedback('Informe o nome.'); editEls.name.focus(); return; }
     if (!email) { showEditFeedback('Informe o e-mail.'); editEls.email.focus(); return; }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      showEditFeedback('E-mail inválido.'); editEls.email.focus(); return;
-    }
-    if (!orgId) { showEditFeedback('Selecione uma empresa.'); editEls.org.focus(); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showEditFeedback('E-mail inválido.'); editEls.email.focus(); return; }
+    if (!organizationId) { showEditFeedback('Selecione uma empresa.'); editEls.org.focus(); return; }
 
     setEditBusy(true);
 
     try {
-      // Atualiza o vínculo específico (por member id — mais seguro)
-      const { error: memberErr } = await window.db
+
+
+      const { error } = await window.db
         .from('organization_members')
         .update({
           name: name,
           email: email,
           role: role,
           active: active,
-          organization_id: orgId
+          organization_id: organizationId
         })
-        .eq('id', memberId);
+        .eq('user_id', targetId);
 
-      if (memberErr) throw memberErr;
+      if (error) throw error;
 
-      // Sincroniza profiles (best-effort)
-      try {
-        await window.db
-          .from('profiles')
-          .update({ name: name, email: email, role: role })
-          .eq('id', userId);
-      } catch (syncError) {
-        console.warn('[DEV HUB] profiles não sincronizado:', syncError);
-      }
+      // Sincroniza o profiles (best-effort)
+      await window.db
+        .from('profiles')
+        .update({ name: name, email: email, role: role })
+        .eq('id', targetId);
+
 
       closeEditModal();
       showToast('Usuário atualizado com sucesso.', 'success');
       await loadAll();
     } catch (error) {
       console.error('[DEV HUB] Falha ao editar usuário:', error);
-      showEditFeedback(mapManageError(error, 'edit'));
+      showEditFeedback(mapManageError(error));
     } finally {
       setEditBusy(false);
     }
@@ -880,6 +1140,7 @@
     editEls.feedback.textContent = message;
     editEls.feedback.hidden = false;
   }
+
   function clearEditFeedback() {
     if (!editEls.feedback) return;
     editEls.feedback.textContent = '';
@@ -887,130 +1148,193 @@
   }
 
   /* =========================================================
-     Modal: CONFIRMAR ação
+     Modal: novo usuário
+     ---------------------------------------------------------
+     Cria o usuário em QUALQUER empresa da plataforma, via a
+     mesma Edge Function 'create-user' usada em Gestão — aqui
+     enviando também organization_id, já que quem cria é o
+     platform_admin e pode escolher a empresa.
      ========================================================= */
-  const confirmEls = {};
+  const createEls = {};
 
-  function setupConfirmModal() {
-    confirmEls.modal = document.getElementById('confirm-modal');
-    confirmEls.text  = document.getElementById('confirm-text');
-    confirmEls.btn   = document.getElementById('confirm-action-btn');
-    if (!confirmEls.modal || !confirmEls.btn) return;
+  function setupCreateModal() {
+    createEls.modal = document.getElementById('create-modal');
+    createEls.form = document.getElementById('create-form');
+    createEls.name = document.getElementById('create-name');
+    createEls.email = document.getElementById('create-email');
+    createEls.password = document.getElementById('create-password');
+    createEls.role = document.getElementById('create-role');
+    createEls.org = document.getElementById('create-org');
+    createEls.feedback = document.getElementById('create-form-feedback');
+    createEls.saveBtn = document.getElementById('create-save-btn');
+    createEls.openBtn = document.getElementById('new-user-btn');
 
-    confirmEls.modal.querySelectorAll('[data-close-modal]').forEach(function (el) {
-      el.addEventListener('click', closeConfirmModal);
-    });
-    document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape' && !confirmEls.modal.hidden) closeConfirmModal();
-    });
-    confirmEls.btn.addEventListener('click', onConfirmAction);
-  }
+    if (!createEls.modal || !createEls.form) return;
 
-  function confirmToggle(user) {
-    state.action = { type: 'toggle', user: user };
-    const isActive = user.active !== false;
-    const name = user.name || 'este usuário';
-
-    if (isActive) {
-      confirmEls.text.textContent =
-        'Desativar "' + name + '"? Ele não conseguirá fazer login até ser reativado.';
-      setConfirmButton('Desativar', 'danger');
-    } else {
-      confirmEls.text.textContent = 'Ativar "' + name + '" novamente?';
-      setConfirmButton('Ativar', 'primary');
+    if (createEls.openBtn) {
+      createEls.openBtn.addEventListener('click', openCreateModal);
     }
 
-    openConfirm();
+    createEls.modal.querySelectorAll('[data-close-modal]').forEach(function (el) {
+      el.addEventListener('click', closeCreateModal);
+    });
+
+    createEls.modal.querySelectorAll('[data-pw-toggle]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        const targetId = btn.getAttribute('data-pw-toggle');
+        const input = document.getElementById(targetId);
+        if (!input) return;
+        const visible = input.type === 'text';
+        input.type = visible ? 'password' : 'text';
+        btn.setAttribute('aria-pressed', String(!visible));
+        btn.setAttribute('aria-label', visible ? 'Mostrar senha' : 'Ocultar senha');
+        input.focus({ preventScroll: true });
+      });
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !createEls.modal.hidden) closeCreateModal();
+    });
+
+    createEls.form.addEventListener('submit', onSubmitCreate);
   }
 
-  function confirmResetPassword(user) {
-    state.action = { type: 'reset', user: user };
-    const name = user.name || 'este usuário';
+  function populateCreateOrgSelect() {
+    if (!createEls.org) return;
+    while (createEls.org.options.length > 0) createEls.org.remove(0);
 
-    confirmEls.text.textContent =
-      'Enviar link de redefinição de senha para "' + name + '"' +
-      (user.email ? ' (' + user.email + ')' : '') + '?';
-    setConfirmButton('Enviar e-mail', 'primary');
-    openConfirm();
+    Object.keys(state.organizations).forEach(function (id) {
+      const o = state.organizations[id];
+      const opt = document.createElement('option');
+      opt.value = id;
+      opt.textContent = o.name + (o.code ? ' (' + o.code + ')' : '');
+      createEls.org.appendChild(opt);
+    });
   }
 
-  function confirmDelete(user) {
-    state.action = { type: 'delete', user: user };
-    const name = user.name || 'este usuário';
+  function openCreateModal() {
+    populateCreateOrgSelect();
+    createEls.form.reset();
+    if (createEls.role) createEls.role.value = 'user';
+    if (createEls.org && state.filterOrg) createEls.org.value = state.filterOrg;
 
-    confirmEls.text.textContent =
-      'Excluir "' + name + '"? A conta de login, o perfil e o vínculo ' +
-      'com a empresa serão removidos. Esta ação não pode ser desfeita.';
-    setConfirmButton('Excluir conta', 'danger');
-    openConfirm();
-  }
+    clearCreateFeedback();
+    setCreateBusy(false);
 
-  function openConfirm() {
-    confirmEls.modal.hidden = false;
+    createEls.modal.hidden = false;
     document.body.style.overflow = 'hidden';
-    confirmEls.btn.focus();
+    createEls.name.focus();
   }
 
-  function setConfirmButton(label, variant) {
-    confirmEls.btn.className = 'btn btn--' + variant;
-    const lbl = confirmEls.btn.querySelector('.btn__label');
-    if (lbl) lbl.textContent = label;
-  }
-
-  function closeConfirmModal() {
-    if (state.acting) return;
-    confirmEls.modal.hidden = true;
+  function closeCreateModal() {
+    if (state.creating) return;
+    createEls.modal.hidden = true;
     document.body.style.overflow = '';
-    state.action = null;
   }
 
-  async function onConfirmAction() {
-    if (state.acting || !state.action) return;
+  async function onSubmitCreate(event) {
+    event.preventDefault();
+    if (state.creating) return;
 
-    const { type, user } = state.action;
-    setConfirmBusy(true);
+    clearCreateFeedback();
+
+    const name = createEls.name.value.trim();
+    const email = createEls.email.value.trim().toLowerCase();
+    const password = createEls.password.value;
+    const role = (createEls.role && createEls.role.value) || 'user';
+    const organizationId = createEls.org ? createEls.org.value : '';
+
+    if (!name) { showCreateFeedback('Informe o nome do usuário.'); createEls.name.focus(); return; }
+    if (!email) { showCreateFeedback('Informe o e-mail do usuário.'); createEls.email.focus(); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      showCreateFeedback('Informe um e-mail válido.');
+      createEls.email.focus();
+      return;
+    }
+    if (!password || password.length < 6) {
+      showCreateFeedback('A senha precisa ter pelo menos 6 caracteres.');
+      createEls.password.focus();
+      return;
+    }
+    if (!organizationId) {
+      showCreateFeedback('Selecione a empresa do novo usuário.');
+      if (createEls.org) createEls.org.focus();
+      return;
+    }
+
+    setCreateBusy(true);
 
     try {
-      if (type === 'toggle') {
-        const newActive = user.active === false;
-        const { error } = await window.db
-          .from('organization_members')
-          .update({ active: newActive })
-          .eq('id', user.id);
-        if (error) throw error;
-        showToast(newActive ? 'Usuário ativado.' : 'Usuário desativado.', 'success');
+      const session = await window.Auth.getSession();
+      if (!session || !session.access_token) throw new Error('Sessão inválida.');
 
-      } else if (type === 'reset') {
-        await callManageUser('reset_password', { user_id: user.user_id });
-        showToast('E-mail de redefinição enviado.', 'success');
+      const baseUrl = (window.db && window.db.supabaseUrl) || '';
+      const url = baseUrl.replace(/\/$/, '') + '/functions/v1/create-user';
 
-      } else if (type === 'delete') {
-        await callManageUser('delete', { user_id: user.user_id });
-        showToast('Usuário excluído com sucesso.', 'success');
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + session.access_token,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: name,
+          email: email,
+          password: password,
+          role: role,
+          organization_id: organizationId
+        })
+      });
+
+      let payload = null;
+      try { payload = await res.json(); } catch (e) { payload = null; }
+
+      if (!res.ok) {
+        const msg = (payload && (payload.error || payload.message)) || '';
+        throw new Error(msg || ('Falha na criação (HTTP ' + res.status + ')'));
       }
 
-      closeConfirmModal();
+      createEls.modal.hidden = true;
+      document.body.style.overflow = '';
+      showToast('Usuário criado com sucesso.', 'success');
       await loadAll();
     } catch (error) {
-      console.error('[DEV HUB] Falha na operação:', error);
-      showToast(mapManageError(error, type), 'error');
+      console.error('[DEV HUB] Falha ao criar usuário:', error);
+      showCreateFeedback(mapManageError(error));
     } finally {
-      setConfirmBusy(false);
+      setCreateBusy(false);
     }
   }
 
-  function setConfirmBusy(busy) {
-    state.acting = busy;
-    if (confirmEls.btn) {
-      confirmEls.btn.disabled = busy;
-      confirmEls.btn.classList.toggle('is-loading', busy);
-      confirmEls.btn.setAttribute('aria-busy', String(busy));
+  function setCreateBusy(busy) {
+    state.creating = busy;
+    if (createEls.saveBtn) {
+      createEls.saveBtn.disabled = busy;
+      createEls.saveBtn.classList.toggle('is-loading', busy);
+      createEls.saveBtn.setAttribute('aria-busy', String(busy));
+      const label = createEls.saveBtn.querySelector('.btn__label');
+      if (label) label.textContent = busy ? 'Criando...' : 'Criar usuário';
     }
+    [createEls.name, createEls.email, createEls.password, createEls.role, createEls.org]
+      .forEach(function (i) { if (i) i.disabled = busy; });
+  }
+
+  function showCreateFeedback(message) {
+    if (!createEls.feedback) return;
+    createEls.feedback.textContent = message;
+    createEls.feedback.hidden = false;
+  }
+
+  function clearCreateFeedback() {
+    if (!createEls.feedback) return;
+    createEls.feedback.textContent = '';
+    createEls.feedback.hidden = true;
   }
 
   /* =========================================================
-     RPC helper (delete/reset)
+     Edge Function helper
      ========================================================= */
+
   async function callManageUser(action, extra) {
     const client = window.db || window.devHubSupabase;
     if (!client) throw new Error('Supabase não está configurado.');
@@ -1018,6 +1342,7 @@
     const userId = extra && extra.user_id;
     if (!userId) throw new Error('Usuário alvo não informado.');
 
+    // Mapeia a ação para a RPC correspondente
     const rpcMap = {
       delete: 'platform_delete_user',
       reset_password: 'platform_reset_password'
@@ -1032,39 +1357,25 @@
     return { success: true, action: action };
   }
 
-  /* =========================================================
-     Mapeamento de erros
-     ========================================================= */
-  function mapManageError(error, context) {
+  function mapManageError(error) {
     if (!error) return 'Não foi possível concluir a operação.';
     const msg = String(error.message || '');
     const lower = msg.toLowerCase();
 
-    if (lower.includes('already') || lower.includes('registered') ||
-        lower.includes('duplicate') || lower.includes('já está sendo utilizado')) {
+    if (lower.includes('already') || lower.includes('registered') || lower.includes('duplicate')) {
       return 'Este e-mail já está sendo utilizado por outro usuário.';
     }
     if (lower.includes('próprio') || lower.includes('self')) {
       return 'Você não pode executar esta ação sobre sua própria conta.';
     }
-    if (lower.includes('plataforma') || lower.includes('platform_admin')) {
+    if (lower.includes('platform_admin') || lower.includes('plataforma')) {
       return 'Apenas administradores da plataforma podem executar esta ação.';
     }
     if (lower.includes('row-level security') || lower.includes('permission denied')) {
       return 'Você não tem permissão para executar esta ação.';
     }
-    if (lower.includes('rate limit') || lower.includes('too many requests') ||
-        lower.includes('for security purposes')) {
-      return 'Muitos e-mails de redefinição enviados recentemente. Aguarde alguns instantes.';
-    }
     if (lower.includes('failed to fetch') || lower.includes('network')) {
       return 'Não foi possível conectar ao servidor.';
-    }
-    if (lower.includes('function') && lower.includes('does not exist')) {
-      return 'Recurso indisponível no momento. Verifique se as RPCs da plataforma estão instaladas.';
-    }
-    if (context === 'create') {
-      return msg || 'Não foi possível criar o usuário.';
     }
     return msg || 'Não foi possível concluir a operação.';
   }

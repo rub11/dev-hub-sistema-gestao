@@ -117,3 +117,145 @@
 @media (max-width: 720px) {
   .cell-product small { max-width: 200px; }
 }
+
+
+/* =========================================================
+   Fotos do produto (até 3) + código de barras
+   ========================================================= */
+
+/* Slots de foto */
+.product-photos {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.product-photo {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  transition: border-color var(--transition), background-color var(--transition);
+}
+
+.product-photo:hover { border-color: var(--accent); background: var(--surface); }
+
+.product-photo--filled {
+  border-style: solid;
+  background: var(--surface);
+}
+
+.product-photo__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.product-photo__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 12px;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+}
+
+.product-photo__empty svg { width: 22px; height: 22px; }
+
+.product-photo__remove {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--transition);
+}
+.product-photo:hover .product-photo__remove { opacity: 1; }
+.product-photo__remove svg { width: 14px; height: 14px; }
+
+.product-photo__badge {
+  position: absolute;
+  bottom: 6px;
+  left: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.product-photo__progress {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.product-photo__input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Thumb na lista (substitui ícone) */
+.cell-product__thumb {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex: none;
+  border-radius: 8px;
+  background: var(--surface-2);
+  color: var(--text-muted);
+  overflow: hidden;
+  margin-right: 10px;
+  vertical-align: middle;
+}
+.cell-product__thumb img { width: 100%; height: 100%; object-fit: cover; }
+.cell-product__thumb svg { width: 18px; height: 18px; }
+
+/* Ajuste do cell-product: agora tem thumb + texto */
+.cell-product {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+.cell-product__info {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+@media (max-width: 640px) {
+  .product-photos { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .product-photo__badge { font-size: 9.5px; padding: 1px 6px; }
+}
