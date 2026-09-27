@@ -1,207 +1,107 @@
 /* =========================================================
-   DEV HUB · Módulo de Gestão
-   Reaproveita global.css, dashboard.css, clientes.css.
-   Aqui só o específico.
+   Permissões dentro do modal de usuário
    ========================================================= */
 
-/* ---------- Stats com 3 colunas ---------- */
-.stats--three {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  margin-bottom: 24px;
-}
-
-.stat__icon--success { background: var(--success-soft); color: var(--success); }
-.stat__icon--danger  { background: var(--danger-soft);  color: var(--danger); }
-
-/* ---------- Tag de perfil (Administrador / Líder / Funcionário) ---------- */
-.role-tag {
-  display: inline-flex;
-  align-items: center;
-  padding: 3px 10px;
-  border-radius: 999px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  color: var(--text-soft);
-  font-size: 12px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.role-tag--admin {
-  background: var(--accent-soft);
-  border-color: #c7d2fe;
-  color: var(--accent-hover);
-}
-
-.role-tag--leader {
-  background: var(--warning-soft);
-  border-color: var(--warning-border);
-  color: var(--warning);
-}
-
-/* ---------- Coluna nome: bold + small de "você" ---------- */
-.cell-user {
-  font-weight: 600;
-  color: var(--text);
-}
-
-.cell-user small {
-  display: block;
-  margin-top: 2px;
-  font-size: 12px;
-  font-weight: 400;
-  color: var(--text-muted);
-}
-
-/* ---------- Select no modal (reaproveita .field) ---------- */
-#user-modal select {
-  width: 100%;
-  height: 46px;
-  padding: 0 40px 0 14px;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius);
-  background: var(--surface);
-  font-size: 15px;
-  color: var(--text);
-  cursor: pointer;
-  -webkit-appearance: none;
-  appearance: none;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23667085' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  background-size: 16px;
-  transition: border-color var(--transition), box-shadow var(--transition);
-}
-#user-modal select:hover:not(:focus) { border-color: #b9bfc9; }
-#user-modal select:focus {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 4px var(--accent-ring);
-}
-#user-modal select:disabled { opacity: 0.62; cursor: not-allowed; }
-
-/* =========================================================
-   Tipos de perfil (role_types)
-   ========================================================= */
-
-.role-type-form {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+.user-perms {
+  margin-top: 14px;
   padding: 16px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--surface-2);
 }
 
-.role-type-form select {
-  width: 100%;
-  height: 46px;
-  padding: 0 40px 0 14px;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius);
-  background: var(--surface);
-  font-size: 15px;
-  color: var(--text);
-  cursor: pointer;
-  -webkit-appearance: none;
-  appearance: none;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23667085' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  background-size: 16px;
-  transition: border-color var(--transition), box-shadow var(--transition);
-}
-.role-type-form select:hover:not(:focus) { border-color: #b9bfc9; }
-.role-type-form select:focus {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 4px var(--accent-ring);
-}
-
-.role-type-form__actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.role-types-list {
+.user-perms__head {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  max-height: 340px;
-  overflow-y: auto;
-  margin-top: 4px;
-  padding-right: 4px;
+  gap: 4px;
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--border);
 }
 
-.role-type-item {
+.user-perms__title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+.user-perms__hint {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.user-perms__groups {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 360px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.user-perms__groups .field-group {
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.user-perms__groups .field-group:last-child {
+  border-bottom: 0;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.user-perms__groups .field-group__title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.user-perm-row {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface);
-  transition: border-color var(--transition), background-color var(--transition);
-}
-.role-type-item:hover { border-color: var(--border-strong); }
-
-.role-type-item__info { flex: 1 1 auto; min-width: 0; }
-
-.role-type-item__label {
-  font-size: 14px;
-  font-weight: 600;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 13.5px;
   color: var(--text);
+  cursor: pointer;
+  user-select: none;
+  transition: background-color var(--transition);
 }
 
-.role-type-item__meta {
-  font-size: 12px;
-  color: var(--text-muted);
-  margin-top: 2px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  overflow-wrap: anywhere;
+.user-perm-row:hover {
+  background: var(--surface);
 }
 
-.role-type-item__actions {
-  display: flex;
-  gap: 4px;
+.user-perm-row input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
   flex: none;
+  accent-color: var(--accent);
+  cursor: pointer;
+  margin: 0;
 }
 
-.role-type-item--custom .role-type-item__label::after {
-  content: "custom";
-  margin-left: 8px;
-  padding: 1px 6px;
-  border-radius: 999px;
-  background: var(--accent-soft);
-  color: var(--accent-hover);
-  font-size: 9.5px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  vertical-align: middle;
+.user-perm-row input[type="checkbox"]:disabled {
+  opacity: 0.5;
+  cursor: wait;
 }
 
-/* ---------- Responsivo ---------- */
-@media (max-width: 900px) {
-  .stats--three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.user-perm-row span {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
-@media (max-width: 720px) {
-  .stats--three { grid-template-columns: 1fr; }
+#user-perms-feedback {
+  margin-top: 10px;
+}
 
-  .role-type-form .form-grid { grid-template-columns: 1fr; }
-
-  .toolbar__actions { flex-direction: column; width: 100%; }
-  .toolbar__actions .btn { width: 100%; }
-
-  .role-type-item {
-    flex-wrap: wrap;
-  }
-  .role-type-item__actions {
-    width: 100%;
-    justify-content: flex-end;
-  }
+/* Modal do usuário um pouco mais largo para caber as permissões */
+#user-modal .modal__dialog {
+  max-width: 640px;
 }

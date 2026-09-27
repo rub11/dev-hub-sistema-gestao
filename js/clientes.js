@@ -2,11 +2,11 @@
    DEV HUB · Módulo de Clientes (completo)
    ---------------------------------------------------------
    - Lista com tipo PF/PJ, telefone/e-mail/cidade principais
-   - Modal com abas
-   - Formulário dinâmico PF/PJ
+   - Modal com abas + formulário dinâmico PF/PJ
    - Repetíveis: telefone, e-mail, endereço, contato
    - Persistência atômica via RPC upsert_customer_full
    - Carga completa via RPC get_customer_full
+   - Permissões: customers.view / .create / .edit / .delete
    ========================================================= */
 
 (function () {
@@ -24,11 +24,16 @@
     deletingId: null,
     saving: false,
     deleting: false,
-    // dados do cliente em edição
     phones: [],
     emails: [],
     addresses: [],
-    contacts: []
+    contacts: [],
+    perms: {
+      view:   true,
+      create: true,
+      edit:   true,
+      remove: true
+    }
   };
 
   document.addEventListener('DOMContentLoaded', init);
@@ -55,12 +60,46 @@
     const session = await Auth.requireSession();
     if (!session) return;
 
+    // ---------- Permissões ----------
+    if (window.Perms && typeof window.Perms.load === 'function') {
+      try { await window.Perms.load(); } catch (e) { /* fallback */ }
+    }
+
+    const hasPerm = function (cap) {
+      if (window.Perms && typeof window.Perms.has === 'function') {
+        return window.Perms.has(cap);
+      }
+      return true; // fallback
+    };
+
+    state.perms.view   = hasPerm('customers.view');
+    state.perms.create = hasPerm('customers.create');
+    state.perms.edit   = hasPerm('customers.edit');
+    state.perms.remove = hasPerm('customers.delete');
+
+    // Guard de página
+    if (!state.perms.view) {
+      window.location.replace('dashboard.html');
+      return;
+    }
+
+    applyPermissionsToUI();
+
     watchAuthChanges();
 
     const profile = await Auth.getProfile(session.user.id);
     renderUser(session.user, profile);
 
     await loadCustomers();
+  }
+
+  /**
+   * Esconde botões de acordo com o que o usuário pode fazer.
+   * Roda 1x no init; os botões por linha são gated em buildActionsCell.
+   */
+  function applyPermissionsToUI() {
+    const newBtn = document.getElementById('new-customer-btn');
+    if (newBtn && !state.perms.create) newBtn.hidden = true;
   }
 
   function watchAuthChanges() {
@@ -163,10 +202,15 @@
      Toolbar / busca
      ========================================================= */
   function setupToolbar() {
-    document.getElementById('new-customer-btn')
-      ?.addEventListener('click', openCreateModal);
-    document.getElementById('empty-new-btn')
-      ?.addEventListener('click', openCreateModal);
+    const newBtn = document.getElementById('new-customer-btn');
+    const emptyNewBtn = document.getElementById('empty-new-btn');
+
+    if (newBtn && state.perms.create) {
+      newBtn.addEventListener('click', openCreateModal);
+    }
+    if (emptyNewBtn && state.perms.create) {
+      emptyNewBtn.addEventListener('click', openCreateModal);
+    }
   }
 
   function setupSearch() {
@@ -203,7 +247,6 @@
   async function loadCustomers() {
     showLoading(true);
 
-    // Junta com telefones/emails/endereços para mostrar no resumo da lista
     const { data, error } = await window.db
       .from('customers')
       .select(`
@@ -276,7 +319,6 @@
     const row = document.createElement('tr');
     row.dataset.id = c.id;
 
-    // Nome + razão/fantasia
     const nameCell = document.createElement('td');
     nameCell.className = 'cell-customer';
     const name = document.createElement('span');
@@ -294,10 +336,8 @@
     }
     row.appendChild(nameCell);
 
-    // CPF/CNPJ
     row.appendChild(createCell(c.cpf_cnpj || '—', 'cell--muted'));
 
-    // Tipo
     const typeCell = document.createElement('td');
     const tag = document.createElement('span');
     tag.className = c.type === 'PJ' ? 'tag-pj' : 'tag-pf';
@@ -305,16 +345,10 @@
     typeCell.appendChild(tag);
     row.appendChild(typeCell);
 
-    // Telefone principal
     row.appendChild(createCell(primaryPhone(c), 'cell--muted'));
-
-    // E-mail principal
     row.appendChild(createCell(primaryEmail(c), 'cell--muted'));
-
-    // Cidade
     row.appendChild(createCell(primaryCity(c), 'cell--muted'));
 
-    // Status
     const statusCell = document.createElement('td');
     const badge = document.createElement('span');
     const st = String(c.status || 'active').toLowerCase();
@@ -323,34 +357,51 @@
     statusCell.appendChild(badge);
     row.appendChild(statusCell);
 
-    // Ações
+    row.appendChild(buildActionsCell(c));
+
+    return row;
+  }
+
+  function buildActionsCell(c) {
     const actionsCell = document.createElement('td');
     actionsCell.className = 'cell--num';
     const wrap = document.createElement('div');
     wrap.className = 'row-actions';
 
-    const editBtn = document.createElement('button');
-    editBtn.type = 'button';
-    editBtn.className = 'row-action';
-    editBtn.setAttribute('aria-label', 'Editar cliente ' + (c.name || ''));
-    editBtn.title = 'Editar';
-    editBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
-    editBtn.addEventListener('click', function () { openEditModal(c); });
+    // ---------- Editar ----------
+    if (state.perms.edit) {
+      const editBtn = document.createElement('button');
+      editBtn.type = 'button';
+      editBtn.className = 'row-action';
+      editBtn.setAttribute('aria-label', 'Editar cliente ' + (c.name || ''));
+      editBtn.title = 'Editar';
+      editBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
+      editBtn.addEventListener('click', function () { openEditModal(c); });
+      wrap.appendChild(editBtn);
+    }
 
-    const delBtn = document.createElement('button');
-    delBtn.type = 'button';
-    delBtn.className = 'row-action row-action--danger';
-    delBtn.setAttribute('aria-label', 'Excluir cliente ' + (c.name || ''));
-    delBtn.title = 'Excluir';
-    delBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6M14 11v6"/></svg>';
-    delBtn.addEventListener('click', function () { openConfirmModal(c); });
+    // ---------- Excluir ----------
+    if (state.perms.remove) {
+      const delBtn = document.createElement('button');
+      delBtn.type = 'button';
+      delBtn.className = 'row-action row-action--danger';
+      delBtn.setAttribute('aria-label', 'Excluir cliente ' + (c.name || ''));
+      delBtn.title = 'Excluir';
+      delBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6M14 11v6"/></svg>';
+      delBtn.addEventListener('click', function () { openConfirmModal(c); });
+      wrap.appendChild(delBtn);
+    }
 
-    wrap.appendChild(editBtn);
-    wrap.appendChild(delBtn);
+    // Sem nenhuma ação → mostra —
+    if (wrap.childNodes.length === 0) {
+      const dash = document.createElement('span');
+      dash.className = 'cell--muted';
+      dash.textContent = '—';
+      wrap.appendChild(dash);
+    }
+
     actionsCell.appendChild(wrap);
-    row.appendChild(actionsCell);
-
-    return row;
+    return actionsCell;
   }
 
   function createCell(text, className) {
@@ -398,7 +449,7 @@
     if (!empty) return;
     if (t) t.textContent = title;
     if (x) x.textContent = text;
-    if (cta) cta.hidden = !showCta;
+    if (cta) cta.hidden = !showCta || !state.perms.create;
     empty.hidden = false;
   }
   function hideEmptyState() {
@@ -428,14 +479,12 @@
     els.type   = document.getElementById('customer-type');
     els.status = document.getElementById('customer-status');
 
-    // PF
     els.name         = document.getElementById('customer-name');
     els.document     = document.getElementById('customer-document');
     els.rg           = document.getElementById('customer-rg');
     els.birth        = document.getElementById('customer-birth');
     els.profession   = document.getElementById('customer-profession');
 
-    // PJ
     els.company      = document.getElementById('customer-company');
     els.trade        = document.getElementById('customer-trade');
     els.documentPJ   = document.getElementById('customer-document-pj');
@@ -444,7 +493,6 @@
     els.cnae         = document.getElementById('customer-cnae');
     els.taxRegime    = document.getElementById('customer-tax-regime');
 
-    // comercial
     els.category     = document.getElementById('customer-category');
     els.segment      = document.getElementById('customer-segment');
     els.origin       = document.getElementById('customer-origin');
@@ -454,7 +502,6 @@
     els.creditLimit  = document.getElementById('customer-credit-limit');
     els.defaultDisc  = document.getElementById('customer-default-discount');
 
-    // entrega
     els.delContact   = document.getElementById('customer-delivery-contact');
     els.delPhone     = document.getElementById('customer-delivery-phone');
     els.delHours     = document.getElementById('customer-delivery-hours');
@@ -462,7 +509,6 @@
     els.delReference = document.getElementById('customer-delivery-reference');
     els.delNotes     = document.getElementById('customer-delivery-notes');
 
-    // observações
     els.commNotes    = document.getElementById('customer-commercial-notes');
     els.notes        = document.getElementById('customer-notes');
 
@@ -471,7 +517,6 @@
 
     if (!els.modal || !els.form) return;
 
-    // Fechar
     els.modal.querySelectorAll('[data-close-modal]').forEach(function (el) {
       el.addEventListener('click', closeCustomerModal);
     });
@@ -479,10 +524,8 @@
       if (e.key === 'Escape' && !els.modal.hidden) closeCustomerModal();
     });
 
-    // Tipo PF/PJ
     els.type.addEventListener('change', onTypeChange);
 
-    // Abas
     els.modal.querySelectorAll('.tab-btn').forEach(function (btn) {
       btn.addEventListener('click', function () {
         const tab = btn.dataset.tab;
@@ -495,7 +538,6 @@
       });
     });
 
-    // Botões de adicionar linha
     els.modal.querySelectorAll('[data-add-row]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         const kind = btn.dataset.addRow;
@@ -503,7 +545,6 @@
       });
     });
 
-    // Máscaras
     bindMask(els.document, maskCPF);
     bindMask(els.documentPJ, maskCNPJ);
     bindMask(els.delPhone, maskPhone);
@@ -515,11 +556,9 @@
     const isPJ = els.type.value === 'PJ';
     els.modal.classList.toggle('customer-type-PJ', isPJ);
 
-    // Aba de contatos só faz sentido em PJ
     const contactTab = els.modal.querySelector('.tab-btn[data-tab="contacts"]');
     if (contactTab) contactTab.hidden = !isPJ;
 
-    // Ajusta required
     if (els.name) els.name.required = !isPJ;
     if (els.company) els.company.required = isPJ;
   }
@@ -532,11 +571,7 @@
       container: 'phones-rows',
       state: 'phones',
       template: function (d) {
-        return {
-          type:      d.type      || 'Celular',
-          phone:     d.phone     || '',
-          is_primary:d.is_primary === true
-        };
+        return { type: d.type || 'Celular', phone: d.phone || '', is_primary: d.is_primary === true };
       },
       render: renderPhoneRow
     },
@@ -544,11 +579,7 @@
       container: 'emails-rows',
       state: 'emails',
       template: function (d) {
-        return {
-          type:      d.type      || 'Principal',
-          email:     d.email     || '',
-          is_primary:d.is_primary === true
-        };
+        return { type: d.type || 'Principal', email: d.email || '', is_primary: d.is_primary === true };
       },
       render: renderEmailRow
     },
@@ -557,16 +588,16 @@
       state: 'addresses',
       template: function (d) {
         return {
-          type:      d.type || 'Residencial',
-          zip_code:  d.zip_code || '',
-          state:     d.state || '',
-          city:      d.city || '',
+          type: d.type || 'Residencial',
+          zip_code: d.zip_code || '',
+          state: d.state || '',
+          city: d.city || '',
           neighborhood: d.neighborhood || '',
-          street:    d.street || '',
-          number:    d.number || '',
-          complement:d.complement || '',
+          street: d.street || '',
+          number: d.number || '',
+          complement: d.complement || '',
           reference: d.reference || '',
-          is_primary:d.is_primary === true
+          is_primary: d.is_primary === true
         };
       },
       render: renderAddressRow
@@ -576,13 +607,13 @@
       state: 'contacts',
       template: function (d) {
         return {
-          name:      d.name || '',
-          department:d.department || '',
-          position:  d.position || '',
-          phone:     d.phone || '',
-          email:     d.email || '',
-          is_primary:d.is_primary === true,
-          notes:     d.notes || ''
+          name: d.name || '',
+          department: d.department || '',
+          position: d.position || '',
+          phone: d.phone || '',
+          email: d.email || '',
+          is_primary: d.is_primary === true,
+          notes: d.notes || ''
         };
       },
       render: renderContactRow
@@ -623,32 +654,26 @@
   function renderPhoneRow(item, idx) {
     const row = document.createElement('div');
     row.className = 'repeatable-row repeatable-row--phone';
-
     row.appendChild(selectField(
       ['Celular','WhatsApp','Comercial','Residencial','Recado','Outro'],
-      item.type,
-      function (v) { updateRow('phones', idx, 'type', v); }
+      item.type, function (v) { updateRow('phones', idx, 'type', v); }
     ));
     row.appendChild(inputField('tel', item.phone, '(00) 00000-0000', function (v) {
       updateRow('phones', idx, 'phone', v);
     }, maskPhone));
-
     row.appendChild(primaryToggle(item.is_primary, function (v) {
       updateRow('phones', idx, 'is_primary', v);
     }));
     row.appendChild(removeBtn(function () { removeRow('phones', idx); }));
-
     return row;
   }
 
   function renderEmailRow(item, idx) {
     const row = document.createElement('div');
     row.className = 'repeatable-row repeatable-row--email';
-
     row.appendChild(selectField(
       ['Principal','Comercial','Financeiro','Pessoal','Outro'],
-      item.type,
-      function (v) { updateRow('emails', idx, 'type', v); }
+      item.type, function (v) { updateRow('emails', idx, 'type', v); }
     ));
     row.appendChild(inputField('email', item.email, 'cliente@empresa.com', function (v) {
       updateRow('emails', idx, 'email', v);
@@ -663,11 +688,9 @@
   function renderAddressRow(item, idx) {
     const row = document.createElement('div');
     row.className = 'repeatable-row repeatable-row--address';
-
     row.appendChild(selectField(
       ['Residencial','Comercial','Entrega','Cobrança','Outro'],
-      item.type,
-      function (v) { updateRow('addresses', idx, 'type', v); }
+      item.type, function (v) { updateRow('addresses', idx, 'type', v); }
     ));
     row.appendChild(inputField('text', item.zip_code, 'CEP', function (v) {
       updateRow('addresses', idx, 'zip_code', v);
@@ -705,7 +728,6 @@
   function renderContactRow(item, idx) {
     const row = document.createElement('div');
     row.className = 'repeatable-row repeatable-row--contact';
-
     row.appendChild(inputField('text', item.name, 'Nome *', function (v) {
       updateRow('contacts', idx, 'name', v);
     }));
@@ -734,12 +756,8 @@
     input.type = type;
     input.value = value || '';
     if (placeholder) input.placeholder = placeholder;
-    if (mask) {
-      bindMask(input, mask);
-    }
-    input.addEventListener('input', function () {
-      onChange(input.value);
-    });
+    if (mask) bindMask(input, mask);
+    input.addEventListener('input', function () { onChange(input.value); });
     return input;
   }
 
@@ -786,22 +804,19 @@
   function bindMask(input, maskFn) {
     if (!input) return;
     input.addEventListener('input', function () {
-      const pos = input.selectionStart;
       input.value = maskFn(input.value);
     });
   }
 
   function maskCPF(v) {
-    return String(v || '')
-      .replace(/\D/g, '').slice(0, 11)
+    return String(v || '').replace(/\D/g, '').slice(0, 11)
       .replace(/(\d{3})(\d)/, '$1.$2')
       .replace(/(\d{3})(\d)/, '$1.$2')
       .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
   }
 
   function maskCNPJ(v) {
-    return String(v || '')
-      .replace(/\D/g, '').slice(0, 14)
+    return String(v || '').replace(/\D/g, '').slice(0, 14)
       .replace(/(\d{2})(\d)/, '$1.$2')
       .replace(/(\d{3})(\d)/, '$1.$2')
       .replace(/(\d{3})(\d)/, '$1/$2')
@@ -821,9 +836,7 @@
     return '(' + d.slice(0, 2) + ') ' + d.slice(2, 7) + '-' + d.slice(7);
   }
 
-  function formatPhone(v) {
-    return maskPhone(v);
-  }
+  function formatPhone(v) { return maskPhone(v); }
 
   /* =========================================================
      Abrir/fechar modal
@@ -841,7 +854,6 @@
     renderRows('emails');
     renderRows('addresses');
     renderRows('contacts');
-    // Aba básica
     els.modal.querySelectorAll('.tab-btn').forEach(function (b, i) {
       b.classList.toggle('is-active', i === 0);
     });
@@ -853,6 +865,10 @@
   }
 
   function openCreateModal() {
+    if (!state.perms.create) {
+      showToast('Você não tem permissão para criar clientes.', 'error');
+      return;
+    }
     state.editingId = null;
     els.title.textContent = 'Novo cliente';
     resetModal();
@@ -862,10 +878,14 @@
   }
 
   async function openEditModal(rowSummary) {
+    if (!state.perms.edit) {
+      showToast('Você não tem permissão para editar clientes.', 'error');
+      return;
+    }
+
     state.editingId = rowSummary.id;
     els.title.textContent = 'Editar cliente';
 
-    // Feedback de carregamento
     els.modal.hidden = false;
     document.body.style.overflow = 'hidden';
     clearFeedback();
@@ -883,7 +903,6 @@
       const addresses = data && Array.isArray(data.addresses) ? data.addresses : [];
       const contacts  = data && Array.isArray(data.contacts)  ? data.contacts  : [];
 
-      // Estado
       state.phones    = phones.map(function (p) { return {
         type: p.type, phone: p.phone, is_primary: !!p.is_primary
       }; });
@@ -903,7 +922,6 @@
         email: k.email || '', is_primary: !!k.is_primary, notes: k.notes || ''
       }; });
 
-      // Cabeçalho
       els.id.value = c.id || '';
       els.type.value = c.type || 'PF';
       els.status.value = c.status || 'active';
@@ -941,7 +959,6 @@
       els.commNotes.value = c.commercial_notes || '';
       els.notes.value     = c.notes || '';
 
-      // Renderiza repetíveis
       renderRows('phones');
       renderRows('emails');
       renderRows('addresses');
@@ -969,6 +986,16 @@
     event.preventDefault();
     if (state.saving) return;
 
+    // Reforço de permissão
+    if (state.editingId && !state.perms.edit) {
+      showFeedback('Você não tem permissão para editar clientes.');
+      return;
+    }
+    if (!state.editingId && !state.perms.create) {
+      showFeedback('Você não tem permissão para criar clientes.');
+      return;
+    }
+
     clearFeedback();
 
     const isPJ = els.type.value === 'PJ';
@@ -993,7 +1020,6 @@
       showFeedback('CPF incompleto.'); els.document.focus(); return;
     }
 
-    // Limpa linhas vazias
     const phones = state.phones.filter(function (p) { return p.phone && p.phone.replace(/\D/g,'') !== ''; });
     const emails = state.emails.filter(function (e) { return e.email && e.email.trim() !== ''; });
     const addresses = state.addresses.filter(function (a) {
@@ -1001,14 +1027,12 @@
     });
     const contacts = isPJ ? state.contacts.filter(function (k) { return k.name && k.name.trim() !== ''; }) : [];
 
-    // Valida e-mail
     for (let i = 0; i < emails.length; i++) {
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emails[i].email)) {
         showFeedback('E-mail inválido: ' + emails[i].email); return;
       }
     }
 
-    // Payload
     const customer = {
       type: isPJ ? 'PJ' : 'PF',
       name: isPJ ? (els.name.value.trim() || els.company.value.trim()) : name,
@@ -1039,7 +1063,6 @@
       commercial_notes: els.commNotes.value.trim() || null,
       notes: els.notes.value.trim() || null,
       status: els.status.value || 'active',
-      // legados (mantém 1º)
       phone: phones[0] ? phones[0].phone : null,
       email: emails[0] ? emails[0].email : null,
       address: addresses[0] ? [addresses[0].street, addresses[0].number].filter(Boolean).join(', ') : null
@@ -1122,6 +1145,10 @@
   }
 
   function openConfirmModal(customer) {
+    if (!state.perms.remove) {
+      showToast('Você não tem permissão para excluir clientes.', 'error');
+      return;
+    }
     state.deletingId = customer.id;
     confirmEls.text.textContent =
       'Excluir "' + (customer.name || customer.company_name || 'este cliente') +

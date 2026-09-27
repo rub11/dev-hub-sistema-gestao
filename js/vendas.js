@@ -5,7 +5,10 @@
    - Edição com senha + auditoria (RPC update_sale)
    - Exclusão com senha + auditoria (RPC delete_sale)
    - Busca de produto por nome/código/código de barras
-     com sugestões e preview
+   - Permissões granulares (Perms.has)
+   - Busca otimizada para mobile (debounce + pointerdown)
+   - Lupa clicável
+   - Desconto em R$ e %
    ========================================================= */
 
 (function () {
@@ -37,6 +40,9 @@
     cancelled: { label: 'Cancelada', modifier: 'badge--danger'  }
   };
 
+  /* Controla qual campo foi editado por último (R$ ou %) */
+  let lastDiscountEdit = 'brl';
+
   const state = {
     // Lista
     sales: [],
@@ -60,7 +66,15 @@
     pickedProduct: null,
 
     // Senha (callback pendente)
-    pendingPasswordAction: null
+    pendingPasswordAction: null,
+
+    // Permissões granulares
+    perms: {
+      view:   true,
+      create: true,
+      edit:   true,
+      remove: true
+    }
   };
 
   document.addEventListener('DOMContentLoaded', init);
@@ -96,7 +110,41 @@
     const profile = await Auth.getProfile(session.user.id);
     renderUser(session.user, profile);
 
+    /* carrega permissões antes de tudo */
+    if (window.Perms && typeof window.Perms.load === 'function') {
+      try { await window.Perms.load(); } catch (e) { /* fallback */ }
+    }
+
+    state.perms.view   = hasPerm('sales.view',   true);
+    state.perms.create = hasPerm('sales.create', true);
+    state.perms.edit   = hasPerm('sales.edit',   true);
+    state.perms.remove = hasPerm('sales.delete', true);
+
+    // Guard de página
+    if (!state.perms.view) {
+      window.location.replace('dashboard.html');
+      return;
+    }
+
+    applyPermissionsToUI();
+
     await loadSales();
+  }
+
+  function hasPerm(cap, fallback) {
+    if (window.Perms && typeof window.Perms.has === 'function') {
+      return window.Perms.has(cap);
+    }
+    return fallback !== false;
+  }
+
+  function applyPermissionsToUI() {
+    if (!state.perms.create) {
+      const newBtn = document.getElementById('new-sale-btn');
+      const emptyBtn = document.getElementById('empty-new-btn');
+      if (newBtn) newBtn.hidden = true;
+      if (emptyBtn) emptyBtn.hidden = true;
+    }
   }
 
   /* =========================================================
@@ -206,8 +254,21 @@
   function setupToolbar() {
     const newBtn = document.getElementById('new-sale-btn');
     const emptyNewBtn = document.getElementById('empty-new-btn');
-    if (newBtn) newBtn.addEventListener('click', openFormView);
-    if (emptyNewBtn) emptyNewBtn.addEventListener('click', openFormView);
+
+    if (newBtn) {
+      if (state.perms.create) {
+        newBtn.addEventListener('click', openFormView);
+      } else {
+        newBtn.hidden = true;
+      }
+    }
+    if (emptyNewBtn) {
+      if (state.perms.create) {
+        emptyNewBtn.addEventListener('click', openFormView);
+      } else {
+        emptyNewBtn.hidden = true;
+      }
+    }
   }
 
   function setupSearch() {
@@ -325,8 +386,13 @@
 
     if (state.sales.length === 0) {
       tableWrap.hidden = true;
-      showEmptyState('Nenhuma venda registrada ainda.',
-                     'Comece registrando sua primeira venda.', true);
+      showEmptyState(
+        'Nenhuma venda registrada ainda.',
+        state.perms.create
+          ? 'Comece registrando sua primeira venda.'
+          : 'Assim que houver vendas, elas aparecerão aqui.',
+        state.perms.create
+      );
       return;
     }
     if (state.filtered.length === 0) {
@@ -387,6 +453,7 @@
     const wrap = document.createElement('div');
     wrap.className = 'row-actions';
 
+    // Detalhes — sempre visível para quem tem sales.view
     const viewBtn = document.createElement('button');
     viewBtn.type = 'button';
     viewBtn.className = 'row-action';
@@ -398,21 +465,24 @@
       '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/>' +
       '<circle cx="12" cy="12" r="3"/></svg>';
     viewBtn.addEventListener('click', function () { openDetailModal(sale); });
-
-    const editBtn = document.createElement('button');
-    editBtn.type = 'button';
-    editBtn.className = 'row-action';
-    editBtn.title = 'Editar venda';
-    editBtn.setAttribute('aria-label', 'Editar venda ' + formatSaleNumber(sale));
-    editBtn.innerHTML =
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"' +
-      ' stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-      '<path d="M12 20h9"/>' +
-      '<path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
-    editBtn.addEventListener('click', function () { openEditSale(sale); });
-
     wrap.appendChild(viewBtn);
-    wrap.appendChild(editBtn);
+
+    // Editar — só se sales.edit
+    if (state.perms.edit) {
+      const editBtn = document.createElement('button');
+      editBtn.type = 'button';
+      editBtn.className = 'row-action';
+      editBtn.title = 'Editar venda';
+      editBtn.setAttribute('aria-label', 'Editar venda ' + formatSaleNumber(sale));
+      editBtn.innerHTML =
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"' +
+        ' stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+        '<path d="M12 20h9"/>' +
+        '<path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
+      editBtn.addEventListener('click', function () { openEditSale(sale); });
+      wrap.appendChild(editBtn);
+    }
+
     cell.appendChild(wrap);
     return cell;
   }
@@ -444,7 +514,7 @@
 
     if (titleEl) titleEl.textContent = title;
     if (textEl) textEl.textContent = text;
-    if (cta) cta.hidden = !showCta;
+    if (cta) cta.hidden = !showCta || !state.perms.create;
     empty.hidden = false;
   }
 
@@ -472,6 +542,10 @@
   }
 
   async function openFormView() {
+    if (!state.perms.create) {
+      showToast('Você não tem permissão para criar vendas.', 'error');
+      return;
+    }
     state.editingSaleId = null;
     setFormMode('create');
     showView('form');
@@ -481,9 +555,10 @@
   }
 
   async function openEditSale(sale) {
-    // Abre o formulário no modo edição DEPOIS de pedir a senha.
-    // Aqui só carregamos os dados e trocamos a view; a validação
-    // da senha acontece quando o usuário clica em "Salvar".
+    if (!state.perms.edit) {
+      showToast('Você não tem permissão para editar vendas.', 'error');
+      return;
+    }
     state.editingSaleId = sale.id;
 
     showView('form');
@@ -491,7 +566,6 @@
       await loadFormData();
     }
 
-    // Carrega os itens existentes
     const items = await fetchSaleItems(sale.id);
 
     state.cart = items.map(function (it) {
@@ -505,9 +579,19 @@
       };
     });
 
-    // Preenche o formulário
     formEls.customer.value = sale.customer_id || '';
     formEls.discount.value = String(toNumber(sale.discount, 0));
+
+    /* Sincroniza o % a partir do valor salvo */
+    const subSaved = toNumber(sale.subtotal, 0);
+    const dscSaved = toNumber(sale.discount, 0);
+    if (formEls.discountPct) {
+      formEls.discountPct.value = subSaved > 0
+        ? String(round2(dscSaved / subSaved * 100))
+        : '0';
+    }
+    lastDiscountEdit = 'brl';
+
     formEls.payment.value = sale.payment_method || '';
     formEls.notes.value = sale.notes || '';
 
@@ -596,78 +680,152 @@
   const formEls = {};
 
   function setupSaleForm() {
-    formEls.form      = document.getElementById('sale-form');
-    formEls.customer  = document.getElementById('sale-customer');
-    formEls.cartBody  = document.getElementById('cart-body');
-    formEls.cartWrap  = document.getElementById('cart-wrap');
-    formEls.cartEmpty = document.getElementById('cart-empty');
-    formEls.discount  = document.getElementById('sale-discount');
-    formEls.totalSub  = document.getElementById('total-subtotal');
-    formEls.totalTotal= document.getElementById('total-total');
-    formEls.payment   = document.getElementById('sale-payment');
-    formEls.notes     = document.getElementById('sale-notes');
-    formEls.feedback  = document.getElementById('sale-form-feedback');
-    formEls.submitBtn = document.getElementById('submit-sale-btn');
+    formEls.form        = document.getElementById('sale-form');
+    formEls.customer    = document.getElementById('sale-customer');
+    formEls.cartBody    = document.getElementById('cart-body');
+    formEls.cartWrap    = document.getElementById('cart-wrap');
+    formEls.cartEmpty   = document.getElementById('cart-empty');
+    formEls.discount    = document.getElementById('sale-discount');
+    formEls.discountPct = document.getElementById('sale-discount-pct');
+    formEls.totalSub    = document.getElementById('total-subtotal');
+    formEls.totalTotal  = document.getElementById('total-total');
+    formEls.payment     = document.getElementById('sale-payment');
+    formEls.notes       = document.getElementById('sale-notes');
+    formEls.feedback    = document.getElementById('sale-form-feedback');
+    formEls.submitBtn   = document.getElementById('submit-sale-btn');
 
     if (!formEls.form) return;
 
-    formEls.discount.addEventListener('input', recalcTotals);
+    // Desconto em R$ → recalcula
+    if (formEls.discount) {
+      formEls.discount.addEventListener('input', function () {
+        lastDiscountEdit = 'brl';
+        recalcTotals();
+      });
+    }
+
+    // Desconto em % → recalcula
+    if (formEls.discountPct) {
+      formEls.discountPct.addEventListener('input', function () {
+        lastDiscountEdit = 'pct';
+        recalcTotals();
+      });
+    }
+
     formEls.form.addEventListener('submit', onSubmitSale);
   }
 
   /* =========================================================
-     BUSCA DE PRODUTOS
+     BUSCA DE PRODUTOS (mobile + sugestões ao digitar)
      ========================================================= */
   const searchEls = {};
+  let searchDebounce = null;
 
   function setupProductSearch() {
-    searchEls.wrap         = document.getElementById('product-search-wrap');
-    searchEls.input        = document.getElementById('product-search-input');
-    searchEls.clear        = document.getElementById('product-search-clear');
-    searchEls.suggestions  = document.getElementById('product-suggestions');
-    searchEls.pick         = document.getElementById('product-pick');
-    searchEls.pickImage    = document.getElementById('product-pick-image');
+    searchEls.wrap            = document.getElementById('product-search-wrap');
+    searchEls.input           = document.getElementById('product-search-input');
+    searchEls.btn             = document.getElementById('product-search-btn');
+    searchEls.clear           = document.getElementById('product-search-clear');
+    searchEls.suggestions     = document.getElementById('product-suggestions');
+    searchEls.pick            = document.getElementById('product-pick');
+    searchEls.pickImage       = document.getElementById('product-pick-image');
     searchEls.pickPlaceholder = document.getElementById('product-pick-placeholder');
-    searchEls.pickName     = document.getElementById('product-pick-name');
-    searchEls.pickDesc     = document.getElementById('product-pick-desc');
-    searchEls.pickPrice    = document.getElementById('product-pick-price');
-    searchEls.pickStock    = document.getElementById('product-pick-stock');
-    searchEls.pickCode     = document.getElementById('product-pick-code');
-    searchEls.pickBarcode  = document.getElementById('product-pick-barcode');
-    searchEls.pickQty      = document.getElementById('product-pick-qty');
-    searchEls.pickAdd      = document.getElementById('product-pick-add');
-    searchEls.pickClose    = document.getElementById('product-pick-close');
+    searchEls.pickName        = document.getElementById('product-pick-name');
+    searchEls.pickDesc        = document.getElementById('product-pick-desc');
+    searchEls.pickPrice       = document.getElementById('product-pick-price');
+    searchEls.pickStock       = document.getElementById('product-pick-stock');
+    searchEls.pickCode        = document.getElementById('product-pick-code');
+    searchEls.pickBarcode     = document.getElementById('product-pick-barcode');
+    searchEls.pickQty         = document.getElementById('product-pick-qty');
+    searchEls.pickAdd         = document.getElementById('product-pick-add');
+    searchEls.pickClose       = document.getElementById('product-pick-close');
 
     if (!searchEls.input) return;
 
-    searchEls.input.addEventListener('input', function () {
-      state.productQuery = searchEls.input.value.trim();
-      runProductSearch();
-    });
-
-    searchEls.input.addEventListener('focus', function () {
-      if (state.productQuery) runProductSearch();
-    });
-
+    searchEls.input.addEventListener('input', onSearchInput);
+    searchEls.input.addEventListener('focus', onSearchFocus);
     searchEls.input.addEventListener('keydown', onSearchKeydown);
 
-    document.addEventListener('click', function (e) {
-      if (searchEls.suggestions.hidden) return;
-      if (searchEls.wrap.contains(e.target)) return;
-      closeSuggestions();
-    });
+    // pointerdown captura mouse E toque (mobile)
+    document.addEventListener('pointerdown', onDocumentPointerDown, true);
 
-    searchEls.clear.addEventListener('click', clearProductSearch);
-    searchEls.pickClose.addEventListener('click', closeProductPick);
-    searchEls.pickAdd.addEventListener('click', addPickedProduct);
+    // lupa clicável
+    if (searchEls.btn) {
+      searchEls.btn.addEventListener('click', onSearchButtonClick);
+    }
+
+    if (searchEls.clear) searchEls.clear.addEventListener('click', clearProductSearch);
+    if (searchEls.pickClose) searchEls.pickClose.addEventListener('click', closeProductPick);
+    if (searchEls.pickAdd) searchEls.pickAdd.addEventListener('click', addPickedProduct);
   }
 
+  /* -------- Handlers de input/focus -------- */
+  function onSearchInput() {
+    state.productQuery = searchEls.input.value.trim();
+
+    if (searchDebounce) clearTimeout(searchDebounce);
+    // debounce leve evita engasgar no mobile ao digitar rápido
+    searchDebounce = setTimeout(runProductSearch, 120);
+  }
+
+  function onSearchFocus() {
+    if (state.productQuery) {
+      runProductSearch();
+    } else {
+      showTopSuggestions();
+    }
+
+    // Em mobile, sobe o input pra o teclado não cobrir o dropdown
+    if (window.innerWidth <= 720) {
+      setTimeout(function () {
+        try {
+          searchEls.input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } catch (e) { /* noop */ }
+      }, 250);
+    }
+  }
+
+  /* Lupa clicável: foca o input e dispara a busca */
+  function onSearchButtonClick(e) {
+    if (e) e.preventDefault();
+
+    try { searchEls.input.focus(); } catch (err) { /* noop */ }
+
+    if (state.productQuery) {
+      runProductSearch();
+    } else {
+      showTopSuggestions();
+    }
+
+    if (window.innerWidth <= 720) {
+      setTimeout(function () {
+        try {
+          searchEls.input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } catch (err) { /* noop */ }
+      }, 200);
+    }
+  }
+
+  function onDocumentPointerDown(e) {
+    if (!searchEls.suggestions || searchEls.suggestions.hidden) return;
+    if (searchEls.wrap.contains(e.target)) return;
+    closeSuggestions();
+  }
+
+  function showTopSuggestions() {
+    const items = (state.products || []).slice(0, 10);
+    state.productSuggestions = items;
+    state.productSuggestionIndex = items.length > 0 ? 0 : -1;
+    renderSuggestions(items, '');
+    if (searchEls.clear) searchEls.clear.hidden = true;
+  }
+
+  /* -------- Busca -------- */
   function runProductSearch() {
     const q = state.productQuery.toLowerCase();
 
     if (!q) {
-      closeSuggestions();
-      searchEls.clear.hidden = true;
+      showTopSuggestions();
       return;
     }
 
@@ -695,7 +853,9 @@
     if (items.length === 0) {
       const li = document.createElement('li');
       li.className = 'product-suggestions__empty';
-      li.textContent = 'Nenhum produto encontrado para "' + query + '".';
+      li.textContent = query
+        ? 'Nenhum produto encontrado para "' + query + '".'
+        : 'Nenhum produto cadastrado.';
       ul.appendChild(li);
       ul.hidden = false;
       searchEls.input.setAttribute('aria-expanded', 'true');
@@ -709,7 +869,6 @@
       li.dataset.id = p.id;
       if (idx === state.productSuggestionIndex) li.setAttribute('aria-selected', 'true');
 
-      // Thumb
       const thumb = document.createElement('div');
       thumb.className = 'product-suggestions__thumb';
       if (p.image_url) {
@@ -725,7 +884,6 @@
           '<path d="m21 8-9-5-9 5v8l9 5 9-5z"/><path d="m3 8 9 5 9-5"/><path d="M12 21v-8"/></svg>';
       }
 
-      // Info
       const info = document.createElement('div');
       info.className = 'product-suggestions__info';
 
@@ -751,10 +909,9 @@
         state.productSuggestionIndex = idx;
         highlightSuggestion();
       });
-      li.addEventListener('mousedown', function (e) {
-        e.preventDefault(); // não fecha o input
-      });
-      li.addEventListener('click', function () {
+
+      li.addEventListener('pointerdown', function (e) {
+        e.preventDefault();
         pickProduct(p);
       });
 
@@ -812,7 +969,8 @@
     searchEls.clear.hidden = true;
     closeSuggestions();
     closeProductPick();
-    searchEls.input.focus();
+
+    try { searchEls.input.focus(); } catch (e) { /* noop */ }
   }
 
   function pickProduct(product) {
@@ -822,7 +980,6 @@
     state.productQuery = product.name || '';
     searchEls.clear.hidden = false;
 
-    // Preenche o preview
     searchEls.pickName.textContent = product.name || '—';
     searchEls.pickDesc.textContent = product.description || 'Sem descrição cadastrada.';
     searchEls.pickPrice.textContent = formatMoney(product.price);
@@ -831,7 +988,6 @@
     searchEls.pickBarcode.textContent = product.barcode || '—';
     searchEls.pickQty.value = '1';
 
-    // Imagem
     if (product.image_url) {
       searchEls.pickImage.src = product.image_url;
       searchEls.pickImage.hidden = false;
@@ -1003,16 +1159,35 @@
     clearFormFeedback();
   }
 
+  /* ===== ATUALIZADO ===== desconto em R$ e % sincronizados */
   function recalcTotals() {
     const subtotal = state.cart.reduce(function (sum, item) {
       return sum + toNumber(item.subtotal, 0);
     }, 0);
 
-    let discount = toNumber(formEls.discount.value, 0);
-    if (!Number.isFinite(discount) || discount < 0) discount = 0;
-    if (discount > subtotal) {
-      discount = subtotal;
-      formEls.discount.value = String(round2(discount));
+    let discount = 0;
+
+    if (lastDiscountEdit === 'pct' && formEls.discountPct) {
+      // Edição pelo campo %
+      let pct = toNumber(formEls.discountPct.value, 0);
+      if (!Number.isFinite(pct) || pct < 0) pct = 0;
+      if (pct > 100) { pct = 100; formEls.discountPct.value = '100'; }
+
+      discount = round2(subtotal * pct / 100);
+      formEls.discount.value = String(discount);
+
+    } else {
+      // Edição pelo campo R$
+      discount = toNumber(formEls.discount.value, 0);
+      if (!Number.isFinite(discount) || discount < 0) discount = 0;
+      if (discount > subtotal) {
+        discount = subtotal;
+        formEls.discount.value = String(round2(discount));
+      }
+
+      // Sincroniza o %
+      const pct = subtotal > 0 ? round2(discount / subtotal * 100) : 0;
+      if (formEls.discountPct) formEls.discountPct.value = String(pct);
     }
 
     const total = Math.max(0, round2(subtotal - discount));
@@ -1020,15 +1195,18 @@
     formEls.totalTotal.textContent = formatMoney(total);
   }
 
+  /* ===== ATUALIZADO ===== reseta os dois campos */
   function resetSaleForm() {
     if (!formEls.form) return;
 
     formEls.form.reset();
     formEls.customer.value = '';
     formEls.discount.value = '0';
+    if (formEls.discountPct) formEls.discountPct.value = '0';
     formEls.payment.value = '';
     formEls.notes.value = '';
     state.cart = [];
+    lastDiscountEdit = 'brl';
 
     clearFormFeedback();
     clearProductSearch();
@@ -1056,6 +1234,15 @@
     if (state.submitting) return;
 
     clearFormFeedback();
+
+    if (state.editingSaleId && !state.perms.edit) {
+      showFormFeedback('Você não tem permissão para editar vendas.');
+      return;
+    }
+    if (!state.editingSaleId && !state.perms.create) {
+      showFormFeedback('Você não tem permissão para criar vendas.');
+      return;
+    }
 
     if (state.cart.length === 0) {
       showFormFeedback('Adicione pelo menos um produto à venda.');
@@ -1101,7 +1288,6 @@
     };
 
     if (state.editingSaleId) {
-      // Edição → pede a senha antes
       requestPassword(
         'Para salvar as alterações da venda ' + formatSaleNumber({ sale_number: state.editingSaleId }) +
         ', confirme sua senha. A alteração fica registrada no histórico.',
@@ -1112,7 +1298,6 @@
       return;
     }
 
-    // Criação
     await submitCreateSale(payload);
   }
 
@@ -1227,6 +1412,10 @@
     });
 
     detailEls.editBtn.addEventListener('click', function () {
+      if (!state.perms.edit) {
+        showToast('Você não tem permissão para editar vendas.', 'error');
+        return;
+      }
       const sale = detailEls.modal.__sale;
       if (!sale) return;
       closeDetailModal();
@@ -1234,6 +1423,10 @@
     });
 
     detailEls.delBtn.addEventListener('click', function () {
+      if (!state.perms.remove) {
+        showToast('Você não tem permissão para excluir vendas.', 'error');
+        return;
+      }
       const sale = detailEls.modal.__sale;
       if (!sale) return;
       closeDetailModal();
@@ -1259,6 +1452,10 @@
     detailEls.title.textContent = formatSaleNumber(sale);
     detailEls.status.innerHTML = '';
     detailEls.status.appendChild(buildStatusBadge(sale.status));
+
+    if (detailEls.editBtn) detailEls.editBtn.hidden = !state.perms.edit;
+    if (detailEls.delBtn)  detailEls.delBtn.hidden  = !state.perms.remove;
+
     detailEls.body.innerHTML =
       '<div class="state-block"><span class="spinner" aria-hidden="true"></span>' +
       '<p>Carregando detalhes...</p></div>';
@@ -1290,7 +1487,6 @@
     if (!detailEls.body) return;
     const frag = document.createDocumentFragment();
 
-    // Resumo
     const s1 = document.createElement('section');
     s1.className = 'detail-section';
     s1.innerHTML = '<h3 class="detail-section__title">Informações gerais</h3>';
@@ -1310,7 +1506,6 @@
     s1.appendChild(grid);
     frag.appendChild(s1);
 
-    // Itens
     const s2 = document.createElement('section');
     s2.className = 'detail-section';
     s2.innerHTML = '<h3 class="detail-section__title">Produtos</h3>';
@@ -1342,7 +1537,6 @@
     }
     frag.appendChild(s2);
 
-    // Totais
     const s3 = document.createElement('section');
     s3.className = 'detail-section';
     s3.innerHTML = '<h3 class="detail-section__title">Totais</h3>';
@@ -1354,7 +1548,6 @@
     s3.appendChild(totals);
     frag.appendChild(s3);
 
-    // Notas
     if (sale.notes && String(sale.notes).trim() !== '') {
       const s4 = document.createElement('section');
       s4.className = 'detail-section';
@@ -1562,9 +1755,6 @@
     });
   }
 
-  /**
-   * Pede a senha do usuário logado e chama `onConfirm(password)`.
-   */
   function requestPassword(hint, onConfirm) {
     state.pendingPasswordAction = onConfirm;
     pwdEls.hint.textContent = hint;
@@ -1582,7 +1772,6 @@
       document.body.style.overflow = '';
       return;
     }
-    // Cancelou
     state.pendingPasswordAction = null;
     pwdEls.modal.hidden = true;
     document.body.style.overflow = '';
@@ -1611,6 +1800,10 @@
      Executar exclusão (com senha)
      ========================================================= */
   async function executeDeleteSale(sale, password) {
+    if (!state.perms.remove) {
+      showToast('Você não tem permissão para excluir vendas.', 'error');
+      return;
+    }
     try {
       const { error } = await window.db.rpc('delete_sale', {
         p_sale_id: sale.id,
@@ -1705,7 +1898,6 @@
     const code    = String(error.code || '');
     const lower   = message.toLowerCase();
 
-    // Mensagens amigáveis vindas das RPCs
     if (message.includes('Senha incorreta')) return 'Senha incorreta. Tente novamente.';
     if (message.includes('Estoque insuficiente')) return message;
     if (message.includes('Produto não encontrado')) return message;
@@ -1717,6 +1909,7 @@
     if (message.includes('Sessão inválida')) return message;
     if (message.includes('Venda não encontrada')) return message;
     if (message.includes('Venda não pertence')) return message;
+    if (message.includes('Sem permissão')) return message;
 
     if (lower.includes('failed to fetch') || lower.includes('network')) {
       return 'Não foi possível conectar ao servidor.';

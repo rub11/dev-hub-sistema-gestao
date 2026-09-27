@@ -192,7 +192,7 @@
               </div>
             </section>
 
-            <!-- ============ BUSCA DE PRODUTO (nova) ============ -->
+            <!-- ============ BUSCA DE PRODUTO ============ -->
             <section class="card">
               <header class="card__head"><h2 class="card__title">Adicionar produto</h2></header>
 
@@ -202,17 +202,23 @@
                   <label for="product-search-input" class="field__label">Buscar produto</label>
 
                   <div class="product-search__control">
-                    <svg class="product-search__icon" viewBox="0 0 24 24" fill="none"
-                         stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"
-                         aria-hidden="true">
-                      <circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" />
-                    </svg>
+                    <!-- ===== LUPA CLICÁVEL ===== -->
+                    <button type="button" class="product-search__btn" id="product-search-btn"
+                            aria-label="Buscar produto" title="Buscar">
+                      <svg viewBox="0 0 24 24" fill="none"
+                           stroke="currentColor" stroke-width="1.9" stroke-linecap="round"
+                           stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" />
+                      </svg>
+                    </button>
+
                     <input type="text" id="product-search-input"
                            placeholder="Nome, código ou código de barras…"
                            autocomplete="off" spellcheck="false"
                            aria-autocomplete="list"
                            aria-controls="product-suggestions"
                            aria-expanded="false" />
+
                     <button type="button" class="product-search__clear" id="product-search-clear"
                             aria-label="Limpar busca" hidden>
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -230,7 +236,7 @@
                       role="listbox" hidden></ul>
                 </div>
 
-                <!-- ============ PREVIEW (preenchido quando escolhe um produto) ============ -->
+                <!-- ============ PREVIEW ============ -->
                 <div class="product-pick" id="product-pick" hidden>
                   <div class="product-pick__media">
                     <img id="product-pick-image" alt="" />
@@ -325,10 +331,16 @@
                     <span class="totals__label">Subtotal</span>
                     <span class="totals__value" id="total-subtotal">R$ 0,00</span>
                   </div>
-                  <div class="totals__row totals__row--field">
-                    <label for="sale-discount" class="totals__label">Desconto (R$)</label>
-                    <input type="number" id="sale-discount" value="0" min="0" step="0.01" inputmode="decimal" />
-                  </div>
+                  
+<div class="totals__row totals__row--field">
+  <label for="sale-discount" class="totals__label">Desconto (R$)</label>
+  <input type="number" id="sale-discount" value="0" min="0" step="0.01" inputmode="decimal" />
+</div>
+<div class="totals__row totals__row--field">
+  <label for="sale-discount-pct" class="totals__label">Desconto (%)</label>
+  <input type="number" id="sale-discount-pct" value="0" min="0" max="100" step="0.01" inputmode="decimal" />
+</div>
+
                   <div class="totals__sep" role="presentation"></div>
                   <div class="totals__row totals__row--grand">
                     <span class="totals__label">Total</span>
@@ -505,6 +517,7 @@
   <script src="js/supabase.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/nav.js"></script>
+  <script src="js/permissions.js"></script>
   <script src="js/vendas.js"></script>
 </body>
 </html>

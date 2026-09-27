@@ -3,6 +3,7 @@
    ---------------------------------------------------------
    Usa apenas window.db. Todas as consultas são feitas
    no Supabase; agregações são calculadas em memória.
+   - Permissões granulares (Perms.has)
    ========================================================= */
 
 (function () {
@@ -75,7 +76,12 @@
     customersById: {},
     totalCustomers: 0,
     newCustomersInPeriod: 0,
-    chart: null
+    chart: null,
+    /* ===== NOVO ===== permissões granulares */
+    perms: {
+      view:   true,
+      export: true
+    }
   };
 
   document.addEventListener('DOMContentLoaded', init);
@@ -127,7 +133,30 @@
     setInputValue('period-start', state.customStart);
     setInputValue('period-end', state.customEnd);
 
+    /* ===== NOVO ===== carrega permissões antes de renderizar */
+    if (window.Perms && typeof window.Perms.load === 'function') {
+      try { await window.Perms.load(); } catch (e) { /* fallback */ }
+    }
+
+    state.perms.view   = hasPerm('reports.view',   true);
+    state.perms.export = hasPerm('reports.export', true);
+
+    // Guard de página — se não pode ver relatórios, sai
+    if (!state.perms.view) {
+      window.location.replace('dashboard.html');
+      return;
+    }
+
     await refresh();
+  }
+
+  /* ===== NOVO =====
+     Lê uma capability. Se Perms não existir, usa o fallback. */
+  function hasPerm(cap, fallback) {
+    if (window.Perms && typeof window.Perms.has === 'function') {
+      return window.Perms.has(cap);
+    }
+    return fallback !== false;
   }
 
   /* =========================================================
@@ -277,7 +306,6 @@
         if (custom) custom.hidden = period !== 'custom';
 
         if (period === 'custom') {
-          // só busca quando clicar em Aplicar
           updatePeriodRangeLabel();
           return;
         }
@@ -394,7 +422,6 @@
     const endISO = end.toISOString();
 
     try {
-      // ---------- Onda 1: consultas independentes em paralelo ----------
       const [
         salesRes,
         productsRes,
@@ -436,7 +463,6 @@
       state.totalCustomers = (totalCustomersRes && totalCustomersRes.count) || 0;
       state.newCustomersInPeriod = (newCustomersRes && newCustomersRes.count) || 0;
 
-      // ---------- Onda 2: itens e nomes dos clientes ----------
       const validSales = state.sales.filter(function (s) {
         return !isCanceled(s.status);
       });
@@ -465,7 +491,6 @@
         state.customersById[c.id] = c.name;
       });
 
-      // ---------- Render ----------
       renderSalesKpis();
       renderChart();
       renderPayments();
@@ -538,7 +563,6 @@
     const valid = getValidSales();
 
     if (typeof window.Chart === 'undefined') {
-      // Chart.js não carregou — esconde o canvas e mostra aviso
       canvas.style.display = 'none';
       empty.hidden = false;
       empty.querySelector('p').textContent = 'Não foi possível carregar a biblioteca de gráficos.';
@@ -725,7 +749,6 @@
     }
     empty.hidden = true;
 
-    // Agrupa por payment_method (respeitando o que existe no banco)
     const map = new Map();
     valid.forEach(function (s) {
       const key = s.payment_method || '';
@@ -735,7 +758,6 @@
       entry.total += toNumber(s.total, 0);
     });
 
-    // Ordena por total desc
     const rows = Array.from(map.entries())
       .map(function (entry) { return { code: entry[0], ...entry[1] }; })
       .sort(function (a, b) { return b.total - a.total; });
@@ -773,7 +795,6 @@
   function labelForPayment(code) {
     if (!code) return 'Não informado';
     if (PAYMENT_LABELS[code]) return PAYMENT_LABELS[code];
-    // fallback: humaniza o código bruto
     return String(code).replace(/_/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); });
   }
 
@@ -936,7 +957,6 @@
     wrap.hidden = false;
     tbody.innerHTML = '';
 
-    // Ordena: sem estoque, baixo, normal — depois por nome
     const sorted = state.products.slice().sort(function (a, b) {
       const sa = stockOrder(a);
       const sb = stockOrder(b);
@@ -1049,7 +1069,6 @@
     tr.appendChild(createCell(formatDateTime(movement.created_at), 'cell--muted'));
     tr.appendChild(createCell(productNameById(movement.product_id), ''));
 
-    // Tipo
     const typeCell = document.createElement('td');
     const info = MOVEMENT_TYPE_INFO[String(movement.type || '').toLowerCase()];
     const badge = document.createElement('span');
@@ -1058,7 +1077,6 @@
     typeCell.appendChild(badge);
     tr.appendChild(typeCell);
 
-    // Quantidade (com sinal)
     const qtyCell = document.createElement('td');
     qtyCell.className = 'cell--num';
     const type = String(movement.type || '').toLowerCase();
@@ -1102,14 +1120,29 @@
     if (productsBtn) productsBtn.addEventListener('click', exportProductsCSV);
   }
 
+  /* ===== NOVO ===== respeita reports.export */
   function setExportButtonsEnabled(enabled) {
     const salesBtn = document.getElementById('export-sales-btn');
     const productsBtn = document.getElementById('export-products-btn');
-    if (salesBtn) salesBtn.disabled = !enabled;
-    if (productsBtn) productsBtn.disabled = !enabled;
+
+    const canExport = state.perms.export === true;
+
+    if (salesBtn) {
+      salesBtn.hidden = !canExport;
+      salesBtn.disabled = !enabled || !canExport;
+    }
+    if (productsBtn) {
+      productsBtn.hidden = !canExport;
+      productsBtn.disabled = !enabled || !canExport;
+    }
   }
 
   function exportSalesCSV() {
+    /* ===== NOVO ===== guard antes de exportar */
+    if (!state.perms.export) {
+      showToast('Você não tem permissão para exportar relatórios.', 'error');
+      return;
+    }
     const valid = getValidSales();
 
     if (valid.length === 0) {
@@ -1137,6 +1170,11 @@
   }
 
   function exportProductsCSV() {
+    /* ===== NOVO ===== guard antes de exportar */
+    if (!state.perms.export) {
+      showToast('Você não tem permissão para exportar relatórios.', 'error');
+      return;
+    }
     if (state.products.length === 0) {
       showToast('Nenhum produto para exportar.', 'error');
       return;

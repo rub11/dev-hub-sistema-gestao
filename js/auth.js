@@ -10,7 +10,7 @@
              • 0 → erro
              • 1 → aplica
              • N → pede para escolher (completeSignIn)
-     3. Aplica contexto (org, role, is_platform_admin, avatar_url)
+     3. Aplica contexto (org, role, role_slug, is_platform_admin, avatar_url)
    Guard de autorização centralizado: requireRole().
    ========================================================= */
 
@@ -134,7 +134,6 @@
       }
 
       // 2+ empresas → devolve para o form pedir a escolha
-      // (sessão do Supabase já está ativa; nada gravado ainda)
       return {
         needsCompanyChoice: true,
         user: user,
@@ -155,7 +154,7 @@
     },
 
     /* =====================================================
-       INTERNO: valida + grava contexto (inclui avatar_url)
+       INTERNO: valida + grava contexto
        ===================================================== */
     async _applyMembership(supabase, user, membership) {
       if (!membership) throw new Error('Empresa inválida.');
@@ -176,7 +175,7 @@
         throw new Error('Não foi possível validar seu acesso.');
       }
 
-      /* ----- Busca avatar_url + is_platform_admin de uma vez ----- */
+      /* ----- Busca avatar_url + is_platform_admin ----- */
       let avatarUrl = null;
       let isPlatformAdmin = Boolean(membership.is_platform_admin);
 
@@ -206,6 +205,7 @@
         organization_id: membership.organization_id || null,
         organization_name: membership.organization_name || '',
         role: String(membership.user_role || 'user').toLowerCase(),
+        role_slug: String(membership.user_role_slug || '').toLowerCase(),   // 👈 NOVO
         name:
           membership.user_name ||
           user.user_metadata?.name ||
@@ -341,7 +341,7 @@
       try {
         const { data, error } = await supabase
           .from('organization_members')
-          .select('organization_id, role, active, name, email')
+          .select('organization_id, role, role_slug, active, name, email')   // 👈 role_slug
           .eq('user_id', uid)
           .limit(1);
 
@@ -358,6 +358,7 @@
         organization_id: membership?.organization_id || null,
         organization_name: '',
         role: String(membership?.role || 'user').toLowerCase(),
+        role_slug: String(membership?.role_slug || '').toLowerCase(),   // 👈 NOVO
         name: membership?.name || session.user.user_metadata?.name || '',
         email: membership?.email || session.user.email || '',
         is_platform_admin: false,
@@ -395,6 +396,12 @@
       const stored = this.getStoredUser();
       if (!stored) return '';
       return String(stored.role || '').toLowerCase();
+    },
+
+    getCurrentRoleSlug() {
+      const stored = this.getStoredUser();
+      if (!stored) return '';
+      return String(stored.role_slug || '').toLowerCase();
     },
 
     hasRole(roles) {
@@ -501,7 +508,6 @@
     const feedback       = document.getElementById('login-feedback');
     const togglePassword = document.getElementById('toggle-password');
 
-    // Estado do fluxo "escolher empresa"
     let pendingMemberships = null;
 
     /* ---------- Feedback ---------- */
@@ -650,7 +656,6 @@
       const email = (emailInput?.value || '').trim().toLowerCase();
       const password = passwordInput?.value || '';
 
-      // Código é opcional — só valida formato se digitado
       if (companyCode && !/^[A-Z0-9-]{2,40}$/.test(companyCode)) {
         showFeedback('O código da empresa é inválido.');
         companyCodeInput?.focus();

@@ -1,14 +1,17 @@
 /* =========================================================
-   DEV HUB · Navegação centralizada + Papéis
+   DEV HUB · Navegação centralizada + Papéis + Permissões
    ---------------------------------------------------------
-   Renderiza a sidebar por role. Marca estado ativo pela URL.
-   Também renderiza o painel do usuário (topbar).
+   Renderiza a sidebar por role (fallback) e por capability
+   (quando window.Perms existe e está carregado).
    Deve ser carregado APÓS auth.js e ANTES do módulo da página.
    ========================================================= */
 
 (function () {
   'use strict';
 
+  /* =========================================================
+     Fallback por role (usado quando Perms NÃO está disponível)
+     ========================================================= */
   const CAPABILITIES = {
     platform_admin: ['platform'],
     admin: ['operations', 'management', 'admin_settings'],
@@ -31,26 +34,55 @@
     'usuário': 'Funcionário'
   };
 
+  /* =========================================================
+     Mapa item → capability exigida (usado quando Perms existe)
+     ========================================================= */
+  const ITEM_PERM = {
+    dashboard:       'dashboard.view',
+
+    vendas:          'sales.view',
+    notas:           'notes.view',
+    clientes:        'customers.view',
+    produtos:        'products.view',
+    estoque:         'stock.view',
+    relatorios:      'reports.view',
+
+    gestao:          'management.view',
+
+    plataforma:      'platform',      // platform admin é flag — não filtra por Perms
+    empresas:        'platform',
+    'plat-usuarios': 'platform',
+    'plat-config':   'platform'
+  };
+
+  // Itens da seção Sistema
+  const SYSTEM_PERM = {
+    configuracoes: null    // sempre visível para quem está logado
+  };
+
+  /* =========================================================
+     Leitura de contexto
+     ========================================================= */
   function readContext() {
     let role = '';
     let isPlatform = false;
+    let roleSlug = '';
     try {
       const raw = sessionStorage.getItem('devhub_user');
       if (raw) {
         const data = JSON.parse(raw);
         role = String(data.role || '').toLowerCase();
         isPlatform = data.is_platform_admin === true;
+        roleSlug = String(data.role_slug || '').toLowerCase();
       }
     } catch (e) { /* ignora */ }
     if (role === 'platform_admin') isPlatform = true;
-    return { role: role, isPlatform: isPlatform };
+    return { role: role, isPlatform: isPlatform, roleSlug: roleSlug };
   }
 
   function capsForRole(role, isPlatform) {
     const baseCaps = CAPABILITIES[String(role || '').toLowerCase()] || ['operations'];
-    if (isPlatform) {
-      return baseCaps.concat(['platform']);
-    }
+    if (isPlatform) return baseCaps.concat(['platform']);
     return baseCaps;
   }
 
@@ -59,8 +91,12 @@
     return capsForRole(ctx.role, ctx.isPlatform);
   }
 
+  /* =========================================================
+     DHRoles · API pública de papéis (compatível com o que já existe)
+     ========================================================= */
   const DHRoles = {
     current() { return readContext().role; },
+    currentSlug() { return readContext().roleSlug; },
     isPlatformAdmin() { return readContext().isPlatform; },
     isAdmin() { const r = readContext().role; return r === 'admin' || r === 'administrador'; },
     isGestor() { const r = readContext().role; return r === 'gestor' || r === 'manager'; },
@@ -87,6 +123,24 @@
 
   window.DHRoles = DHRoles;
 
+  /* =========================================================
+     Checagem de permissão (com fallback)
+     ========================================================= */
+  function hasPermission(cap) {
+    if (!cap) return true;                       // sem exigência → libera
+    if (cap === 'platform') {                    // platform é flag, não capability
+      return readContext().isPlatform;
+    }
+    if (window.Perms && typeof window.Perms.has === 'function') {
+      return window.Perms.has(cap);
+    }
+    // Fallback: libera (mantém comportamento antigo)
+    return true;
+  }
+
+  /* =========================================================
+     Ícones
+     ========================================================= */
   const ICONS = {
     dashboard: '<svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7.5" height="7.5" rx="1.8" /><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.8" /><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.8" /><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.8" /></svg>',
     vendas: '<svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="20" r="1.4" /><circle cx="18" cy="20" r="1.4" /><path d="M2.5 3.5h2.3l2.3 11.6a1.8 1.8 0 0 0 1.8 1.4h8.8a1.8 1.8 0 0 0 1.8-1.4L21 7.5H6" /></svg>',
@@ -102,6 +156,9 @@
     logout: '<svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="m16 17 5-5-5-5" /><path d="M21 12H9" /></svg>'
   };
 
+  /* =========================================================
+     Estrutura de menu
+     ========================================================= */
   const MENU = [
     {
       section: 'Operação',
@@ -127,14 +184,17 @@
       section: 'Plataforma',
       capability: 'platform',
       items: [
-        { id: 'plataforma',    label: 'Dashboard',                    href: 'plataforma.html',              icon: 'dashboard' },
-        { id: 'empresas',      label: 'Empresas',                     href: 'plataforma.html#empresas',     icon: 'empresas' },
-        { id: 'plat-usuarios', label: 'Usuários',                     href: 'plataforma-usuarios.html',     icon: 'usuarios' },
+        { id: 'plataforma',    label: 'Dashboard',                    href: 'plataforma.html',               icon: 'dashboard' },
+        { id: 'empresas',      label: 'Empresas',                     href: 'plataforma.html#empresas',      icon: 'empresas' },
+        { id: 'plat-usuarios', label: 'Usuários',                     href: 'plataforma-usuarios.html',      icon: 'usuarios' },
         { id: 'plat-config',   label: 'Configurações da Plataforma', href: 'plataforma-configuracoes.html', icon: 'configuracoes' }
       ]
     }
   ];
 
+  /* =========================================================
+     Página atual
+     ========================================================= */
   function currentPageId() {
     const path = (window.location.pathname || '').split('/').pop() || 'index.html';
     const file = path.replace(/\.html?$/i, '').toLowerCase();
@@ -162,18 +222,48 @@
     return MAP[file] || file;
   }
 
+  /* =========================================================
+     Seções  ← AQUI é a correção
+     ---------------------------------------------------------
+     Antes: se a seção tinha capability 'management' e o papel base
+            não tinha, a seção inteira era descartada mesmo se o
+            usuário tivesse management.view concedido no banco.
+
+     Agora: se a capability de seção não bate, verificamos se ao
+            menos um item da seção passa no Perms granular. Se
+            sim, a seção aparece (só com os itens permitidos).
+     ========================================================= */
   function buildSection(section, caps, activeId, withTopMargin) {
-    if (section.capability && caps.indexOf(section.capability) === -1) return '';
+    /* ===== NOVO ===== */
+    let sectionVisible = true;
+
+    if (section.capability && caps.indexOf(section.capability) === -1) {
+      // Papel base não tem a capability de seção — tenta pelo granular
+      sectionVisible = section.items.some(function (item) {
+        const perm = ITEM_PERM[item.id];
+        return hasPermission(perm);
+      });
+    }
+
+    if (!sectionVisible) return '';
+    /* ===== /NOVO ===== */
 
     const parts = [];
     const style = withTopMargin ? ' style="margin-top:10px;"' : '';
-    parts.push('<p class="nav__label"' + style + '>' + section.section + '</p>');
+    const itemsHTML = [];
+    let visibleCount = 0;
 
     section.items.forEach(function (item) {
+      // capability da seção (fallback)
       if (item.requiresCapability && caps.indexOf(item.requiresCapability) === -1) return;
 
+      // Permissão granular
+      const perm = ITEM_PERM[item.id];
+      if (!hasPermission(perm)) return;
+
       if (item.soon) {
-        parts.push(
+        visibleCount++;
+        itemsHTML.push(
           '<button type="button" class="nav__item" aria-disabled="true" title="Em breve">' +
           ICONS[item.icon] + '<span>' + item.label + '</span>' +
           '<span class="nav__badge">Em breve</span>' +
@@ -182,16 +272,22 @@
         return;
       }
 
+      visibleCount++;
       const isActive = item.id === activeId;
       const cls = 'nav__item' + (isActive ? ' is-active' : '');
       const aria = isActive ? ' aria-current="page"' : '';
 
-      parts.push(
+      itemsHTML.push(
         '<a class="' + cls + '" href="' + item.href + '"' + aria + '>' +
         ICONS[item.icon] + '<span>' + item.label + '</span>' +
         '</a>'
       );
     });
+
+    if (visibleCount === 0) return '';
+
+    parts.push('<p class="nav__label"' + style + '>' + section.section + '</p>');
+    parts.push(itemsHTML.join(''));
 
     return parts.join('');
   }
@@ -214,37 +310,47 @@
 
     parts.push('<div class="sidebar__spacer"></div>');
 
-    parts.push('<nav class="nav" aria-label="Sistema">');
-    parts.push('<div class="nav__sep" role="presentation"></div>');
+    // ---------- Sistema ----------
+    const systemParts = [];
 
-    if (caps.indexOf('operations') !== -1) {
+    // Minha Conta — sempre visível para usuários logados (não-platform)
+    const showAccount = caps.indexOf('operations') !== -1 || caps.indexOf('management') !== -1
+      || hasPermission('management.view');
+    if (showAccount) {
       const isConf = activeId === 'configuracoes';
-      parts.push(
+      systemParts.push(
         '<a class="nav__item' + (isConf ? ' is-active' : '') + '" href="configuracoes.html"' +
         (isConf ? ' aria-current="page"' : '') + '>' +
-        ICONS.configuracoes +
-        '<span>Minha Conta</span>' +
+        ICONS.configuracoes + '<span>Minha Conta</span>' +
         '</a>'
       );
     }
 
-    parts.push(
+    systemParts.push(
       '<button type="button" class="nav__item nav__item--danger" data-action="logout">' +
       ICONS.logout + '<span>Sair</span>' +
       '</button>'
     );
+
+    parts.push('<nav class="nav" aria-label="Sistema">');
+    parts.push('<div class="nav__sep" role="presentation"></div>');
+    parts.push(systemParts.join(''));
     parts.push('</nav>');
 
     return parts.join('');
   }
 
-  /* ---------------------------------------------------------
+  /* =========================================================
      Painel do usuário (topbar)
-     --------------------------------------------------------- */
+     ========================================================= */
   function buildUserMenuHTML(caps) {
     const parts = [];
 
-    if (caps.indexOf('operations') !== -1) {
+    const showAccount = caps.indexOf('operations') !== -1
+      || caps.indexOf('management') !== -1
+      || hasPermission('management.view');
+
+    if (showAccount) {
       parts.push(
         '<a class="menu-item" role="menuitem" href="configuracoes.html">' +
         '<span>Minha Conta</span>' +
@@ -273,6 +379,9 @@
     return parts.join('');
   }
 
+  /* =========================================================
+     Sidebar mobile
+     ========================================================= */
   function closeSidebar() {
     if (!document.body.classList.contains('sidebar-open')) return;
     document.body.classList.remove('sidebar-open');
@@ -303,17 +412,12 @@
     });
   }
 
-  /* ---------------------------------------------------------
-     Foto do perfil na topbar
-     - Primeiro tenta sessionStorage (rápido).
-     - Se vazio, consulta o banco.
-     - Reaplica em vários intervalos para vencer o timing dos
-       módulos que sobrescrevem #user-avatar com a inicial.
-     --------------------------------------------------------- */
+  /* =========================================================
+     Avatar na topbar
+     ========================================================= */
   function renderTopbarAvatar(url) {
     const el = document.getElementById('user-avatar');
     if (!el) return;
-
     if (el.dataset.avatarUrl === (url || '')) return;
 
     el.innerHTML = '';
@@ -332,7 +436,6 @@
       el.appendChild(img);
     } else {
       el.style.background = '';
-      // deixa o módulo cuidar de preencher a inicial
     }
   }
 
@@ -342,49 +445,36 @@
       if (!raw) return null;
       const ctx = JSON.parse(raw);
       return ctx && ctx.avatar_url ? ctx.avatar_url : null;
-    } catch (e) {
-      return null;
-    }
+    } catch (e) { return null; }
   }
 
   async function fetchAvatarFromDb() {
     if (!window.db) return null;
     try {
       const { data: sess } = await window.db.auth.getSession();
-      const uid = sess?.session?.user?.id;
+      const uid = sess && sess.session && sess.session.user && sess.session.user.id;
       if (!uid) return null;
 
       const { data, error } = await window.db
-        .from('profiles')
-        .select('avatar_url')
-        .eq('id', uid)
-        .maybeSingle();
+        .from('profiles').select('avatar_url').eq('id', uid).maybeSingle();
 
       if (error) return null;
       return data && data.avatar_url ? data.avatar_url : null;
-    } catch (e) {
-      return null;
-    }
+    } catch (e) { return null; }
   }
 
   async function applyTopbarAvatar() {
     const el = document.getElementById('user-avatar');
     if (!el) return;
 
-    // 1) Cache
     const cached = readCachedAvatar();
-    if (cached) {
-      renderTopbarAvatar(cached);
-      return;
-    }
+    if (cached) { renderTopbarAvatar(cached); return; }
 
-    // 2) Banco
     const url = await fetchAvatarFromDb();
     if (!url) return;
 
     renderTopbarAvatar(url);
 
-    // Atualiza cache para a próxima navegação
     try {
       const raw = sessionStorage.getItem('devhub_user');
       const ctx = raw ? JSON.parse(raw) : {};
@@ -399,9 +489,9 @@
     });
   }
 
-  /* ---------------------------------------------------------
-     Renderização da sidebar
-     --------------------------------------------------------- */
+  /* =========================================================
+     Renderização
+     ========================================================= */
   function renderSidebar() {
     const aside = document.getElementById('sidebar');
     if (!aside) return;
@@ -416,7 +506,6 @@
       link.addEventListener('click', closeSidebar);
     });
 
-    /* ---------- Painel do usuário ---------- */
     const userPanel = document.getElementById('user-menu-panel');
     if (userPanel) {
       userPanel.innerHTML = buildUserMenuHTML(caps);
@@ -430,17 +519,23 @@
     );
   }
 
-  /* ---------------------------------------------------------
+  /* =========================================================
      Bootstrap
-     --------------------------------------------------------- */
+     ========================================================= */
   function bootstrap() {
-    renderSidebar();
+    // Se Perms estiver disponível, espera o load() terminar
+    // para renderizar com as permissões corretas.
+    if (window.Perms && typeof window.Perms.load === 'function') {
+      window.Perms.load()
+        .then(function () { renderSidebar(); })
+        .catch(function () { renderSidebar(); });
+    } else {
+      renderSidebar();
+    }
+
     scheduleAvatarRefresh();
   }
 
-  // A sidebar depende do elemento #sidebar estar no DOM.
-  // Como este script é carregado no fim do <body>, ele já existe.
-  // Mas usamos DOMContentLoaded como cinto de segurança.
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', bootstrap);
   } else {
@@ -449,7 +544,11 @@
 
   window.addEventListener('load', scheduleAvatarRefresh);
 
-  // Se a sessão mudar (login/logout), reaplica avatar
+  // Se Perms emitir evento depois, re-renderiza
+  document.addEventListener('perms:ready', function () {
+    renderSidebar();
+  });
+
   if (window.db && window.db.auth && window.db.auth.onAuthStateChange) {
     window.db.auth.onAuthStateChange(function (event) {
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {

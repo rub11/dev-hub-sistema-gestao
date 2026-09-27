@@ -2,9 +2,9 @@
    DEV HUB · Área de Gestão
    ---------------------------------------------------------
    - Admin / Gestor criam usuários (regras por papel)
+   - Permissões por tipo de perfil DENTRO do modal de usuário
    - Alterar senha do funcionário direto no modal de edição
-     (exige informar a senha atual do funcionário)
-   - Sem botão de "enviar e-mail de redefinição"
+   - Acesso à página via management.view (granular) OU papel base
    ========================================================= */
 
 (function () {
@@ -19,6 +19,48 @@
   const ROLE_ADMIN   = ['admin', 'administrador'];
   const ROLE_MANAGER = ['gestor', 'manager'];
 
+  /* Grupos de permissão exibidos no modal do usuário */
+  const PERM_GROUPS = [
+    { title: 'Geral', caps: [
+      ['dashboard.view', 'Ver dashboard']
+    ]},
+    { title: 'Vendas', caps: [
+      ['sales.view',   'Ver vendas'],
+      ['sales.create', 'Criar venda'],
+      ['sales.edit',   'Editar venda'],
+      ['sales.delete', 'Excluir venda']
+    ]},
+    { title: 'Notas', caps: [
+      ['notes.view',  'Ver notas'],
+      ['notes.print', 'Imprimir notas']
+    ]},
+    { title: 'Clientes', caps: [
+      ['customers.view',   'Ver clientes'],
+      ['customers.create', 'Criar cliente'],
+      ['customers.edit',   'Editar cliente'],
+      ['customers.delete', 'Excluir cliente']
+    ]},
+    { title: 'Produtos', caps: [
+      ['products.view',   'Ver produtos'],
+      ['products.create', 'Criar produto'],
+      ['products.edit',   'Editar produto'],
+      ['products.delete', 'Excluir produto']
+    ]},
+    { title: 'Estoque', caps: [
+      ['stock.view',     'Ver estoque'],
+      ['stock.movement', 'Movimentar estoque']
+    ]},
+    { title: 'Relatórios', caps: [
+      ['reports.view',   'Ver relatórios'],
+      ['reports.export', 'Exportar CSV']
+    ]},
+    { title: 'Gestão', caps: [
+      ['management.view',  'Acessar Gestão'],
+      ['management.roles', 'Gerenciar tipos de perfil'],
+      ['management.users', 'Gerenciar usuários']
+    ]}
+  ];
+
   const state = {
     members: [],
     roleTypes: [],
@@ -30,7 +72,14 @@
     creating: false,
     editingMember: null,
     action: null,
-    acting: false
+    acting: false,
+    permsSlug: null,
+
+    perms: {
+      view:  true,
+      roles: true,
+      users: true
+    }
   };
 
   document.addEventListener('DOMContentLoaded', init);
@@ -67,21 +116,48 @@
     state.currentRole = String((profile && profile.role) || '').toLowerCase();
     state.currentOrgId = profile && profile.organization_id ? profile.organization_id : null;
 
-    const canManage = window.DHRoles && typeof window.DHRoles.canAccessManagement === 'function'
+    if (window.Perms && typeof window.Perms.load === 'function') {
+      try { await window.Perms.load(); } catch (e) { /* fallback */ }
+    }
+
+    state.perms.view  = hasPerm('management.view',  true);
+    state.perms.roles = hasPerm('management.roles', true);
+    state.perms.users = hasPerm('management.users', true);
+
+    const hasBase = window.DHRoles && typeof window.DHRoles.canAccessManagement === 'function'
       ? window.DHRoles.canAccessManagement(state.currentRole)
       : state.currentRole === 'admin';
+
+    const canManage = state.perms.view || hasBase;
 
     if (!canManage) {
       window.location.replace('dashboard.html');
       return;
     }
 
+    applyPermissionsToUI();
+
     watchAuthChanges();
     await Promise.all([loadMembers(), loadRoleTypes()]);
   }
 
+  function hasPerm(cap, fallback) {
+    if (window.Perms && typeof window.Perms.has === 'function') {
+      return window.Perms.has(cap);
+    }
+    return fallback !== false;
+  }
+
+  function applyPermissionsToUI() {
+    const roleTypesBtn = document.getElementById('role-types-open-btn');
+    const newUserBtn   = document.getElementById('new-user-btn');
+
+    if (roleTypesBtn && !state.perms.roles) roleTypesBtn.hidden = true;
+    if (newUserBtn   && !state.perms.users) newUserBtn.hidden   = true;
+  }
+
   /* =========================================================
-     Permissões (helpers)
+     Helpers de permissão
      ========================================================= */
   function callerIsAdmin() {
     return ROLE_ADMIN.indexOf(state.currentRole) !== -1;
@@ -94,13 +170,8 @@
     });
   }
 
-  /**
-   * Pode editar este membro?
-   * - Nunca a si mesmo
-   * - Admin: todos
-   * - Gestor: apenas quem tem papel base 'user'
-   */
   function canEditMember(member) {
+    if (!state.perms.users) return false;
     if (member.user_id === state.currentUserId) return false;
 
     const baseRole = String(member.role || '').toLowerCase();
@@ -115,6 +186,7 @@
   }
 
   function canManageMember(member) {
+    if (!state.perms.users) return false;
     return canEditMember(member);
   }
 
@@ -292,7 +364,7 @@
   }
 
   /* =========================================================
-     Renderização
+     Renderização da tabela
      ========================================================= */
   function renderMembers() {
     const tbody = document.getElementById('users-body');
@@ -531,7 +603,7 @@
   }
 
   /* =========================================================
-     Modal: usuário
+     MODAL: USUÁRIO (com bloco de permissões embutido)
      ========================================================= */
   const modalEls = {};
 
@@ -546,15 +618,23 @@
     modalEls.saveBtn  = document.getElementById('user-save-btn');
     modalEls.openBtn  = document.getElementById('new-user-btn');
 
-    // Novo bloco de troca de senha
     modalEls.passwordChangeBlock = document.getElementById('user-password-change-block');
     modalEls.currentPassword     = document.getElementById('user-current-password');
     modalEls.newPassword         = document.getElementById('user-new-password');
 
+    modalEls.permsBlock    = document.getElementById('user-perms-block');
+    modalEls.permsHint     = document.getElementById('user-perms-hint');
+    modalEls.permsGroups   = document.getElementById('user-perms-groups');
+    modalEls.permsFeedback = document.getElementById('user-perms-feedback');
+
     if (!modalEls.modal || !modalEls.form) return;
 
     if (modalEls.openBtn) {
-      modalEls.openBtn.addEventListener('click', function () { openUserModal(null); });
+      if (state.perms.users) {
+        modalEls.openBtn.addEventListener('click', function () { openUserModal(null); });
+      } else {
+        modalEls.openBtn.hidden = true;
+      }
     }
 
     modalEls.modal.querySelectorAll('[data-close-modal]').forEach(function (el) {
@@ -579,30 +659,50 @@
     });
 
     modalEls.form.addEventListener('submit', onSubmitUser);
+
+    if (modalEls.role) {
+      modalEls.role.addEventListener('change', function () {
+        if (!state.editingMember) return;
+        const opt = modalEls.role.options[modalEls.role.selectedIndex];
+        const slug = (opt && opt.dataset && opt.dataset.slug) || '';
+        loadUserPermsForSlug(slug);
+      });
+    }
   }
 
   function openUserModal(member) {
+    if (!state.perms.users) {
+      showToast('Você não tem permissão para gerenciar usuários.', 'error');
+      return;
+    }
+
     state.editingMember = member || null;
     const isEdit = Boolean(state.editingMember);
 
     modalEls.form.reset();
     clearFormFeedback();
+    clearPermsFeedback();
     setFormBusy(false);
 
     if (modalEls.passwordChangeBlock) {
       modalEls.passwordChangeBlock.hidden = !isEdit;
     }
+    if (modalEls.permsBlock) {
+      modalEls.permsBlock.hidden = !isEdit;
+    }
 
     if (isEdit) {
       modalEls.name.value = state.editingMember.name || '';
       modalEls.email.value = state.editingMember.email || '';
-      togglePasswordField(false); // campo de senha da criação, sempre escondido em edit
+      togglePasswordField(false);
       populateRoleSelect(state.editingMember.role_slug, state.editingMember.role);
+      loadUserPermsForSlug(state.editingMember.role_slug || '');
     } else {
       togglePasswordField(true);
       populateRoleSelect(null, 'user');
       if (modalEls.currentPassword) modalEls.currentPassword.value = '';
       if (modalEls.newPassword) modalEls.newPassword.value = '';
+      if (modalEls.permsGroups) modalEls.permsGroups.innerHTML = '';
     }
 
     setModalMode(isEdit ? 'edit' : 'create');
@@ -615,13 +715,13 @@
   function closeCreateModal() {
     if (state.creating) return;
     state.editingMember = null;
+    state.permsSlug = null;
     modalEls.modal.hidden = true;
     document.body.style.overflow = '';
   }
 
   function setModalMode(mode) {
-    const title = modalEls.modal.querySelector('[data-modal-title]') ||
-      modalEls.modal.querySelector('.modal__title, .modal-title, h2, h3');
+    const title = modalEls.modal.querySelector('.modal__title');
     if (title) title.textContent = mode === 'edit' ? 'Editar usuário' : 'Criar novo usuário';
 
     if (modalEls.saveBtn) {
@@ -634,9 +734,183 @@
     if (!modalEls.password) return;
     modalEls.password.required = show;
     modalEls.password.value = '';
-    const container = modalEls.password.closest('.field, .form-group, .input-group, label') ||
-      modalEls.password.parentElement;
+    const container = modalEls.password.closest('.field') || modalEls.password.parentElement;
     if (container) container.hidden = !show;
+  }
+
+  /* =========================================================
+     PERMISSÕES — bloco embutido no modal do usuário
+     ========================================================= */
+  function loadUserPermsForSlug(slug) {
+    if (!modalEls.permsBlock) return;
+
+    state.permsSlug = String(slug || '').toLowerCase();
+
+    if (!state.permsSlug) {
+      modalEls.permsHint.textContent =
+        'Este perfil usa as permissões padrão do papel base. ' +
+        'Para personalizar, crie um "Tipo de perfil" e atribua a este usuário.';
+      modalEls.permsGroups.innerHTML =
+        '<div class="state-block state-block--compact">' +
+        '<p>Selecione um tipo personalizado (ex.: Vendedor) para editar as permissões.</p></div>';
+      return;
+    }
+
+    modalEls.permsHint.textContent =
+      'Marque o que este perfil pode ver e fazer. Salva automaticamente.';
+
+    modalEls.permsGroups.innerHTML =
+      '<div class="state-block state-block--compact">' +
+      '<span class="spinner" aria-hidden="true"></span>' +
+      '<p>Carregando permissões…</p></div>';
+
+    fetchAndRenderPerms(state.permsSlug);
+  }
+
+  async function fetchAndRenderPerms(slug) {
+    if (!state.currentOrgId) {
+      renderPermsGroups({});
+      return;
+    }
+
+    try {
+      const { data, error } = await window.db
+        .from('role_permissions')
+        .select('capability, allowed')
+        .eq('organization_id', state.currentOrgId)
+        .eq('role_slug', slug);
+
+      const map = {};
+      if (!error && Array.isArray(data)) {
+        data.forEach(function (r) { map[r.capability] = r.allowed === true; });
+      } else if (error) {
+        console.warn('[DEV HUB] Falha ao ler role_permissions:', error);
+      }
+
+      renderPermsGroups(map);
+    } catch (e) {
+      console.error('[DEV HUB] Erro ao carregar permissões:', e);
+      renderPermsGroups({});
+    }
+  }
+
+  /* ===== ATUALIZADO =====
+     Checkbox reflete o estado EFETIVO:
+       - se há linha no banco → usa o `allowed` gravado
+       - senão → usa o default do papel base (via Perms.DEFAULTS)
+     Assim você vê o que o usuário realmente tem, não só o que está gravado. */
+  function renderPermsGroups(map) {
+    if (!modalEls.permsGroups) return;
+
+    // Descobre o base_role do slug atual e pega os defaults do Perms
+    const rt = state.roleTypes.find(function (r) {
+      return String(r.slug || '').toLowerCase() === state.permsSlug;
+    });
+    const baseRole = rt ? String(rt.base_role || 'user').toLowerCase() : 'user';
+
+    const defaults =
+      (window.Perms && window.Perms.DEFAULTS && window.Perms.DEFAULTS[baseRole]) || [];
+
+    modalEls.permsGroups.innerHTML = '';
+
+    PERM_GROUPS.forEach(function (group) {
+      const wrap = document.createElement('div');
+      wrap.className = 'field-group';
+
+      const title = document.createElement('p');
+      title.className = 'field-group__title';
+      title.textContent = group.title;
+      wrap.appendChild(title);
+
+      group.caps.forEach(function (pair) {
+        const cap = pair[0];
+        const lbl = pair[1];
+
+        const row = document.createElement('label');
+        row.className = 'user-perm-row';
+
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+
+        const hasDbRow = Object.prototype.hasOwnProperty.call(map, cap);
+        cb.checked = hasDbRow
+          ? map[cap] === true
+          : (defaults.indexOf(cap) !== -1);
+
+        cb.dataset.cap = cap;
+        cb.addEventListener('change', function () {
+          toggleUserPermission(cap, cb.checked, cb);
+        });
+
+        const txt = document.createElement('span');
+        txt.textContent = lbl;
+
+        row.appendChild(cb);
+        row.appendChild(txt);
+        wrap.appendChild(row);
+      });
+
+      modalEls.permsGroups.appendChild(wrap);
+    });
+  }
+
+  async function toggleUserPermission(capability, allowed, cbEl) {
+    const slug = state.permsSlug;
+    if (!slug) return;
+
+    if (!state.currentOrgId) {
+      showPermsFeedback('Empresa não identificada.');
+      if (cbEl) cbEl.checked = !allowed;
+      return;
+    }
+
+    clearPermsFeedback();
+    if (cbEl) cbEl.disabled = true;
+
+    try {
+      const { error } = await window.db
+        .from('role_permissions')
+        .upsert({
+          organization_id: state.currentOrgId,
+          role_slug: slug,
+          capability: capability,
+          allowed: allowed
+        }, { onConflict: 'organization_id,role_slug,capability' });
+
+      if (error) throw error;
+      showToast(allowed ? 'Permissão concedida.' : 'Permissão removida.', 'success');
+    } catch (error) {
+      console.error('[DEV HUB] Falha ao salvar permissão:', error);
+      const lower = String(error.message || '').toLowerCase();
+
+      if (lower.includes('relation') && lower.includes('does not exist')) {
+        showPermsFeedback(
+          'A tabela role_permissions não existe no banco. Rode o SQL de setup.'
+        );
+      } else if (lower.includes('on conflict') || lower.includes('no unique')) {
+        showPermsFeedback(
+          'Falta a unique constraint (organization_id, role_slug, capability) na tabela.'
+        );
+      } else if (lower.includes('row-level security') || lower.includes('permission denied')) {
+        showPermsFeedback('Você não tem permissão para alterar permissões.');
+      } else {
+        showPermsFeedback('Não foi possível salvar: ' + (error.message || 'erro desconhecido'));
+      }
+      if (cbEl) cbEl.checked = !allowed;
+    } finally {
+      if (cbEl) cbEl.disabled = false;
+    }
+  }
+
+  function showPermsFeedback(msg) {
+    if (!modalEls.permsFeedback) return;
+    modalEls.permsFeedback.textContent = msg;
+    modalEls.permsFeedback.hidden = false;
+  }
+  function clearPermsFeedback() {
+    if (!modalEls.permsFeedback) return;
+    modalEls.permsFeedback.textContent = '';
+    modalEls.permsFeedback.hidden = true;
   }
 
   /* =========================================================
@@ -699,11 +973,16 @@
   }
 
   /* =========================================================
-     Submit
+     Submit do modal de usuário
      ========================================================= */
   async function onSubmitUser(event) {
     event.preventDefault();
     if (state.creating) return;
+
+    if (!state.perms.users) {
+      showFormFeedback('Você não tem permissão para gerenciar usuários.');
+      return;
+    }
 
     clearFormFeedback();
 
@@ -794,12 +1073,16 @@
   async function onSubmitEditMember(name, email, baseRole, slug) {
     const member = state.editingMember;
 
+    if (!state.perms.users) {
+      showFormFeedback('Você não tem permissão para gerenciar usuários.');
+      return;
+    }
+
     if (baseRole === 'gestor' && !callerIsAdmin()) {
       showFormFeedback('Apenas administradores podem definir o perfil Gestor.');
       return;
     }
 
-    // Proteção: único admin
     const wasAdmin = String(member.role || '').toLowerCase() === 'admin';
     const willBeAdmin = baseRole === 'admin';
     if (wasAdmin && !willBeAdmin) {
@@ -815,7 +1098,6 @@
       }
     }
 
-    // Lê campos de senha
     const currentPw = modalEls.currentPassword ? modalEls.currentPassword.value : '';
     const newPw     = modalEls.newPassword ? modalEls.newPassword.value : '';
 
@@ -842,7 +1124,6 @@
     setFormBusy(true);
 
     try {
-      // 1) Atualiza dados básicos
       const { error } = await window.db
         .from('organization_members')
         .update({
@@ -855,7 +1136,6 @@
 
       if (error) throw error;
 
-      // Sync profiles (best-effort)
       try {
         await window.db
           .from('profiles')
@@ -865,7 +1145,6 @@
         console.warn('[DEV HUB] profiles não sincronizado:', syncError);
       }
 
-      // 2) Troca a senha (se o admin preencheu os campos)
       if (wantsPasswordChange) {
         const { error: pwErr } = await window.db.rpc('admin_change_user_password', {
           p_user_id: member.user_id,
@@ -985,7 +1264,11 @@
     if (!roleTypeEls.modal) return;
 
     if (roleTypeEls.openBtn) {
-      roleTypeEls.openBtn.addEventListener('click', openRoleTypesModal);
+      if (state.perms.roles) {
+        roleTypeEls.openBtn.addEventListener('click', openRoleTypesModal);
+      } else {
+        roleTypeEls.openBtn.hidden = true;
+      }
     }
 
     roleTypeEls.modal.querySelectorAll('[data-close-modal]').forEach(function (el) {
@@ -1047,6 +1330,10 @@
   }
 
   function openRoleTypesModal() {
+    if (!state.perms.roles) {
+      showToast('Você não tem permissão para gerenciar tipos de perfil.', 'error');
+      return;
+    }
     resetRoleTypeForm();
     renderRoleTypesList();
     roleTypeEls.modal.hidden = false;
@@ -1166,6 +1453,11 @@
     event.preventDefault();
     clearRoleTypeFeedback();
 
+    if (!state.perms.roles) {
+      showRoleTypeFeedback('Você não tem permissão para gerenciar tipos de perfil.');
+      return;
+    }
+
     const id    = roleTypeEls.id.value;
     const label = roleTypeEls.label.value.trim();
     const base  = roleTypeEls.base.value;
@@ -1242,6 +1534,11 @@
   }
 
   async function deleteRoleType(rt) {
+    if (!state.perms.roles) {
+      showToast('Você não tem permissão para gerenciar tipos de perfil.', 'error');
+      return;
+    }
+
     if (!window.confirm(
       'Excluir o tipo "' + rt.label + '"?\n\n' +
       'Usuários já vinculados a ele continuarão existindo, mas o nome exibido ' +
@@ -1309,6 +1606,11 @@
   }
 
   function confirmAction(type, member) {
+    if (!state.perms.users) {
+      showToast('Você não tem permissão para gerenciar usuários.', 'error');
+      return;
+    }
+
     state.action = { type: type, member: member };
 
     const isActive = member.active !== false;
@@ -1353,6 +1655,12 @@
 
   async function onConfirmAction() {
     if (state.acting || !state.action) return;
+
+    if (!state.perms.users) {
+      showToast('Você não tem permissão para gerenciar usuários.', 'error');
+      closeConfirmModal();
+      return;
+    }
 
     const { type, member } = state.action;
     setConfirmBusy(true);
