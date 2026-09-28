@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Estoque · DEV HUB</title>
-  <!-- Tema ANTES da CSS (evita flash) -->
+
   <script src="js/theme.js"></script>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -22,26 +22,14 @@
 
   <a class="skip-link" href="#main">Pular para o conteúdo principal</a>
 
-  <!-- ================= SIDEBAR ================= -->
-  
-
-<aside class="sidebar" id="sidebar" aria-label="Menu principal"></aside>
-
-
+  <aside class="sidebar" id="sidebar" aria-label="Menu principal"></aside>
   <div class="sidebar-overlay" id="sidebar-overlay" hidden></div>
 
-  <!-- ================= ÁREA PRINCIPAL ================= -->
   <div class="app__body">
 
     <header class="topbar">
-      <button
-        type="button"
-        class="icon-btn menu-toggle"
-        id="menu-toggle"
-        aria-label="Abrir menu"
-        aria-expanded="false"
-        aria-controls="sidebar"
-      >
+      <button type="button" class="icon-btn menu-toggle" id="menu-toggle"
+              aria-label="Abrir menu" aria-expanded="false" aria-controls="sidebar">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
              stroke-linecap="round" aria-hidden="true">
           <path d="M3.5 6.5h17M3.5 12h17M3.5 17.5h17" />
@@ -51,15 +39,8 @@
       <span class="topbar__brand">DEV HUB</span>
 
       <div class="topbar__actions">
-
-        <button
-          type="button"
-          class="icon-btn"
-          id="notifications-btn"
-          aria-label="Notificações (em breve)"
-          title="Em breve"
-          disabled
-        >
+        <button type="button" class="icon-btn" id="notifications-btn"
+                aria-label="Notificações (em breve)" title="Em breve" disabled>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M18 8.5a6 6 0 1 0-12 0c0 6.5-2.5 8.5-2.5 8.5h17S18 15 18 8.5" />
@@ -68,14 +49,8 @@
         </button>
 
         <div class="user-menu">
-          <button
-            type="button"
-            class="user-menu__trigger"
-            id="user-menu-trigger"
-            aria-haspopup="true"
-            aria-expanded="false"
-            aria-controls="user-menu-panel"
-          >
+          <button type="button" class="user-menu__trigger" id="user-menu-trigger"
+                  aria-haspopup="true" aria-expanded="false" aria-controls="user-menu-panel">
             <span class="avatar" id="user-avatar" aria-hidden="true">–</span>
             <span class="user-menu__meta">
               <span class="user-menu__name" id="user-name">Carregando…</span>
@@ -91,16 +66,13 @@
             <button type="button" class="menu-item" role="menuitem" aria-disabled="true">
               Perfil <span class="menu-item__tag">Em breve</span>
             </button>
-            <button type="button" class="menu-item" role="menuitem" aria-disabled="true">
-              Configurações <span class="menu-item__tag">Em breve</span>
-            </button>
+            <a class="menu-item" role="menuitem" href="configuracoes.html">Configurações</a>
             <div class="menu-item__sep" role="separator"></div>
             <button type="button" class="menu-item menu-item--danger" role="menuitem" data-action="logout">
               Sair
             </button>
           </div>
         </div>
-
       </div>
     </header>
 
@@ -114,13 +86,13 @@
           <span class="role-badge" id="greeting-role" hidden></span>
         </p>
         <h1 class="page-head__title">Estoque</h1>
-        <p class="page-head__sub">Acompanhe o estoque e registre movimentações.</p>
+        <p class="page-head__sub">Acompanhe o estoque e registre cada movimentação.</p>
       </div>
 
-      <!-- ---------- Cards de resumo ---------- -->
+      <!-- ---------- Cards de resumo (clicáveis) ---------- -->
       <section class="stats" aria-label="Resumo do estoque">
 
-        <article class="stat">
+        <article class="stat stat--clickable" data-stat-filter="all" role="button" tabindex="0">
           <div class="stat__top">
             <span class="stat__label">Total de produtos</span>
             <span class="stat__icon" aria-hidden="true">
@@ -135,7 +107,7 @@
           <p class="stat__value" id="stat-total">—</p>
         </article>
 
-        <article class="stat">
+        <article class="stat stat--clickable" data-stat-filter="with-stock" role="button" tabindex="0">
           <div class="stat__top">
             <span class="stat__label">Com estoque</span>
             <span class="stat__icon stat__icon--success" aria-hidden="true">
@@ -148,7 +120,7 @@
           <p class="stat__value" id="stat-with-stock">—</p>
         </article>
 
-        <article class="stat">
+        <article class="stat stat--clickable" data-stat-filter="low" role="button" tabindex="0">
           <div class="stat__top">
             <span class="stat__label">Estoque baixo</span>
             <span class="stat__icon stat__icon--warning" aria-hidden="true">
@@ -162,7 +134,7 @@
           <p class="stat__value" id="stat-low">—</p>
         </article>
 
-        <article class="stat">
+        <article class="stat stat--clickable" data-stat-filter="out" role="button" tabindex="0">
           <div class="stat__top">
             <span class="stat__label">Sem estoque</span>
             <span class="stat__icon stat__icon--danger" aria-hidden="true">
@@ -196,14 +168,20 @@
                   <path d="m20 20-3.5-3.5" />
                 </svg>
               </span>
-              <input
-                type="search"
-                id="product-search"
-                class="search__input"
-                placeholder="Buscar produto..."
-                aria-label="Buscar produto por nome ou código"
-                autocomplete="off"
-              />
+              <input type="search" id="product-search" class="search__input"
+                     placeholder="Buscar por nome, código ou código de barras…"
+                     aria-label="Buscar produto por nome, código ou código de barras"
+                     autocomplete="off" />
+            </div>
+
+            <div class="field field--inline" id="filter-stock-status-wrap">
+              <label for="product-stock-filter" class="sr-only">Filtrar por situação</label>
+              <select id="product-stock-filter" class="control-select">
+                <option value="">Todos</option>
+                <option value="with-stock">Com estoque</option>
+                <option value="low">Estoque baixo</option>
+                <option value="out">Sem estoque</option>
+              </select>
             </div>
           </div>
         </div>
@@ -271,6 +249,53 @@
                 <option value="ajuste">Ajuste</option>
               </select>
             </div>
+
+            <div class="field field--inline">
+              <label for="movement-filter-category" class="sr-only">Filtrar por categoria</label>
+              <select id="movement-filter-category" class="control-select">
+                <option value="">Todas as categorias</option>
+                <option value="compra">Compra</option>
+                <option value="venda">Venda</option>
+                <option value="devolucao">Devolução</option>
+                <option value="transferencia">Transferência</option>
+                <option value="perda">Perda</option>
+                <option value="avaria">Avaria</option>
+                <option value="inventario">Inventário</option>
+                <option value="ajuste_manual">Ajuste manual</option>
+                <option value="outro">Outro</option>
+              </select>
+            </div>
+
+            <div class="field field--inline">
+              <label for="movement-filter-period" class="sr-only">Filtrar por período</label>
+              <select id="movement-filter-period" class="control-select">
+                <option value="all">Todo o período</option>
+                <option value="today">Hoje</option>
+                <option value="7d">Últimos 7 dias</option>
+                <option value="30d">Últimos 30 dias</option>
+                <option value="month">Este mês</option>
+              </select>
+            </div>
+
+            <!-- Só aparece se tiver stock.audit -->
+            <div class="field field--inline" id="movement-filter-user-wrap" hidden>
+              <label for="movement-filter-user" class="sr-only">Filtrar por usuário</label>
+              <select id="movement-filter-user" class="control-select">
+                <option value="">Todos os usuários</option>
+              </select>
+            </div>
+
+            <!-- Só aparece se tiver stock.report -->
+            <button type="button" class="btn btn--ghost" id="export-movements-btn" hidden>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+                   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
+                   style="width:16px;height:16px">
+                <path d="M12 3v12" />
+                <path d="m7 10 5 5 5-5" />
+                <path d="M5 21h14" />
+              </svg>
+              <span>Exportar CSV</span>
+            </button>
           </div>
         </div>
 
@@ -300,9 +325,12 @@
                 <th scope="col">Produto</th>
                 <th scope="col">Tipo</th>
                 <th scope="col" class="cell--num">Qtd.</th>
-                <th scope="col" class="cell--num">Estoque anterior</th>
-                <th scope="col" class="cell--num">Novo estoque</th>
+                <th scope="col" class="cell--num">Anterior</th>
+                <th scope="col" class="cell--num">Novo</th>
+                <th scope="col">Categoria</th>
+                <th scope="col">Documento</th>
                 <th scope="col">Motivo</th>
+                <th scope="col" class="col-user" hidden>Usuário</th>
               </tr>
             </thead>
             <tbody id="movements-body"></tbody>
@@ -318,7 +346,7 @@
   <div class="modal" id="movement-modal" hidden>
     <div class="modal__backdrop" data-close-modal></div>
 
-    <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="movement-modal-title">
+    <div class="modal__dialog modal__dialog--lg" role="dialog" aria-modal="true" aria-labelledby="movement-modal-title">
       <header class="modal__head">
         <h2 class="modal__title" id="movement-modal-title">Movimentar estoque</h2>
         <button type="button" class="icon-btn modal__close" aria-label="Fechar" data-close-modal>
@@ -337,13 +365,31 @@
           <input type="text" id="movement-product-name" readonly />
         </div>
 
-        <div class="field">
-          <label for="movement-current-stock">Estoque atual</label>
-          <input type="text" id="movement-current-stock" readonly />
+        <div class="form-grid">
+          <div class="field">
+            <label for="movement-current-stock">Estoque atual</label>
+            <input type="text" id="movement-current-stock" readonly />
+          </div>
+
+          <div class="field">
+            <label for="movement-category">Categoria da movimentação *</label>
+            <select id="movement-category" required>
+              <option value="">Selecione…</option>
+              <option value="compra">Compra de fornecedor</option>
+              <option value="venda">Venda</option>
+              <option value="devolucao">Devolução de cliente</option>
+              <option value="transferencia">Transferência</option>
+              <option value="perda">Perda</option>
+              <option value="avaria">Avaria / Dano</option>
+              <option value="inventario">Inventário</option>
+              <option value="ajuste_manual">Ajuste manual</option>
+              <option value="outro">Outro</option>
+            </select>
+          </div>
         </div>
 
         <div class="field">
-          <span class="field__label">Tipo de movimentação</span>
+          <span class="field__label">Tipo de movimentação *</span>
           <div class="segmented" role="radiogroup" aria-label="Tipo de movimentação">
             <label class="segmented__option">
               <input type="radio" name="movement-type" value="entrada" checked />
@@ -360,17 +406,35 @@
           </div>
         </div>
 
-        <div class="field">
-          <label for="movement-quantity" id="movement-quantity-label">Quantidade</label>
-          <input type="number" id="movement-quantity" min="0" step="1" inputmode="numeric" />
-          <p class="field__hint" id="movement-quantity-hint">
-            Quantidade a adicionar ao estoque.
-          </p>
+        <div class="form-grid">
+          <div class="field">
+            <label for="movement-quantity" id="movement-quantity-label">Quantidade *</label>
+            <input type="number" id="movement-quantity" min="0" step="1" inputmode="numeric" />
+            <p class="field__hint" id="movement-quantity-hint">
+              Quantidade a adicionar ao estoque.
+            </p>
+          </div>
+
+          <div class="field" id="movement-unit-cost-wrap">
+            <label for="movement-unit-cost">Custo unitário (R$)</label>
+            <input type="number" id="movement-unit-cost" min="0" step="0.01"
+                   inputmode="decimal" placeholder="Ex.: 12,50" />
+            <p class="field__hint">Opcional. Preencha em compras.</p>
+          </div>
         </div>
 
-        <div class="field">
-          <label for="movement-reason">Motivo (opcional)</label>
-          <input type="text" id="movement-reason" maxlength="200" placeholder="Ex.: Compra de fornecedor" />
+        <div class="form-grid">
+          <div class="field">
+            <label for="movement-document">Documento / NF</label>
+            <input type="text" id="movement-document" maxlength="80"
+                   placeholder="Ex.: NF 1234, Pedido 5678" autocomplete="off" />
+          </div>
+
+          <div class="field">
+            <label for="movement-reason">Motivo (descrição livre)</label>
+            <input type="text" id="movement-reason" maxlength="200"
+                   placeholder="Ex.: Compra de fornecedor XYZ" />
+          </div>
         </div>
 
         <p id="movement-feedback" class="feedback feedback--error" role="alert" aria-live="polite" hidden></p>
@@ -378,7 +442,7 @@
         <footer class="modal__foot">
           <button type="button" class="btn btn--ghost" data-close-modal>Cancelar</button>
           <button type="submit" class="btn btn--primary" id="movement-save-btn">
-            <span class="btn__label">Salvar</span>
+            <span class="btn__label">Registrar movimentação</span>
             <span class="btn__spinner" aria-hidden="true"></span>
           </button>
         </footer>
@@ -386,14 +450,13 @@
     </div>
   </div>
 
-  <!-- ================= TOASTS ================= -->
   <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="false"></div>
 
- <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/supabase.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/nav.js"></script>
-<script src="js/permissions.js"></script>
-<script src="js/estoque.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/nav.js"></script>
+  <script src="js/permissions.js"></script>
+  <script src="js/estoque.js"></script>
 </body>
 </html>

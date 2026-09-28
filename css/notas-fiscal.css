@@ -1,0 +1,193 @@
+/* =========================================================
+   DEV HUB · Notas fiscais — visual estilo ERP
+   ========================================================= */
+
+.stats--four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+.nf-layout { width: 100%; }
+
+.nf-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.nf-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.nf-tab {
+  flex: 0 0 auto;
+  padding: 12px 18px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color var(--transition), border-color var(--transition), background-color var(--transition);
+}
+.nf-tab:hover { color: var(--text); background: var(--surface); }
+.nf-tab.is-active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  background: var(--surface);
+}
+
+.nf-panel {
+  display: none;
+  flex-direction: column;
+  gap: 16px;
+  padding: 22px;
+}
+.nf-panel.is-active { display: flex; }
+
+.nf-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.nf-grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+
+.nf-dest-summary {
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+.nf-dest-summary__line { margin: 0 0 6px 0; font-size: 13.5px; color: var(--text); }
+.nf-dest-summary__line:last-child { margin-bottom: 0; }
+.nf-dest-summary__line strong { color: var(--text-muted); font-weight: 600; margin-right: 6px; }
+
+.nf-dest-empty {
+  padding: 14px 16px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-muted);
+  font-size: 13.5px;
+  text-align: center;
+}
+
+.nf-itens-toolbar { display: flex; justify-content: flex-end; }
+
+.nf-items-wrap {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  max-height: 380px;
+  overflow: auto;
+}
+
+.nf-items-table {
+  width: 100%;
+  min-width: 900px;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.nf-items-table th {
+  position: sticky; top: 0; z-index: 1;
+  padding: 8px 8px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--text-muted); text-align: left; white-space: nowrap;
+}
+.nf-items-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.nf-items-table tr:last-child td { border-bottom: 0; }
+.nf-items-table .c { text-align: center; }
+.nf-items-table .r { text-align: right; font-variant-numeric: tabular-nums; }
+
+.nf-items-empty td {
+  padding: 32px 12px; text-align: center;
+  color: var(--text-muted); font-size: 13px;
+}
+
+.nf-item-remove {
+  display: grid; place-items: center;
+  width: 28px; height: 28px;
+  border: 0; border-radius: 6px;
+  background: transparent; color: var(--text-muted);
+  cursor: pointer;
+}
+.nf-item-remove:hover { background: var(--danger-soft); color: var(--danger); }
+.nf-item-remove svg { width: 14px; height: 14px; }
+
+.nf-items-actions { display: flex; justify-content: flex-start; }
+
+.nf-totals-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px; margin-top: 8px;
+}
+.nf-total-card {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+.nf-total-card span {
+  font-size: 11.5px; font-weight: 600;
+  letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--text-muted);
+}
+.nf-total-card strong {
+  font-size: 15px; font-weight: 700;
+  color: var(--text); font-variant-numeric: tabular-nums;
+}
+.nf-total-card--grand { border-color: var(--accent); background: var(--accent-soft); }
+.nf-total-card--grand strong { font-size: 18px; color: var(--accent-hover); }
+
+.nf-help {
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: 12.5px;
+}
+
+.nf-form__actions {
+  display: flex; justify-content: flex-end; gap: 10px;
+  padding: 16px 22px;
+  border-top: 1px solid var(--border);
+  background: var(--surface-2);
+}
+
+.btn--sm { height: 34px; padding: 0 12px; font-size: 13px; }
+
+@media (max-width: 900px) {
+  .stats--four { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .nf-grid-3 { grid-template-columns: 1fr 1fr; }
+  .nf-totals-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 720px) {
+  .stats--four { grid-template-columns: 1fr; }
+  .nf-grid-2, .nf-grid-3 { grid-template-columns: 1fr; }
+  .nf-totals-grid { grid-template-columns: 1fr; }
+  .nf-form__actions { flex-direction: column; }
+  .nf-form__actions .btn { width: 100%; }
+  .nf-tabs { padding: 0 6px; }
+  .nf-tab { padding: 10px 12px; font-size: 12.5px; }
+}
+
+.nf-items-table input,
+.nf-items-table select {
+  width: 100%; height: 32px; padding: 0 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: var(--surface);
+  font-size: 12.5px; color: var(--text);
+  box-sizing: border-box;
+}

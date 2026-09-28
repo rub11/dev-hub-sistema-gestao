@@ -12,30 +12,33 @@
 (function () {
   'use strict';
 
-  // Lista canônica de capabilities
+  /* Lista canônica de capabilities */
   const CAPABILITIES = [
     'dashboard.view',
 
     'sales.view', 'sales.create', 'sales.edit', 'sales.delete',
     'notes.view', 'notes.print',
 
+    'invoices.view', 'invoices.create', 'invoices.cancel', 'invoices.delete',
+
     'customers.view', 'customers.create', 'customers.edit', 'customers.delete',
 
     'products.view', 'products.create', 'products.edit', 'products.delete',
 
-    'stock.view', 'stock.movement',
+    'stock.view', 'stock.movement', 'stock.audit', 'stock.report',
 
     'reports.view', 'reports.export',
 
     'management.view', 'management.roles', 'management.users'
   ];
 
-  // Permissões padrão por base_role (fallback quando não configurado)
+  /* Permissões padrão por base_role (fallback quando não configurado) */
   const DEFAULTS = {
     user: [
       'dashboard.view',
       'sales.view', 'sales.create',
       'notes.view', 'notes.print',
+      'invoices.view',
       'customers.view', 'customers.create', 'customers.edit',
       'products.view',
       'stock.view',
@@ -45,9 +48,10 @@
       'dashboard.view',
       'sales.view', 'sales.create', 'sales.edit', 'sales.delete',
       'notes.view', 'notes.print',
+      'invoices.view', 'invoices.create', 'invoices.cancel', 'invoices.delete',
       'customers.view', 'customers.create', 'customers.edit', 'customers.delete',
       'products.view', 'products.create', 'products.edit',
-      'stock.view', 'stock.movement',
+      'stock.view', 'stock.movement', 'stock.audit', 'stock.report',
       'reports.view', 'reports.export',
       'management.view', 'management.roles', 'management.users'
     ],
@@ -77,11 +81,13 @@
     const slug = String(ctx.role_slug || '').toLowerCase();
     state.roleSlug = slug;
 
-    // 1) Começa com defaults do base
+    /* 1) Começa com defaults do base */
     const baseDefaults = DEFAULTS[base] || DEFAULTS.user;
-    baseDefaults.forEach(function (cap) { state.capabilities[cap] = true; });
+    baseDefaults.forEach(function (cap) {
+      state.capabilities[cap] = true;
+    });
 
-    // 2) Overlay do banco (role_permissions)
+    /* 2) Overlay do banco (role_permissions) */
     try {
       if (window.db && typeof window.db.rpc === 'function') {
         const { data, error } = await window.db.rpc('my_capabilities');

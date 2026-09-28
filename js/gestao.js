@@ -46,9 +46,11 @@
       ['products.edit',   'Editar produto'],
       ['products.delete', 'Excluir produto']
     ]},
-    { title: 'Estoque', caps: [
+       { title: 'Estoque', caps: [
       ['stock.view',     'Ver estoque'],
-      ['stock.movement', 'Movimentar estoque']
+      ['stock.movement', 'Movimentar estoque'],
+      ['stock.audit',    'Ver auditoria de estoque'],
+      ['stock.report',   'Exportar relatório de estoque']
     ]},
     { title: 'Relatórios', caps: [
       ['reports.view',   'Ver relatórios'],
