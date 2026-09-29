@@ -1,0 +1,615 @@
+/* =========================================================
+   DEV HUB · Dashboard Pro (Fase 1)
+   ---------------------------------------------------------
+   CORREÇÕES APLICADAS:
+   1. `.control-select` ganhou definição base — antes, o
+      dashboard.html não carregava nenhum CSS que definisse
+      esse seletor, então o dropdown de período renderizava
+      como select nativo do browser.
+   2. `input[type="date"]` ganha `color-scheme` para o picker
+      nativo respeitar o tema. Em dark mode, o ícone do
+      calendário era invisível.
+   3. `.alert-item__icon` variants ganham override dark mode.
+   4. Removido `.dash-chart-wrap--doughnut` (idêntico ao base).
+   5. `.dash-chart-wrap` — removida duplicação height/min-height.
+   6. `.dash-header` ganha stack em mobile.
+   7. Notas sobre onde cada `--*` variável viria se migrar
+      cores hardcoded.
+   ========================================================= */
+
+/* =========================================================
+   Header + período
+   ========================================================= */
+.dash-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.dash-period {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.dash-period .control-select { min-width: 170px; }
+
+.dash-period__custom {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* CORREÇÃO #2: input date com color-scheme */
+.dash-period__custom input[type="date"] {
+  height: 36px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  color-scheme: light;
+}
+
+[data-theme="dark"] .dash-period__custom input[type="date"] {
+  color-scheme: dark;
+}
+
+.dash-period__custom span {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.dash-range {
+  margin: 0 0 18px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  letter-spacing: 0.01em;
+}
+
+/* =========================================================
+   CORREÇÃO #1: definição base do .control-select
+   ---------------------------------------------------------
+   O dashboard.html NÃO carrega estoque.css, notas.css,
+   relatorios.css nem plataforma.css — que são os arquivos
+   onde .control-select estava definido. Como resultado,
+   o <select id="dash-period" class="control-select">
+   renderizava como select NATIVO do browser.
+
+   Aqui definimos a versão canônica, idêntica à usada em
+   estoque.css / notas.css / relatorios.css. Se um dia
+   movermos para global.css, remova daqui.
+   ========================================================= */
+.control-select {
+  height: 40px;
+  min-width: 170px;
+  padding: 0 34px 0 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  font-size: 14px;
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color var(--transition), box-shadow var(--transition);
+  -webkit-appearance: none;
+  appearance: none;
+  /* Chevron coberto por theme.css no dark */
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23667085' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 15px;
+}
+
+.control-select:hover:not(:focus) {
+  border-color: color-mix(in srgb, var(--border-strong) 70%, var(--text) 30%);
+}
+
+.control-select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-ring);
+}
+
+/* =========================================================
+   KPIs
+   ========================================================= */
+.dash-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.kpi {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px 16px 14px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color .15s, box-shadow .15s, transform .15s;
+}
+.kpi:hover {
+  border-color: var(--border-strong);
+  box-shadow: 0 6px 20px -8px rgba(16, 24, 40, .10);
+  transform: translateY(-1px);
+}
+
+.kpi__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.kpi__icon {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: var(--surface-2);
+  color: var(--text-muted);
+  flex: none;
+}
+.kpi__icon svg { width: 15px; height: 15px; }
+
+/* Cada variante com light/dark explícito */
+.kpi__icon--customers { background: #ecfdf3; color: #067647; }
+.kpi__icon--sales     { background: #eef2ff; color: #4f46e5; }
+.kpi__icon--revenue   { background: #fff7ed; color: #b54708; }
+.kpi__icon--products  { background: #eef4ff; color: #3538cd; }
+.kpi__icon--users     { background: #f4f3ff; color: #6941c6; }
+.kpi__icon--orgs      { background: #fdf2fa; color: #c11574; }
+
+.kpi__label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.01em;
+}
+
+.kpi__value {
+  margin: 0 0 4px;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  line-height: 1.1;
+}
+
+.kpi__hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.kpi__hint strong { color: var(--text); }
+
+/* =========================================================
+   Grid de cards
+   ========================================================= */
+.dash-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.dash-grid--charts { grid-template-columns: 2fr 1fr; }
+.dash-grid--single { grid-template-columns: 1fr; }
+
+@media (max-width: 980px) {
+  .dash-grid,
+  .dash-grid--charts { grid-template-columns: 1fr; }
+}
+
+.dash-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.dash-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.dash-card__title {
+  margin: 0 0 2px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.005em;
+}
+
+.dash-card__sub {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* =========================================================
+   Charts
+   ---------------------------------------------------------
+   CORREÇÃO #4/#5: removido `.dash-chart-wrap--doughnut`
+   (idêntico ao base) e a duplicação height/min-height.
+   ========================================================= */
+.dash-chart-wrap {
+  position: relative;
+  height: 260px;
+}
+
+/* =========================================================
+   Rankings
+   ========================================================= */
+.dash-rank {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 100px;
+}
+
+.rank-item {
+  display: grid;
+  grid-template-columns: 22px 1fr auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.rank-item__pos {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: var(--surface-2);
+  color: var(--text-muted);
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.rank-item__body { min-width: 0; }
+
+.rank-item__name {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 5px;
+}
+
+.rank-item__bar {
+  height: 5px;
+  border-radius: 3px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+.rank-item__bar > span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #6366f1, #8b5cf6);
+  border-radius: 3px;
+  transition: width .6s cubic-bezier(.22, .61, .36, 1);
+}
+
+.rank-item__value {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  text-align: right;
+}
+.rank-item__value small {
+  display: block;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
+/* =========================================================
+   Alertas
+   ---------------------------------------------------------
+   CORREÇÃO #3: variants com dark mode explícito.
+   ========================================================= */
+.dash-alerts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.alert-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  font-size: 13px;
+  color: var(--text);
+}
+
+.alert-item__icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+.alert-item__icon svg { width: 14px; height: 14px; }
+
+.alert-item--danger .alert-item__icon { background: #fef3f2; color: #b42318; }
+.alert-item--warn   .alert-item__icon { background: #fef3e6; color: #b54708; }
+.alert-item--info   .alert-item__icon { background: #eff8ff; color: #175cd3; }
+
+[data-theme="dark"] .alert-item--danger .alert-item__icon {
+  background: rgba(249, 112, 102, 0.16);
+  color: #f97066;
+}
+[data-theme="dark"] .alert-item--warn .alert-item__icon {
+  background: rgba(253, 176, 34, 0.16);
+  color: #fdb022;
+}
+[data-theme="dark"] .alert-item--info .alert-item__icon {
+  background: rgba(99, 102, 241, 0.18);
+  color: #a5b4fc;
+}
+
+.alert-item__text { flex: 1 1 auto; }
+.alert-item__text strong { font-weight: 700; }
+
+.alert-item__link {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+}
+.alert-item__link:hover { text-decoration: underline; }
+
+/* =========================================================
+   Lista de estoque baixo
+   ========================================================= */
+.dash-stock {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.stock-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  text-decoration: none;
+  color: var(--text);
+  transition: border-color .15s, background-color .15s;
+}
+.stock-pill:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-2);
+}
+
+.stock-pill__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+}
+/* Cores saturadas de dot pequeno — funcionam nos dois temas */
+.stock-pill--out .stock-pill__dot { background: #f04438; }
+.stock-pill--low .stock-pill__dot { background: #f79009; }
+
+.stock-pill__name {
+  flex: 1 1 auto;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.stock-pill__qty {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  flex: none;
+}
+
+/* =========================================================
+   Empty states
+   ========================================================= */
+.dash-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 6px;
+  padding: 20px;
+  color: var(--text-muted);
+}
+.dash-empty svg {
+  width: 32px;
+  height: 32px;
+  color: var(--border-strong);
+  margin-bottom: 4px;
+}
+.dash-empty p {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--text);
+}
+.dash-empty small { font-size: 12px; }
+
+.dash-empty--inline {
+  position: static;
+  inset: auto;
+  padding: 22px 12px;
+  min-height: 80px;
+}
+
+/* =========================================================
+   Skeleton
+   ========================================================= */
+.skeleton {
+  position: relative;
+  color: transparent !important;
+  background: linear-gradient(90deg,
+    var(--surface-2) 0%,
+    color-mix(in srgb, var(--surface-2) 60%, var(--border) 40%) 50%,
+    var(--surface-2) 100%);
+  background-size: 200% 100%;
+  animation: skel 1.2s ease-in-out infinite;
+  border-radius: 6px;
+  min-height: 1em;
+  min-width: 40px;
+  display: inline-block;
+}
+@keyframes skel {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* =========================================================
+   Dark mode
+   ========================================================= */
+:root[data-theme="dark"] .rank-item__bar > span {
+  background: linear-gradient(90deg, #818cf8, #a78bfa);
+}
+:root[data-theme="dark"] .kpi__icon--customers { background: #052e16; color: #6ee7b7; }
+:root[data-theme="dark"] .kpi__icon--sales     { background: #1e1b4b; color: #a5b4fc; }
+:root[data-theme="dark"] .kpi__icon--revenue   { background: #431407; color: #fdba74; }
+:root[data-theme="dark"] .kpi__icon--products  { background: #1e1b4b; color: #c7d2fe; }
+:root[data-theme="dark"] .kpi__icon--users     { background: #2e1065; color: #c4b5fd; }
+:root[data-theme="dark"] .kpi__icon--orgs      { background: #500724; color: #f9a8d4; }
+
+/* =========================================================
+   Activity feed (timeline)
+   ========================================================= */
+.dash-feed {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.feed-item {
+  display: grid;
+  grid-template-columns: 32px 1fr auto;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px 4px;
+  border-bottom: 1px dashed var(--border);
+  min-width: 0;
+}
+.feed-item:last-child { border-bottom: 0; }
+
+.feed-item__icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  background: var(--surface-2);
+  color: var(--text-muted);
+}
+.feed-item__icon svg { width: 15px; height: 15px; }
+
+.feed-item__icon--sale      { background: #eef2ff; color: #4f46e5; }
+.feed-item__icon--customer  { background: #ecfdf3; color: #067647; }
+.feed-item__icon--product   { background: #eef4ff; color: #3538cd; }
+.feed-item__icon--user      { background: #f4f3ff; color: #6941c6; }
+.feed-item__icon--org       { background: #fdf2fa; color: #c11574; }
+.feed-item__icon--movement  { background: #fff7ed; color: #b54708; }
+
+.feed-item__body {
+  min-width: 0;
+  padding-top: 2px;
+}
+
+.feed-item__text {
+  margin: 0 0 2px;
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.4;
+}
+.feed-item__text strong { font-weight: 700; }
+.feed-item__text em {
+  font-style: normal;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.feed-item__meta {
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.feed-item__time {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  padding-top: 3px;
+  flex: none;
+}
+
+/* Dark mode */
+:root[data-theme="dark"] .feed-item__icon--sale     { background: #1e1b4b; color: #a5b4fc; }
+:root[data-theme="dark"] .feed-item__icon--customer { background: #052e16; color: #6ee7b7; }
+:root[data-theme="dark"] .feed-item__icon--product  { background: #1e1b4b; color: #c7d2fe; }
+:root[data-theme="dark"] .feed-item__icon--user     { background: #2e1065; color: #c4b5fd; }
+:root[data-theme="dark"] .feed-item__icon--org      { background: #500724; color: #f9a8d4; }
+:root[data-theme="dark"] .feed-item__icon--movement { background: #431407; color: #fdba74; }
+
+/* =========================================================
+   Responsivo
+   ---------------------------------------------------------
+   CORREÇÃO #6: header com período em stack no mobile.
+   ========================================================= */
+@media (max-width: 720px) {
+  .dash-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dash-period {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dash-period .control-select {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .dash-period__custom {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .dash-period__custom input[type="date"] {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+}

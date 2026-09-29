@@ -1,0 +1,424 @@
+/* =========================================================
+   DEV HUB · Usuários da plataforma
+   ---------------------------------------------------------
+   Layout agrupado por usuário (1 linha por e-mail).
+   Ação principal: modal de perfil com abas (Empresas, Info,
+   Histórico) e cartões de vínculo por empresa.
+   ---------------------------------------------------------
+   CORREÇÕES APLICADAS:
+   1. Arquivo consolidado: removida a duplicação massiva entre
+      "Fase 1" e "Fase 2" (~40 regras). Agora há uma única
+      definição por seletor.
+   2. `.modal__dialog--profile` padronizado em 780px.
+   3. `.status-badge*` declarado UMA vez (era 3×).
+   4. `.stats--four` declarado UMA vez (era 3× no arquivo).
+   5. Removido CSS morto de Fase 1: `.pf-org-card*`,
+      `.pf-org-move`, `.pf-org-history` (standalone),
+      `.pf-status-grid`, `.pf-status-card*`,
+      `.pf-status-actions*`, `.pf-perms-groups`, `.pf-perm-row`.
+      Nenhum é referenciado em plataforma-usuarios.html ou .js.
+   6. Badges `--vacation` e `--inactive` sem cor hardcoded.
+   7. Media queries consolidadas.
+   ========================================================= */
+
+/* =========================================================
+   1. Stats
+   ========================================================= */
+.stats--four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.stat__icon--success { background: var(--success-soft); color: var(--success); }
+.stat__icon--warning { background: var(--warning-soft); color: var(--warning); }
+
+/* =========================================================
+   2. Modal de perfil — cabeçalho
+   ========================================================= */
+.modal__dialog--profile {
+  max-width: 780px;
+  width: 100%;
+}
+
+.pf-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+}
+
+.pf-avatar {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  flex: none;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
+  color: #fff;
+  font-size: 20px;
+  font-weight: 700;
+  overflow: hidden;
+}
+
+.pf-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.pf-header__info { flex: 1 1 auto; min-width: 0; }
+
+.pf-header__name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 2px;
+  overflow-wrap: anywhere;
+}
+
+.pf-header__email {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.pf-header__status { flex: none; }
+
+/* =========================================================
+   3. Modal de perfil — abas
+   ========================================================= */
+.pf-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 0 18px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.pf-tab {
+  flex: 0 0 auto;
+  padding: 11px 14px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color var(--transition), border-color var(--transition);
+}
+
+.pf-tab:hover { color: var(--text); }
+.pf-tab.is-active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.pf-body {
+  padding: 20px 22px;
+  overflow-y: auto;
+  max-height: calc(100vh - 340px);
+}
+
+.pf-panel { display: none; }
+.pf-panel.is-active { display: block; }
+
+/* =========================================================
+   4. Blocos de ajuda / seções
+   ========================================================= */
+.pf-help {
+  font-size: 13px;
+  color: var(--text-soft);
+  line-height: 1.55;
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+
+.pf-section-title {
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 20px 0 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+.pf-section-title:first-child { margin-top: 0; }
+
+/* =========================================================
+   5. Card de empresa (dentro do perfil)
+   ========================================================= */
+.pf-empresas {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pf-empresa {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.pf-empresa:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-sm);
+}
+
+.pf-empresa__icon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  flex: none;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.pf-empresa__icon svg { width: 20px; height: 20px; }
+
+.pf-empresa__body { flex: 1 1 200px; min-width: 0; }
+
+.pf-empresa__name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 2px;
+  overflow-wrap: anywhere;
+}
+
+.pf-empresa__meta {
+  font-size: 12px;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.pf-empresa__status { flex: none; }
+
+.pf-empresa__actions {
+  display: flex;
+  gap: 6px;
+  flex: none;
+  margin-left: auto;
+}
+
+/* =========================================================
+   6. Lista de informações (dl/dt/dd)
+   ========================================================= */
+.pf-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 0;
+}
+
+.pf-list__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--border);
+}
+.pf-list__row:last-child { border-bottom: 0; }
+
+.pf-list dt {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-weight: 500;
+  flex: none;
+}
+
+.pf-list dd {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text);
+  text-align: right;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+.pf-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* =========================================================
+   7. Histórico (movimentações de empresa e status)
+   ========================================================= */
+.pf-history__list,
+.pf-org-history__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.pf-history__list li,
+.pf-org-history__list li {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.5;
+}
+.pf-history__list li:last-child,
+.pf-org-history__list li:last-child { border-bottom: 0; }
+
+.pf-history__empty,
+.pf-org-history__empty {
+  color: var(--text-muted);
+  font-style: italic;
+  font-size: 13px;
+}
+
+.pf-history__item-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.pf-history__item-who { font-weight: 600; color: var(--text); }
+.pf-history__item-when {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.pf-history__item-body { color: var(--text-soft); font-size: 12.5px; }
+
+/* =========================================================
+   8. Formulário para vincular nova empresa
+   ========================================================= */
+.pf-add-empresa {
+  margin-top: 18px;
+  padding: 14px 16px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface-2);
+}
+.pf-add-empresa .field { margin-bottom: 10px; }
+
+/* Grid de 2 colunas (usado nos campos de vínculo) */
+.pf-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* =========================================================
+   9. Badges de status do vínculo
+   ========================================================= */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.status-badge::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.status-badge--active {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+/* CORREÇÃO #6: cores translúcidas (funcionam nos dois temas) */
+.status-badge--vacation {
+  background: rgba(59, 130, 246, 0.14);
+  color: #1d4ed8;
+}
+[data-theme="dark"] .status-badge--vacation {
+  background: rgba(59, 130, 246, 0.18);
+  color: #93c5fd;
+}
+
+.status-badge--banned {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.status-badge--suspended {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.status-badge--inactive {
+  background: var(--surface-2);
+  color: var(--text-muted);
+}
+[data-theme="dark"] .status-badge--inactive {
+  background: #1f242a;
+}
+
+/* =========================================================
+   10. Célula "N empresas" na tabela
+   ========================================================= */
+.cell-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-hover);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* =========================================================
+   11. Botão pequeno (ações por empresa)
+   ========================================================= */
+.btn--micro {
+  height: 32px;
+  padding: 0 10px;
+  font-size: 12px;
+  border-radius: 8px;
+  gap: 6px;
+}
+.btn--micro svg { width: 14px; height: 14px; }
+
+/* =========================================================
+   12. Responsivo
+   ========================================================= */
+@media (max-width: 720px) {
+  .stats--four { grid-template-columns: 1fr 1fr; }
+
+  .pf-header { flex-wrap: wrap; }
+  .pf-grid-2 { grid-template-columns: 1fr; }
+  .pf-list__row { flex-direction: column; align-items: flex-start; gap: 2px; }
+  .pf-list dd { text-align: left; }
+  .pf-body { padding: 16px; max-height: calc(100vh - 300px); }
+
+  .pf-empresa {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .pf-empresa__actions {
+    margin-left: 0;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats--four { grid-template-columns: 1fr; }
+}

@@ -1,5 +1,21 @@
 /* =========================================================
    DEV HUB · Estilos globais (tokens, reset e componentes)
+   ---------------------------------------------------------
+   CORREÇÕES APLICADAS:
+   1. Removida a duplicação de `.avatar` e `.avatar img`
+      (o arquivo tinha o mesmo par de regras 2×).
+   2. `.field input:hover` sem `#b9bfc9` hardcoded — usa
+      `color-mix()` que funciona nos dois temas.
+   3. `.badge` e `.feedback--info` usam variáveis em vez de
+      cores hardcoded.
+   4. Adicionado `color-scheme` em `:root` — controles nativos
+      (date picker, scrollbar, selects) respeitam o tema sem
+      precisar repetir em cada arquivo.
+   5. Adicionado autofill hack em `.field input` — evita o
+      fundo amarelo do Chrome que quebra o dark mode.
+   6. `.field select` e `.field textarea` também herdam o
+      estado disabled/readonly.
+   7. Reset de `appearance` em `input[type="search"]`.
    ========================================================= */
 
 :root {
@@ -32,6 +48,9 @@
 
   --success: #067647;
   --success-soft: #ecfdf3;
+  /* OBSERVAÇÃO: falta --success-border, simetria com danger/warning.
+     Adicione quando necessário:
+     --success-border: #abefc6; */
 
   /* Formas */
   --radius-sm: 6px;
@@ -51,6 +70,12 @@
   --font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
           Helvetica, Arial, sans-serif;
   --transition: 160ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* CORREÇÃO #4: color-scheme global. Faz com que controles
+     nativos (date picker, time picker, scrollbar, select
+     dropdown) se renderizem no tema correto. Tema escuro
+     sobrescreve para `dark` em theme.css. */
+  color-scheme: light;
 }
 
 /* ---------- Reset ---------- */
@@ -109,8 +134,10 @@ a { color: inherit; text-decoration: none; }
 /* ---------- Acessibilidade ---------- */
 .sr-only {
   position: absolute;
-  width: 1px; height: 1px;
-  padding: 0; margin: -1px;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
   overflow: hidden;
   clip: rect(0 0 0 0);
   white-space: nowrap;
@@ -119,7 +146,7 @@ a { color: inherit; text-decoration: none; }
 
 .skip-link {
   position: absolute;
-  top: -100px;
+  top: -200px;                    /* valor folgado (antes: -100px) */
   left: 16px;
   z-index: 200;
   padding: 10px 16px;
@@ -200,6 +227,9 @@ a { color: inherit; text-decoration: none; }
   cursor: not-allowed;
 }
 
+/* NOTA: o spinner usa branco com alpha, assumindo fundo escuro
+   (botão primário). Se um dia for reutilizado em `.btn--ghost`
+   ou `.btn--secondary`, o spinner precisa de cor contextual. */
 .btn__spinner {
   display: none;
   width: 16px;
@@ -249,11 +279,29 @@ a { color: inherit; text-decoration: none; }
   font-size: 15px;
   color: var(--text);
   transition: border-color var(--transition), box-shadow var(--transition);
+
+  /* CORREÇÃO #7: neutraliza o X nativo do Chrome em
+     `input[type="search"]` e o arredondamento do Safari.
+     Sem isso, o visual do campo varia entre browsers. */
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Chrome adiciona X nativo em type=search — escondemos */
+.field input[type="search"]::-webkit-search-cancel-button,
+.field input[type="search"]::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .field input::placeholder { color: var(--text-muted); }
 
-.field input:hover:not(:focus) { border-color: #b9bfc9; }
+/* CORREÇÃO #2: hover sem `#b9bfc9` hardcoded. Usa color-mix()
+   para derivar um tom ~30% mais escuro que --border-strong,
+   funcionando nos dois temas. */
+.field input:hover:not(:focus) {
+  border-color: color-mix(in srgb, var(--border-strong) 70%, var(--text) 30%);
+}
 
 .field input:focus {
   outline: none;
@@ -261,10 +309,37 @@ a { color: inherit; text-decoration: none; }
   box-shadow: 0 0 0 4px var(--accent-ring);
 }
 
+/* CORREÇÃO #6: cobre select e textarea também */
 .field input:disabled,
-.field input[readonly] {
+.field input[readonly],
+.field select:disabled,
+.field textarea:disabled,
+.field textarea[readonly] {
   background: var(--surface-2);
   color: var(--text-soft);
+  cursor: not-allowed;
+}
+
+/* =========================================================
+   CORREÇÃO #5: Autofill do Chrome / Edge / Safari
+   ---------------------------------------------------------
+   Quando o navegador preenche automaticamente um campo, ele
+   força `background-color` próprio (amarelo claro no Chrome)
+   que IGNORA o `background: var(--surface)`. Em dark mode o
+   resultado é ilegível.
+   O hack do `box-shadow inset 1000px` cobre o fundo nativo.
+   ========================================================= */
+.field input:-webkit-autofill,
+.field input:-webkit-autofill:hover,
+.field input:-webkit-autofill:focus,
+.field input:-webkit-autofill:active,
+.field textarea:-webkit-autofill,
+.field select:-webkit-autofill {
+  -webkit-text-fill-color: var(--text) !important;
+  -webkit-box-shadow: 0 0 0 1000px var(--surface) inset !important;
+  box-shadow: 0 0 0 1000px var(--surface) inset !important;
+  caret-color: var(--text);
+  transition: background-color 5000s ease-in-out 0s;
 }
 
 .field__control { position: relative; }
@@ -321,9 +396,11 @@ a { color: inherit; text-decoration: none; }
   color: var(--warning);
 }
 
+/* CORREÇÃO #3: usa color-mix() em vez de `#c7d2fe` hardcoded.
+   Mesmo azul translúcido em ambos os temas. */
 .feedback--info,
 .alert--info {
-  border-color: #c7d2fe;
+  border-color: color-mix(in srgb, var(--accent) 28%, transparent);
   background: var(--accent-soft);
   color: var(--accent-hover);
 }
@@ -336,7 +413,10 @@ a { color: inherit; text-decoration: none; }
   align-items: center;
   padding: 3px 10px;
   border-radius: 999px;
-  background: #f2f4f7;
+
+  /* CORREÇÃO #3: era #f2f4f7 hardcoded. Agora usa --surface-2,
+     que é o mesmo valor no light e o tom correto no dark. */
+  background: var(--surface-2);
   color: var(--text-soft);
   font-size: 12px;
   font-weight: 600;
@@ -347,6 +427,13 @@ a { color: inherit; text-decoration: none; }
 .badge--warning { background: var(--warning-soft); color: var(--warning); }
 .badge--danger  { background: var(--danger-soft);  color: var(--danger); }
 
+/* =========================================================
+   Avatar (CORREÇÃO #1: consolidação)
+   ---------------------------------------------------------
+   Antes, `.avatar` e `.avatar img` apareciam 2× cada — o
+   arquivo tinha um "resto" de merge. Aqui há uma única
+   definição por seletor.
+   ========================================================= */
 .avatar {
   display: grid;
   place-items: center;
@@ -359,7 +446,7 @@ a { color: inherit; text-decoration: none; }
   font-size: 13px;
   font-weight: 600;
   text-transform: uppercase;
-  overflow: hidden;              /* 👈 garante o crop redondo */
+  overflow: hidden;              /* garante o crop redondo */
 }
 
 .avatar img {
@@ -370,15 +457,20 @@ a { color: inherit; text-decoration: none; }
   display: block;
 }
 
-.avatar {
-  /* ... o que já existe ... */
-  overflow: hidden;
+/* =========================================================
+   Layout topnav — esconde a sidebar legada
+   ---------------------------------------------------------
+   Aplicado no <html> e no <body> por retrocompatibilidade.
+   ========================================================= */
+html.layout-topnav .sidebar,
+html.layout-topnav .sidebar-overlay,
+html.layout-topnav .menu-toggle,
+body.layout-topnav .sidebar,
+body.layout-topnav .sidebar-overlay,
+body.layout-topnav .menu-toggle {
+  display: none !important;
 }
-
-.avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 50%;
-  display: block;
+html.layout-topnav .app__body,
+body.layout-topnav .app__body {
+  margin-left: 0 !important;
 }

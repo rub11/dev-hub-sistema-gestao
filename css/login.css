@@ -1,19 +1,52 @@
 /* =========================================================
    DEV HUB · Tela de login
+   ---------------------------------------------------------
+   CORREÇÕES APLICADAS:
+   1. `100vh` → `100dvh` (dynamic viewport height). No iOS
+      Safari, `100vh` considera apenas o viewport *ideal*
+      (sem a barra de endereço), cortando o conteúdo de baixo.
+      `100dvh` acompanha a barra dinamicamente.
+   2. Autofill do Chrome: hack `-webkit-box-shadow inset` para
+      forçar o fundo correto e evitar o clássico "input amarelo"
+      que destrói o dark mode. Aplicado em todos os inputs do
+      formulário de login.
+   3. Adicionado `color-scheme` no painel do formulário —
+      controles nativos (scrollbar, selects futuros) respeitam
+      o tema automaticamente.
+   4. Removida a redundância `min-height: 100vh` do `.login`
+      (o `.login-page` já garante).
+   5. Comentários explicando que `.login__aside` é
+      intencionalmente escuro nos dois temas.
    ========================================================= */
 
 .login-page {
   min-height: 100vh;
+  min-height: 100dvh;      /* CORREÇÃO #1 */
   background: var(--bg);
+
+  /* CORREÇÃO #3: força correta do placeholder, autofill e
+     futuros controles nativos dentro da tela de login. */
+  color-scheme: light;
+}
+
+[data-theme="dark"] .login-page {
+  color-scheme: dark;
 }
 
 .login {
   display: grid;
   grid-template-columns: 1.05fr 1fr;
-  min-height: 100vh;
+  /* min-height removido — o .login-page já garante 100dvh */
 }
 
-/* ---------- Painel esquerdo ---------- */
+/* =========================================================
+   Painel esquerdo (institucional)
+   ---------------------------------------------------------
+   Por design, este painel é SEMPRE escuro, independente do
+   tema do usuário — funciona como "âncora visual" da marca.
+   As cores hardcoded aqui (e não `var(--sidebar-bg)`) são
+   intencionais para deixar essa regra explícita.
+   ========================================================= */
 .login__aside {
   position: relative;
   display: flex;
@@ -36,6 +69,7 @@
     linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
   background-size: 56px 56px;
+  /* mask-image já tem prefix -webkit- — ✅ correto */
   mask-image: radial-gradient(circle at 30% 20%, #000 0%, transparent 78%);
   -webkit-mask-image: radial-gradient(circle at 30% 20%, #000 0%, transparent 78%);
   pointer-events: none;
@@ -75,7 +109,9 @@
   color: #667085;
 }
 
-/* ---------- Painel do formulário ---------- */
+/* =========================================================
+   Painel do formulário
+   ========================================================= */
 .login__panel {
   display: flex;
   align-items: center;
@@ -118,6 +154,33 @@
 
 .login__form .btn { margin-top: 4px; }
 
+/* =========================================================
+   CORREÇÃO #2: Autofill do Chrome / Edge / Safari
+   ---------------------------------------------------------
+   Quando o navegador preenche automaticamente e-mail e senha,
+   ele força um `background-color` próprio (amarelo claro no
+   Chrome) que IGNORA o `background: var(--surface)`. Em dark
+   mode isso fica horrível e o texto pode virar ilegível.
+   O hack padrão usa `box-shadow inset` de 1000px para cobrir
+   esse fundo com a cor correta.
+   ========================================================= */
+.login__form input:-webkit-autofill,
+.login__form input:-webkit-autofill:hover,
+.login__form input:-webkit-autofill:focus,
+.login__form input:-webkit-autofill:active {
+  -webkit-text-fill-color: var(--text) !important;
+  -webkit-box-shadow: 0 0 0 1000px var(--surface) inset !important;
+  box-shadow: 0 0 0 1000px var(--surface) inset !important;
+  caret-color: var(--text);
+  /* Transição longuíssima evita o "flash" durante o preenchimento */
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Firefox tem seletor próprio */
+.login__form input:autofill {
+  filter: none;
+}
+
 .login__foot {
   margin-top: 28px;
   font-size: 12.5px;
@@ -125,11 +188,17 @@
   text-align: center;
 }
 
-/* ---------- Responsivo ---------- */
+/* =========================================================
+   Responsivo
+   ========================================================= */
 @media (max-width: 960px) {
   .login { grid-template-columns: 1fr; }
   .login__aside { display: none; }
-  .login__panel { padding: 40px 24px; min-height: 100vh; }
+  .login__panel {
+    padding: 40px 24px;
+    min-height: 100vh;
+    min-height: 100dvh;    /* CORREÇÃO #1 */
+  }
   .login__brand-mobile { display: flex; }
 }
 

@@ -4,6 +4,21 @@
    - CRUD de produtos
    - Até 3 fotos (Supabase Storage: bucket `product-images`)
    - Código interno + código de barras (EAN)
+   ---------------------------------------------------------
+   CORREÇÕES APLICADAS:
+   1. Preview de imagem agora usa `previewUrl` cacheado e é
+      revogado (URL.revokeObjectURL) em troca/remoção/reset —
+      elimina vazamento de memória.
+   2. Checkbox "Ativo" usa `disabled` (não aceita `readOnly`)
+      durante o salvamento.
+   3. Guards de null em `setupProductForm`, `openConfirmModal`,
+      `onSubmitProduct` e `setSaving`.
+   4. `parseNumber` agora entende o formato brasileiro
+      ("1.234,56") e o formato US ("1234.56").
+   5. `onPhotoSelected` ignora seleção durante salvamento.
+   6. Inputs de foto ficam bloqueados enquanto salva.
+   7. Update de produto detecta "0 linhas afetadas" (registro
+      removido por outro usuário).
    ========================================================= */
 
 (function () {
@@ -27,9 +42,10 @@
     deleting: false,
 
     // Fotos: array de até 3 slots.
-    // Cada slot: { url: string|null, file: File|null, uploading: boolean, removing: boolean }
-    // url = URL já persistida no banco
-    // file = arquivo novo ainda não upado
+    // Cada slot: { url, file, previewUrl, uploading, removing }
+    //   url        = URL já persistida no banco
+    //   file       = arquivo novo ainda não upado
+    //   previewUrl = objectURL temporário (precisa ser revogado)
     photos: []
   };
 
@@ -498,10 +514,39 @@
     }
   }
 
+  /* =========================================================
+     Fotos: helpers (CORRIGIDO — preview cacheado + revogação)
+     ========================================================= */
+  function makeEmptyPhotoSlot() {
+    return {
+      url: null,
+      file: null,
+      previewUrl: null,
+      uploading: false,
+      removing: false
+    };
+  }
+
+  /**
+   * Revoga todos os objectURLs pendentes. Chamado antes de:
+   *   - resetPhotos (novo produto)
+   *   - openEditModal (carregar outro produto)
+   *   - close do modal (opcional — deixamos pro reset)
+   */
+  function releasePhotoPreviews() {
+    state.photos.forEach(function (slot) {
+      if (slot && slot.previewUrl) {
+        try { URL.revokeObjectURL(slot.previewUrl); } catch (e) { /* ignora */ }
+        slot.previewUrl = null;
+      }
+    });
+  }
+
   function resetPhotos() {
+    releasePhotoPreviews();
     state.photos = [];
     for (let i = 0; i < MAX_PHOTOS; i += 1) {
-      state.photos.push({ url: null, file: null, uploading: false, removing: false });
+      state.photos.push(makeEmptyPhotoSlot());
     }
     renderPhotoSlots();
   }
@@ -520,6 +565,7 @@
         btn.type = 'button';
         btn.className = 'product-photo__empty';
         btn.setAttribute('aria-label', 'Adicionar foto ' + (i + 1));
+        btn.disabled = state.saving === true;  // bloqueia durante save
         btn.innerHTML =
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"' +
           ' stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
@@ -531,6 +577,7 @@
         input.accept = ALLOWED_TYPES.join(',');
         input.className = 'product-photo__input';
         input.setAttribute('aria-hidden', 'true');
+        input.disabled = state.saving === true;  // bloqueia durante save
 
         btn.addEventListener('click', function () { input.click(); });
         input.addEventListener('change', function (e) {
@@ -543,8 +590,9 @@
         return;
       }
 
-      // Preenchido
-      const url = slot.url || (slot.file ? URL.createObjectURL(slot.file) : null);
+      // Preenchido — usa previewUrl cacheado (não cria novo objectURL)
+      const url = slot.url || slot.previewUrl;
+      if (!url) return;
 
       const img = document.createElement('img');
       img.className = 'product-photo__img';
@@ -565,6 +613,7 @@
       remove.type = 'button';
       remove.className = 'product-photo__remove';
       remove.setAttribute('aria-label', 'Remover foto ' + (i + 1));
+      remove.disabled = state.saving === true;  // bloqueia durante save
       remove.innerHTML =
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"' +
         ' stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
@@ -583,6 +632,7 @@
 
   function onPhotoSelected(index, file) {
     if (!file) return;
+    if (state.saving) return;  // CORREÇÃO #6
 
     if (ALLOWED_TYPES.indexOf(file.type) === -1) {
       showFormFeedback('Formato inválido. Use JPG, PNG ou WEBP.');
@@ -593,14 +643,32 @@
       return;
     }
 
+    // Revoga preview anterior do slot (se houver)
+    const prev = state.photos[index];
+    if (prev && prev.previewUrl) {
+      try { URL.revokeObjectURL(prev.previewUrl); } catch (e) { /* ignora */ }
+    }
+
     clearFormFeedback();
-    state.photos[index] = { url: null, file: file, uploading: false, removing: false };
+    state.photos[index] = {
+      url: null,
+      file: file,
+      previewUrl: URL.createObjectURL(file),  // cacheado — será revogado depois
+      uploading: false,
+      removing: false
+    };
     renderPhotoSlots();
   }
 
   function onPhotoRemove(index) {
     if (state.saving) return;
-    state.photos[index] = { url: null, file: null, uploading: false, removing: false };
+
+    const prev = state.photos[index];
+    if (prev && prev.previewUrl) {
+      try { URL.revokeObjectURL(prev.previewUrl); } catch (e) { /* ignora */ }
+    }
+
+    state.photos[index] = makeEmptyPhotoSlot();
     renderPhotoSlots();
   }
 
@@ -675,9 +743,12 @@
       el.addEventListener('click', closeProductModal);
     });
 
-    modalEls.active.addEventListener('change', function () {
-      modalEls.activeLabel.textContent = modalEls.active.checked ? 'Ativo' : 'Inativo';
-    });
+    // CORREÇÃO #3: guard de null no checkbox
+    if (modalEls.active && modalEls.activeLabel) {
+      modalEls.active.addEventListener('change', function () {
+        modalEls.activeLabel.textContent = modalEls.active.checked ? 'Ativo' : 'Inativo';
+      });
+    }
 
     document.addEventListener('keydown', function (event) {
       if (event.key === 'Escape' && !modalEls.modal.hidden) closeProductModal();
@@ -688,42 +759,45 @@
 
   function openCreateModal() {
     state.editingId = null;
-    modalEls.title.textContent = 'Novo produto';
+    if (modalEls.title) modalEls.title.textContent = 'Novo produto';
     modalEls.form.reset();
-    modalEls.id.value = '';
-    modalEls.price.value = '0';
-    modalEls.stock.value = '0';
-    modalEls.minimumStock.value = '0';
-    modalEls.active.checked = true;
-    modalEls.activeLabel.textContent = 'Ativo';
+    if (modalEls.id) modalEls.id.value = '';
+    if (modalEls.price) modalEls.price.value = '0';
+    if (modalEls.stock) modalEls.stock.value = '0';
+    if (modalEls.minimumStock) modalEls.minimumStock.value = '0';
+    if (modalEls.active) modalEls.active.checked = true;
+    if (modalEls.activeLabel) modalEls.activeLabel.textContent = 'Ativo';
     clearFormFeedback();
     resetPhotos();
     openModal(modalEls.modal);
-    modalEls.name.focus();
+    if (modalEls.name) modalEls.name.focus();
   }
 
   function openEditModal(product) {
     state.editingId = product.id;
-    modalEls.title.textContent = 'Editar produto';
-    modalEls.id.value = product.id || '';
-    modalEls.name.value = product.name || '';
-    modalEls.code.value = product.code || '';
-    modalEls.barcode.value = product.barcode || '';
-    modalEls.description.value = product.description || '';
-    modalEls.price.value = normalizeNumberInput(product.price);
-    modalEls.stock.value = normalizeIntegerInput(product.stock);
-    modalEls.minimumStock.value = normalizeIntegerInput(product.minimum_stock);
-    modalEls.active.checked = product.active === true;
-    modalEls.activeLabel.textContent = modalEls.active.checked ? 'Ativo' : 'Inativo';
+    if (modalEls.title) modalEls.title.textContent = 'Editar produto';
+    if (modalEls.id) modalEls.id.value = product.id || '';
+    if (modalEls.name) modalEls.name.value = product.name || '';
+    if (modalEls.code) modalEls.code.value = product.code || '';
+    if (modalEls.barcode) modalEls.barcode.value = product.barcode || '';
+    if (modalEls.description) modalEls.description.value = product.description || '';
+    if (modalEls.price) modalEls.price.value = normalizeNumberInput(product.price);
+    if (modalEls.stock) modalEls.stock.value = normalizeIntegerInput(product.stock);
+    if (modalEls.minimumStock) modalEls.minimumStock.value = normalizeIntegerInput(product.minimum_stock);
+    if (modalEls.active) modalEls.active.checked = product.active === true;
+    if (modalEls.activeLabel) modalEls.activeLabel.textContent = modalEls.active.checked ? 'Ativo' : 'Inativo';
     clearFormFeedback();
 
-    // Carrega fotos existentes nos slots
+    // Carrega fotos existentes nos slots — CORREÇÃO #1/8: revoga previews antigas
+    releasePhotoPreviews();
+
     const existing = getProductImageUrls(product);
     state.photos = [];
     for (let i = 0; i < MAX_PHOTOS; i += 1) {
       state.photos.push({
         url: existing[i] || null,
         file: null,
+        previewUrl: null,
         uploading: false,
         removing: false
       });
@@ -731,7 +805,7 @@
     renderPhotoSlots();
 
     openModal(modalEls.modal);
-    modalEls.name.focus();
+    if (modalEls.name) modalEls.name.focus();
   }
 
   function closeProductModal() {
@@ -795,11 +869,17 @@
       };
 
       if (state.editingId) {
-        const { error } = await window.db
+        // CORREÇÃO #7: detecta update de 0 linhas (registro removido)
+        const { data, error } = await window.db
           .from('products')
           .update(payload)
-          .eq('id', state.editingId);
+          .eq('id', state.editingId)
+          .select('id');
+
         if (error) throw error;
+        if (!data || data.length === 0) {
+          throw new Error('PRODUCT_NOT_FOUND');
+        }
         showToast('Produto atualizado com sucesso.', 'success');
       } else {
         const { error } = await window.db
@@ -809,11 +889,19 @@
         showToast('Produto cadastrado com sucesso.', 'success');
       }
 
+      // Antes de fechar, revoga previews (o produto já está persistido)
+      releasePhotoPreviews();
+
       closeModal(modalEls.modal);
       await loadProducts();
     } catch (error) {
       console.error('[DEV HUB] Falha ao salvar produto:', error);
-      showFormFeedback(mapDbError(error, 'save'));
+
+      if (error && error.message === 'PRODUCT_NOT_FOUND') {
+        showFormFeedback('Este produto não existe mais. Ele pode ter sido excluído por outro usuário.');
+      } else {
+        showFormFeedback(mapDbError(error, 'save'));
+      }
     } finally {
       setSaving(false);
     }
@@ -830,10 +918,17 @@
       if (label) label.textContent = isSaving ? 'Salvando...' : 'Salvar';
     }
 
-    ['name', 'code', 'barcode', 'description', 'price', 'stock', 'minimumStock', 'active']
+    // CORREÇÃO #2: inputs de texto aceitam readOnly
+    ['name', 'code', 'barcode', 'description', 'price', 'stock', 'minimumStock']
       .forEach(function (key) {
         if (modalEls[key]) modalEls[key].readOnly = isSaving;
       });
+
+    // CORREÇÃO #2: checkbox NÃO aceita readOnly → usar disabled
+    if (modalEls.active) modalEls.active.disabled = isSaving;
+
+    // CORREÇÃO #7: re-renderiza slots pra bloquear botões/inputs de foto
+    if (photoEls.container) renderPhotoSlots();
   }
 
   function showFormFeedback(message) {
@@ -871,12 +966,15 @@
   }
 
   function openConfirmModal(product) {
+    // CORREÇÃO #4: guard de null
     state.deletingId = product.id;
-    confirmEls.text.textContent =
-      'Tem certeza que deseja excluir "' + (product.name || 'este produto') +
-      '"? Esta ação não pode ser desfeita.';
+    if (confirmEls.text) {
+      confirmEls.text.textContent =
+        'Tem certeza que deseja excluir "' + (product.name || 'este produto') +
+        '"? Esta ação não pode ser desfeita.';
+    }
     openModal(confirmEls.modal);
-    confirmEls.btn.focus();
+    if (confirmEls.btn) confirmEls.btn.focus();
   }
 
   function closeConfirmModal() {
@@ -1050,11 +1148,24 @@
     return parseInteger(value, 0);
   }
 
+  /* CORREÇÃO #5: aceita formato BR e US */
   function parseNumber(value) {
     if (value === null || value === undefined || value === '') return null;
     if (typeof value === 'number') return Number.isFinite(value) ? value : null;
-    const normalized = String(value).replace(',', '.').trim();
-    const parsed = Number(normalized);
+
+    let str = String(value).trim();
+
+    // Aceita "1.234,56" (BR) e "1234.56" (US)
+    if (str.indexOf(',') !== -1 && str.indexOf('.') !== -1) {
+      // Tem os dois → assume BR: remove pontos (milhar), troca vírgula por ponto
+      str = str.replace(/\./g, '').replace(',', '.');
+    } else if (str.indexOf(',') !== -1) {
+      // Só vírgula → assume decimal BR
+      str = str.replace(',', '.');
+    }
+    // Só ponto ou nada → deixa como está
+
+    const parsed = Number(str);
     return Number.isFinite(parsed) ? parsed : null;
   }
 

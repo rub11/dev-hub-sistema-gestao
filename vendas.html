@@ -6,6 +6,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Vendas · DEV HUB</title>
 
+  <!-- Tema ANTES da CSS (evita flash de tema) -->
+  <script src="js/theme.js"></script>
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -14,9 +17,20 @@
   <link rel="stylesheet" href="css/dashboard.css" />
   <link rel="stylesheet" href="css/clientes.css" />
   <link rel="stylesheet" href="css/vendas.css" />
+
+  <!-- Anti-flash do topnav (marca <html> antes da pintura) -->
+  <script>
+    (function () {
+      try {
+        if (!/[?&]blocked=1/.test(location.search)) {
+          document.documentElement.classList.add('layout-topnav');
+        }
+      } catch (e) {}
+    })();
+  </script>
 </head>
 
-<body data-page="sales">
+<body class="layout-topnav" data-page="sales">
 
   <a class="skip-link" href="#main">Pular para o conteúdo principal</a>
 
@@ -331,15 +345,15 @@
                     <span class="totals__label">Subtotal</span>
                     <span class="totals__value" id="total-subtotal">R$ 0,00</span>
                   </div>
-                  
-<div class="totals__row totals__row--field">
-  <label for="sale-discount" class="totals__label">Desconto (R$)</label>
-  <input type="number" id="sale-discount" value="0" min="0" step="0.01" inputmode="decimal" />
-</div>
-<div class="totals__row totals__row--field">
-  <label for="sale-discount-pct" class="totals__label">Desconto (%)</label>
-  <input type="number" id="sale-discount-pct" value="0" min="0" max="100" step="0.01" inputmode="decimal" />
-</div>
+
+                  <div class="totals__row totals__row--field">
+                    <label for="sale-discount" class="totals__label">Desconto (R$)</label>
+                    <input type="number" id="sale-discount" value="0" min="0" step="0.01" inputmode="decimal" />
+                  </div>
+                  <div class="totals__row totals__row--field">
+                    <label for="sale-discount-pct" class="totals__label">Desconto (%)</label>
+                    <input type="number" id="sale-discount-pct" value="0" min="0" max="100" step="0.01" inputmode="decimal" />
+                  </div>
 
                   <div class="totals__sep" role="presentation"></div>
                   <div class="totals__row totals__row--grand">
@@ -520,4 +534,5 @@
   <script src="js/permissions.js"></script>
   <script src="js/vendas.js"></script>
 </body>
+
 </html>

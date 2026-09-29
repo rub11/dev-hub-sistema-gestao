@@ -1,211 +1,362 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Dashboard · DEV HUB</title>
-    <!-- Tema ANTES da CSS (evita flash) -->
-    <script src="js/theme.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dashboard · DEV HUB</title>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="js/theme.js"></script>
 
-    <link rel="stylesheet" href="css/global.css" />
-    <link rel="stylesheet" href="css/dashboard.css" />
-    <link rel="stylesheet" href="css/theme.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/global.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/theme.css" />
+  <link rel="stylesheet" href="css/dashboard-pro.css" />
+
+  <script>
+    (function () {
+      try {
+        if (!/[?&]blocked=1/.test(location.search)) {
+          document.documentElement.classList.add('layout-topnav');
+        }
+      } catch (e) {}
+    })();
+  </script>
 </head>
 
-<body data-page="dashboard">
+<body class="layout-topnav" data-page="dashboard">
 
-    <a class="skip-link" href="#main">Pular para o conteúdo principal</a>
+  <a class="skip-link" href="#main">Pular para o conteúdo principal</a>
 
-    <!-- ================= SIDEBAR ================= -->
-    
+  <aside class="sidebar" id="sidebar" aria-label="Menu principal"></aside>
+  <div class="sidebar-overlay" id="sidebar-overlay" hidden></div>
 
+  <div class="app__body">
 
-<aside class="sidebar" id="sidebar" aria-label="Menu principal"></aside>
-    
+    <header class="topbar">
+      <button type="button" class="icon-btn menu-toggle" id="menu-toggle"
+              aria-label="Abrir menu" aria-expanded="false" aria-controls="sidebar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+             stroke-linecap="round" aria-hidden="true">
+          <path d="M3.5 6.5h17M3.5 12h17M3.5 17.5h17" />
+        </svg>
+      </button>
 
+      <span class="topbar__brand">DEV HUB</span>
 
+      <div class="topbar__actions">
+        <button type="button" class="icon-btn" id="notifications-btn"
+                aria-label="Notificações (em breve)" title="Em breve" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M18 8.5a6 6 0 1 0-12 0c0 6.5-2.5 8.5-2.5 8.5h17S18 15 18 8.5" />
+            <path d="M13.7 20.5a2 2 0 0 1-3.4 0" />
+          </svg>
+        </button>
 
-    <div class="sidebar-overlay" id="sidebar-overlay" hidden></div>
+        <div class="user-menu">
+          <button type="button" class="user-menu__trigger" id="user-menu-trigger"
+                  aria-haspopup="true" aria-expanded="false" aria-controls="user-menu-panel">
+            <span class="avatar" id="user-avatar" aria-hidden="true">–</span>
+            <span class="user-menu__meta">
+              <span class="user-menu__name" id="user-name">Carregando…</span>
+              <span class="user-menu__role" id="user-role"></span>
+            </span>
+            <svg class="user-menu__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </button>
 
-    <!-- ================= ÁREA PRINCIPAL ================= -->
-    <div class="app__body">
-
-        <header class="topbar">
-            <button type="button" class="icon-btn menu-toggle" id="menu-toggle" aria-label="Abrir menu"
-                aria-expanded="false" aria-controls="sidebar">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"
-                    aria-hidden="true">
-                    <path d="M3.5 6.5h17M3.5 12h17M3.5 17.5h17" />
-                </svg>
+          <div class="user-menu__panel" id="user-menu-panel" role="menu" hidden>
+            <a class="menu-item" role="menuitem" href="configuracoes.html">Configurações</a>
+            <div class="menu-item__sep" role="separator"></div>
+            <button type="button" class="menu-item menu-item--danger" role="menuitem" data-action="logout">
+              Sair
             </button>
+          </div>
+        </div>
+      </div>
+    </header>
 
-            <span class="topbar__brand">DEV HUB</span>
+    <main class="content" id="main">
 
-            <div class="topbar__actions">
+      <div id="global-alert" class="alert" role="alert" hidden></div>
 
-                <button type="button" class="icon-btn" id="notifications-btn" aria-label="Notificações (em breve)"
-                    title="Em breve" disabled>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-                        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M18 8.5a6 6 0 1 0-12 0c0 6.5-2.5 8.5-2.5 8.5h17S18 15 18 8.5" />
-                        <path d="M13.7 20.5a2 2 0 0 1-3.4 0" />
-                    </svg>
-                </button>
+      <!-- ===================== HEADER ===================== -->
+      <div class="dash-header">
+        <div>
+          <p class="page-head__eyebrow">
+            <span id="greeting-name">Olá</span>
+            <span class="role-badge" id="greeting-role" hidden></span>
+          </p>
+          <h1 class="page-head__title">Dashboard</h1>
+          <p class="page-head__sub">Visão geral do seu negócio</p>
+        </div>
 
-                <div class="user-menu">
-                    <button type="button" class="user-menu__trigger" id="user-menu-trigger" aria-haspopup="true"
-                        aria-expanded="false" aria-controls="user-menu-panel">
-                        <span class="avatar" id="user-avatar" aria-hidden="true">–</span>
-                        <span class="user-menu__meta">
-                            <span class="user-menu__name" id="user-name">Carregando…</span>
-                            <span class="user-menu__role" id="user-role"></span>
-                        </span>
-                        <svg class="user-menu__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <path d="m6 9 6 6 6-6" />
-                        </svg>
-                    </button>
+        <div class="dash-period">
+          <label for="dash-period" class="sr-only">Período</label>
+          <select id="dash-period" class="control-select">
+            <option value="today">Hoje</option>
+            <option value="7d">Últimos 7 dias</option>
+            <option value="30d" selected>Últimos 30 dias</option>
+            <option value="month">Este mês</option>
+            <option value="last_month">Mês anterior</option>
+            <option value="3m">Últimos 3 meses</option>
+            <option value="year">Este ano</option>
+            <option value="custom">Personalizado</option>
+          </select>
 
-                    <div class="user-menu__panel" id="user-menu-panel" role="menu" hidden>
-                        <button type="button" class="menu-item" role="menuitem" aria-disabled="true">
-                            Perfil <span class="menu-item__tag">Em breve</span>
-                        </button>
-                        <button type="button" class="menu-item" role="menuitem" aria-disabled="true">
-                            Configurações <span class="menu-item__tag">Em breve</span>
-                        </button>
-                        <div class="menu-item__sep" role="separator"></div>
-                        <button type="button" class="menu-item menu-item--danger" role="menuitem" data-action="logout">
-                            Sair
-                        </button>
-                    </div>
-                </div>
+          <div class="dash-period__custom" id="dash-period-custom" hidden>
+            <input type="date" id="dash-start" />
+            <span>→</span>
+            <input type="date" id="dash-end" />
+            <button type="button" class="btn btn--primary btn--sm" id="dash-apply">Aplicar</button>
+          </div>
+        </div>
+      </div>
 
+      <p class="dash-range" id="dash-range">Carregando…</p>
+
+      <!-- ===================== KPIs ===================== -->
+      <section class="dash-kpis" id="dash-kpis" aria-label="Indicadores principais">
+
+        <!-- Clientes -->
+        <article class="kpi" data-kpi="customers">
+          <div class="kpi__head">
+            <span class="kpi__icon kpi__icon--customers" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 20v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20" />
+                <circle cx="9" cy="7.5" r="3.5" />
+                <path d="M22 20v-1.5a4 4 0 0 0-3-3.87" />
+              </svg>
+            </span>
+            <span class="kpi__label">Clientes</span>
+          </div>
+          <p class="kpi__value skeleton" data-value>—</p>
+          <p class="kpi__hint" data-hint>&nbsp;</p>
+        </article>
+
+        <!-- Vendas (count) -->
+        <article class="kpi" data-kpi="sales">
+          <div class="kpi__head">
+            <span class="kpi__icon kpi__icon--sales" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="9" cy="20" r="1.4" /><circle cx="18" cy="20" r="1.4" />
+                <path d="M2.5 3.5h2.3l2.3 11.6a1.8 1.8 0 0 0 1.8 1.4h8.8a1.8 1.8 0 0 0 1.8-1.4L21 7.5H6" />
+              </svg>
+            </span>
+            <span class="kpi__label">Vendas</span>
+          </div>
+          <p class="kpi__value skeleton" data-value>—</p>
+          <p class="kpi__hint" data-hint>&nbsp;</p>
+        </article>
+
+        <!-- Faturamento -->
+        <article class="kpi" data-kpi="revenue">
+          <div class="kpi__head">
+            <span class="kpi__icon kpi__icon--revenue" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2v20M17 6.5a5 5 0 0 0-5-3.5c-3 0-5 1.5-5 4 0 3 2 3.5 5 4.5s5 1.5 5 4.5c0 2.5-2 4-5 4a5 5 0 0 1-5-3.5" />
+              </svg>
+            </span>
+            <span class="kpi__label">Faturamento</span>
+          </div>
+          <p class="kpi__value skeleton" data-value>—</p>
+          <p class="kpi__hint" data-hint>&nbsp;</p>
+        </article>
+
+        <!-- Produtos -->
+        <article class="kpi" data-kpi="products">
+          <div class="kpi__head">
+            <span class="kpi__icon kpi__icon--products" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <path d="m21 8-9-5-9 5v8l9 5 9-5z" />
+                <path d="m3 8 9 5 9-5" />
+                <path d="M12 21v-8" />
+              </svg>
+            </span>
+            <span class="kpi__label">Produtos</span>
+          </div>
+          <p class="kpi__value skeleton" data-value>—</p>
+          <p class="kpi__hint" data-hint>&nbsp;</p>
+        </article>
+
+        <!-- Usuários -->
+        <article class="kpi" data-kpi="users">
+          <div class="kpi__head">
+            <span class="kpi__icon kpi__icon--users" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 20v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20" />
+                <circle cx="9" cy="7.5" r="3.5" />
+                <path d="M22 20v-1.5a4 4 0 0 0-3-3.87" />
+              </svg>
+            </span>
+            <span class="kpi__label">Usuários</span>
+          </div>
+          <p class="kpi__value skeleton" data-value>—</p>
+          <p class="kpi__hint" data-hint>&nbsp;</p>
+        </article>
+
+        <!-- Empresas (só Super Admin) -->
+        <article class="kpi" data-kpi="orgs" hidden>
+          <div class="kpi__head">
+            <span class="kpi__icon kpi__icon--orgs" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 21h18" />
+                <path d="M5 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16" />
+                <path d="M15 21V9h4a2 2 0 0 1 2 2v10" />
+              </svg>
+            </span>
+            <span class="kpi__label">Empresas</span>
+          </div>
+          <p class="kpi__value skeleton" data-value>—</p>
+          <p class="kpi__hint" data-hint>&nbsp;</p>
+        </article>
+
+      </section>
+
+      <!-- ===================== GRÁFICOS (linha + rosca) ===================== -->
+      <section class="dash-grid dash-grid--charts">
+
+        <!-- Vendas ao longo do tempo -->
+        <article class="dash-card dash-card--wide">
+          <header class="dash-card__head">
+            <div>
+              <h2 class="dash-card__title">Faturamento ao longo do tempo</h2>
+              <p class="dash-card__sub">Total de vendas não canceladas por dia</p>
             </div>
-        </header>
-
-        <main class="content" id="main">
-
-            <div id="global-alert" class="alert" role="alert" hidden></div>
-
-            <div class="page-head">
-                <p class="page-head__eyebrow">
-                    <span id="greeting-name">Olá</span>
-                    <span class="role-badge" id="greeting-role" hidden></span>
-                </p>
-                <h1 class="page-head__title">Dashboard</h1>
-                <p class="page-head__sub">Visão geral do seu negócio</p>
+          </header>
+          <div class="dash-chart-wrap">
+            <canvas id="chart-revenue" aria-label="Gráfico de faturamento" role="img"></canvas>
+            <div class="dash-empty" data-empty hidden>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 3v16a2 2 0 0 0 2 2h16" />
+                <path d="m7 15 3.5-4 3 2.5L20 7" />
+              </svg>
+              <p><strong>Ainda não há vendas no período.</strong></p>
+              <small>Quando houver movimentações, este gráfico aparecerá aqui.</small>
             </div>
+          </div>
+        </article>
 
-            <!-- ---------- Indicadores ---------- -->
-            <section class="stats" aria-label="Indicadores do negócio">
+        <!-- Formas de pagamento -->
+        <article class="dash-card">
+          <header class="dash-card__head">
+            <div>
+              <h2 class="dash-card__title">Formas de pagamento</h2>
+              <p class="dash-card__sub">Distribuição por valor total</p>
+            </div>
+          </header>
+          <div class="dash-chart-wrap dash-chart-wrap--doughnut">
+            <canvas id="chart-payments" aria-label="Gráfico de formas de pagamento" role="img"></canvas>
+            <div class="dash-empty" data-empty hidden>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="9" /><path d="M12 3v9l6 3" />
+              </svg>
+              <p><strong>Sem dados de pagamento</strong></p>
+              <small>Registre vendas para visualizar.</small>
+            </div>
+          </div>
+        </article>
 
-                <article class="stat">
-                    <div class="stat__top">
-                        <span class="stat__label">Vendas hoje</span>
-                        <span class="stat__icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-                                stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="9" cy="20" r="1.4" />
-                                <circle cx="18" cy="20" r="1.4" />
-                                <path
-                                    d="M2.5 3.5h2.3l2.3 11.6a1.8 1.8 0 0 0 1.8 1.4h8.8a1.8 1.8 0 0 0 1.8-1.4L21 7.5H6" />
-                            </svg>
-                        </span>
-                    </div>
-                    <p class="stat__value" id="stat-sales-today">—</p>
-                </article>
+      </section>
 
-                <article class="stat">
-                    <div class="stat__top">
-                        <span class="stat__label">Vendas no mês</span>
-                        <span class="stat__icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-                                stroke-linecap="round" stroke-linejoin="round">
-                                <rect x="3" y="4.5" width="18" height="16" rx="2.5" />
-                                <path d="M3 9.5h18M8 3v3M16 3v3" />
-                            </svg>
-                        </span>
-                    </div>
-                    <p class="stat__value" id="stat-sales-month">—</p>
-                </article>
+      <!-- ===================== RANKINGS (top produtos + top clientes) ===================== -->
+      <section class="dash-grid">
 
-                <article class="stat">
-                    <div class="stat__top">
-                        <span class="stat__label">Clientes</span>
-                        <span class="stat__icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-                                stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M16 20v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20" />
-                                <circle cx="9" cy="7.5" r="3.5" />
-                                <path d="M22 20v-1.5a4 4 0 0 0-3-3.87" />
-                                <path d="M16.5 4.13a4 4 0 0 1 0 7.75" />
-                            </svg>
-                        </span>
-                    </div>
-                    <p class="stat__value" id="stat-customers">—</p>
-                </article>
+        <article class="dash-card">
+          <header class="dash-card__head">
+            <div>
+              <h2 class="dash-card__title">Produtos mais vendidos</h2>
+              <p class="dash-card__sub">Top 5 por quantidade no período</p>
+            </div>
+          </header>
+          <div class="dash-rank" id="dash-top-products">
+            <p class="dash-empty dash-empty--inline">Carregando…</p>
+          </div>
+        </article>
 
-                <article class="stat">
-                    <div class="stat__top">
-                        <span class="stat__label">Produtos</span>
-                        <span class="stat__icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-                                stroke-linecap="round" stroke-linejoin="round">
-                                <path d="m21 8-9-5-9 5v8l9 5 9-5z" />
-                                <path d="m3 8 9 5 9-5" />
-                                <path d="M12 21v-8" />
-                            </svg>
-                        </span>
-                    </div>
-                    <p class="stat__value" id="stat-products">—</p>
-                </article>
+        <article class="dash-card">
+          <header class="dash-card__head">
+            <div>
+              <h2 class="dash-card__title">Clientes com maior volume</h2>
+              <p class="dash-card__sub">Top 5 por valor total no período</p>
+            </div>
+          </header>
+          <div class="dash-rank" id="dash-top-customers">
+            <p class="dash-empty dash-empty--inline">Carregando…</p>
+          </div>
+        </article>
 
-            </section>
+      </section>
 
-            <!-- ---------- Últimas vendas ---------- -->
-            <section class="panel" aria-labelledby="latest-sales-title">
-                <div class="panel__head">
-                    <div>
-                        <h2 class="panel__title" id="latest-sales-title">Últimas vendas</h2>
-                        <p class="panel__sub">Os 5 registros mais recentes</p>
-                    </div>
-                </div>
-
-                <div class="table-wrap">
-                    <table>
-                        <caption class="sr-only">Últimas vendas registradas</caption>
-                        <thead>
-                            <tr>
-                                <th scope="col">Nº</th>
-                                <th scope="col">Cliente</th>
-                                <th scope="col">Data</th>
-                                <th scope="col" class="cell--num">Valor</th>
-                                <th scope="col">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="sales-body">
-                            <tr id="sales-empty" class="table-empty">
-                                <td colspan="5">Carregando…</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-
-        </main>
+      <!-- ===================== ALERTAS ===================== -->
+      <section class="dash-grid dash-grid--single">
+        <article class="dash-card">
+          <header class="dash-card__head">
+            <div>
+              <h2 class="dash-card__title">Atenção necessária</h2>
+              <p class="dash-card__sub">Alertas baseados nos dados atuais</p>
+            </div>
+          </header>
+          <div class="dash-alerts" id="dash-alerts">
+            <p class="dash-empty dash-empty--inline">Carregando…</p>
+          </div>
+        </article>
+      </section><!-- ===================== ATIVIDADE RECENTE ===================== -->
+<section class="dash-grid dash-grid--single">
+  <article class="dash-card">
+    <header class="dash-card__head">
+      <div>
+        <h2 class="dash-card__title">Atividade recente</h2>
+        <p class="dash-card__sub">Últimas ações registradas no sistema</p>
+      </div>
+    </header>
+    <div class="dash-feed" id="dash-feed">
+      <p class="dash-empty dash-empty--inline">Carregando…</p>
     </div>
+  </article>
+</section>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/supabase.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/nav.js"></script>
-<script src="js/permissions.js"></script>
-<script src="js/dashboard.js"></script>
+      <!-- ===================== PRODUTOS COM ESTOQUE BAIXO ===================== -->
+      <section class="dash-grid dash-grid--single">
+        <article class="dash-card">
+          <header class="dash-card__head">
+            <div>
+              <h2 class="dash-card__title">Produtos com estoque crítico</h2>
+              <p class="dash-card__sub">Estoque igual ou abaixo do mínimo</p>
+            </div>
+            <a class="btn btn--ghost btn--sm" href="estoque.html">Ver estoque</a>
+          </header>
+          <div class="dash-stock" id="dash-stock-list">
+            <p class="dash-empty dash-empty--inline">Carregando…</p>
+          </div>
+        </article>
+      </section>
+
+    </main>
+  </div>
+
+  <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="false"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/nav.js"></script>
+  <script src="js/permissions.js"></script>
+  <script src="js/dashboard.js"></script>
 </body>
-
 </html>

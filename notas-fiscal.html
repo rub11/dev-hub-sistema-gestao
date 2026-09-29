@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Notas fiscais · DEV HUB</title>
+
+  <!-- Tema ANTES da CSS (evita flash de tema) -->
+  <script src="js/theme.js"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/global.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/clientes.css" />
+  <link rel="stylesheet" href="css/theme.css" />
+  <link rel="stylesheet" href="css/notas.css" />
+  <link rel="stylesheet" href="css/notas-fiscal.css" />
+
+  <!-- Anti-flash do topnav -->
+  <script>
+    (function () {
+      try {
+        if (!/[?&]blocked=1/.test(location.search)) {
+          document.documentElement.classList.add('layout-topnav');
+        }
+      } catch (e) {}
+    })();
+  </script>
+</head>
+
+<body class="layout-topnav" data-page="notes-fiscal">
+
+  <a class="skip-link" href="#main">Pular para o conteúdo principal</a>
+
+  <aside class="sidebar" id="sidebar" aria-label="Menu principal"></aside>
+  <div class="sidebar-overlay" id="sidebar-overlay" hidden></div>
+
+  <div class="app__body">
+
+    <header class="topbar">
+      <button type="button" class="icon-btn menu-toggle" id="menu-toggle"
+              aria-label="Abrir menu" aria-expanded="false" aria-controls="sidebar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+             stroke-linecap="round" aria-hidden="true">
+          <path d="M3.5 6.5h17M3.5 12h17M3.5 17.5h17" />
+        </svg>
+      </button>
+
+      <span class="topbar__brand">DEV HUB</span>
+
+      <div class="topbar__actions">
+        <button type="button" class="icon-btn" id="notifications-btn"
+                aria-label="Notificações (em breve)" title="Em breve" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M18 8.5a6 6 0 1 0-12 0c0 6.5-2.5 8.5-2.5 8.5h17S18 15 18 8.5" />
+            <path d="M13.7 20.5a2 2 0 0 1-3.4 0" />
+          </svg>
+        </button>
+
+        <div class="user-menu">
+          <button type="button" class="user-menu__trigger" id="user-menu-trigger"
+                  aria-haspopup="true" aria-expanded="false" aria-controls="user-menu-panel">
+            <span class="avatar" id="user-avatar" aria-hidden="true">–</span>
+            <span class="user-menu__meta">
+              <span class="user-menu__name" id="user-name">Carregando…</span>
+              <span class="user-menu__role" id="user-role"></span>
+            </span>
+            <svg class="user-menu__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </button>
+
+          <div class="user-menu__panel" id="user-menu-panel" role="menu" hidden>
+            <button type="button" class="menu-item" role="menuitem" aria-disabled="true">
+              Perfil <span class="menu-item__tag">Em breve</span>
+            </button>
+            <a class="menu-item" role="menuitem" href="configuracoes.html">Configurações</a>
+            <div class="menu-item__sep" role="separator"></div>
+            <button type="button" class="menu-item menu-item--danger" role="menuitem" data-action="logout">
+              Sair
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="content" id="main">
+
+      <div id="global-alert" class="alert" role="alert" hidden></div>
+
+      <!-- ============ VIEW: LISTA ============ -->
+      <div id="view-list">
+
+        <div class="page-head page-head--split">
+          <div class="page-head__main">
+            <p class="page-head__eyebrow">
+              <span id="greeting-name">Olá</span>
+              <span class="role-badge" id="greeting-role" hidden></span>
+            </p>
+            <h1 class="page-head__title">Notas fiscais</h1>
+            <p class="page-head__sub">Documentos internos de venda (não substituem NF-e fiscal).</p>
+          </div>
+          <div class="page-head__actions">
+            <button type="button" class="btn btn--primary" id="new-invoice-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
+                   style="width:16px;height:16px"><path d="M12 5v14M5 12h14" /></svg>
+              <span>Emitir nota fiscal</span>
+            </button>
+          </div>
+        </div>
+
+        <section class="stats stats--four" aria-label="Resumo de notas">
+          <article class="stat">
+            <div class="stat__top">
+              <span class="stat__label">Total</span>
+              <span class="stat__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M14 2.5H7A2 2 0 0 0 5 4.5v15a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7.5z" />
+                  <path d="M14 2.5v5h5" />
+                </svg>
+              </span>
+            </div>
+            <p class="stat__value" id="stat-total">—</p>
+          </article>
+
+          <article class="stat">
+            <div class="stat__top">
+              <span class="stat__label">Emitidas</span>
+              <span class="stat__icon stat__icon--success" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                     stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+              </span>
+            </div>
+            <p class="stat__value" id="stat-issued">—</p>
+          </article>
+
+          <article class="stat">
+            <div class="stat__top">
+              <span class="stat__label">Canceladas</span>
+              <span class="stat__icon stat__icon--danger" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="9" /><path d="M15 9l-6 6M9 9l6 6" />
+                </svg>
+              </span>
+            </div>
+            <p class="stat__value" id="stat-canceled">—</p>
+          </article>
+
+          <article class="stat">
+            <div class="stat__top">
+              <span class="stat__label">Valor total</span>
+              <span class="stat__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2v20M17 6.5a5 5 0 0 0-5-3.5c-3 0-5 1.5-5 4 0 3 2 3.5 5 4.5s5 1.5 5 4.5c0 2.5-2 4-5 4a5 5 0 0 1-5-3.5" />
+                </svg>
+              </span>
+            </div>
+            <p class="stat__value" id="stat-value">—</p>
+          </article>
+        </section>
+
+        <section class="panel" aria-labelledby="invoices-title">
+          <div class="panel__head toolbar">
+            <div class="toolbar__info">
+              <h2 class="panel__title" id="invoices-title">Documentos emitidos</h2>
+              <p class="panel__sub" id="invoices-count">Carregando…</p>
+            </div>
+
+            <div class="toolbar__actions">
+              <div class="search">
+                <span class="search__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+                       stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" />
+                  </svg>
+                </span>
+                <input type="search" id="invoices-search" class="search__input"
+                       placeholder="Buscar por nº, cliente ou CPF/CNPJ..."
+                       aria-label="Buscar notas fiscais" autocomplete="off" />
+              </div>
+
+              <div class="field field--inline">
+                <label for="invoices-status-filter" class="sr-only">Status</label>
+                <select id="invoices-status-filter" class="control-select">
+                  <option value="">Todos os status</option>
+                  <option value="draft">Em digitação</option>
+                  <option value="issued">Emitida</option>
+                  <option value="canceled">Cancelada</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div id="invoices-loading" class="state-block">
+            <span class="spinner" aria-hidden="true"></span>
+            <p>Carregando notas fiscais...</p>
+          </div>
+
+          <div id="invoices-empty" class="state-block" hidden>
+            <div class="state-block__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2.5H7A2 2 0 0 0 5 4.5v15a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7.5z" />
+                <path d="M14 2.5v5h5" />
+              </svg>
+            </div>
+            <h3 id="invoices-empty-title">Nenhuma nota fiscal emitida ainda.</h3>
+            <p id="invoices-empty-text">Use o botão acima para emitir a primeira.</p>
+          </div>
+
+          <div class="table-wrap" id="invoices-table-wrap" hidden>
+            <table>
+              <caption class="sr-only">Lista de notas fiscais</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Nº</th>
+                  <th scope="col">Série</th>
+                  <th scope="col">Emissão</th>
+                  <th scope="col">Destinatário</th>
+                  <th scope="col" class="cell--num">Valor</th>
+                  <th scope="col">Situação</th>
+                  <th scope="col" class="cell--num">Ações</th>
+                </tr>
+              </thead>
+              <tbody id="invoices-body"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <!-- ============ VIEW: FORMULÁRIO ============ -->
+      <div id="view-form" hidden>
+        <div class="page-head page-head--with-back">
+          <button type="button" class="btn btn--ghost btn--back" id="back-to-list">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
+                 style="width:16px;height:16px"><path d="m15 18-6-6 6-6" /></svg>
+            <span>Voltar</span>
+          </button>
+
+          <div>
+            <h1 class="page-head__title" id="form-title">Emitir nota fiscal</h1>
+            <p class="page-head__sub">Preencha os dados fiscais do documento.</p>
+          </div>
+        </div>
+
+        <div class="nf-layout">
+          <form id="invoice-form" class="nf-form" novalidate>
+
+            <nav class="nf-tabs" role="tablist">
+              <button type="button" class="nf-tab is-active" data-tab="geral">Identificação</button>
+              <button type="button" class="nf-tab" data-tab="dest">Destinatário</button>
+              <button type="button" class="nf-tab" data-tab="itens">Produtos/serviços</button>
+              <button type="button" class="nf-tab" data-tab="totais">Totais</button>
+              <button type="button" class="nf-tab" data-tab="cobranca">Cobrança</button>
+              <button type="button" class="nf-tab" data-tab="transp">Transporte</button>
+              <button type="button" class="nf-tab" data-tab="info">Info. adicionais</button>
+            </nav>
+
+            <!-- Identificação -->
+            <div class="nf-panel is-active" data-panel="geral">
+              <div class="nf-grid-3">
+                <div class="field">
+                  <label for="nf-purpose">Finalidade</label>
+                  <select id="nf-purpose">
+                    <option value="normal">NF-e normal</option>
+                    <option value="complementar">NF-e complementar</option>
+                    <option value="ajuste">NF-e de ajuste</option>
+                    <option value="devolucao">NF-e de devolução</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="nf-series">Série</label>
+                  <input type="text" id="nf-series" value="1" maxlength="5" />
+                </div>
+                <div class="field">
+                  <label for="nf-number">Nº</label>
+                  <input type="text" id="nf-number" readonly placeholder="Automático" />
+                </div>
+              </div>
+
+              <div class="nf-grid-3">
+                <div class="field">
+                  <label for="nf-issued">Emissão *</label>
+                  <input type="date" id="nf-issued" required />
+                </div>
+                <div class="field">
+                  <label for="nf-departure">Saída</label>
+                  <input type="date" id="nf-departure" />
+                </div>
+                <div class="field">
+                  <label for="nf-hour">Hora de saída</label>
+                  <input type="time" id="nf-hour" />
+                </div>
+              </div>
+
+              <div class="nf-grid-3">
+                <div class="field">
+                  <label for="nf-op">Operação fiscal *</label>
+                  <input type="text" id="nf-op" value="Saída" maxlength="60" required />
+                </div>
+                <div class="field">
+                  <label for="nf-nature">Natureza da operação</label>
+                  <select id="nf-nature">
+                    <option value="consumidor_final">Para consumidor final</option>
+                    <option value="uso_consumo">Para uso e consumo</option>
+                    <option value="revenda">Para revenda</option>
+                    <option value="industrializacao">Para industrialização</option>
+                    <option value="exportacao">Exportação</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="nf-responsible">Responsável</label>
+                  <input type="text" id="nf-responsible" maxlength="120" placeholder="Nome do responsável" />
+                </div>
+              </div>
+
+              <div class="field">
+                <label for="nf-cfop-global">CFOP padrão dos itens</label>
+                <input type="text" id="nf-cfop-global" value="5102" maxlength="5" />
+                <p class="field__hint">Será aplicado a itens novos adicionados na aba Produtos.</p>
+              </div>
+            </div>
+
+            <!-- Destinatário -->
+            <div class="nf-panel" data-panel="dest">
+              <div class="field">
+                <label for="nf-customer">Cliente / destinatário *</label>
+                <select id="nf-customer" required>
+                  <option value="">Selecione…</option>
+                </select>
+              </div>
+
+              <div class="nf-dest-summary" id="nf-dest-summary" hidden>
+                <p class="nf-dest-summary__line"><strong>Nome:</strong> <span id="dest-name">—</span></p>
+                <p class="nf-dest-summary__line"><strong>CPF/CNPJ:</strong> <span id="dest-doc">—</span></p>
+                <p class="nf-dest-summary__line"><strong>Telefone:</strong> <span id="dest-phone">—</span></p>
+                <p class="nf-dest-summary__line"><strong>E-mail:</strong> <span id="dest-email">—</span></p>
+                <p class="nf-dest-summary__line"><strong>Endereço:</strong> <span id="dest-address">—</span></p>
+              </div>
+              <p class="nf-dest-empty" id="nf-dest-empty">Selecione um cliente para ver os dados.</p>
+            </div>
+
+            <!-- Itens -->
+            <div class="nf-panel" data-panel="itens">
+              <div class="nf-itens-toolbar">
+                <button type="button" class="btn btn--primary btn--sm" id="nf-add-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                       stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
+                       style="width:14px;height:14px"><path d="M12 5v14M5 12h14" /></svg>
+                  <span>Adicionar item</span>
+                </button>
+              </div>
+
+              <div class="table-wrap nf-items-wrap">
+                <table class="nf-items-table">
+                  <thead>
+                    <tr>
+                      <th>Código</th>
+                      <th>Descrição</th>
+                      <th>NCM</th>
+                      <th>CFOP</th>
+                      <th class="c">Qt</th>
+                      <th>Unid</th>
+                      <th class="r">Vl un</th>
+                      <th class="r">Desc.</th>
+                      <th class="r">Subtotal</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody id="nf-items-body">
+                    <tr class="nf-items-empty">
+                      <td colspan="10">Nenhum item adicionado.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="nf-items-actions">
+                <button type="button" class="btn btn--ghost btn--sm" id="nf-add-from-products">
+                  Importar de produtos cadastrados
+                </button>
+              </div>
+            </div>
+
+            <!-- Totais -->
+            <div class="nf-panel" data-panel="totais">
+              <div class="nf-grid-2">
+                <div class="field">
+                  <label for="nf-freight">Frete (R$)</label>
+                  <input type="number" id="nf-freight" min="0" step="0.01" value="0" />
+                </div>
+                <div class="field">
+                  <label for="nf-insurance">Seguro (R$)</label>
+                  <input type="number" id="nf-insurance" min="0" step="0.01" value="0" />
+                </div>
+                <div class="field">
+                  <label for="nf-other">Outras despesas (R$)</label>
+                  <input type="number" id="nf-other" min="0" step="0.01" value="0" />
+                </div>
+                <div class="field">
+                  <label for="nf-discount">Desconto geral (R$)</label>
+                  <input type="number" id="nf-discount" min="0" step="0.01" value="0" />
+                </div>
+              </div>
+
+              <div class="nf-totals-grid">
+                <div class="nf-total-card">
+                  <span>Produtos/serviços</span>
+                  <strong id="nf-total-products">R$ 0,00</strong>
+                </div>
+                <div class="nf-total-card">
+                  <span>Base ICMS</span>
+                  <strong id="nf-total-base-icms">R$ 0,00</strong>
+                </div>
+                <div class="nf-total-card">
+                  <span>Valor ICMS</span>
+                  <strong id="nf-total-icms">R$ 0,00</strong>
+                </div>
+                <div class="nf-total-card">
+                  <span>Valor IPI</span>
+                  <strong id="nf-total-ipi">R$ 0,00</strong>
+                </div>
+                <div class="nf-total-card">
+                  <span>Valor contábil</span>
+                  <strong id="nf-total-acct">R$ 0,00</strong>
+                </div>
+                <div class="nf-total-card nf-total-card--grand">
+                  <span>Total da nota</span>
+                  <strong id="nf-total-total">R$ 0,00</strong>
+                </div>
+              </div>
+            </div>
+
+            <!-- Cobrança -->
+            <div class="nf-panel" data-panel="cobranca">
+              <div class="nf-grid-2">
+                <div class="field">
+                  <label for="nf-payment">Forma de pagamento</label>
+                  <select id="nf-payment">
+                    <option value="">Não informado</option>
+                    <option value="cash">Dinheiro</option>
+                    <option value="pix">Pix</option>
+                    <option value="debit_card">Cartão de débito</option>
+                    <option value="credit_card">Cartão de crédito</option>
+                    <option value="boleto">Boleto</option>
+                    <option value="other">Outro</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Transporte -->
+            <div class="nf-panel" data-panel="transp">
+              <div class="nf-grid-2">
+                <div class="field">
+                  <label for="nf-freight-cond">Condição de frete</label>
+                  <select id="nf-freight-cond">
+                    <option value="">—</option>
+                    <option value="emitente">Emitente (CIF)</option>
+                    <option value="destinatario">Destinatário (FOB)</option>
+                    <option value="terceiros">Terceiros</option>
+                    <option value="sem">Sem frete</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="nf-carrier">Transportadora</label>
+                  <input type="text" id="nf-carrier" maxlength="120" />
+                </div>
+                <div class="field">
+                  <label for="nf-carrier-doc">CPF/CNPJ da transportadora</label>
+                  <input type="text" id="nf-carrier-doc" maxlength="20" />
+                </div>
+                <div class="field">
+                  <label for="nf-carrier-plate">Placa do veículo</label>
+                  <input type="text" id="nf-carrier-plate" maxlength="10" />
+                </div>
+                <div class="field">
+                  <label for="nf-carrier-state">UF da placa</label>
+                  <input type="text" id="nf-carrier-state" maxlength="2" style="text-transform: uppercase;" />
+                </div>
+                <div class="field">
+                  <label for="nf-volumes-qty">Qt volumes</label>
+                  <input type="number" id="nf-volumes-qty" min="0" step="1" />
+                </div>
+                <div class="field">
+                  <label for="nf-volumes-species">Espécie</label>
+                  <input type="text" id="nf-volumes-species" maxlength="40" placeholder="Ex.: Caixa" />
+                </div>
+                <div class="field">
+                  <label for="nf-volumes-brand">Marca</label>
+                  <input type="text" id="nf-volumes-brand" maxlength="40" />
+                </div>
+                <div class="field">
+                  <label for="nf-volumes-numbering">Numeração</label>
+                  <input type="text" id="nf-volumes-numbering" maxlength="40" />
+                </div>
+                <div class="field">
+                  <label for="nf-gross">Peso bruto (kg)</label>
+                  <input type="number" id="nf-gross" min="0" step="0.001" />
+                </div>
+                <div class="field">
+                  <label for="nf-net">Peso líquido (kg)</label>
+                  <input type="number" id="nf-net" min="0" step="0.001" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Info adicionais -->
+            <div class="nf-panel" data-panel="info">
+              <div class="field">
+                <label for="nf-extra-tax">Informações de interesse do fisco</label>
+                <textarea id="nf-extra-tax" rows="4" maxlength="2000"></textarea>
+              </div>
+              <div class="field">
+                <label for="nf-extra-contrib">Informações de interesse do contribuinte</label>
+                <textarea id="nf-extra-contrib" rows="4" maxlength="2000"></textarea>
+              </div>
+            </div>
+
+            <p id="nf-feedback" class="feedback feedback--error" role="alert" aria-live="polite" hidden></p>
+
+            <footer class="nf-form__actions">
+              <button type="button" class="btn btn--ghost" id="nf-cancel">Cancelar</button>
+              <button type="button" class="btn btn--ghost" id="nf-save-draft">
+                <span class="btn__label">Salvar rascunho</span>
+                <span class="btn__spinner" aria-hidden="true"></span>
+              </button>
+              <button type="submit" class="btn btn--primary" id="nf-save-issue">
+                <span class="btn__label">Emitir nota</span>
+                <span class="btn__spinner" aria-hidden="true"></span>
+              </button>
+            </footer>
+          </form>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ============ MODAL: ADICIONAR ITEM ============ -->
+  <div class="modal" id="item-modal" hidden>
+    <div class="modal__backdrop" data-close-modal></div>
+    <div class="modal__dialog modal__dialog--lg" role="dialog" aria-modal="true" aria-labelledby="item-modal-title">
+      <header class="modal__head">
+        <h2 class="modal__title" id="item-modal-title">Adicionar item</h2>
+        <button type="button" class="icon-btn modal__close" aria-label="Fechar" data-close-modal>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+               stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+        </button>
+      </header>
+
+      <form id="item-form" class="modal__body" novalidate>
+        <div class="field">
+          <label for="item-product">Produto cadastrado (opcional)</label>
+          <select id="item-product">
+            <option value="">Item livre (não vinculado)</option>
+          </select>
+        </div>
+
+        <div class="nf-grid-2">
+          <div class="field">
+            <label for="item-code">Código</label>
+            <input type="text" id="item-code" maxlength="60" />
+          </div>
+          <div class="field">
+            <label for="item-unit">Unidade</label>
+            <input type="text" id="item-unit" value="UN" maxlength="6" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="item-description">Descrição *</label>
+          <input type="text" id="item-description" maxlength="200" required />
+        </div>
+
+        <div class="nf-grid-2">
+          <div class="field">
+            <label for="item-ncm">NCM</label>
+            <input type="text" id="item-ncm" maxlength="10" />
+          </div>
+          <div class="field">
+            <label for="item-cfop">CFOP</label>
+            <input type="text" id="item-cfop" maxlength="5" value="5102" />
+          </div>
+        </div>
+
+        <div class="nf-grid-3">
+          <div class="field">
+            <label for="item-qty">Quantidade *</label>
+            <input type="number" id="item-qty" min="0.001" step="0.001" value="1" required />
+          </div>
+          <div class="field">
+            <label for="item-unit-price">Preço unitário (R$) *</label>
+            <input type="number" id="item-unit-price" min="0" step="0.01" value="0" required />
+          </div>
+          <div class="field">
+            <label for="item-discount">Desconto (R$)</label>
+            <input type="number" id="item-discount" min="0" step="0.01" value="0" />
+          </div>
+        </div>
+
+        <div class="nf-grid-2">
+          <div class="field">
+            <label for="item-icms-pct">% ICMS</label>
+            <input type="number" id="item-icms-pct" min="0" max="100" step="0.01" value="0" />
+          </div>
+          <div class="field">
+            <label for="item-ipi-pct">% IPI</label>
+            <input type="number" id="item-ipi-pct" min="0" max="100" step="0.01" value="0" />
+          </div>
+        </div>
+
+        <p id="item-feedback" class="feedback feedback--error" role="alert" aria-live="polite" hidden></p>
+
+        <footer class="modal__foot">
+          <button type="button" class="btn btn--ghost" data-close-modal>Cancelar</button>
+          <button type="submit" class="btn btn--primary" id="item-save-btn">
+            <span class="btn__label">Adicionar</span>
+            <span class="btn__spinner" aria-hidden="true"></span>
+          </button>
+        </footer>
+      </form>
+    </div>
+  </div>
+
+  <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="false"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/nav.js"></script>
+  <script src="js/permissions.js"></script>
+  <script src="js/notas-fiscal.js"></script>
+</body>
+</html>

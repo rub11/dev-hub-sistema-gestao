@@ -10,8 +10,20 @@
              • 0 → erro
              • 1 → aplica
              • N → pede para escolher (completeSignIn)
-     3. Aplica contexto (org, role, role_slug, is_platform_admin, avatar_url)
-   Guard de autorização centralizado: requireRole().
+     3. Valida status efetivo (banned/suspended/inactive/vacation)
+     4. Aplica contexto (org, role, role_slug, is_platform_admin, avatar_url)
+   Guards: requireSession() checa status a cada troca de página.
+   ---------------------------------------------------------
+   CORREÇÕES APLICADAS:
+   1. `requireSession` retorna null quando o guard de status
+      bloqueia — antes, retornava a session (truthy) e o
+      caller continuava carregando mesmo durante o redirect.
+   2. Novo helper `_purgeLocalContext()` limpa `devhub_user`
+      em todos os caminhos de signOut por status.
+   3. `getProfile` preenche `organization_name` consultando
+      a tabela `organizations`.
+   4. `_applyMembership` faz 1 única query a `profiles`.
+   5. `signIn` limpa `devhub_user` nos caminhos de erro.
    ========================================================= */
 
 (function () {
@@ -38,6 +50,23 @@
     },
 
     /* =====================================================
+       HELPERS INTERNOS DE CONTEXTO (CORREÇÃO #2)
+       ===================================================== */
+    _purgeLocalContext() {
+      try {
+        sessionStorage.removeItem('devhub_user');
+      } catch (e) { /* storage indisponível — ignora */ }
+    },
+
+    _persistLocalContext(ctx) {
+      try {
+        sessionStorage.setItem('devhub_user', JSON.stringify(ctx));
+      } catch (e) {
+        console.warn('[DEV HUB] Não foi possível salvar contexto local.', e);
+      }
+    },
+
+    /* =====================================================
        SESSÃO
        ===================================================== */
     async getSession() {
@@ -54,11 +83,6 @@
 
     /* =====================================================
        LOGIN
-       Retornos:
-         { ...contexto }                      → sucesso
-         { needsCompanyChoice: true,
-           user: <User>,
-           memberships: [...] }               → precisa escolher
        ===================================================== */
     async signIn(companyCode, email, password) {
       const supabase = this.getClient();
@@ -97,12 +121,14 @@
         if (companyError) {
           console.error('[DEV HUB] Erro ao validar empresa:', companyError);
           await supabase.auth.signOut();
+          this._purgeLocalContext();           // CORREÇÃO #5
           throw new Error('Não foi possível validar a empresa.');
         }
 
         const membership = Array.isArray(companyData) ? companyData[0] : companyData;
         if (!membership) {
           await supabase.auth.signOut();
+          this._purgeLocalContext();           // CORREÇÃO #5
           throw new Error('O código da empresa não corresponde ao seu acesso.');
         }
 
@@ -116,6 +142,7 @@
       if (listError) {
         console.error('[DEV HUB] Erro ao listar empresas:', listError);
         await supabase.auth.signOut();
+        this._purgeLocalContext();             // CORREÇÃO #5
         throw new Error('Não foi possível identificar suas empresas.');
       }
 
@@ -123,17 +150,16 @@
 
       if (memberships.length === 0) {
         await supabase.auth.signOut();
+        this._purgeLocalContext();             // CORREÇÃO #5
         throw new Error(
           'Sua conta não está vinculada a nenhuma empresa. Contate o administrador.'
         );
       }
 
-      // 1 empresa → aplica direto
       if (memberships.length === 1) {
         return this._applyMembership(supabase, user, memberships[0]);
       }
 
-      // 2+ empresas → devolve para o form pedir a escolha
       return {
         needsCompanyChoice: true,
         user: user,
@@ -159,25 +185,70 @@
     async _applyMembership(supabase, user, membership) {
       if (!membership) throw new Error('Empresa inválida.');
 
-      if (!membership.organization_active) {
+      /* Helper: desloga e limpa contexto antes de lançar erro */
+      const failAndOut = async (msg) => {
         await supabase.auth.signOut();
-        throw new Error('Esta empresa está desativada.');
+        this._purgeLocalContext();              // CORREÇÃO #2
+        throw new Error(msg);
+      };
+
+      if (!membership.organization_active) {
+        return failAndOut('Esta empresa está desativada.');
       }
       if (!membership.user_active) {
-        await supabase.auth.signOut();
-        throw new Error(
+        return failAndOut(
           'Seu acesso está desativado. Entre em contato com o administrador da empresa.'
         );
       }
-      if (membership.user_id && membership.user_id !== user.id) {
-        console.error('[DEV HUB] Inconsistência de usuário na validação.');
-        await supabase.auth.signOut();
-        throw new Error('Não foi possível validar seu acesso.');
+
+      /* ===== Guard de status efetivo ===== */
+      const statusEffective = String(membership.status_effective || 'active').toLowerCase();
+
+      if (statusEffective === 'banned') {
+        return failAndOut(
+          'Sua conta está banida. Entre em contato com o administrador.'
+        );
       }
 
-      /* ----- Busca avatar_url + is_platform_admin ----- */
+      if (statusEffective === 'suspended') {
+        const until = membership.block_until
+          ? new Date(membership.block_until).toLocaleString('pt-BR')
+          : null;
+        return failAndOut(
+          until
+            ? 'Sua conta está suspensa até ' + until + '.'
+            : 'Sua conta está suspensa. Entre em contato com o administrador.'
+        );
+      }
+
+      if (statusEffective === 'inactive') {
+        return failAndOut(
+          'Sua conta está inativa. Entre em contato com o administrador.'
+        );
+      }
+
+      if (statusEffective === 'vacation') {
+        const start = membership.vacation_start
+          ? new Date(membership.vacation_start).toLocaleDateString('pt-BR')
+          : '—';
+        const end = membership.vacation_end
+          ? new Date(membership.vacation_end).toLocaleDateString('pt-BR')
+          : '—';
+        return failAndOut(
+          'Você está em férias (' + start + ' a ' + end + '). ' +
+          'O acesso será liberado automaticamente ao fim do período.'
+        );
+      }
+
+      if (membership.user_id && membership.user_id !== user.id) {
+        console.error('[DEV HUB] Inconsistência de usuário na validação.');
+        return failAndOut('Não foi possível validar seu acesso.');
+      }
+
+      /* ----- Busca avatar_url + is_platform_admin (CORREÇÃO #4) ----- */
       let avatarUrl = null;
       let isPlatformAdmin = Boolean(membership.is_platform_admin);
+      let profileRead = false;
 
       try {
         const { data: profileRow, error: profileErr } = await supabase
@@ -187,6 +258,7 @@
           .maybeSingle();
 
         if (!profileErr && profileRow) {
+          profileRead = true;                    // CORREÇÃO #4
           avatarUrl = profileRow.avatar_url || null;
           if (!isPlatformAdmin) {
             isPlatformAdmin = profileRow.is_platform_admin === true;
@@ -196,7 +268,8 @@
         console.warn('[DEV HUB] Não foi possível ler perfil no login:', e);
       }
 
-      if (!isPlatformAdmin) {
+      /* Só faz a segunda query se a primeira não retornou nada útil */
+      if (!isPlatformAdmin && !profileRead) {
         isPlatformAdmin = await this._fetchPlatformAdminFlag(supabase, user.id);
       }
 
@@ -205,7 +278,7 @@
         organization_id: membership.organization_id || null,
         organization_name: membership.organization_name || '',
         role: String(membership.user_role || 'user').toLowerCase(),
-        role_slug: String(membership.user_role_slug || '').toLowerCase(),   // 👈 NOVO
+        role_slug: String(membership.user_role_slug || '').toLowerCase(),
         name:
           membership.user_name ||
           user.user_metadata?.name ||
@@ -218,11 +291,7 @@
         avatar_url: avatarUrl
       };
 
-      try {
-        sessionStorage.setItem('devhub_user', JSON.stringify(sessionUser));
-      } catch (e) {
-        console.warn('[DEV HUB] Não foi possível salvar contexto local.', e);
-      }
+      this._persistLocalContext(sessionUser);
 
       return sessionUser;
     },
@@ -299,7 +368,73 @@
         }
         return null;
       }
+
+      /* CORREÇÃO #1: o guard retorna `true` quando bloqueia
+         (e dispara o redirect). Aqui propagamos como null para
+         o caller parar de executar. */
+      const blocked = await this._checkStatusGuard(session);
+      if (blocked) return null;
+
       return session;
+    },
+
+    /**
+     * Chama a RPC check_my_status e, se o usuário estiver bloqueado,
+     * expulsa imediatamente e volta pra tela de login com a mensagem.
+     *
+     * @returns {boolean} true se bloqueou (redirect disparado),
+     *                    false se está tudo ok.
+     */
+    async _checkStatusGuard(session) {
+      const supabase = this.getClient();
+      if (!supabase || !session || !session.user) return false;
+
+      try {
+        const { data, error } = await supabase.rpc('check_my_status');
+        if (error) {
+          // Se a RPC ainda não existe, não bloqueia o app
+          console.warn('[DEV HUB] Guard de status indisponível:', error.message);
+          return false;
+        }
+
+        const row = Array.isArray(data) ? data[0] : data;
+        if (!row) return false;
+
+        const status = String(row.status_effective || 'active').toLowerCase();
+        if (status === 'active') return false;
+
+        // Bloqueado. Registra a intenção de logout e expulsa.
+        try { sessionStorage.setItem('devhub_signing_out', '1'); } catch (e) { /* ignora */ }
+        this._purgeLocalContext();
+
+        let url = 'index.html?blocked=' + encodeURIComponent(status);
+
+        if (status === 'suspended' && row.block_until) {
+          url += '&until=' + encodeURIComponent(
+            new Date(row.block_until).toLocaleString('pt-BR')
+          );
+        }
+        if (status === 'vacation') {
+          if (row.vacation_start) {
+            url += '&start=' + encodeURIComponent(
+              new Date(row.vacation_start).toLocaleDateString('pt-BR')
+            );
+          }
+          if (row.vacation_end) {
+            url += '&end=' + encodeURIComponent(
+              new Date(row.vacation_end).toLocaleDateString('pt-BR')
+            );
+          }
+        }
+
+        try { await supabase.auth.signOut(); } catch (e) { /* ignora */ }
+
+        window.location.href = url;
+        return true;
+      } catch (e) {
+        console.warn('[DEV HUB] Erro no guard de status:', e);
+        return false;
+      }
     },
 
     async redirectIfAuthenticated() {
@@ -341,7 +476,7 @@
       try {
         const { data, error } = await supabase
           .from('organization_members')
-          .select('organization_id, role, role_slug, active, name, email')   // 👈 role_slug
+          .select('organization_id, role, role_slug, active, name, email')
           .eq('user_id', uid)
           .limit(1);
 
@@ -353,19 +488,36 @@
         console.warn('[DEV HUB] getProfile: erro em organization_members.', e);
       }
 
+      /* CORREÇÃO #3: busca o nome da organização separadamente. */
+      let organizationName = '';
+      if (membership && membership.organization_id) {
+        try {
+          const { data: orgRow, error: orgErr } = await supabase
+            .from('organizations')
+            .select('name')
+            .eq('id', membership.organization_id)
+            .maybeSingle();
+
+          if (!orgErr && orgRow) {
+            organizationName = orgRow.name || '';
+          }
+        } catch (e) {
+          console.warn('[DEV HUB] getProfile: falha ao ler organizations.', e);
+        }
+      }
+
       const context = {
         user_id: uid,
         organization_id: membership?.organization_id || null,
-        organization_name: '',
+        organization_name: organizationName,           // CORREÇÃO #3
         role: String(membership?.role || 'user').toLowerCase(),
-        role_slug: String(membership?.role_slug || '').toLowerCase(),   // 👈 NOVO
+        role_slug: String(membership?.role_slug || '').toLowerCase(),
         name: membership?.name || session.user.user_metadata?.name || '',
         email: membership?.email || session.user.email || '',
         is_platform_admin: false,
         avatar_url: null
       };
 
-      // Busca avatar + flag
       try {
         const { data: profileRow } = await supabase
           .from('profiles')
@@ -382,9 +534,7 @@
         context.is_platform_admin = await this._fetchPlatformAdminFlag(supabase, uid);
       }
 
-      try {
-        sessionStorage.setItem('devhub_user', JSON.stringify(context));
-      } catch (e) { /* storage indisponível — ignora */ }
+      this._persistLocalContext(context);
 
       return context;
     },
@@ -475,8 +625,8 @@
       const supabase = this.getClient();
 
       try {
-        sessionStorage.setItem('devhub_signing_out', '1');
-        sessionStorage.removeItem('devhub_user');
+        try { sessionStorage.setItem('devhub_signing_out', '1'); } catch (e) { /* ignora */ }
+        this._purgeLocalContext();
 
         if (supabase) {
           const { error } = await supabase.auth.signOut();
@@ -567,7 +717,9 @@
       const label = submitButton.querySelector('.btn__label');
       if (label) label.textContent = 'ENTRAR NESTA EMPRESA';
 
-      companySelect?.focus();
+      if (companySelect && typeof companySelect.focus === 'function') {
+        companySelect.focus();
+      }
     }
 
     function exitChoiceMode() {
@@ -577,7 +729,7 @@
       if (pickerWrap) pickerWrap.hidden = true;
       if (backBtn) backBtn.hidden = true;
 
-      const label = submitButton.querySelector('.btn__label');
+      const label = submitButton && submitButton.querySelector('.btn__label');
       if (label) label.textContent = 'ENTRAR';
 
       hideFeedback();
@@ -590,8 +742,9 @@
         if (supabase) {
           try { await supabase.auth.signOut(); } catch (e) { /* ignora */ }
         }
+        Auth._purgeLocalContext();
         exitChoiceMode();
-        emailInput?.focus();
+        if (emailInput) emailInput.focus();
       });
     }
 
@@ -627,7 +780,7 @@
 
       /* ============ MODO ESCOLHA ============ */
       if (pendingMemberships) {
-        const orgId = companySelect?.value;
+        const orgId = companySelect ? companySelect.value : '';
         const membership = pendingMemberships.find(function (m) {
           return m.organization_id === orgId;
         });
@@ -640,7 +793,7 @@
         setLoading(true);
         try {
           await Auth.completeSignIn(membership);
-          sessionStorage.removeItem('devhub_signing_out');
+          try { sessionStorage.removeItem('devhub_signing_out'); } catch (e) { /* ignora */ }
           window.location.href = 'dashboard.html';
         } catch (error) {
           console.error('[DEV HUB] Falha ao entrar na empresa:', error);
@@ -658,17 +811,17 @@
 
       if (companyCode && !/^[A-Z0-9-]{2,40}$/.test(companyCode)) {
         showFeedback('O código da empresa é inválido.');
-        companyCodeInput?.focus();
+        if (companyCodeInput) companyCodeInput.focus();
         return;
       }
       if (!email) {
         showFeedback('Informe seu e-mail.');
-        emailInput?.focus();
+        if (emailInput) emailInput.focus();
         return;
       }
       if (!password) {
         showFeedback('Informe sua senha.');
-        passwordInput?.focus();
+        if (passwordInput) passwordInput.focus();
         return;
       }
       if (!Auth.isConfigured()) {
@@ -688,7 +841,7 @@
           return;
         }
 
-        sessionStorage.removeItem('devhub_signing_out');
+        try { sessionStorage.removeItem('devhub_signing_out'); } catch (e) { /* ignora */ }
         window.location.href = 'dashboard.html';
 
       } catch (error) {
@@ -702,7 +855,41 @@
     });
 
     /* ---------- Limpa estado de logout ---------- */
-    sessionStorage.removeItem('devhub_signing_out');
+    try { sessionStorage.removeItem('devhub_signing_out'); } catch (e) { /* ignora */ }
+
+    /* ---------- Mostra mensagem de bloqueio vinda da URL ---------- */
+    (function showBlockedMessage() {
+      const params = new URLSearchParams(window.location.search);
+      const blocked = params.get('blocked');
+      if (!blocked) return;
+
+      const msgs = {
+        banned:    'Sua conta está banida. Entre em contato com o administrador.',
+        inactive:  'Sua conta está inativa. Entre em contato com o administrador.',
+        suspended: 'Sua conta está suspensa' +
+          (params.get('until') ? ' até ' + params.get('until') : '') + '.',
+        vacation:  'Você está em férias' +
+          (params.get('start') && params.get('end')
+            ? ' (' + params.get('start') + ' a ' + params.get('end') + ')'
+            : '') +
+          '.'
+      };
+
+      const msg = msgs[blocked] || 'Seu acesso foi bloqueado.';
+
+      const fb = document.getElementById('login-feedback');
+      if (fb) {
+        fb.textContent = msg;
+        fb.className = 'feedback feedback--error';
+        fb.hidden = false;
+      }
+
+      // Limpa a URL pra não reaparecer ao recarregar
+      try {
+        const clean = window.location.pathname + window.location.hash;
+        window.history.replaceState({}, '', clean);
+      } catch (e) { /* ignora */ }
+    })();
 
     /* ---------- Verifica sessão existente ---------- */
     Auth.redirectIfAuthenticated().catch(function (error) {

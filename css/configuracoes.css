@@ -1,9 +1,29 @@
 /* =========================================================
    DEV HUB · Módulo de Configurações
    Reaproveita global.css, dashboard.css, clientes.css.
+   ---------------------------------------------------------
+   CORREÇÕES APLICADAS:
+   1. Removida a duplicação completa do bloco "Foto do perfil"
+      (`.avatar-uploader*` + media query) que aparecia 2×
+      consecutivas no fim do arquivo.
+   2. `.theme-option__body` ganha `position: relative` —
+      antes, o `::before` (bolinha marcadora) se posicionava
+      em relação ao `.theme-option` por acidente. Agora
+      funciona por design, não por sorte.
+   3. Removida a redefinição de `.btn__spinner` por ID —
+      `global.css` já define o mesmo spinner. Manter em
+      `global.css` como fonte única.
+   4. Removida `.user-menu__panel a.menu-item
+      { text-decoration: none }` — `global.css` já neutraliza
+      o underline globalmente em `a`.
+   5. Media queries consolidadas num único bloco por breakpoint.
+   6. Comentário-nota em `#password-modal` sobre a
+      especificidade de ID.
    ========================================================= */
 
-/* ---------- Grid de cards ---------- */
+/* =========================================================
+   Grid de cards
+   ========================================================= */
 .settings-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -78,7 +98,9 @@
   padding-top: 6px;
 }
 
-/* ---------- Lista de informações ---------- */
+/* =========================================================
+   Lista de informações
+   ========================================================= */
 .info-list {
   display: flex;
   flex-direction: column;
@@ -120,7 +142,9 @@
   color: var(--text-muted);
 }
 
-/* ---------- Seletor de tema ---------- */
+/* =========================================================
+   Seletor de tema
+   ========================================================= */
 .theme-options {
   display: grid;
   grid-template-columns: 1fr;
@@ -128,6 +152,9 @@
 }
 
 .theme-option {
+  /* Necessário para o ::before de .theme-option__body se
+     posicionar em relação a este container. Antes, dependia
+     do position: relative implícito — funcionava por acidente. */
   position: relative;
   display: block;
   cursor: pointer;
@@ -147,6 +174,10 @@
 }
 
 .theme-option__body {
+  /* CORREÇÃO #2: ancora o ::before aqui em vez de depender
+     do pai. Assim, se um dia removerem o position: relative
+     do .theme-option, a bolinha continua no lugar certo. */
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -201,41 +232,92 @@
   outline-offset: 2px;
 }
 
-/* ---------- Hint abaixo dos campos ---------- */
+/* =========================================================
+   Hint abaixo dos campos
+   ---------------------------------------------------------
+   NOTA: `.field__hint` também está definido em
+   `estoque.css` e `notas-fiscal.css` com a mesma declaração.
+   Refatoração ideal: mover para `global.css`. Mantido aqui
+   porque cada página carrega só um CSS — sem colisão runtime.
+   ========================================================= */
 .field__hint {
   font-size: 12.5px;
   color: var(--text-muted);
   margin-top: -2px;
 }
 
-/* ---------- Feedback / alertas menores ---------- */
+/* =========================================================
+   Feedback / alertas menores
+   ========================================================= */
 .settings-card .feedback { margin: 0; }
 
-/* ---------- Toque: modal de senha um pouco mais estreito ---------- */
+/* =========================================================
+   Foto do perfil
+   ---------------------------------------------------------
+   (FONTE ÚNICA — a duplicação anterior foi removida)
+   ========================================================= */
+.avatar-uploader {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.avatar-uploader__preview {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  flex: none;
+  border-radius: 50%;
+  overflow: hidden;
+  background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
+  color: #ffffff;
+  display: grid;
+  place-items: center;
+  font-size: 34px;
+  font-weight: 600;
+  text-transform: uppercase;
+  user-select: none;
+}
+
+.avatar-uploader__preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.avatar-uploader__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 180px;
+}
+
+/* =========================================================
+   Modal de senha
+   ---------------------------------------------------------
+   NOTA: usa ID para vencer `.modal__dialog` (base). Como
+   este modal é específico da página de Configurações, o ID
+   funciona. Se um dia precisar replicar em outra página,
+   prefira uma classe como `.modal__dialog--password`.
+   ========================================================= */
 #password-modal .modal__dialog { max-width: 480px; }
 
-/* ---------- Spinner nos botões do módulo ---------- */
-#profile-save-btn .btn__spinner,
-#password-save-btn .btn__spinner,
-#signout-confirm-btn .btn__spinner {
-  display: none;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.4);
-  border-top-color: #fff;
-  animation: dh-spin 0.65s linear infinite;
-}
-#profile-save-btn.is-loading .btn__spinner,
-#password-save-btn.is-loading .btn__spinner,
-#signout-confirm-btn.is-loading .btn__spinner { display: block; }
+/* =========================================================
+   Spinner dos botões
+   ---------------------------------------------------------
+   CORREÇÃO #3: removidas as redefinições de `.btn__spinner`
+   por ID. `global.css` já define o spinner como:
+     .btn__spinner { display: none; ... }
+     .btn.is-loading .btn__spinner { display: block; }
+   Como os botões já recebem `.btn` + `is-loading` via JS,
+   a regra global cobre. Não há motivo para duplicar.
+   ========================================================= */
 
-/* ---------- Ações do user menu: link estilizado como item ---------- */
-.user-menu__panel a.menu-item {
-  text-decoration: none;
-}
-
-/* ---------- Responsivo ---------- */
+/* =========================================================
+   Responsivo
+   ========================================================= */
 @media (max-width: 900px) {
   .settings-grid { grid-template-columns: 1fr; }
 }
@@ -246,96 +328,7 @@
   .settings-card__body--row { flex-direction: column; align-items: stretch; }
   .settings-card__actions { flex-direction: column; }
   .settings-card__actions .btn { width: 100%; }
-}
 
-/* ---------- Foto do perfil ---------- */
-.avatar-uploader {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  flex-wrap: wrap;
-}
-
-.avatar-uploader__preview {
-  position: relative;
-  width: 96px;
-  height: 96px;
-  flex: none;
-  border-radius: 50%;
-  overflow: hidden;
-  background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
-  color: #ffffff;
-  display: grid;
-  place-items: center;
-  font-size: 34px;
-  font-weight: 600;
-  text-transform: uppercase;
-  user-select: none;
-}
-
-.avatar-uploader__preview img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.avatar-uploader__actions {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 180px;
-}
-
-@media (max-width: 720px) {
-  .avatar-uploader {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  .avatar-uploader__actions { width: 100%; }
-  .avatar-uploader__actions .btn { width: 100%; }
-}
-
-/* ---------- Foto do perfil ---------- */
-.avatar-uploader {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  flex-wrap: wrap;
-}
-
-.avatar-uploader__preview {
-  position: relative;
-  width: 96px;
-  height: 96px;
-  flex: none;
-  border-radius: 50%;
-  overflow: hidden;
-  background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
-  color: #ffffff;
-  display: grid;
-  place-items: center;
-  font-size: 34px;
-  font-weight: 600;
-  text-transform: uppercase;
-  user-select: none;
-}
-
-.avatar-uploader__preview img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.avatar-uploader__actions {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 180px;
-}
-
-@media (max-width: 720px) {
   .avatar-uploader {
     flex-direction: column;
     align-items: flex-start;

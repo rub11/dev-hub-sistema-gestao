@@ -4,6 +4,8 @@
    Usa apenas window.db. Todas as consultas são feitas
    no Supabase; agregações são calculadas em memória.
    - Permissões granulares (Perms.has)
+   - Filtros vindos do dashboard via query string
+   - Gráfico reage ao dark mode
    ========================================================= */
 
 (function () {
@@ -77,11 +79,15 @@
     totalCustomers: 0,
     newCustomersInPeriod: 0,
     chart: null,
-    /* ===== NOVO ===== permissões granulares */
+    /* ===== permissões granulares ===== */
     perms: {
       view:   true,
       export: true
-    }
+    },
+    /* ===== filtros vindos do dashboard (via URL) ===== */
+    priceMin: null,
+    priceMax: null,
+    focusSection: null
   };
 
   document.addEventListener('DOMContentLoaded', init);
@@ -98,7 +104,6 @@
       return;
     }
 
-    setupSidebar();
     setupUserMenu();
     setupLogout();
     setupPeriodControls();
@@ -133,7 +138,7 @@
     setInputValue('period-start', state.customStart);
     setInputValue('period-end', state.customEnd);
 
-    /* ===== NOVO ===== carrega permissões antes de renderizar */
+    /* ===== carrega permissões antes de renderizar ===== */
     if (window.Perms && typeof window.Perms.load === 'function') {
       try { await window.Perms.load(); } catch (e) { /* fallback */ }
     }
@@ -147,11 +152,16 @@
       return;
     }
 
+    /* ===== lê filtros vindos do dashboard (query string) ===== */
+    applyDashboardFilters();
+
     await refresh();
+
+    /* ===== depois de renderizar, rola até a seção pedida ===== */
+    scrollToFocusSection();
   }
 
-  /* ===== NOVO =====
-     Lê uma capability. Se Perms não existir, usa o fallback. */
+  /* Lê uma capability. Se Perms não existir, usa o fallback. */
   function hasPerm(cap, fallback) {
     if (window.Perms && typeof window.Perms.has === 'function') {
       return window.Perms.has(cap);
@@ -202,46 +212,8 @@
   }
 
   /* =========================================================
-     Sidebar / user menu / logout
+     User menu / logout
      ========================================================= */
-  function setupSidebar() {
-    const toggle = document.getElementById('menu-toggle');
-    const overlay = document.getElementById('sidebar-overlay');
-    const sidebar = document.getElementById('sidebar');
-    if (!toggle || !overlay || !sidebar) return;
-
-    function open() {
-      document.body.classList.add('sidebar-open');
-      toggle.setAttribute('aria-expanded', 'true');
-      toggle.setAttribute('aria-label', 'Fechar menu');
-      overlay.hidden = false;
-    }
-    function close() {
-      if (!document.body.classList.contains('sidebar-open')) return;
-      document.body.classList.remove('sidebar-open');
-      toggle.setAttribute('aria-expanded', 'false');
-      toggle.setAttribute('aria-label', 'Abrir menu');
-      overlay.hidden = true;
-    }
-
-    toggle.addEventListener('click', function () {
-      document.body.classList.contains('sidebar-open') ? close() : open();
-    });
-    overlay.addEventListener('click', close);
-
-    document.addEventListener('keydown', function (event) {
-      if (event.key === 'Escape') close();
-    });
-
-    sidebar.querySelectorAll('a.nav__item').forEach(function (link) {
-      link.addEventListener('click', close);
-    });
-
-    window.addEventListener('resize', function () {
-      if (window.innerWidth >= 1024) close();
-    });
-  }
-
   function setupUserMenu() {
     const trigger = document.getElementById('user-menu-trigger');
     const panel = document.getElementById('user-menu-panel');
@@ -380,7 +352,13 @@
 
   function updatePeriodRangeLabel() {
     const { start, end } = getPeriodRange();
-    setText('period-range', formatRangeLabel(start, end));
+    let label = formatRangeLabel(start, end);
+
+    if (hasPriceFilterActive()) {
+      label += ' · ' + describePriceRange();
+    }
+
+    setText('period-range', label);
   }
 
   function formatRangeLabel(start, end) {
@@ -404,6 +382,140 @@
       state.movementTypeFilter = select.value;
       renderMovements();
     });
+  }
+
+  /* =========================================================
+     Filtros vindos do dashboard (query string)
+     ========================================================= */
+  function readDashboardFilters() {
+    const params = new URLSearchParams(window.location.search);
+
+    return {
+      period:   params.get('period'),
+      start:    params.get('start'),
+      end:      params.get('end'),
+      minPrice: params.get('min_price'),
+      maxPrice: params.get('max_price'),
+      focus:    params.get('focus')
+    };
+  }
+
+  function applyDashboardFilters() {
+    const f = readDashboardFilters();
+
+    /* ---------- Período ---------- */
+    if (f.period && ['today', '7d', '30d', 'month', 'last_month', 'custom'].indexOf(f.period) !== -1) {
+      state.period = f.period;
+
+      if (f.period === 'custom' && f.start && f.end) {
+        state.customStart = f.start;
+        state.customEnd = f.end;
+      }
+
+      const btn = document.querySelector('.segmented__btn[data-period="' + f.period + '"]');
+      if (btn) {
+        document.querySelectorAll('.segmented__btn[data-period]').forEach(function (b) {
+          b.classList.toggle('is-active', b === btn);
+        });
+      }
+      const custom = document.getElementById('period-custom');
+      if (custom) custom.hidden = f.period !== 'custom';
+
+      if (f.start) setInputValue('period-start', f.start);
+      if (f.end)   setInputValue('period-end', f.end);
+    }
+
+    /* ---------- Faixa de preço ---------- */
+    let priceFilterActive = false;
+
+    if (f.minPrice !== null && f.minPrice !== '') {
+      const n = Number(f.minPrice);
+      if (Number.isFinite(n) && n >= 0) {
+        state.priceMin = n;
+        priceFilterActive = true;
+      }
+    }
+    if (f.maxPrice !== null && f.maxPrice !== '') {
+      const n = Number(f.maxPrice);
+      if (Number.isFinite(n) && n >= 0) {
+        state.priceMax = n;
+        priceFilterActive = true;
+      }
+    }
+
+    /* ---------- Focus (scroll) ---------- */
+    if (f.focus) {
+      state.focusSection = f.focus;
+    }
+
+    /* ---------- Limpa a URL (evita reaplicar em F5) ---------- */
+    try {
+      const clean = window.location.pathname;
+      window.history.replaceState({}, '', clean);
+    } catch (e) { /* ignora */ }
+
+    /* ---------- Aviso visual se um filtro veio ativo ---------- */
+    if (priceFilterActive) {
+      showToast('Relatório filtrado por faixa de preço.', 'info');
+    }
+  }
+
+  function hasPriceFilterActive() {
+    return state.priceMin !== null || state.priceMax !== null;
+  }
+
+  function describePriceRange() {
+    const min = state.priceMin;
+    const max = state.priceMax;
+
+    if (min !== null && max !== null) {
+      return 'Preço: ' + formatMoney(min) + ' — ' + formatMoney(max);
+    }
+    if (min !== null) return 'Preço: ≥ ' + formatMoney(min);
+    if (max !== null) return 'Preço: ≤ ' + formatMoney(max);
+    return '';
+  }
+
+  /* Aplica a faixa de preço à lista de produtos */
+  function applyPriceFilterToProducts() {
+    if (!hasPriceFilterActive()) return state.products;
+
+    return state.products.filter(function (p) {
+      const price = toNumber(p.price, 0);
+      if (state.priceMin !== null && price < state.priceMin) return false;
+      if (state.priceMax !== null && price > state.priceMax) return false;
+      return true;
+    });
+  }
+
+  /* IDs dos produtos que passam pelo filtro de preço */
+  function getFilteredProductIds() {
+    const filtered = applyPriceFilterToProducts();
+    const set = new Set();
+    filtered.forEach(function (p) { if (p.id) set.add(p.id); });
+    return set;
+  }
+
+  /* Scroll suave até a seção pedida via ?focus= */
+  function scrollToFocusSection() {
+    const focus = state.focusSection;
+    if (!focus) return;
+
+    const map = {
+      sales:     '#chart-evolution',
+      customers: '#kpi-total-customers',
+      finance:   '#kpi-revenue',
+      products:  '#stock-table-title'
+    };
+    const selector = map[focus];
+    if (!selector) return;
+
+    const el = document.querySelector(selector);
+    if (el && el.scrollIntoView) {
+      setTimeout(function () {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 250);
+    }
   }
 
   /* =========================================================
@@ -554,6 +666,17 @@
   /* =========================================================
      2. Gráfico de evolução
      ========================================================= */
+  function readChartTheme() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    return {
+      tick:        isDark ? '#94a3b8' : '#9ca3af',
+      grid:        isDark ? 'rgba(148,163,184,.10)' : '#f3f4f6',
+      legend:      isDark ? '#cbd5e1' : '#4b5563',
+      tooltipBg:   isDark ? '#0f172a' : '#111827',
+      tooltipText: '#e5e7eb'
+    };
+  }
+
   function renderChart() {
     const canvas = document.getElementById('chart-evolution');
     const empty = document.getElementById('chart-empty');
@@ -595,6 +718,7 @@
       state.chart = null;
     }
 
+    const t = readChartTheme();
     const ctx = canvas.getContext('2d');
     state.chart = new window.Chart(ctx, {
       type: 'line',
@@ -647,11 +771,13 @@
               pointStyle: 'circle',
               padding: 14,
               font: { family: 'Inter', size: 12 },
-              color: '#4b5563'
+              color: t.legend
             }
           },
           tooltip: {
-            backgroundColor: '#111827',
+            backgroundColor: t.tooltipBg,
+            titleColor: '#fff',
+            bodyColor: t.tooltipText,
             padding: 10,
             titleFont: { family: 'Inter', size: 12, weight: '600' },
             bodyFont: { family: 'Inter', size: 12 },
@@ -671,7 +797,7 @@
           x: {
             grid: { display: false },
             ticks: {
-              color: '#9ca3af',
+              color: t.tick,
               font: { family: 'Inter', size: 11 },
               maxRotation: 0,
               autoSkipPadding: 12
@@ -680,9 +806,9 @@
           yCount: {
             position: 'left',
             beginAtZero: true,
-            grid: { color: '#f3f4f6' },
+            grid: { color: t.grid },
             ticks: {
-              color: '#9ca3af',
+              color: t.tick,
               font: { family: 'Inter', size: 11 },
               precision: 0
             }
@@ -692,7 +818,7 @@
             beginAtZero: true,
             grid: { display: false },
             ticks: {
-              color: '#9ca3af',
+              color: t.tick,
               font: { family: 'Inter', size: 11 },
               callback: function (value) {
                 return 'R$ ' + numberFormatter.format(value);
@@ -732,6 +858,11 @@
     return Array.from(map.values());
   }
 
+  /* Redesenha o gráfico quando o tema mudar */
+  document.addEventListener('theme:changed', function () {
+    if (state.chart) renderChart();
+  });
+
   /* =========================================================
      3. Formas de pagamento
      ========================================================= */
@@ -759,7 +890,7 @@
     });
 
     const rows = Array.from(map.entries())
-      .map(function (entry) { return { code: entry[0], ...entry[1] }; })
+      .map(function (entry) { return { code: entry[0], count: entry[1].count, total: entry[1].total }; })
       .sort(function (a, b) { return b.total - a.total; });
 
     grid.innerHTML = '';
@@ -807,7 +938,16 @@
     const tbody = document.getElementById('top-products-body');
     if (!wrap || !empty || !tbody) return;
 
-    if (state.saleItems.length === 0) {
+    const filteredIds = getFilteredProductIds();
+    const filterActive = hasPriceFilterActive();
+
+    const items = state.saleItems.filter(function (item) {
+      if (!filterActive) return true;
+      if (!item.product_id) return false;
+      return filteredIds.has(item.product_id);
+    });
+
+    if (items.length === 0) {
       wrap.hidden = true;
       empty.hidden = false;
       tbody.innerHTML = '';
@@ -815,7 +955,7 @@
     }
 
     const map = new Map();
-    state.saleItems.forEach(function (item) {
+    items.forEach(function (item) {
       const key = item.product_id || ('name:' + (item.product_name || '—'));
       if (!map.has(key)) {
         map.set(key, { name: item.product_name || '—', quantity: 0, revenue: 0 });
@@ -924,7 +1064,8 @@
     let out = 0;
     let total = 0;
 
-    state.products.forEach(function (p) {
+    /* Aplica o filtro de preço vindo do dashboard */
+    applyPriceFilterToProducts().forEach(function (p) {
       total += 1;
       const stock = toInteger(p.stock, 0);
       const min = toInteger(p.minimum_stock, 0);
@@ -946,9 +1087,15 @@
     const tbody = document.getElementById('stock-table-body');
     if (!wrap || !empty || !tbody) return;
 
-    if (state.products.length === 0) {
+    /* Aplica o filtro de preço vindo do dashboard */
+    const filtered = applyPriceFilterToProducts();
+
+    if (filtered.length === 0) {
       wrap.hidden = true;
       empty.hidden = false;
+      empty.querySelector('p').textContent = hasPriceFilterActive()
+        ? 'Nenhum produto encontrado na faixa de preço selecionada.'
+        : 'Nenhum produto cadastrado.';
       tbody.innerHTML = '';
       return;
     }
@@ -957,7 +1104,7 @@
     wrap.hidden = false;
     tbody.innerHTML = '';
 
-    const sorted = state.products.slice().sort(function (a, b) {
+    const sorted = filtered.slice().sort(function (a, b) {
       const sa = stockOrder(a);
       const sb = stockOrder(b);
       if (sa !== sb) return sa - sb;
@@ -1120,7 +1267,6 @@
     if (productsBtn) productsBtn.addEventListener('click', exportProductsCSV);
   }
 
-  /* ===== NOVO ===== respeita reports.export */
   function setExportButtonsEnabled(enabled) {
     const salesBtn = document.getElementById('export-sales-btn');
     const productsBtn = document.getElementById('export-products-btn');
@@ -1138,7 +1284,6 @@
   }
 
   function exportSalesCSV() {
-    /* ===== NOVO ===== guard antes de exportar */
     if (!state.perms.export) {
       showToast('Você não tem permissão para exportar relatórios.', 'error');
       return;
@@ -1170,18 +1315,21 @@
   }
 
   function exportProductsCSV() {
-    /* ===== NOVO ===== guard antes de exportar */
     if (!state.perms.export) {
       showToast('Você não tem permissão para exportar relatórios.', 'error');
       return;
     }
-    if (state.products.length === 0) {
+
+    /* Respeita o filtro de preço vindo do dashboard */
+    const filtered = applyPriceFilterToProducts();
+
+    if (filtered.length === 0) {
       showToast('Nenhum produto para exportar.', 'error');
       return;
     }
 
     const headers = ['Produto', 'Código', 'Estoque', 'Estoque mínimo', 'Situação', 'Preço', 'Ativo'];
-    const rows = state.products.map(function (p) {
+    const rows = filtered.map(function (p) {
       const stock = toInteger(p.stock, 0);
       const min = toInteger(p.minimum_stock, 0);
       return [

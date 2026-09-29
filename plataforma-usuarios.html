@@ -4,7 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Usuários · DEV HUB</title>
-  <!-- Tema ANTES da CSS (evita flash) -->
+
+  <!-- Tema ANTES da CSS (evita flash de tema) -->
   <script src="js/theme.js"></script>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -16,8 +17,21 @@
   <link rel="stylesheet" href="css/clientes.css" />
   <link rel="stylesheet" href="css/theme.css" />
   <link rel="stylesheet" href="css/plataforma.css" />
+  <link rel="stylesheet" href="css/plataforma-usuarios.css" />
+
+  <!-- Anti-flash do topnav -->
+  <script>
+    (function () {
+      try {
+        if (!/[?&]blocked=1/.test(location.search)) {
+          document.documentElement.classList.add('layout-topnav');
+        }
+      } catch (e) {}
+    })();
+  </script>
 </head>
-<body data-page="platform-users">
+
+<body class="layout-topnav" data-page="platform-users">
 
   <a class="skip-link" href="#main">Pular para o conteúdo principal</a>
 
@@ -25,7 +39,6 @@
   <div class="sidebar-overlay" id="sidebar-overlay" hidden></div>
 
   <div class="app__body">
-
     <header class="topbar">
       <button type="button" class="icon-btn menu-toggle" id="menu-toggle"
               aria-label="Abrir menu" aria-expanded="false" aria-controls="sidebar">
@@ -34,19 +47,8 @@
           <path d="M3.5 6.5h17M3.5 12h17M3.5 17.5h17" />
         </svg>
       </button>
-
       <span class="topbar__brand">DEV HUB</span>
-
       <div class="topbar__actions">
-        <button type="button" class="icon-btn" id="notifications-btn"
-                aria-label="Notificações (em breve)" title="Em breve" disabled>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M18 8.5a6 6 0 1 0-12 0c0 6.5-2.5 8.5-2.5 8.5h17S18 15 18 8.5" />
-            <path d="M13.7 20.5a2 2 0 0 1-3.4 0" />
-          </svg>
-        </button>
-
         <div class="user-menu">
           <button type="button" class="user-menu__trigger" id="user-menu-trigger"
                   aria-haspopup="true" aria-expanded="false" aria-controls="user-menu-panel">
@@ -61,7 +63,12 @@
             </svg>
           </button>
 
+          <!-- Menu do usuário: para platform_admin, "Configurações" aponta
+               para as configurações da PLATAFORMA, não do tenant. -->
           <div class="user-menu__panel" id="user-menu-panel" role="menu" hidden>
+            <a class="menu-item" role="menuitem" href="plataforma-configuracoes.html">
+              Configurações da plataforma
+            </a>
             <div class="menu-item__sep" role="separator"></div>
             <button type="button" class="menu-item menu-item--danger" role="menuitem" data-action="logout">
               Sair
@@ -75,17 +82,18 @@
 
       <div id="global-alert" class="alert" role="alert" hidden></div>
 
-      <div class="page-head">
-        <p class="page-head__eyebrow">
-          <span id="greeting-name">Olá</span>
-          <span class="role-badge" id="greeting-role" hidden></span>
-        </p>
-        <h1 class="page-head__title">Usuários</h1>
-        <p class="page-head__sub">Todos os usuários cadastrados na plataforma DEV HUB.</p>
+      <div class="page-head page-head--split">
+        <div class="page-head__main">
+          <p class="page-head__eyebrow">
+            <span id="greeting-name">Olá</span>
+            <span class="role-badge" id="greeting-role" hidden></span>
+          </p>
+          <h1 class="page-head__title">Usuários</h1>
+          <p class="page-head__sub">Administração de contas, vínculos e permissões.</p>
+        </div>
       </div>
 
-      <!-- ---------- Cards resumo ---------- -->
-      <section class="stats" aria-label="Resumo da plataforma">
+      <section class="stats stats--four" aria-label="Resumo">
         <article class="stat">
           <div class="stat__top">
             <span class="stat__label">Total de usuários</span>
@@ -94,13 +102,11 @@
                    stroke-linecap="round" stroke-linejoin="round">
                 <path d="M16 20v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20" />
                 <circle cx="9" cy="7.5" r="3.5" />
-                <path d="M22 20v-1.5a4 4 0 0 0-3-3.87" />
               </svg>
             </span>
           </div>
           <p class="stat__value" id="stat-total">—</p>
         </article>
-
         <article class="stat">
           <div class="stat__top">
             <span class="stat__label">Ativos</span>
@@ -111,37 +117,33 @@
           </div>
           <p class="stat__value" id="stat-active">—</p>
         </article>
-
         <article class="stat">
           <div class="stat__top">
-            <span class="stat__label">Inativos</span>
-            <span class="stat__icon stat__icon--danger" aria-hidden="true">
+            <span class="stat__label">Bloqueados / Suspensos</span>
+            <span class="stat__icon stat__icon--warning" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
                    stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="9" /><path d="M15 9l-6 6M9 9l6 6" />
+                <circle cx="12" cy="12" r="9" /><path d="M12 7v5M12 16h.01" />
               </svg>
             </span>
           </div>
-          <p class="stat__value" id="stat-inactive">—</p>
+          <p class="stat__value" id="stat-blocked">—</p>
         </article>
-
         <article class="stat">
           <div class="stat__top">
-            <span class="stat__label">Empresas</span>
+            <span class="stat__label">Vínculos totais</span>
             <span class="stat__icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
                    stroke-linecap="round" stroke-linejoin="round">
                 <path d="M3 21h18" />
                 <path d="M5 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16" />
-                <path d="M15 21V9h4a2 2 0 0 1 2 2v10" />
               </svg>
             </span>
           </div>
-          <p class="stat__value" id="stat-orgs">—</p>
+          <p class="stat__value" id="stat-links">—</p>
         </article>
       </section>
 
-      <!-- ---------- Painel ---------- -->
       <section class="panel" aria-labelledby="users-title">
 
         <div class="panel__head toolbar">
@@ -155,41 +157,35 @@
               <span class="search__icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
                      stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="11" cy="11" r="7" />
-                  <path d="m20 20-3.5-3.5" />
+                  <circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" />
                 </svg>
               </span>
               <input type="search" id="users-search" class="search__input"
                      placeholder="Buscar por nome ou e-mail…"
-                     aria-label="Buscar usuários por nome ou e-mail"
-                     autocomplete="off" />
+                     aria-label="Buscar usuários" autocomplete="off" />
             </div>
 
             <div class="field field--inline">
-              <label for="filter-org" class="sr-only">Filtrar por empresa</label>
-              <select id="filter-org" class="control-select">
-                <option value="">Todas as empresas</option>
-              </select>
-            </div>
-
-            <div class="field field--inline">
-              <label for="filter-role" class="sr-only">Filtrar por perfil</label>
+              <label for="filter-role" class="sr-only">Função</label>
               <select id="filter-role" class="control-select">
-                <option value="">Todos os perfis</option>
+                <option value="">Todas as funções</option>
                 <option value="admin">Administrador</option>
                 <option value="gestor">Gestor</option>
                 <option value="user">Funcionário</option>
               </select>
             </div>
 
-            <button type="button" class="btn btn--primary" id="new-user-btn">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
-                   style="width:16px;height:16px">
-                <path d="M12 5v14M5 12h14" />
-              </svg>
-              <span>Novo usuário</span>
-            </button>
+            <div class="field field--inline">
+              <label for="filter-status" class="sr-only">Status</label>
+              <select id="filter-status" class="control-select">
+                <option value="">Todos os status</option>
+                <option value="active">Ativo</option>
+                <option value="vacation">Em férias</option>
+                <option value="banned">Banido</option>
+                <option value="suspended">Suspenso</option>
+                <option value="inactive">Inativo</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -204,24 +200,23 @@
                  stroke-linecap="round" stroke-linejoin="round">
               <path d="M16 20v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20" />
               <circle cx="9" cy="7.5" r="3.5" />
-              <path d="M22 20v-1.5a4 4 0 0 0-3-3.87" />
             </svg>
           </div>
-          <h3 id="users-empty-title">Nenhum usuário cadastrado.</h3>
-          <p id="users-empty-text">Os usuários aparecem aqui quando são criados nas empresas.</p>
+          <h3 id="users-empty-title">Nenhum usuário encontrado.</h3>
+          <p id="users-empty-text">Ajuste os filtros ou a busca.</p>
         </div>
 
         <div class="table-wrap" id="users-table-wrap" hidden>
           <table>
-            <caption class="sr-only">Todos os usuários da plataforma</caption>
+            <caption class="sr-only">Lista de usuários</caption>
             <thead>
               <tr>
-                <th scope="col">Nome</th>
+                <th scope="col">Usuário</th>
                 <th scope="col">E-mail</th>
-                <th scope="col">Empresa</th>
-                <th scope="col">Perfil</th>
+                <th scope="col" class="cell--num">Empresas</th>
+                <th scope="col">Função</th>
                 <th scope="col">Status</th>
-                <th scope="col">Cadastro</th>
+                <th scope="col">Desde</th>
                 <th scope="col" class="cell--num">Ações</th>
               </tr>
             </thead>
@@ -230,209 +225,113 @@
         </div>
 
       </section>
-
     </main>
   </div>
 
-  <!-- ================= MODAL: NOVO USUÁRIO ================= -->
-<div class="modal" id="create-modal" hidden>
-  <div class="modal__backdrop" data-close-modal></div>
+  <!-- ================= MODAL: PERFIL ================= -->
+  <div class="modal" id="profile-modal" hidden>
+    <div class="modal__backdrop" data-close-modal></div>
 
-  <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="create-modal-title">
-    <header class="modal__head">
-      <h2 class="modal__title" id="create-modal-title">Novo usuário</h2>
-      <button type="button" class="icon-btn modal__close" aria-label="Fechar" data-close-modal>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
-             stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
-      </button>
-    </header>
-
-    <form id="create-form" class="modal__body" novalidate>
-
-      <div class="field">
-        <label for="create-name">Nome completo *</label>
-        <input type="text" id="create-name" autocomplete="name" required maxlength="150" />
-      </div>
-
-      <div class="field">
-        <label for="create-email">E-mail *</label>
-        <input type="email" id="create-email" autocomplete="email" required maxlength="150" />
-      </div>
-
-      <div class="field">
-        <label for="create-password">Senha inicial *</label>
-        <div class="field__control">
-          <input type="password" id="create-password" autocomplete="new-password"
-                 required minlength="6" maxlength="72" />
-          <button type="button" class="pw-toggle" data-pw-toggle="create-password"
-                  aria-label="Mostrar senha" aria-pressed="false">
-            <svg class="pw-toggle__icon pw-toggle__icon--show" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
-                 aria-hidden="true">
-              <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" />
-              <circle cx="12" cy="12" r="3" />
-            </svg>
-            <svg class="pw-toggle__icon pw-toggle__icon--hide" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
-                 aria-hidden="true">
-              <path d="M9.9 5.7A9.6 9.6 0 0 1 12 5.5c6 0 9.5 6.5 9.5 6.5a17 17 0 0 1-3.2 4.1" />
-              <path d="M6.3 6.3A17 17 0 0 0 2.5 12S6 18.5 12 18.5a9.4 9.4 0 0 0 4.2-.95" />
-              <path d="m3 3 18 18" />
-            </svg>
-          </button>
-        </div>
-        <p class="field__hint">Mínimo de 6 caracteres.</p>
-      </div>
-
-      <div class="form-grid">
-        <div class="field">
-          <label for="create-role">Perfil *</label>
-          <select id="create-role" required>
-            <option value="user" selected>Funcionário</option>
-            <option value="gestor">Gestor</option>
-            <option value="admin">Administrador</option>
-          </select>
-        </div>
-
-        <div class="field">
-          <label for="create-org">Empresa *</label>
-          <select id="create-org" required></select>
-        </div>
-      </div>
-
-      <p id="create-form-feedback" class="feedback feedback--error" role="alert" aria-live="polite" hidden></p>
-
-      <footer class="modal__foot">
-        <button type="button" class="btn btn--ghost" data-close-modal>Cancelar</button>
-        <button type="submit" class="btn btn--primary" id="create-save-btn">
-          <span class="btn__label">Criar usuário</span>
-          <span class="btn__spinner" aria-hidden="true"></span>
+    <div class="modal__dialog modal__dialog--profile" role="dialog" aria-modal="true"
+         aria-labelledby="profile-modal-title">
+      <header class="modal__head">
+        <h2 class="modal__title" id="profile-modal-title">Perfil do usuário</h2>
+        <button type="button" class="icon-btn modal__close" aria-label="Fechar" data-close-modal>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+               stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
         </button>
-      </footer>
-    </form>
-  </div>
-</div>
+      </header>
 
-  <!-- ================= MODAL: EDITAR USUÁRIO ================= -->
-<div class="modal" id="edit-modal" hidden>
-  <div class="modal__backdrop" data-close-modal></div>
-
-  <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="edit-modal-title">
-    <header class="modal__head">
-      <h2 class="modal__title" id="edit-modal-title">Editar usuário</h2>
-      <button type="button" class="icon-btn modal__close" aria-label="Fechar" data-close-modal>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
-             stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
-      </button>
-    </header>
-
-    <form id="edit-form" class="modal__body" novalidate>
-      <input type="hidden" id="edit-user-id" />
-
-      <div class="field">
-        <label for="edit-name">Nome completo *</label>
-        <input type="text" id="edit-name" required maxlength="150" />
-      </div>
-
-      <div class="field">
-        <label for="edit-email">E-mail *</label>
-        <input type="email" id="edit-email" required maxlength="150" />
-      </div>
-
-      <div class="form-grid">
-        <div class="field">
-          <label for="edit-role">Perfil *</label>
-          <select id="edit-role" required>
-            <option value="user">Funcionário</option>
-            <option value="gestor">Gestor</option>
-            <option value="admin">Administrador</option>
-          </select>
+      <div class="pf-header">
+        <span class="pf-avatar" id="pf-avatar" aria-hidden="true">–</span>
+        <div class="pf-header__info">
+          <h3 class="pf-header__name" id="pf-name">—</h3>
+          <p class="pf-header__email" id="pf-email">—</p>
         </div>
-
-        <div class="field">
-          <label for="edit-active">Status *</label>
-          <select id="edit-active" required>
-            <option value="true">Ativo</option>
-            <option value="false">Inativo</option>
-          </select>
-        </div>
+        <span class="pf-header__status" id="pf-status-badge"></span>
       </div>
 
-      <div class="field">
-        <label for="edit-org">Empresa *</label>
-        <select id="edit-org" required></select>
-        <p class="field__hint">Ao mover o usuário, ele perde acesso aos dados da empresa anterior.</p>
+      <nav class="pf-tabs" role="tablist">
+        <button type="button" class="pf-tab is-active" data-tab="empresas">Empresas</button>
+        <button type="button" class="pf-tab" data-tab="info">Informações</button>
+        <button type="button" class="pf-tab" data-tab="historico">Histórico</button>
+      </nav>
+
+      <div class="pf-body">
+
+        <!-- Aba: Empresas -->
+        <section class="pf-panel is-active" data-panel="empresas">
+          <p class="pf-help">
+            Empresas às quais <strong id="pf-empresas-nome">este usuário</strong> está vinculado.
+            Cada vínculo tem seu próprio status e função.
+          </p>
+
+          <div id="pf-empresas-list" class="pf-empresas">
+            <div class="state-block state-block--compact">
+              <span class="spinner" aria-hidden="true"></span>
+              <p>Carregando vínculos…</p>
+            </div>
+          </div>
+
+          <div class="pf-add-empresa" id="pf-add-empresa-wrap">
+            <h4 class="pf-section-title">Vincular a outra empresa</h4>
+            <div class="field">
+              <label for="pf-move-target">Empresa</label>
+              <select id="pf-move-target"></select>
+            </div>
+            <div class="field">
+              <label for="pf-move-role">Função</label>
+              <select id="pf-move-role">
+                <option value="user">Funcionário</option>
+                <option value="gestor">Gestor</option>
+                <option value="admin">Administrador</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="pf-move-reason">Motivo (opcional)</label>
+              <input type="text" id="pf-move-reason" maxlength="200"
+                     placeholder="Ex.: Mudança de unidade" />
+            </div>
+            <button type="button" class="btn btn--primary" id="pf-move-btn">
+              Vincular a esta empresa
+            </button>
+          </div>
+        </section>
+
+        <!-- Aba: Informações -->
+        <section class="pf-panel" data-panel="info">
+          <dl class="pf-list">
+            <div class="pf-list__row"><dt>Nome</dt><dd id="pf-info-name">—</dd></div>
+            <div class="pf-list__row"><dt>E-mail</dt><dd id="pf-info-email">—</dd></div>
+            <div class="pf-list__row"><dt>ID do usuário</dt><dd id="pf-info-userid" class="pf-mono">—</dd></div>
+            <div class="pf-list__row"><dt>Função principal</dt><dd id="pf-info-role">—</dd></div>
+            <div class="pf-list__row"><dt>Empresas vinculadas</dt><dd id="pf-info-count">—</dd></div>
+            <div class="pf-list__row"><dt>Cadastro</dt><dd id="pf-info-created">—</dd></div>
+            <div class="pf-list__row"><dt>Último acesso</dt><dd id="pf-info-lastlogin">—</dd></div>
+          </dl>
+        </section>
+
+        <!-- Aba: Histórico -->
+        <section class="pf-panel" data-panel="historico">
+          <h4 class="pf-section-title">Movimentações de empresa</h4>
+          <ul class="pf-org-history__list" id="pf-org-history-list">
+            <li class="pf-org-history__empty">Nenhuma movimentação registrada.</li>
+          </ul>
+
+          <h4 class="pf-section-title">Alterações de status</h4>
+          <ul class="pf-history__list" id="pf-status-history-list">
+            <li class="pf-history__empty">Nenhuma alteração registrada.</li>
+          </ul>
+        </section>
       </div>
-
-      <p id="edit-form-feedback" class="feedback feedback--error" role="alert" aria-live="polite" hidden></p>
-
-      <footer class="modal__foot">
-        <button type="button" class="btn btn--ghost" data-close-modal>Cancelar</button>
-        <button type="submit" class="btn btn--primary" id="edit-save-btn">
-          <span class="btn__label">Salvar alterações</span>
-          <span class="btn__spinner" aria-hidden="true"></span>
-        </button>
-      </footer>
-    </form>
-  </div>
-</div>
-
-<!-- ================= MODAL: GERENCIAR EMPRESAS DO USUÁRIO ================= -->
-<div class="modal" id="org-manage-modal" hidden>
-  <div class="modal__backdrop" data-close-modal></div>
-
-  <div class="modal__dialog modal__dialog--lg" role="dialog" aria-modal="true"
-       aria-labelledby="org-manage-title">
-    <header class="modal__head">
-      <h2 class="modal__title" id="org-manage-title">Gerenciar empresas do usuário</h2>
-      <button type="button" class="icon-btn modal__close" aria-label="Fechar" data-close-modal>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
-             stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
-      </button>
-    </header>
-
-    <div class="modal__body">
-
-      <div class="org-manage__user" id="org-manage-user">
-        <strong>—</strong>
-        <small>—</small>
-      </div>
-
-      <div class="field">
-        <label for="org-manage-search">Buscar empresa</label>
-        <div class="search">
-          <span class="search__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
-                 stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="11" cy="11" r="7" />
-              <path d="m20 20-3.5-3.5" />
-            </svg>
-          </span>
-          <input type="search" id="org-manage-search" class="search__input"
-                 placeholder="Nome ou código da empresa…"
-                 aria-label="Buscar empresa" autocomplete="off" />
-        </div>
-      </div>
-
-      <div class="org-manage__list" id="org-manage-list">
-        <div class="state-block state-block--compact">
-          <span class="spinner" aria-hidden="true"></span>
-          <p>Carregando empresas…</p>
-        </div>
-      </div>
-
-      <p id="org-manage-feedback" class="feedback feedback--error"
-         role="alert" aria-live="polite" hidden></p>
 
       <footer class="modal__foot">
         <button type="button" class="btn btn--ghost" data-close-modal>Fechar</button>
       </footer>
     </div>
   </div>
-</div>
 
-
-  <!-- MODAL: CONFIRMAR AÇÃO -->
+  <!-- ================= MODAL: CONFIRMAR ================= -->
   <div class="modal" id="confirm-modal" hidden>
     <div class="modal__backdrop" data-close-modal></div>
     <div class="modal__dialog modal__dialog--sm" role="alertdialog" aria-modal="true"
@@ -445,7 +344,7 @@
         </button>
       </header>
       <div class="modal__body">
-        <p id="confirm-text" class="confirm-text">Tem certeza que deseja continuar?</p>
+        <p id="confirm-text" class="confirm-text">Tem certeza?</p>
         <footer class="modal__foot">
           <button type="button" class="btn btn--ghost" data-close-modal>Cancelar</button>
           <button type="button" class="btn btn--danger" id="confirm-action-btn">
@@ -454,6 +353,104 @@
           </button>
         </footer>
       </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: FÉRIAS ================= -->
+  <div class="modal" id="vacation-modal" hidden>
+    <div class="modal__backdrop" data-close-modal></div>
+    <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="vacation-title">
+      <header class="modal__head">
+        <h2 class="modal__title" id="vacation-title">Colocar em férias</h2>
+        <button type="button" class="icon-btn modal__close" aria-label="Fechar" data-close-modal>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+               stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+        </button>
+      </header>
+      <form id="vacation-form" class="modal__body" novalidate>
+        <p class="confirm-text">
+          <strong id="vacation-user-name">—</strong>
+          na empresa <strong id="vacation-org-name">—</strong>
+        </p>
+        <div class="pf-grid-2">
+          <div class="field">
+            <label for="vacation-start">Início *</label>
+            <input type="date" id="vacation-start" required />
+          </div>
+          <div class="field">
+            <label for="vacation-end">Fim *</label>
+            <input type="date" id="vacation-end" required />
+          </div>
+        </div>
+        <div class="field">
+          <label for="vacation-notes">Observação</label>
+          <input type="text" id="vacation-notes" maxlength="200" placeholder="Ex.: Férias programadas" />
+        </div>
+        <p id="vacation-feedback" class="feedback feedback--error" role="alert" hidden></p>
+        <footer class="modal__foot">
+          <button type="button" class="btn btn--ghost" data-close-modal>Cancelar</button>
+          <button type="submit" class="btn btn--primary" id="vacation-confirm-btn">
+            <span class="btn__label">Confirmar férias</span>
+            <span class="btn__spinner" aria-hidden="true"></span>
+          </button>
+        </footer>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: BLOQUEIO ================= -->
+  <div class="modal" id="block-modal" hidden>
+    <div class="modal__backdrop" data-close-modal></div>
+    <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="block-title">
+      <header class="modal__head">
+        <h2 class="modal__title" id="block-title">Bloquear usuário</h2>
+        <button type="button" class="icon-btn modal__close" aria-label="Fechar" data-close-modal>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+               stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+        </button>
+      </header>
+      <form id="block-form" class="modal__body" novalidate>
+        <p class="confirm-text">
+          <strong id="block-user-name">—</strong>
+          na empresa <strong id="block-org-name">—</strong>
+        </p>
+        <div class="field">
+          <label for="block-duration">Duração</label>
+          <select id="block-duration">
+            <option value="1h">1 hora</option>
+            <option value="6h">6 horas</option>
+            <option value="12h">12 horas</option>
+            <option value="1d">1 dia</option>
+            <option value="3d" selected>3 dias</option>
+            <option value="7d">7 dias</option>
+            <option value="15d">15 dias</option>
+            <option value="30d">30 dias</option>
+            <option value="custom">Personalizado</option>
+          </select>
+        </div>
+        <div class="pf-grid-2" id="block-custom-dates" hidden>
+          <div class="field">
+            <label for="block-start">Início</label>
+            <input type="datetime-local" id="block-start" />
+          </div>
+          <div class="field">
+            <label for="block-end">Fim</label>
+            <input type="datetime-local" id="block-end" />
+          </div>
+        </div>
+        <div class="field">
+          <label for="block-reason">Motivo *</label>
+          <input type="text" id="block-reason" maxlength="200" required />
+        </div>
+        <p id="block-feedback" class="feedback feedback--error" role="alert" hidden></p>
+        <footer class="modal__foot">
+          <button type="button" class="btn btn--ghost" data-close-modal>Cancelar</button>
+          <button type="submit" class="btn btn--danger" id="block-confirm-btn">
+            <span class="btn__label">Bloquear</span>
+            <span class="btn__spinner" aria-hidden="true"></span>
+          </button>
+        </footer>
+      </form>
     </div>
   </div>
 

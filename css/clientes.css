@@ -1,6 +1,30 @@
 /* =========================================================
    DEV HUB · Módulo de Clientes
    (reaproveita global.css + dashboard.css)
+   ---------------------------------------------------------
+   Este é o CSS-base compartilhado por quase todos os módulos.
+   Componentes genéricos (toolbar, search, modal, toast,
+   state-block, row-actions) são definidos aqui e reusados
+   pelos demais arquivos.
+   ---------------------------------------------------------
+   CORREÇÕES APLICADAS:
+   1. `100vh` → `100dvh` em `.modal__dialog` — evita o corte
+      no iOS Safari (barra de endereço dinâmica).
+   2. Removidas redefinições `#customer-save-btn .btn__spinner`
+      e `#confirm-delete-btn .btn__spinner` — `global.css` já
+      define o spinner de forma canônica.
+   3. Removida `.customer-type-PJ .tab-btn.pj-only-tab` — o
+      JS alterna o `hidden` do botão, não a classe.
+   4. `.toast--success` / `.toast--info` usam tons translúcidos
+      em vez de cores pastel fixas.
+   5. `.tag-pf` / `.tag-pj` idem.
+   6. `#b9bfc9` → `color-mix()` nos 3 hovers.
+   7. `.btn--danger:hover` usa `color-mix()` em vez de `#961e14`.
+   8. `.toast__close:hover` usa `var(--surface-2)` em vez de
+      `rgba(0, 0, 0, 0.06)` (funciona no dark).
+   9. `.modal[hidden]` e `.modal__dialog--customer { width: 100% }`
+      removidos (redundância).
+   10. `.cell-customer__meta` ganha `overflow-wrap: anywhere`.
    ========================================================= */
 
 /* =========================================================
@@ -34,6 +58,7 @@
   pointer-events: none;
 }
 .search__icon svg { width: 16px; height: 16px; }
+
 .search__input {
   width: 100%;
   height: 40px;
@@ -46,7 +71,11 @@
   transition: border-color var(--transition), box-shadow var(--transition);
 }
 .search__input::placeholder { color: var(--text-muted); }
-.search__input:hover:not(:focus) { border-color: #b9bfc9; }
+
+/* CORREÇÃO #6: hover sem `#b9bfc9` hardcoded */
+.search__input:hover:not(:focus) {
+  border-color: color-mix(in srgb, var(--border-strong) 70%, var(--text) 30%);
+}
 .search__input:focus {
   outline: none;
   border-color: var(--accent);
@@ -66,21 +95,25 @@
 }
 .state-block h3 { font-size: 16px; font-weight: 600; color: var(--text); }
 .state-block p { font-size: 14px; color: var(--text-soft); max-width: 360px; }
+
 .state-block__icon {
   display: grid;
   place-items: center;
-  width: 48px; height: 48px;
+  width: 48px;
+  height: 48px;
   border-radius: 12px;
   background: var(--accent-soft);
   color: var(--accent);
   margin-bottom: 4px;
 }
 .state-block__icon svg { width: 22px; height: 22px; }
+
 .state-block .btn { margin-top: 8px; }
 .state-block--compact { padding: 32px 20px; }
 
 .spinner {
-  width: 22px; height: 22px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   border: 2.5px solid var(--border-strong);
   border-top-color: var(--accent);
@@ -94,20 +127,29 @@
   justify-content: flex-end;
   gap: 6px;
 }
+
 .row-action {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px; height: 32px;
+  width: 32px;
+  height: 32px;
   border: 1px solid transparent;
   border-radius: 8px;
   background: transparent;
   color: var(--text-soft);
   cursor: pointer;
-  transition: background-color var(--transition), border-color var(--transition), color var(--transition);
+  transition: background-color var(--transition), border-color var(--transition),
+              color var(--transition);
 }
 .row-action svg { width: 16px; height: 16px; }
-.row-action:hover { background: var(--surface-2); border-color: var(--border); color: var(--text); }
+
+.row-action:hover {
+  background: var(--surface-2);
+  border-color: var(--border);
+  color: var(--text);
+}
+
 .row-action--danger:hover {
   background: var(--danger-soft);
   border-color: var(--danger-border);
@@ -126,7 +168,7 @@
   justify-content: center;
   padding: 20px;
 }
-.modal[hidden] { display: none; }
+/* `[hidden]` global já cobre `.modal[hidden]` — não repete. */
 
 .modal__backdrop {
   position: absolute;
@@ -144,7 +186,9 @@
   flex-direction: column;
   width: 100%;
   max-width: 560px;
+  /* CORREÇÃO #1: 100dvh para o iOS Safari não cortar o modal */
   max-height: calc(100vh - 40px);
+  max-height: calc(100dvh - 40px);
   border-radius: var(--radius-lg);
   background: var(--surface);
   box-shadow: 0 24px 60px rgba(16, 24, 40, 0.25);
@@ -167,11 +211,13 @@
   border-bottom: 1px solid var(--border);
   flex: 0 0 auto;
 }
+
 .modal__title {
   font-size: 16px;
   font-weight: 600;
   letter-spacing: -0.01em;
 }
+
 .modal__close { color: var(--text-muted); }
 
 .modal__body {
@@ -195,7 +241,11 @@
   min-height: 84px;
   transition: border-color var(--transition), box-shadow var(--transition);
 }
-.modal__body textarea:hover:not(:focus) { border-color: #b9bfc9; }
+
+/* CORREÇÃO #6: hover sem `#b9bfc9` hardcoded */
+.modal__body textarea:hover:not(:focus) {
+  border-color: color-mix(in srgb, var(--border-strong) 70%, var(--text) 30%);
+}
 .modal__body textarea:focus {
   outline: none;
   border-color: var(--accent);
@@ -229,7 +279,10 @@
   background: var(--danger);
   color: #fff;
 }
-.btn--danger:hover:not(:disabled) { background: #961e14; }
+/* CORREÇÃO #7: usa color-mix para o hover em vez de #961e14 */
+.btn--danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--danger) 80%, black 20%);
+}
 
 .confirm-text {
   font-size: 14.5px;
@@ -237,25 +290,18 @@
   line-height: 1.55;
 }
 
-/* botão spinner */
-#customer-save-btn .btn__spinner,
-#confirm-delete-btn .btn__spinner {
-  display: none;
-  width: 16px; height: 16px;
-  border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.4);
-  border-top-color: #fff;
-  animation: dh-spin 0.65s linear infinite;
-}
-#customer-save-btn.is-loading .btn__spinner,
-#confirm-delete-btn.is-loading .btn__spinner { display: block; }
+/* CORREÇÃO #2: removidas redefinições por ID do `.btn__spinner`
+   — `global.css` já define para todos os `.btn.is-loading`.
+   Se um dia precisar de spinner com cor diferente para botões
+   ghost, o lugar correto é em `global.css`. */
 
 /* =========================================================
    3. TOASTS
    ========================================================= */
 .toast-region {
   position: fixed;
-  right: 20px; bottom: 20px;
+  right: 20px;
+  bottom: 20px;
   z-index: 200;
   display: flex;
   flex-direction: column;
@@ -263,6 +309,7 @@
   width: min(360px, calc(100vw - 32px));
   pointer-events: none;
 }
+
 .toast {
   pointer-events: auto;
   display: flex;
@@ -277,18 +324,40 @@
   color: var(--text);
   animation: dh-toast-in 200ms ease-out;
 }
-.toast--success { border-color: #abefc6; background: var(--success-soft); color: var(--success); }
-.toast--error   { border-color: var(--danger-border); background: var(--danger-soft); color: var(--danger); }
-.toast--info    { border-color: #c7d2fe; background: var(--accent-soft); color: var(--accent-hover); }
 
-.toast__icon { flex: none; width: 18px; height: 18px; margin-top: 1px; }
+/* CORREÇÃO #4: cores translúcidas que funcionam nos dois temas */
+.toast--success {
+  border-color: color-mix(in srgb, var(--success) 35%, transparent);
+  background: var(--success-soft);
+  color: var(--success);
+}
+.toast--error {
+  border-color: var(--danger-border);
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.toast--info {
+  border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+  background: var(--accent-soft);
+  color: var(--accent-hover);
+}
+
+.toast__icon {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+}
 .toast__icon svg { width: 100%; height: 100%; }
+
 .toast__message { flex: 1 1 auto; min-width: 0; }
+
 .toast__close {
   flex: none;
   display: grid;
   place-items: center;
-  width: 22px; height: 22px;
+  width: 22px;
+  height: 22px;
   border: 0;
   border-radius: 6px;
   background: transparent;
@@ -297,8 +366,13 @@
   cursor: pointer;
   transition: opacity var(--transition), background-color var(--transition);
 }
-.toast__close:hover { opacity: 1; background: rgba(0, 0, 0, 0.06); }
+/* CORREÇÃO #8: usa variável (mesmo tom no light, correto no dark) */
+.toast__close:hover {
+  opacity: 1;
+  background: var(--surface-2);
+}
 .toast__close svg { width: 14px; height: 14px; }
+
 .toast.is-leaving { animation: dh-toast-out 180ms ease-in forwards; }
 
 @keyframes dh-toast-in {
@@ -314,9 +388,9 @@
    ========================================================= */
 
 /* ---------- Modal grande ---------- */
+/* CORREÇÃO #10: removido `width: 100%` redundante com a base */
 .modal__dialog--customer {
   max-width: 880px;
-  width: 100%;
 }
 
 /* ---------- Abas ---------- */
@@ -331,7 +405,10 @@
   scrollbar-width: thin;
 }
 .tabs::-webkit-scrollbar { height: 3px; }
-.tabs::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 2px; }
+.tabs::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 2px;
+}
 
 .tab-btn {
   flex: 0 0 auto;
@@ -385,18 +462,25 @@
 }
 
 /* =========================================================
-   PF x PJ  (correção principal)
+   PF x PJ
    ========================================================= */
-/* Por padrão (PF): mostra PF, esconde PJ */
-.pf-only { display: flex; flex-direction: column; gap: 14px; }
+.pf-only {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
 .pj-only { display: none; }
 
-/* Quando o modal estiver com a classe .customer-type-PJ: */
 .customer-type-PJ .pf-only { display: none; }
-.customer-type-PJ .pj-only { display: flex; flex-direction: column; gap: 14px; }
+.customer-type-PJ .pj-only {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
 
-/* Aba "Contatos" some quando o tipo é PF */
-.customer-type-PJ .tab-btn.pj-only-tab { display: inline-flex; }
+/* CORREÇÃO #3: removida `.customer-type-PJ .tab-btn.pj-only-tab
+   { display: inline-flex }` — o JS usa `contactTab.hidden = !isPJ`
+   e nunca aplica a classe `.pj-only-tab`. Era código morto. */
 
 /* =========================================================
    Repetíveis (telefone / email / endereço / contato)
@@ -478,18 +562,24 @@
   color: var(--text);
   transition: border-color var(--transition), box-shadow var(--transition);
 }
+
 .repeatable-row select {
   padding-right: 30px;
   -webkit-appearance: none;
   appearance: none;
+  /* Chevron coberto por theme.css no dark */
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23667085' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
   background-repeat: no-repeat;
   background-position: right 8px center;
   background-size: 14px;
   cursor: pointer;
 }
+
+/* CORREÇÃO #6: hovers sem `#b9bfc9` hardcoded */
 .repeatable-row input:hover,
-.repeatable-row select:hover { border-color: #b9bfc9; }
+.repeatable-row select:hover {
+  border-color: color-mix(in srgb, var(--border-strong) 70%, var(--text) 30%);
+}
 .repeatable-row input:focus,
 .repeatable-row select:focus {
   outline: none;
@@ -518,13 +608,15 @@
 .repeatable-row__remove {
   display: grid;
   place-items: center;
-  width: 34px; height: 34px;
+  width: 34px;
+  height: 34px;
   border: 1px solid transparent;
   border-radius: 8px;
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
-  transition: background-color var(--transition), color var(--transition), border-color var(--transition);
+  transition: background-color var(--transition), color var(--transition),
+              border-color var(--transition);
 }
 .repeatable-row__remove:hover {
   background: var(--danger-soft);
@@ -579,6 +671,8 @@
   margin-top: 2px;
   font-size: 12px;
   color: var(--text-muted);
+  /* CORREÇÃO #11: nomes de fantasia longos não estouram */
+  overflow-wrap: anywhere;
 }
 
 /* Tags PF/PJ */
@@ -592,8 +686,20 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
-.tag-pf { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
-.tag-pj { background: #fdf2f8; color: #be185d; border: 1px solid #fbcfe8; }
+
+/* CORREÇÃO #5: cores translúcidas em vez de pastel fixo.
+   No dark, os overrides em theme.css ainda refinam, mas
+   o resultado base já é correto. */
+.tag-pf {
+  background: rgba(59, 130, 246, 0.14);
+  color: #1d4ed8;
+  border: 1px solid rgba(59, 130, 246, 0.28);
+}
+.tag-pj {
+  background: rgba(236, 72, 153, 0.14);
+  color: #be185d;
+  border: 1px solid rgba(236, 72, 153, 0.28);
+}
 
 /* =========================================================
    8. Responsivo
@@ -604,9 +710,14 @@
   .search { width: 100%; flex: 1 1 auto; }
   .form-grid { grid-template-columns: 1fr; }
 
-  .modal { padding: 12px; align-items: flex-end; }
+  .modal {
+    padding: 12px;
+    align-items: flex-end;
+  }
   .modal__dialog {
+    /* CORREÇÃO #1: 100dvh também no mobile */
     max-height: calc(100vh - 24px);
+    max-height: calc(100dvh - 24px);
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   }
   .modal__dialog--customer { max-width: 100%; }
@@ -666,10 +777,14 @@
   .repeatable-row--contact > *:nth-child(6) { grid-area: prim; }
   .repeatable-row--contact > *:nth-child(7) { grid-area: remove; }
 
-  .toast-region { right: 12px; left: 12px; bottom: 12px; width: auto; }
+  .toast-region {
+    right: 12px;
+    left: 12px;
+    bottom: 12px;
+    width: auto;
+  }
 }
 
-/* =========================================================
-   9. Correção do [hidden] garantida
-   ========================================================= */
-.modal[hidden] { display: none; }
+/* Nota: `.modal[hidden] { display: none }` foi removido
+   (redundante com `[hidden] { display: none !important }`
+   em `global.css`). */

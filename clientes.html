@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Clientes · DEV HUB</title>
 
+  <!-- Tema ANTES da CSS (evita flash de tema) -->
   <script src="js/theme.js"></script>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -15,8 +16,20 @@
   <link rel="stylesheet" href="css/dashboard.css" />
   <link rel="stylesheet" href="css/clientes.css" />
   <link rel="stylesheet" href="css/theme.css" />
+
+  <!-- Anti-flash do topnav -->
+  <script>
+    (function () {
+      try {
+        if (!/[?&]blocked=1/.test(location.search)) {
+          document.documentElement.classList.add('layout-topnav');
+        }
+      } catch (e) {}
+    })();
+  </script>
 </head>
-<body data-page="customers">
+
+<body class="layout-topnav" data-page="customers">
 
   <a class="skip-link" href="#main">Pular para o conteúdo principal</a>
 

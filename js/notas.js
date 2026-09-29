@@ -3,6 +3,19 @@
    ---------------------------------------------------------
    Documentos internos de venda. NÃO é NF-e fiscal.
    Usa apenas window.db (cliente já criado em js/supabase.js).
+   ---------------------------------------------------------
+   CORREÇÕES APLICADAS:
+   1. `init()` usa `Auth.requireSession()` — antes pulava o
+      guard de status (banned/suspended/vacation) chamando
+      `getUser()` direto.
+   2. Carrega `Perms` e bloqueia a página se o usuário não
+      tem `notes.view`. Esconde o botão de impressão se não
+      tem `notes.print`.
+   3. Race condition em `openNotaModal`: token incremental
+      descarta respostas obsoletas.
+   4. `printNota` usa try/finally pra garantir que a classe
+      `printing-nota` é sempre removida.
+   5. Guards de null em `modalEls.body`.
    ========================================================= */
 
 (function () {
@@ -51,7 +64,15 @@
     customStart: '',
     customEnd: '',
     loading: false,
-    currentSaleId: null
+    currentSaleId: null,
+
+    /* Token para evitar race em openNotaModal */
+    openToken: 0,
+
+    perms: {
+      view:  true,
+      print: true
+    }
   };
 
   document.addEventListener('DOMContentLoaded', init);
@@ -77,27 +98,31 @@
     setupFilters();
     setupModal();
 
-    // Verificação de sessão (getUser) — se não houver usuário, volta pro login
-    try {
-      const result = await window.db.auth.getUser();
-      const user = result && result.data ? result.data.user : null;
+    /* CORREÇÃO #1: requireSession roda o guard de status.
+       Antes usávamos getUser(), que não bloqueia usuário
+       banido/suspenso/em férias. */
+    const session = await Auth.requireSession();
+    if (!session) return;
 
-      if (!user) {
-        window.location.replace('index.html');
-        return;
-      }
+    watchAuthChanges();
 
-      const profile = Auth.getProfile
-        ? await Auth.getProfile(user.id)
-        : null;
-      renderUser(user, profile);
-    } catch (error) {
-      console.error('[DEV HUB] Falha ao verificar sessão:', error);
-      window.location.replace('index.html');
+    const profile = await Auth.getProfile(session.user.id);
+    renderUser(session.user, profile);
+
+    /* CORREÇÃO #2: carrega permissões e aplica guard de página */
+    if (window.Perms && typeof window.Perms.load === 'function') {
+      try { await window.Perms.load(); } catch (e) { /* fallback */ }
+    }
+
+    state.perms.view  = hasPerm('notes.view',  true);
+    state.perms.print = hasPerm('notes.print', true);
+
+    if (!state.perms.view) {
+      window.location.replace('dashboard.html');
       return;
     }
 
-    watchAuthChanges();
+    applyPermissionsToUI();
 
     // Define datas padrão do período personalizado
     const now = new Date();
@@ -107,6 +132,19 @@
     setInputValue('notas-end', state.customEnd);
 
     await loadNotas();
+  }
+
+  function hasPerm(cap, fallback) {
+    if (window.Perms && typeof window.Perms.has === 'function') {
+      return window.Perms.has(cap);
+    }
+    return fallback !== false;
+  }
+
+  function applyPermissionsToUI() {
+    /* Esconde o botão "Imprimir" do modal se não tem notes.print */
+    const printBtn = document.getElementById('nota-print-btn');
+    if (printBtn) printBtn.hidden = !state.perms.print;
   }
 
   /* =========================================================
@@ -429,7 +467,6 @@
   }
 
   async function loadCustomersMap() {
-    // Carrega todos os clientes referenciados
     const ids = Array.from(new Set(
       state.sales
         .map(function (s) { return s.customer_id; })
@@ -629,7 +666,14 @@
   }
 
   async function openNotaModal(sale) {
-    if (!modalEls.modal) return;
+    if (!modalEls.modal || !modalEls.body) return;
+
+    /* CORREÇÃO #3: token para descartar respostas obsoletas.
+       Se o usuário abrir a nota A e depois a nota B antes da
+       A terminar de carregar, a resposta da A não sobrescreve
+       mais o conteúdo da B. */
+    state.openToken += 1;
+    const myToken = state.openToken;
 
     state.currentSaleId = sale.id || null;
 
@@ -642,16 +686,25 @@
 
     try {
       const items = await fetchSaleItems(sale.id);
+
+      /* Se outra chamada começou depois dessa, descarta o resultado */
+      if (myToken !== state.openToken) return;
+
       renderNotaDoc(sale, items);
     } catch (error) {
+      if (myToken !== state.openToken) return;
       console.error('[DEV HUB] Falha ao carregar itens da nota:', error);
-      modalEls.body.innerHTML =
-        '<div class="state-block"><p>Não foi possível carregar os itens deste documento.</p></div>';
+      if (modalEls.body) {
+        modalEls.body.innerHTML =
+          '<div class="state-block"><p>Não foi possível carregar os itens deste documento.</p></div>';
+      }
     }
   }
 
   function closeNotaModal() {
     if (!modalEls.modal) return;
+    /* Invalida qualquer fetch em curso */
+    state.openToken += 1;
     modalEls.modal.hidden = true;
     document.body.style.overflow = '';
     state.currentSaleId = null;
@@ -871,26 +924,35 @@
       showToast('Abra uma nota antes de imprimir.', 'error');
       return;
     }
+    if (!state.perms.print) {
+      showToast('Você não tem permissão para imprimir notas.', 'error');
+      return;
+    }
 
+    /* CORREÇÃO #4: try/finally garante que a classe é removida
+       mesmo se window.print() lançar (extensões, bloqueios). */
     document.body.classList.add('printing-nota');
 
-    // Após o print (ou cancelamento), remove a classe.
-    // O setTimeout aqui é só para limpeza — não é usado para
-    // resolver loading nem para esconder nada.
     const cleanup = function () {
       document.body.classList.remove('printing-nota');
       window.removeEventListener('afterprint', cleanup);
     };
-    window.addEventListener('afterprint', cleanup);
-    setTimeout(cleanup, 2000);
 
-    window.print();
+    window.addEventListener('afterprint', cleanup);
+
+    try {
+      window.print();
+    } finally {
+      // fallback para navegadores que não disparam afterprint
+      setTimeout(cleanup, 2000);
+    }
   }
 
   /* =========================================================
      Helpers de dados
      ========================================================= */
   function customerNameOf(sale) {
+    if (!sale) return 'Não informado';
     if (sale.customers) {
       const c = Array.isArray(sale.customers) ? sale.customers[0] : sale.customers;
       if (c && c.name) return c.name;
@@ -902,6 +964,7 @@
   }
 
   function customerDocumentOf(sale) {
+    if (!sale) return '';
     if (sale.customers) {
       const c = Array.isArray(sale.customers) ? sale.customers[0] : sale.customers;
       if (c && c.cpf_cnpj) return String(c.cpf_cnpj);
@@ -1006,7 +1069,7 @@
   }
 
   function escapeHtml(value) {
-    return String(value)
+    return String(value == null ? '' : value)
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')

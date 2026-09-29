@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Produtos · DEV HUB</title>
 
+  <!-- Tema ANTES da CSS (evita flash de tema) -->
+  <script src="js/theme.js"></script>
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -13,8 +16,166 @@
   <link rel="stylesheet" href="css/dashboard.css" />
   <link rel="stylesheet" href="css/clientes.css" />
   <link rel="stylesheet" href="css/produtos.css" />
+
+  <!-- Anti-flash do topnav -->
+  <script>
+    (function () {
+      try {
+        if (!/[?&]blocked=1/.test(location.search)) {
+          document.documentElement.classList.add('layout-topnav');
+        }
+      } catch (e) {}
+    })();
+  </script>
+
+  <!-- ========================================================
+       ENHANCEMENT · Autocomplete da busca
+       Pode mover este bloco para css/produtos.css quando quiser.
+       ======================================================== -->
+  <style>
+    .search-wrap {
+      position: relative;
+      display: inline-block;
+    }
+
+    .search-wrap .search__clear {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: grid;
+      place-items: center;
+      width: 24px;
+      height: 24px;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--text-muted, #667085);
+      cursor: pointer;
+      transition: background-color .12s, color .12s;
+    }
+    .search-wrap .search__clear:hover {
+      background: var(--surface-2, #f2f4f7);
+      color: var(--text, #101828);
+    }
+    .search-wrap .search__clear svg { width: 14px; height: 14px; }
+    .search-wrap .search__clear[hidden] { display: none !important; }
+
+    /* Reserva espaço pra o botão de limpar não colidir com o texto */
+    .search-wrap .search__input { padding-right: 36px; }
+
+    /* ---------- Lista de sugestões ---------- */
+    .search-suggestions {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      right: 0;
+      min-width: 340px;
+      max-height: 340px;
+      overflow-y: auto;
+      padding: 6px;
+      margin: 0;
+      list-style: none;
+      background: var(--surface, #fff);
+      border: 1px solid var(--border, #eaecf0);
+      border-radius: 12px;
+      box-shadow: 0 12px 32px -8px rgba(16, 24, 40, .18);
+      z-index: 60;
+      animation: sug-pop 140ms ease-out;
+    }
+    @keyframes sug-pop {
+      from { opacity: 0; transform: translateY(-4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .search-suggestions[hidden] { display: none !important; }
+
+    .search-suggestions__group {
+      padding: 8px 10px 4px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted, #98a2b3);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+
+    .search-suggestions__item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      color: var(--text, #101828);
+      font-size: 13.5px;
+      transition: background-color .12s, color .12s;
+    }
+    .search-suggestions__item:hover,
+    .search-suggestions__item.is-selected {
+      background: var(--accent-soft, #eef2ff);
+      color: var(--accent-hover, #4338ca);
+    }
+
+    .search-suggestions__thumb {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      background: var(--surface-2, #f2f4f7);
+      display: grid;
+      place-items: center;
+      flex: none;
+      overflow: hidden;
+      font-size: 14px;
+      color: var(--text-muted, #667085);
+    }
+    .search-suggestions__thumb img {
+      width: 100%; height: 100%; object-fit: cover;
+    }
+
+    .search-suggestions__label { flex: 1 1 auto; min-width: 0; }
+    .search-suggestions__label mark {
+      background: transparent;
+      color: var(--accent, #4f46e5);
+      font-weight: 700;
+      padding: 0;
+    }
+
+    .search-suggestions__meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: none;
+      font-size: 12px;
+      color: var(--text-muted, #667085);
+    }
+    .search-suggestions__meta .price {
+      font-weight: 600;
+      color: var(--text, #101828);
+    }
+    .search-suggestions__item.is-selected .search-suggestions__meta,
+    .search-suggestions__item.is-selected .search-suggestions__meta .price {
+      color: var(--accent-hover, #4338ca);
+    }
+
+    .search-suggestions__badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      background: #fef3e6;
+      color: #b54708;
+    }
+
+    .search-suggestions__empty {
+      padding: 22px 12px;
+      text-align: center;
+      font-size: 13px;
+      color: var(--text-muted, #667085);
+    }
+  </style>
 </head>
-<body data-page="products">
+<body class="layout-topnav" data-page="products">
 
   <a class="skip-link" href="#main">Pular para o conteúdo principal</a>
 
@@ -94,19 +255,36 @@
           </div>
 
           <div class="toolbar__actions">
-            <div class="search">
-              <span class="search__icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
-                     stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="11" cy="11" r="7" />
-                  <path d="m20 20-3.5-3.5" />
-                </svg>
-              </span>
-              <input type="search" id="search-input" class="search__input"
-                     placeholder="Buscar produtos..."
-                     aria-label="Buscar produtos por nome, código ou descrição"
-                     autocomplete="off" />
+            <!-- ============ AUTOCOMPLETE ============ -->
+            <div class="search-wrap" id="search-wrap">
+              <div class="search">
+                <span class="search__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+                       stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="7" />
+                    <path d="m20 20-3.5-3.5" />
+                  </svg>
+                </span>
+                <input type="search" id="search-input" class="search__input"
+                       placeholder="Buscar produtos..."
+                       aria-label="Buscar produtos por nome, código ou descrição"
+                       autocomplete="off"
+                       role="combobox"
+                       aria-autocomplete="list"
+                       aria-controls="search-suggestions"
+                       aria-expanded="false" />
+                <button type="button" class="search__clear" id="search-clear"
+                        aria-label="Limpar busca" hidden>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                       stroke-linecap="round" aria-hidden="true">
+                    <path d="M6 6l12 12M18 6L6 18" />
+                  </svg>
+                </button>
+              </div>
+              <ul class="search-suggestions" id="search-suggestions"
+                  role="listbox" hidden></ul>
             </div>
+            <!-- ========== /AUTOCOMPLETE ========== -->
 
             <button type="button" class="btn btn--primary" id="new-product-btn">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -185,9 +363,7 @@
         <!-- Fotos -->
         <div class="field">
           <label>Fotos do produto</label>
-          <div class="product-photos" id="product-photos">
-            <!-- 3 slots gerados por JS -->
-          </div>
+          <div class="product-photos" id="product-photos"></div>
           <p class="field__hint">Até 3 imagens. JPG, PNG ou WEBP, máx. 2 MB cada.</p>
         </div>
 
@@ -299,5 +475,303 @@
   <script src="js/nav.js"></script>
   <script src="js/permissions.js"></script>
   <script src="js/produtos.js"></script>
+
+  <!-- ========================================================
+       ENHANCEMENT · Autocomplete da busca de produtos
+       Lê os produtos direto das linhas de #products-body
+       (não interfere no produtos.js). Pode mover para
+       js/produtos.js quando quiser.
+       ======================================================== -->
+  <script>
+  (function () {
+    'use strict';
+
+    const input   = document.getElementById('search-input');
+    const clearBt = document.getElementById('search-clear');
+    const listEl  = document.getElementById('search-suggestions');
+    const wrapEl  = document.getElementById('search-wrap');
+    const tbody   = document.getElementById('products-body');
+
+    if (!input || !listEl || !wrapEl || !tbody) return;
+
+    const MAX = 8;
+
+    /* ---------------- Helpers ---------------- */
+    const fmtBRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+
+    const escapeHTML = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+
+    const norm = (s) => String(s == null ? '' : s)
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase().trim();
+
+    function highlight(text, q) {
+      if (!q) return escapeHTML(text);
+      const hay = norm(text);
+      const needle = norm(q);
+      const i = hay.indexOf(needle);
+      if (i === -1) return escapeHTML(text);
+      return escapeHTML(text.slice(0, i)) +
+             '<mark>' + escapeHTML(text.slice(i, i + needle.length)) + '</mark>' +
+             escapeHTML(text.slice(i + needle.length));
+    }
+
+    /* -------- Parser de linha da tabela --------
+       Estrutura esperada (por <th>):
+       0 Produto | 1 Código | 2 Preço | 3 Estoque | 4 Mínimo | 5 Status | 6 Ações
+    -------------------------------------------- */
+    function parseRow(tr) {
+      const tds = tr.children;
+      if (!tds || tds.length < 6) return null;
+
+      const nameEl = tds[0].querySelector('.cell-product__name') || tds[0];
+      const subEl  = tds[0].querySelector('.cell-product__sub');
+
+      const thumbEl = tds[0].querySelector('.cell-product__thumb img');
+      const image = thumbEl ? thumbEl.getAttribute('src') : null;
+
+      const name = (nameEl.textContent || '').trim();
+      const code = (tds[1].textContent || '').trim();
+      const priceTxt = (tds[2].textContent || '').trim();
+      const priceNum = Number(priceTxt.replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.')) || 0;
+      const stockTxt = (tds[3].textContent || '').trim();
+      const minTxt   = (tds[4].textContent || '').trim();
+      const stock = parseInt(stockTxt.replace(/\D/g, ''), 10) || 0;
+      const min   = parseInt(minTxt.replace(/\D/g, ''), 10) || 0;
+      const sub = subEl ? (subEl.textContent || '').trim() : '';
+
+      const id = tr.getAttribute('data-id') || tr.dataset.id || '';
+
+      return { id, name, code, sub, image, priceNum, priceTxt, stock, min };
+    }
+
+    /* ---------------- Cache em memória ---------------- */
+    let cache = [];           // lista completa (todos os produtos visíveis na tabela)
+    let cached = false;       // já conseguimos capturar?
+
+    function tryCapture() {
+      const rows = tbody.querySelectorAll('tr');
+      if (rows.length === 0) return false;
+      // Só consideramos "lista completa" quando o input está vazio.
+      if (input.value.trim() !== '') return false;
+      cache = Array.from(rows).map(parseRow).filter(Boolean);
+      cached = cache.length > 0;
+      return cached;
+    }
+
+    // Observa o tbody: quando ele ganhar/atualizar linhas com o input vazio,
+    // recapturamos a lista completa.
+    const mo = new MutationObserver(() => {
+      if (input.value.trim() === '') tryCapture();
+    });
+    mo.observe(tbody, { childList: true, subtree: true });
+
+    // Fallback: em caso de cache inicial vazio, tenta algumas vezes.
+    [0, 300, 800, 1500, 2500].forEach(ms => setTimeout(() => {
+      if (!cached) tryCapture();
+    }, ms));
+
+    /* ---------------- Renderização ---------------- */
+    let items = [];
+    let idx = -1;
+    let open = false;
+
+    function filter(q) {
+      if (!cached) tryCapture();
+      if (!cached) return [];
+
+      const needle = norm(q);
+      if (!needle) return cache.slice(0, MAX);
+
+      const scored = [];
+      for (const p of cache) {
+        const name = norm(p.name);
+        const code = norm(p.code);
+        const sub  = norm(p.sub);
+        let s = -1;
+        if (name.startsWith(needle))      s = 100;
+        else if (name.includes(needle))   s = 80;
+        else if (code.startsWith(needle)) s = 70;
+        else if (code.includes(needle))   s = 60;
+        else if (sub.includes(needle))    s = 50;
+        if (s >= 0) scored.push({ p, s });
+      }
+      scored.sort((a, b) => b.s - a.s || a.p.name.localeCompare(b.p.name));
+      return scored.slice(0, MAX).map(x => x.p);
+    }
+
+    function render(q) {
+      items = filter(q);
+      idx = items.length ? 0 : -1;
+
+      if (items.length === 0) {
+        listEl.innerHTML =
+          '<li class="search-suggestions__empty">' +
+            (q ? 'Nenhum produto encontrado para “' + escapeHTML(q) + '”.'
+               : 'Nenhum produto encontrado.') +
+          '</li>';
+        show();
+        return;
+      }
+
+      const html = [];
+      html.push('<li class="search-suggestions__group" role="presentation">' +
+                (q ? 'Sugestões' : 'Produtos recentes') + '</li>');
+
+      items.forEach((p, i) => {
+        const thumb = p.image
+          ? '<img src="' + escapeHTML(p.image) + '" alt="">'
+          : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" ' +
+            'stroke-linecap="round" stroke-linejoin="round" width="14" height="14">' +
+            '<path d="m21 8-9-5-9 5v8l9 5 9-5z"/><path d="m3 8 9 5 9-5"/><path d="M12 21v-8"/></svg>';
+
+        const low = p.stock <= p.min && p.min > 0;
+
+        html.push(
+          '<li class="search-suggestions__item' + (i === idx ? ' is-selected' : '') + '" ' +
+              'role="option" data-idx="' + i + '" data-id="' + escapeHTML(p.id) + '" ' +
+              'aria-selected="' + (i === idx) + '">' +
+            '<span class="search-suggestions__thumb">' + thumb + '</span>' +
+            '<span class="search-suggestions__label">' + highlight(p.name, q) +
+              (p.code ? ' <span style="color:var(--text-muted,#98a2b3);font-size:12px"> · ' +
+                        escapeHTML(p.code) + '</span>' : '') +
+            '</span>' +
+            '<span class="search-suggestions__meta">' +
+              '<span class="price">' + fmtBRL.format(p.priceNum) + '</span>' +
+              (low ? '<span class="search-suggestions__badge">Baixo</span>' : '') +
+            '</span>' +
+          '</li>'
+        );
+      });
+
+      listEl.innerHTML = html.join('');
+      show();
+    }
+
+    function show() {
+      listEl.hidden = false;
+      input.setAttribute('aria-expanded', 'true');
+      open = true;
+    }
+    function hide() {
+      listEl.hidden = true;
+      input.setAttribute('aria-expanded', 'false');
+      open = false;
+      idx = -1;
+    }
+
+    function setSelected(i) {
+      if (items.length === 0) return;
+      idx = (i + items.length) % items.length;
+      listEl.querySelectorAll('.search-suggestions__item').forEach((el, k) => {
+        const on = k === idx;
+        el.classList.toggle('is-selected', on);
+        el.setAttribute('aria-selected', on ? 'true' : 'false');
+        if (on && el.scrollIntoView) el.scrollIntoView({ block: 'nearest' });
+      });
+    }
+
+    function choose(i) {
+      const p = items[i];
+      if (!p) return;
+
+      // Preenche o input e dispara o evento 'input' para o produtos.js
+      // aplicar o filtro na tabela normalmente.
+      input.value = p.name;
+      if (clearBt) clearBt.hidden = false;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+
+      hide();
+      input.blur();
+
+      // Destaque visual temporário na linha correspondente
+      const row = p.id
+        ? tbody.querySelector('tr[data-id="' + CSS.escape(p.id) + '"]')
+        : Array.from(tbody.querySelectorAll('tr')).find(tr => {
+            const c = tr.children[0];
+            return c && c.textContent.indexOf(p.name) !== -1;
+          });
+
+      if (row && row.scrollIntoView) {
+        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const prev = row.style.backgroundColor;
+        row.style.transition = 'background-color .4s';
+        row.style.backgroundColor = 'var(--accent-soft, #eef2ff)';
+        setTimeout(() => {
+          row.style.backgroundColor = prev || '';
+        }, 900);
+      }
+    }
+
+    /* ---------------- Eventos ---------------- */
+    input.addEventListener('focus', () => {
+      if (!cached) tryCapture();
+      render(input.value);
+    });
+
+    input.addEventListener('click', () => {
+      if (!open) {
+        if (!cached) tryCapture();
+        render(input.value);
+      }
+    });
+
+    input.addEventListener('input', () => {
+      if (clearBt) clearBt.hidden = input.value.length === 0;
+      // Se ainda não temos cache, tenta capturar ANTES do produtos.js
+      // re-renderizar a tabela (ele roda em microtask).
+      if (!cached) tryCapture();
+      render(input.value);
+    });
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (!open) render(input.value);
+        else setSelected(idx + 1);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (open) setSelected(idx - 1);
+      } else if (e.key === 'Enter') {
+        if (open && idx >= 0) {
+          e.preventDefault();
+          choose(idx);
+        }
+      } else if (e.key === 'Escape') {
+        if (open) { e.preventDefault(); hide(); }
+      }
+    });
+
+    listEl.addEventListener('mousedown', (e) => {
+      const li = e.target.closest('.search-suggestions__item');
+      if (!li) return;
+      e.preventDefault(); // não perde o foco
+      choose(Number(li.dataset.idx));
+    });
+
+    listEl.addEventListener('mouseover', (e) => {
+      const li = e.target.closest('.search-suggestions__item');
+      if (!li) return;
+      setSelected(Number(li.dataset.idx));
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!wrapEl.contains(e.target)) hide();
+    });
+
+    if (clearBt) {
+      clearBt.addEventListener('click', () => {
+        input.value = '';
+        clearBt.hidden = true;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        hide();
+        input.focus();
+      });
+    }
+  })();
+  </script>
+
 </body>
 </html>

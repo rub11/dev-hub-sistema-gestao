@@ -5,6 +5,23 @@
    As movimentações usam a RPC `register_stock_movement`
    (atômica: valida + atualiza products.stock + insere em
    stock_movements numa única transação).
+   ---------------------------------------------------------
+   CORREÇÕES APLICADAS:
+   1. Cards de resumo (data-stat-filter) agora filtram a tabela.
+   2. Select #product-stock-filter wired (sincronizado com os
+      cards — mudar um reflete no outro).
+   3. Filtros de categoria e período de movimentação wired.
+   4. Colunas Categoria, Documento e Usuário renderizadas.
+   5. Categoria, custo unitário e documento são lidos do modal
+      e enviados na RPC.
+   6. Permissões granulares aplicadas (view/movement/audit/report).
+   7. Botão "Exportar CSV" funcional + gate por stock.report.
+   8. Filtro de usuário exibido se stock.audit; preenchido a
+      partir dos movementos carregados.
+   9. Race products/movements corrigida — movements só renderiza
+      após products estar disponível.
+  10. Coluna "Usuário" na tabela é ocultada/mostrada conforme perm.
+  11. Fallback: se produto não existe mais, mostra o id curto.
    ========================================================= */
 
 (function () {
@@ -17,6 +34,11 @@
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit'
+  });
+
+  const currencyFormatter = new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL'
   });
 
   /* ---------- Rótulos ---------- */
@@ -32,17 +54,45 @@
     out: { label: 'Sem estoque',    modifier: 'badge--danger'  }
   };
 
+  const CATEGORY_LABELS = {
+    compra:        'Compra',
+    venda:         'Venda',
+    devolucao:     'Devolução',
+    transferencia: 'Transferência',
+    perda:         'Perda',
+    avaria:        'Avaria',
+    inventario:    'Inventário',
+    ajuste_manual: 'Ajuste manual',
+    outro:         'Outro'
+  };
+
   /* ---------- Estado ---------- */
   const state = {
     products: [],
     productsFiltered: [],
     productsSearch: '',
+    productsStatusFilter: '',      /* '', 'with-stock', 'low', 'out' */
+
     movements: [],
     movementsFiltered: [],
     movementsProductFilter: '',
     movementsTypeFilter: '',
+    movementsCategoryFilter: '',
+    movementsPeriodFilter: 'all',
+    movementsUserFilter: '',
+
     modalProduct: null,
-    saving: false
+    saving: false,
+
+    /* Filtro ativo vindo do card (para sincronizar com o select) */
+    activeStatFilter: 'all',
+
+    perms: {
+      view:     true,
+      movement: true,
+      audit:    false,
+      report:   false
+    }
   };
 
   document.addEventListener('DOMContentLoaded', init);
@@ -65,6 +115,8 @@
     setupUserMenu();
     setupLogout();
     setupProductSearch();
+    setupStockStatusFilter();
+    setupStatCards();
     setupMovementFilters();
     setupMovementModal();
 
@@ -76,8 +128,49 @@
     const profile = await Auth.getProfile(session.user.id);
     renderUser(session.user, profile);
 
-    await Promise.all([loadProducts(), loadMovements()]);
+    /* CORREÇÃO #6: carrega permissões granulares */
+    if (window.Perms && typeof window.Perms.load === 'function') {
+      try { await window.Perms.load(); } catch (e) { /* fallback */ }
+    }
+    state.perms.view     = hasPerm('stock.view',     true);
+    state.perms.movement = hasPerm('stock.movement', true);
+    state.perms.audit    = hasPerm('stock.audit',    false);
+    state.perms.report   = hasPerm('stock.report',   false);
+
+    if (!state.perms.view) {
+      window.location.replace('dashboard.html');
+      return;
+    }
+
+    applyPermissionsToUI();
+
+    /* CORREÇÃO #9: garante que products carregue antes de
+       renderizar as movimentações (que dependem do nome do
+       produto). */
+    await loadProducts();
+    await loadMovements();
     recomputeStats();
+  }
+
+  function hasPerm(cap, fallback) {
+    if (window.Perms && typeof window.Perms.has === 'function') {
+      return window.Perms.has(cap);
+    }
+    return fallback !== false;
+  }
+
+  function applyPermissionsToUI() {
+    /* Botão de exportação só aparece com stock.report */
+    const exportBtn = document.getElementById('export-movements-btn');
+    if (exportBtn) exportBtn.hidden = !state.perms.report;
+
+    /* Filtro por usuário só aparece com stock.audit */
+    const userWrap = document.getElementById('movement-filter-user-wrap');
+    if (userWrap) userWrap.hidden = !state.perms.audit;
+
+    /* Coluna "Usuário" da tabela só aparece com stock.audit */
+    const userCol = document.querySelector('.col-user');
+    if (userCol) userCol.hidden = !state.perms.audit;
   }
 
   /* =========================================================
@@ -238,16 +331,26 @@
     populateProductFilter();
   }
 
+  /* CORREÇÃO #10: filtro combina busca textual + filtro de status. */
   function applyProductFilter() {
     const term = state.productsSearch;
-    if (!term) {
-      state.productsFiltered = state.products.slice();
-    } else {
-      state.productsFiltered = state.products.filter(function (p) {
-        return matches(p.name, term) || matches(p.code, term);
-      });
-    }
+    const status = state.productsStatusFilter;
+
+    state.productsFiltered = state.products.filter(function (p) {
+      if (term && !(matches(p.name, term) || matches(p.code, term))) return false;
+
+      if (status) {
+        const stock = toInteger(p.stock, 0);
+        const min = toInteger(p.minimum_stock, 0);
+        if (status === 'out' && stock !== 0) return false;
+        if (status === 'low' && !(stock > 0 && stock <= min)) return false;
+        if (status === 'with-stock' && !(stock > min)) return false;
+      }
+      return true;
+    });
+
     renderProducts();
+    updateCountLabel('products');
   }
 
   function renderProducts() {
@@ -268,7 +371,7 @@
       wrap.hidden = true;
       showEmpty('products',
         'Nenhum produto encontrado.',
-        'Ajuste a busca para encontrar o produto desejado.'
+        'Ajuste a busca ou o filtro para encontrar o produto desejado.'
       );
       return;
     }
@@ -288,7 +391,6 @@
     const row = document.createElement('tr');
     row.dataset.id = product.id || '';
 
-    // Nome + aviso de inativo
     const nameCell = document.createElement('td');
     nameCell.className = 'cell-product';
     const name = document.createElement('span');
@@ -333,21 +435,29 @@
     const wrap = document.createElement('div');
     wrap.className = 'row-actions';
 
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'row-action';
-    btn.setAttribute('aria-label', 'Movimentar estoque de ' + (product.name || ''));
-    btn.title = 'Movimentar estoque';
-    btn.innerHTML =
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"' +
-      ' stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-      '<path d="m17 3 4 4-4 4"/>' +
-      '<path d="M21 7H8a4 4 0 0 0-4 4v1"/>' +
-      '<path d="m7 21-4-4 4-4"/>' +
-      '<path d="M3 17h13a4 4 0 0 0 4-4v-1"/></svg>';
-    btn.addEventListener('click', function () { openMovementModal(product); });
+    /* CORREÇÃO #6: sem stock.movement, não mostra o botão */
+    if (state.perms.movement) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'row-action';
+      btn.setAttribute('aria-label', 'Movimentar estoque de ' + (product.name || ''));
+      btn.title = 'Movimentar estoque';
+      btn.innerHTML =
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"' +
+        ' stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+        '<path d="m17 3 4 4-4 4"/>' +
+        '<path d="M21 7H8a4 4 0 0 0-4 4v1"/>' +
+        '<path d="m7 21-4-4 4-4"/>' +
+        '<path d="M3 17h13a4 4 0 0 0 4-4v-1"/></svg>';
+      btn.addEventListener('click', function () { openMovementModal(product); });
+      wrap.appendChild(btn);
+    } else {
+      const dash = document.createElement('span');
+      dash.className = 'cell--muted';
+      dash.textContent = '—';
+      wrap.appendChild(dash);
+    }
 
-    wrap.appendChild(btn);
     cell.appendChild(wrap);
     return cell;
   }
@@ -380,21 +490,70 @@
     }
 
     state.movements = data || [];
+
+    /* CORREÇÃO #8: popula filtro de usuário a partir dos dados. */
+    populateUserFilter();
+
     applyMovementFilters();
     updateCountLabel('movements');
   }
 
+  /* CORREÇÃO #3: aplica TODOS os filtros (produto, tipo, categoria,
+     período, usuário). */
   function applyMovementFilters() {
     const productId = state.movementsProductFilter;
-    const type = state.movementsTypeFilter;
+    const type      = state.movementsTypeFilter;
+    const category  = state.movementsCategoryFilter;
+    const period    = state.movementsPeriodFilter;
+    const user      = state.movementsUserFilter;
+
+    const range = getMovementPeriodRange(period);
 
     state.movementsFiltered = state.movements.filter(function (m) {
       if (productId && m.product_id !== productId) return false;
       if (type && String(m.type || '').toLowerCase() !== type) return false;
+      if (category && String(m.category || '').toLowerCase() !== category) return false;
+      if (user && String(m.created_by || m.user_id || '') !== user) return false;
+
+      if (range) {
+        const d = new Date(m.created_at);
+        if (!(d >= range.start && d <= range.end)) return false;
+      }
       return true;
     });
 
     renderMovements();
+  }
+
+  function getMovementPeriodRange(period) {
+    if (!period || period === 'all') return null;
+    const now = new Date();
+
+    if (period === 'today') {
+      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+      const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+      return { start, end };
+    }
+    if (period === '7d') {
+      const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+      const start = new Date(end);
+      start.setDate(start.getDate() - 6);
+      start.setHours(0, 0, 0, 0);
+      return { start, end };
+    }
+    if (period === '30d') {
+      const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+      const start = new Date(end);
+      start.setDate(start.getDate() - 29);
+      start.setHours(0, 0, 0, 0);
+      return { start, end };
+    }
+    if (period === 'month') {
+      const start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+      const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+      return { start, end };
+    }
+    return null;
   }
 
   function renderMovements() {
@@ -434,6 +593,8 @@
     tbody.appendChild(fragment);
   }
 
+  /* CORREÇÃO #4: renderiza TODAS as colunas, incluindo Categoria,
+     Documento e Usuário (esta última só se stock.audit). */
   function buildMovementRow(movement) {
     const row = document.createElement('tr');
 
@@ -443,9 +604,34 @@
     row.appendChild(buildQuantityCell(movement));
     row.appendChild(createCell(String(toInteger(movement.previous_stock, 0)), 'cell--num cell-stock'));
     row.appendChild(createCell(String(toInteger(movement.new_stock, 0)), 'cell--num cell-stock'));
+    row.appendChild(buildCategoryCell(movement));
+    row.appendChild(createCell(movement.document || '—', 'movement-doc'));
     row.appendChild(createCell(movement.reason || '—', 'movement-reason'));
 
+    /* Coluna "Usuário" só se stock.audit */
+    if (state.perms.audit) {
+      const userCell = document.createElement('td');
+      userCell.className = 'cell-user-name';
+      userCell.textContent = movement.created_by_name || movement.user_name || '—';
+      row.appendChild(userCell);
+    }
+
     return row;
+  }
+
+  function buildCategoryCell(movement) {
+    const cell = document.createElement('td');
+    const key = String(movement.category || '').toLowerCase();
+    const label = CATEGORY_LABELS[key];
+    if (label) {
+      cell.textContent = label;
+    } else if (movement.category) {
+      cell.textContent = movement.category;
+    } else {
+      cell.textContent = '—';
+      cell.className = 'cell--muted';
+    }
+    return cell;
   }
 
   function buildTypeCell(movement) {
@@ -477,7 +663,8 @@
       cls += ' movement-qty--out';
       text = '-' + qty;
     } else {
-      // ajuste: quantity pode ser positiva (aumentou) ou negativa (diminuiu)
+      /* Ajuste: quantity pode ser positiva (aumentou) ou negativa
+         (diminuiu), se o RPC armazena delta assinado. */
       cls += qty >= 0 ? ' movement-qty--in' : ' movement-qty--out';
       text = qty >= 0 ? '+' + qty : String(qty);
     }
@@ -500,6 +687,26 @@
       const option = document.createElement('option');
       option.value = p.id;
       option.textContent = p.name || '(sem nome)';
+      select.appendChild(option);
+    });
+  }
+
+  /* CORREÇÃO #8: popula o select de usuário a partir dos movimentos. */
+  function populateUserFilter() {
+    const select = document.getElementById('movement-filter-user');
+    if (!select) return;
+
+    while (select.options.length > 1) select.remove(1);
+
+    const seen = {};
+    state.movements.forEach(function (m) {
+      const id = m.created_by || m.user_id;
+      const name = m.created_by_name || m.user_name || '';
+      if (!id || seen[id]) return;
+      seen[id] = true;
+      const option = document.createElement('option');
+      option.value = id;
+      option.textContent = name || id;
       select.appendChild(option);
     });
   }
@@ -540,9 +747,66 @@
     });
   }
 
+  /* CORREÇÃO #2: select de situação wired + sincroniza com cards. */
+  function setupStockStatusFilter() {
+    const select = document.getElementById('product-stock-filter');
+    if (!select) return;
+
+    select.addEventListener('change', function () {
+      state.productsStatusFilter = select.value;
+
+      /* Sincroniza com o card ativo (all quando vazio) */
+      const cardFilter = select.value || 'all';
+      setActiveStatCard(cardFilter);
+
+      applyProductFilter();
+    });
+  }
+
+  /* CORREÇÃO #1: cards clicáveis filtram a tabela. */
+  function setupStatCards() {
+    const cards = document.querySelectorAll('[data-stat-filter]');
+    cards.forEach(function (card) {
+      const filter = card.dataset.statFilter;
+
+      const activate = function () {
+        state.productsStatusFilter =
+          (filter === 'all') ? '' : filter;
+        state.activeStatFilter = filter;
+
+        /* Sincroniza com o select */
+        const select = document.getElementById('product-stock-filter');
+        if (select) select.value = state.productsStatusFilter;
+
+        setActiveStatCard(filter);
+        applyProductFilter();
+      };
+
+      card.addEventListener('click', activate);
+
+      /* Acessibilidade: Enter/Space no card com role=button */
+      card.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          activate();
+        }
+      });
+    });
+  }
+
+  function setActiveStatCard(filter) {
+    document.querySelectorAll('[data-stat-filter]').forEach(function (card) {
+      card.classList.toggle('is-active', card.dataset.statFilter === filter);
+    });
+  }
+
+  /* CORREÇÃO #3: wired categoria, período e usuário. */
   function setupMovementFilters() {
-    const product = document.getElementById('movement-filter-product');
-    const type = document.getElementById('movement-filter-type');
+    const product  = document.getElementById('movement-filter-product');
+    const type     = document.getElementById('movement-filter-type');
+    const category = document.getElementById('movement-filter-category');
+    const period   = document.getElementById('movement-filter-period');
+    const user     = document.getElementById('movement-filter-user');
 
     if (product) {
       product.addEventListener('change', function () {
@@ -558,6 +822,33 @@
         updateCountLabel('movements');
       });
     }
+    if (category) {
+      category.addEventListener('change', function () {
+        state.movementsCategoryFilter = category.value;
+        applyMovementFilters();
+        updateCountLabel('movements');
+      });
+    }
+    if (period) {
+      period.addEventListener('change', function () {
+        state.movementsPeriodFilter = period.value || 'all';
+        applyMovementFilters();
+        updateCountLabel('movements');
+      });
+    }
+    if (user) {
+      user.addEventListener('change', function () {
+        state.movementsUserFilter = user.value;
+        applyMovementFilters();
+        updateCountLabel('movements');
+      });
+    }
+
+    /* CORREÇÃO #7: botão de exportação wired. */
+    const exportBtn = document.getElementById('export-movements-btn');
+    if (exportBtn) {
+      exportBtn.addEventListener('click', exportMovementsCSV);
+    }
   }
 
   function updateCountLabel(section) {
@@ -565,8 +856,14 @@
       const label = document.getElementById('products-count');
       if (!label) return;
       const total = state.products.length;
-      if (total === 0) label.textContent = 'Nenhum produto cadastrado';
-      else label.textContent = total === 1 ? '1 produto' : total + ' produtos';
+      const shown = state.productsFiltered.length;
+      if (total === 0) {
+        label.textContent = 'Nenhum produto cadastrado';
+      } else if (shown === total) {
+        label.textContent = total === 1 ? '1 produto' : total + ' produtos';
+      } else {
+        label.textContent = shown + ' de ' + total + ' produtos';
+      }
       return;
     }
 
@@ -589,6 +886,77 @@
   }
 
   /* =========================================================
+     Exportação CSV (CORREÇÃO #7)
+     ========================================================= */
+  function exportMovementsCSV() {
+    if (!state.perms.report) {
+      showToast('Você não tem permissão para exportar movimentações.', 'error');
+      return;
+    }
+    const rows = state.movementsFiltered;
+    if (rows.length === 0) {
+      showToast('Nenhuma movimentação para exportar.', 'error');
+      return;
+    }
+
+    const headers = [
+      'Data', 'Produto', 'Tipo', 'Quantidade',
+      'Anterior', 'Novo', 'Categoria', 'Documento', 'Motivo'
+    ];
+    if (state.perms.audit) headers.push('Usuário');
+
+    const lines = [headers.join(';')];
+    rows.forEach(function (m) {
+      const cols = [
+        formatDateTimeCSV(m.created_at),
+        csvEsc(productName(m.product_id)),
+        csvEsc(TYPE_INFO[String(m.type || '').toLowerCase()]?.label || m.type || ''),
+        String(toInteger(m.quantity, 0)),
+        String(toInteger(m.previous_stock, 0)),
+        String(toInteger(m.new_stock, 0)),
+        csvEsc(CATEGORY_LABELS[String(m.category || '').toLowerCase()] || m.category || ''),
+        csvEsc(m.document || ''),
+        csvEsc(m.reason || '')
+      ];
+      if (state.perms.audit) {
+        cols.push(csvEsc(m.created_by_name || m.user_name || ''));
+      }
+      lines.push(cols.join(';'));
+    });
+
+    const csv = '\uFEFF' + lines.join('\r\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'movimentacoes_' + fileStamp() + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('Exportação concluída.', 'success');
+  }
+
+  function csvEsc(v) {
+    const s = String(v == null ? '' : v);
+    return /[;"\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }
+
+  function formatDateTimeCSV(value) {
+    if (!value) return '';
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return '';
+    return d.toLocaleString('pt-BR');
+  }
+
+  function fileStamp() {
+    const d = new Date();
+    const p = function (n) { return String(n).padStart(2, '0'); };
+    return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) +
+           '_' + p(d.getHours()) + p(d.getMinutes());
+  }
+
+  /* =========================================================
      Modal de movimentação
      ========================================================= */
   const modalEls = {};
@@ -599,9 +967,12 @@
     modalEls.productId    = document.getElementById('movement-product-id');
     modalEls.productName  = document.getElementById('movement-product-name');
     modalEls.currentStock = document.getElementById('movement-current-stock');
+    modalEls.category     = document.getElementById('movement-category');
     modalEls.quantity     = document.getElementById('movement-quantity');
     modalEls.quantityLbl  = document.getElementById('movement-quantity-label');
     modalEls.quantityHint = document.getElementById('movement-quantity-hint');
+    modalEls.unitCost     = document.getElementById('movement-unit-cost');
+    modalEls.document     = document.getElementById('movement-document');
     modalEls.reason       = document.getElementById('movement-reason');
     modalEls.feedback     = document.getElementById('movement-feedback');
     modalEls.saveBtn      = document.getElementById('movement-save-btn');
@@ -625,16 +996,23 @@
   }
 
   function openMovementModal(product) {
+    if (!state.perms.movement) {
+      showToast('Você não tem permissão para movimentar o estoque.', 'error');
+      return;
+    }
+
     state.modalProduct = product;
 
-    modalEls.productId.value = product.id;
-    modalEls.productName.value = product.name || '';
-    modalEls.currentStock.value = String(toInteger(product.stock, 0));
-    modalEls.quantity.value = '';
-    modalEls.reason.value = '';
+    if (modalEls.productId)    modalEls.productId.value = product.id;
+    if (modalEls.productName)  modalEls.productName.value = product.name || '';
+    if (modalEls.currentStock) modalEls.currentStock.value = String(toInteger(product.stock, 0));
+    if (modalEls.quantity)     modalEls.quantity.value = '';
+    if (modalEls.reason)       modalEls.reason.value = '';
+    if (modalEls.category)     modalEls.category.value = '';
+    if (modalEls.unitCost)     modalEls.unitCost.value = '';
+    if (modalEls.document)     modalEls.document.value = '';
     clearModalFeedback();
 
-    // Reseta para "Entrada"
     modalEls.radios.forEach(function (radio) {
       radio.checked = radio.value === 'entrada';
     });
@@ -642,11 +1020,12 @@
 
     modalEls.modal.hidden = false;
     document.body.style.overflow = 'hidden';
-    modalEls.quantity.focus();
+    if (modalEls.quantity) modalEls.quantity.focus();
   }
 
   function closeModal() {
     if (state.saving) return;
+    if (!modalEls.modal) return;
     modalEls.modal.hidden = true;
     document.body.style.overflow = '';
     state.modalProduct = null;
@@ -661,6 +1040,7 @@
 
   function updateQuantityFieldForType() {
     const type = getSelectedType();
+    if (!modalEls.quantityLbl || !modalEls.quantityHint) return;
 
     if (type === 'entrada') {
       modalEls.quantityLbl.textContent = 'Quantidade';
@@ -674,40 +1054,50 @@
     }
   }
 
+  /* CORREÇÃO #5: lê e envia categoria, custo unitário e documento. */
   async function onSubmitMovement(event) {
     event.preventDefault();
     if (state.saving) return;
 
     clearModalFeedback();
 
-    const productId = modalEls.productId.value;
+    const productId = modalEls.productId ? modalEls.productId.value : '';
     const type = getSelectedType();
-    const rawQty = modalEls.quantity.value.trim();
-    const reason = modalEls.reason.value.trim();
+    const rawQty = modalEls.quantity ? modalEls.quantity.value.trim() : '';
+    const reason = modalEls.reason ? modalEls.reason.value.trim() : '';
+
+    const category = modalEls.category ? modalEls.category.value : '';
+    const document = modalEls.document ? modalEls.document.value.trim() : '';
+    const unitCost = modalEls.unitCost ? modalEls.unitCost.value.trim() : '';
 
     if (!productId) {
       showModalFeedback('Selecione um produto.');
       return;
     }
-
+    if (!category) {
+      showModalFeedback('Selecione a categoria da movimentação.');
+      if (modalEls.category) modalEls.category.focus();
+      return;
+    }
     if (rawQty === '') {
       showModalFeedback('Informe uma quantidade válida.');
-      modalEls.quantity.focus();
+      if (modalEls.quantity) modalEls.quantity.focus();
       return;
     }
 
     const qty = toInteger(rawQty, NaN);
     if (!Number.isFinite(qty) || qty < 0) {
       showModalFeedback('Informe uma quantidade válida.');
-      modalEls.quantity.focus();
+      if (modalEls.quantity) modalEls.quantity.focus();
+      return;
+    }
+    if (type !== 'ajuste' && qty <= 0) {
+      showModalFeedback('A quantidade deve ser maior que zero.');
+      if (modalEls.quantity) modalEls.quantity.focus();
       return;
     }
 
-    if (type !== 'ajuste' && qty <= 0) {
-      showModalFeedback('A quantidade deve ser maior que zero.');
-      modalEls.quantity.focus();
-      return;
-    }
+    const cost = parseNumberBR(unitCost);
 
     setSaving(true);
 
@@ -716,7 +1106,11 @@
         p_product_id: productId,
         p_type: type,
         p_quantity: qty,
-        p_reason: reason
+        p_reason: reason,
+        /* Extras — se a RPC não aceitar, ela ignora */
+        p_category: category || null,
+        p_document: document || null,
+        p_unit_cost: (cost === null ? null : cost)
       });
 
       if (error) throw error;
@@ -724,7 +1118,7 @@
       const result = Array.isArray(data) ? data[0] : data;
       const newStock = result && result.new_stock;
 
-      modalEls.modal.hidden = true;
+      if (modalEls.modal) modalEls.modal.hidden = true;
       document.body.style.overflow = '';
       state.modalProduct = null;
 
@@ -735,8 +1129,9 @@
         'success'
       );
 
-      // Recarrega produtos + movimentações em paralelo e recalcula cards
-      await Promise.all([loadProducts(), loadMovements()]);
+      /* CORREÇÃO #9: products primeiro, depois movements */
+      await loadProducts();
+      await loadMovements();
       recomputeStats();
     } catch (error) {
       console.error('[DEV HUB] Falha ao movimentar estoque:', error);
@@ -757,8 +1152,13 @@
       if (label) label.textContent = isSaving ? 'Salvando...' : 'Salvar';
     }
 
-    if (modalEls.quantity) modalEls.quantity.readOnly = isSaving;
-    if (modalEls.reason) modalEls.reason.readOnly = isSaving;
+    [modalEls.quantity, modalEls.reason, modalEls.category,
+     modalEls.unitCost, modalEls.document].forEach(function (el) {
+      if (!el) return;
+      if (el.tagName === 'SELECT') el.disabled = isSaving;
+      else el.readOnly = isSaving;
+    });
+
     modalEls.radios.forEach(function (radio) { radio.disabled = isSaving; });
   }
 
@@ -779,8 +1179,8 @@
      ========================================================= */
   function showLoading(section, isLoading) {
     const loadingId = section === 'products' ? 'products-loading' : 'movements-loading';
-    const wrapId = section === 'products' ? 'products-table-wrap' : 'movements-table-wrap';
-    const emptyId = section === 'products' ? 'products-empty' : 'movements-empty';
+    const wrapId    = section === 'products' ? 'products-table-wrap' : 'movements-table-wrap';
+    const emptyId   = section === 'products' ? 'products-empty' : 'movements-empty';
 
     const loading = document.getElementById(loadingId);
     const wrap = document.getElementById(wrapId);
@@ -833,7 +1233,6 @@
     const message = String(error.message || '');
     const lower = message.toLowerCase();
 
-    // Mensagens amigáveis vindas da RPC
     if (message.includes('Estoque insuficiente')) return message;
     if (message.includes('Produto não encontrado')) return message;
     if (message.includes('Tipo de movimentação inválido')) return message;
@@ -925,10 +1324,12 @@
     return cell;
   }
 
+  /* CORREÇÃO #11: fallback pro id curto se produto foi excluído. */
   function productName(productId) {
     if (!productId) return '—';
     const product = state.products.find(function (p) { return p.id === productId; });
-    return (product && product.name) || '—';
+    if (product && product.name) return product.name;
+    return '(produto removido: ' + String(productId).slice(0, 8) + ')';
   }
 
   function statusInfo(stock, minimum) {
@@ -948,6 +1349,21 @@
     if (value === null || value === undefined || value === '') return fallback;
     const parsed = parseInt(value, 10);
     return Number.isFinite(parsed) ? parsed : fallback;
+  }
+
+  /* Aceita "1.234,56" (BR) e "1234.56" (US). */
+  function parseNumberBR(value) {
+    if (value === null || value === undefined || value === '') return null;
+    if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+
+    let str = String(value).trim();
+    if (str.indexOf(',') !== -1 && str.indexOf('.') !== -1) {
+      str = str.replace(/\./g, '').replace(',', '.');
+    } else if (str.indexOf(',') !== -1) {
+      str = str.replace(',', '.');
+    }
+    const n = Number(str);
+    return Number.isFinite(n) ? n : null;
   }
 
   function matches(value, term) {

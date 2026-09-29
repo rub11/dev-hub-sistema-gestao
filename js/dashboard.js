@@ -1,117 +1,190 @@
 /* =========================================================
    DEV HUB · Dashboard
+   ---------------------------------------------------------
+   Fase 1: KPIs, gráficos, rankings, alertas, estoque crítico
+   Fase 2: Activity feed (timeline)
+   ---------------------------------------------------------
+   - Todos os dados vêm do Supabase. Sem números fictícios.
+   - Empty states elegantes quando não há dados.
+   - Skeleton loading durante o fetch.
+   - Gráficos com Chart.js (reaproveitado, sem lib extra).
+   ---------------------------------------------------------
+   CORREÇÕES APLICADAS:
+   1. Race condition em troca de período: token de geração
+      descarta respostas obsoletas. Antes, trocar de "30d"
+      pra "Hoje" durante o load era ignorado silenciosamente.
+   2. Tema escuro/claro: 'theme:changed' agora RE-RENDERIZA
+      os charts (não só update) para reaplicar as cores.
+   3. `animateNumber` cancela animação anterior por elemento
+      (WeakMap) — evita flicker e valor final inconsistente.
+   4. `resolveContext()` com fallback pra Auth.getProfile()
+      quando sessionStorage está vazio (nova aba).
+   5. `metadata` parseado defensivamente (string | object).
+   6. Removido `stockListCache` (código morto).
+   7. Quantidades de estoque formatadas com Intl.
+   8. `describeAction` trata `entity_name` vazio.
+   9. `getPeriodRange` valida datas antes de usar.
    ========================================================= */
 
 (function () {
   'use strict';
 
   /* ---------- Formatadores ---------- */
-  const currencyFormatter = new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL'
-  });
-  const numberFormatter = new Intl.NumberFormat('pt-BR');
-  const dateFormatter = new Intl.DateTimeFormat('pt-BR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric'
-  });
+  const fmtBRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+  const fmtNum = new Intl.NumberFormat('pt-BR');
+  const fmtDate = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit' });
+  const fmtDateFull = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
-  /* Campos candidatos a "valor da venda" (usado para somar).
-     O primeiro encontrado em cada registro é utilizado. */
-  const TOTAL_FIELDS = [
-    'total', 'total_amount', 'total_value', 'valor_total',
-    'amount', 'value', 'valor', 'price'
-  ];
-
-  const STATUS_CLASSES = {
-    pago: 'badge--success',
-    'concluída': 'badge--success',
-    concluida: 'badge--success',
-    finalizada: 'badge--success',
-    aprovada: 'badge--success',
-    pendente: 'badge--warning',
-    aberta: 'badge--warning',
-    processando: 'badge--warning',
-    cancelada: 'badge--danger',
-    cancelado: 'badge--danger',
-    recusada: 'badge--danger',
-    estornada: 'badge--danger'
+  const PAYMENT_LABELS = {
+    '': 'Não informado',
+    cash: 'Dinheiro',
+    pix: 'Pix',
+    debit_card: 'Cartão de débito',
+    credit_card: 'Cartão de crédito',
+    boleto: 'Boleto',
+    other: 'Outro'
   };
 
-  let totalFieldWarningShown = false;
+  const CANCELED = ['canceled', 'cancelled'];
 
-  document.addEventListener('DOMContentLoaded', init);
+  /* ---------- Estado ---------- */
+  const state = {
+    period: '30d',
+    customStart: '',
+    customEnd: '',
+    user: null,
+    isPlatformAdmin: false,
+    charts: { revenue: null, payments: null },
+    loading: false,
+
+    /* CORREÇÃO #1: token de geração para descartar loads obsoletos */
+    loadGeneration: 0
+  };
+
+  /* CORREÇÃO #3: cancela animação anterior por elemento */
+  const numberAnimations = new WeakMap();
 
   /* =========================================================
-     Inicialização
+     Init
      ========================================================= */
+  document.addEventListener('DOMContentLoaded', init);
+
   async function init() {
-    const Auth = window.Auth;
+    if (!window.db) return;
 
-    if (!Auth || !Auth.isConfigured() || !window.db) {
-      showAlert(
-        'Não foi possível conectar ao Supabase. Verifique as credenciais em js/supabase.js.',
-        'error'
-      );
-      return;
-    }
-
-    setupSidebar();
     setupUserMenu();
     setupLogout();
+    setupPeriod();
+
+    const Auth = window.Auth;
+    if (!Auth || !Auth.isConfigured()) return;
 
     const session = await Auth.requireSession();
     if (!session) return;
 
-    watchAuthChanges();
-
     const profile = await Auth.getProfile(session.user.id);
     renderUser(session.user, profile);
 
-    await Promise.all([loadStats(), loadLatestSales()]);
+    /* CORREÇÃO #4: contexto com fallback — antes, em nova aba,
+       getStoredUser() retornava null e o KPI "Empresas" nunca
+       aparecia para super-admin. */
+    const ctx = await resolveContext(Auth, session);
+    state.user = ctx;
+    state.isPlatformAdmin = Boolean(ctx && ctx.is_platform_admin);
+
+    if (state.isPlatformAdmin) {
+      const kpiOrgs = document.querySelector('[data-kpi="orgs"]');
+      if (kpiOrgs) kpiOrgs.hidden = false;
+    }
+
+    // Default datas do período personalizado
+    const today = new Date();
+    setInputValue('dash-start', toDateInput(new Date(today.getFullYear(), today.getMonth(), 1)));
+    setInputValue('dash-end', toDateInput(today));
+
+    // Carrega tudo
+    await loadDashboard();
+
+    // Reage a mudanças de auth
+    if (window.db.auth && window.db.auth.onAuthStateChange) {
+      window.db.auth.onAuthStateChange(function (event) {
+        if (event === 'SIGNED_OUT' && Auth && !Auth.isSigningOut()) {
+          window.location.replace('index.html?expired=1');
+        }
+      });
+    }
   }
 
-  /* =========================================================
-     Alertas globais
-     ========================================================= */
-  function showAlert(message, type) {
-    const alert = document.getElementById('global-alert');
-    if (!alert) return;
-
-    alert.textContent = message;
-    alert.className = 'alert alert--' + (type || 'error');
-    alert.hidden = false;
-  }
-
-  /* =========================================================
-     Sessão
-     ========================================================= */
-  function watchAuthChanges() {
-    if (!window.db) return;
-
-    window.db.auth.onAuthStateChange(function (event) {
-      if (event === 'SIGNED_OUT' && !window.Auth.isSigningOut()) {
-        window.location.replace('index.html?expired=1');
+  /**
+   * CORREÇÃO #4: resolve contexto em ordem de custo.
+   * 1) Auth.getStoredUser() — rápido
+   * 2) Auth.getProfile() — lento, mas sempre funciona
+   */
+  async function resolveContext(Auth, session) {
+    try {
+      if (typeof Auth.getStoredUser === 'function') {
+        const ctx = Auth.getStoredUser();
+        if (ctx) return ctx;
       }
+    } catch (e) { /* ignora */ }
+
+    if (session && session.user && typeof Auth.getProfile === 'function') {
+      try { return await Auth.getProfile(session.user.id); }
+      catch (e) { /* ignora */ }
+    }
+    return null;
+  }
+
+  /* =========================================================
+     Header (usuário)
+     ========================================================= */
+  function setupUserMenu() {
+    const trigger = document.getElementById('user-menu-trigger');
+    const panel = document.getElementById('user-menu-panel');
+    if (!trigger || !panel) return;
+
+    function open() { panel.hidden = false; trigger.setAttribute('aria-expanded', 'true'); }
+    function close() { panel.hidden = true; trigger.setAttribute('aria-expanded', 'false'); }
+
+    trigger.addEventListener('click', function (e) {
+      e.stopPropagation();
+      panel.hidden ? open() : close();
+    });
+    document.addEventListener('click', function (e) {
+      if (panel.hidden) return;
+      if (panel.contains(e.target) || trigger.contains(e.target)) return;
+      close();
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !panel.hidden) { close(); trigger.focus(); }
     });
   }
 
-  /* =========================================================
-     Usuário
-     ========================================================= */
+  function setupLogout() {
+    document.querySelectorAll('[data-action="logout"]').forEach(function (btn) {
+      btn.addEventListener('click', async function () {
+        if (btn.disabled) return;
+        btn.disabled = true;
+        if (window.Auth && typeof window.Auth.signOut === 'function') {
+          await window.Auth.signOut();
+        } else {
+          window.location.href = 'index.html';
+        }
+      });
+    });
+  }
+
   function renderUser(user, profile) {
     const meta = user.user_metadata || {};
-
     const fullName =
       (profile && profile.name) ||
-      meta.name ||
-      meta.full_name ||
+      meta.name || meta.full_name ||
       (user.email ? user.email.split('@')[0] : '') ||
       'Usuário';
 
-    const role = (profile && profile.role) || meta.role || '';
-    const roleText = window.Auth.roleLabel(role);
+    const roleText = window.Auth && window.Auth.roleLabel
+      ? window.Auth.roleLabel((profile && profile.role) || meta.role || '')
+      : '';
 
     const firstName = String(fullName).trim().split(/\s+/)[0] || 'Usuário';
     const initial = firstName.charAt(0).toUpperCase() || '?';
@@ -123,343 +196,1089 @@
 
     const roleBadge = document.getElementById('greeting-role');
     if (roleBadge) {
-      if (roleText) {
-        roleBadge.textContent = roleText;
-        roleBadge.hidden = false;
-      } else {
-        roleBadge.hidden = true;
-      }
+      if (roleText) { roleBadge.textContent = roleText; roleBadge.hidden = false; }
+      else { roleBadge.hidden = true; }
     }
-
-    document.title = 'Dashboard · DEV HUB';
   }
 
   /* =========================================================
-     Sidebar (mobile)
+     Período
      ========================================================= */
-  function setupSidebar() {
-    const toggle = document.getElementById('menu-toggle');
-    const overlay = document.getElementById('sidebar-overlay');
-    const sidebar = document.getElementById('sidebar');
+  function setupPeriod() {
+    const select = document.getElementById('dash-period');
+    const custom = document.getElementById('dash-period-custom');
+    const applyBtn = document.getElementById('dash-apply');
+    if (!select) return;
 
-    if (!toggle || !overlay || !sidebar) return;
-
-    function openSidebar() {
-      document.body.classList.add('sidebar-open');
-      toggle.setAttribute('aria-expanded', 'true');
-      toggle.setAttribute('aria-label', 'Fechar menu');
-      overlay.hidden = false;
-    }
-
-    function closeSidebar() {
-      if (!document.body.classList.contains('sidebar-open')) return;
-      document.body.classList.remove('sidebar-open');
-      toggle.setAttribute('aria-expanded', 'false');
-      toggle.setAttribute('aria-label', 'Abrir menu');
-      overlay.hidden = true;
-    }
-
-    toggle.addEventListener('click', function () {
-      if (document.body.classList.contains('sidebar-open')) {
-        closeSidebar();
-      } else {
-        openSidebar();
+    select.addEventListener('change', function () {
+      state.period = select.value;
+      if (custom) custom.hidden = state.period !== 'custom';
+      if (state.period === 'custom') {
+        updateRangeLabel();
+        return;
       }
+      loadDashboard();
     });
 
-    overlay.addEventListener('click', closeSidebar);
-
-    document.addEventListener('keydown', function (event) {
-      if (event.key === 'Escape') closeSidebar();
-    });
-
-    // Fecha o menu ao navegar (mobile)
-    sidebar.querySelectorAll('a.nav__item').forEach(function (link) {
-      link.addEventListener('click', closeSidebar);
-    });
-
-    window.addEventListener('resize', function () {
-      if (window.innerWidth >= 1024) closeSidebar();
-    });
-  }
-
-  /* =========================================================
-     Menu do usuário
-     ========================================================= */
-  function setupUserMenu() {
-    const trigger = document.getElementById('user-menu-trigger');
-    const panel = document.getElementById('user-menu-panel');
-
-    if (!trigger || !panel) return;
-
-    function close() {
-      panel.hidden = true;
-      trigger.setAttribute('aria-expanded', 'false');
-    }
-
-    function open() {
-      panel.hidden = false;
-      trigger.setAttribute('aria-expanded', 'true');
-      const firstItem = panel.querySelector('.menu-item:not([aria-disabled="true"])');
-      if (firstItem) firstItem.focus();
-    }
-
-    trigger.addEventListener('click', function (event) {
-      event.stopPropagation();
-      if (panel.hidden) open();
-      else close();
-    });
-
-    document.addEventListener('click', function (event) {
-      if (panel.hidden) return;
-      if (panel.contains(event.target) || trigger.contains(event.target)) return;
-      close();
-    });
-
-    document.addEventListener('keydown', function (event) {
-      if (event.key === 'Escape' && !panel.hidden) {
-        close();
-        trigger.focus();
-      }
-    });
-  }
-
-  /* =========================================================
-     Logout (sidebar + menu do usuário)
-     ========================================================= */
-  function setupLogout() {
-    const buttons = document.querySelectorAll('[data-action="logout"]');
-
-    buttons.forEach(function (button) {
-      button.addEventListener('click', async function () {
-        if (button.disabled) return;
-
-        button.disabled = true;
-        button.setAttribute('aria-busy', 'true');
-
-        await window.Auth.signOut();
+    if (applyBtn) {
+      applyBtn.addEventListener('click', function () {
+        const s = getInputValue('dash-start');
+        const e = getInputValue('dash-end');
+        if (!s || !e) { showToast('Informe data inicial e final.', 'error'); return; }
+        if (s > e) { showToast('Data inicial maior que a final.', 'error'); return; }
+        state.customStart = s;
+        state.customEnd = e;
+        loadDashboard();
       });
-    });
+    }
+  }
+
+  /* CORREÇÃO #9: valida as datas custom antes de usar */
+  function getPeriodRange() {
+    const now = new Date();
+    let start, end;
+
+    switch (state.period) {
+      case 'today':
+        start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+        end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+        break;
+      case '7d':
+        end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+        start = new Date(end); start.setDate(start.getDate() - 6); start.setHours(0, 0, 0, 0);
+        break;
+      case '30d':
+        end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+        start = new Date(end); start.setDate(start.getDate() - 29); start.setHours(0, 0, 0, 0);
+        break;
+      case 'month':
+        start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+        end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+        break;
+      case 'last_month':
+        start = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0, 0);
+        end = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+        break;
+      case '3m':
+        start = new Date(now.getFullYear(), now.getMonth() - 2, 1, 0, 0, 0, 0);
+        end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+        break;
+      case 'year':
+        start = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
+        end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+        break;
+      case 'custom':
+      default: {
+        const s = state.customStart ? new Date(state.customStart + 'T00:00:00') : null;
+        const e = state.customEnd ? new Date(state.customEnd + 'T23:59:59.999') : null;
+
+        start = (s && !isNaN(s.getTime()))
+          ? s
+          : new Date(now.getFullYear(), now.getMonth(), 1);
+        end = (e && !isNaN(e.getTime()))
+          ? e
+          : now;
+
+        if (start > end) {
+          // Segurança: inverte ou usa default
+          start = new Date(now.getFullYear(), now.getMonth(), 1);
+          end = now;
+        }
+        break;
+      }
+    }
+
+    // Última barreira: nunca retornar datas inválidas
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      start = new Date(now.getFullYear(), now.getMonth(), 1);
+      end = now;
+    }
+
+    return { start, end };
+  }
+
+  function updateRangeLabel() {
+    const { start, end } = getPeriodRange();
+    const sameDay = start.toDateString() === end.toDateString();
+    const label = sameDay
+      ? 'Período: ' + fmtDateFull.format(start)
+      : 'Período: ' + fmtDateFull.format(start) + ' → ' + fmtDateFull.format(end);
+    setText('dash-range', label);
   }
 
   /* =========================================================
-     Indicadores
+     Carga principal
      ========================================================= */
-  async function loadStats() {
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
+  async function loadDashboard() {
+    /* CORREÇÃO #1: NÃO bloqueia mais com `if (state.loading) return`.
+       Em vez disso, incrementa a geração e deixa a resposta antiga
+       ser descartada quando chegar. Assim, trocar de período durante
+       um load ativo funciona: a UI sempre reflete o último período
+       selecionado. */
+    state.loadGeneration += 1;
+    const myGen = state.loadGeneration;
+    state.loading = true;
 
-    const startOfMonth = new Date();
-    startOfMonth.setDate(1);
-    startOfMonth.setHours(0, 0, 0, 0);
+    updateRangeLabel();
+    clearAllKpis();
 
-    const [customers, products, todayTotal, monthTotal] = await Promise.all([
-      countRows('customers'),
-      countRows('products'),
-      sumSalesSince(startOfDay.toISOString()),
-      sumSalesSince(startOfMonth.toISOString())
+    const { start, end } = getPeriodRange();
+    const startISO = start.toISOString();
+    const endISO = end.toISOString();
+
+    // Roda em paralelo — cada uma isolada para não derrubar tudo
+    await Promise.allSettled([
+      loadCustomerKpis(startISO, endISO, myGen),
+      loadSalesAndRevenue(startISO, endISO, myGen),
+      loadProductKpis(myGen),
+      loadUserKpis(myGen),
+      state.isPlatformAdmin ? loadOrgKpis(myGen) : Promise.resolve(),
+      loadTopProducts(startISO, endISO, myGen),
+      loadTopCustomers(startISO, endISO, myGen),
+      loadStockAlerts(myGen),
+      loadActivityFeed(myGen)
     ]);
 
-    setText('stat-customers', customers === null ? '—' : numberFormatter.format(customers));
-    setText('stat-products', products === null ? '—' : numberFormatter.format(products));
-    setText('stat-sales-today', todayTotal === null ? '—' : currencyFormatter.format(todayTotal));
-    setText('stat-sales-month', monthTotal === null ? '—' : currencyFormatter.format(monthTotal));
+    /* Só libera `loading` se ainda formos a geração mais recente */
+    if (myGen === state.loadGeneration) {
+      state.loading = false;
+    }
   }
 
-  async function countRows(table) {
-    const { count, error } = await window.db
-      .from(table)
-      .select('*', { count: 'exact', head: true });
-
-    if (error) {
-      console.error('[DEV HUB] Falha ao contar registros de "' + table + '":', error);
-      return null;
-    }
-    return count || 0;
+  function clearAllKpis() {
+    document.querySelectorAll('.kpi__value').forEach(function (el) {
+      el.textContent = '—';
+      el.classList.add('skeleton');
+    });
+    document.querySelectorAll('.kpi__hint').forEach(function (el) { el.innerHTML = '&nbsp;'; });
   }
 
-  async function sumSalesSince(sinceISO) {
-    const { data, error } = await window.db
-      .from('sales')
-      .select('*')
-      .gte('created_at', sinceISO);
-
-    if (error) {
-      console.error('[DEV HUB] Falha ao somar vendas desde ' + sinceISO + ':', error);
-      return null;
-    }
-
-    return (data || []).reduce(function (sum, sale) {
-      return sum + getSaleTotal(sale);
-    }, 0);
+  /* Helper: descarta se a geração mudou */
+  function isStale(myGen) {
+    return myGen !== undefined && myGen !== state.loadGeneration;
   }
 
   /* =========================================================
-     Últimas vendas
+     KPIs
      ========================================================= */
-  async function loadLatestSales() {
-    let response = await window.db
-      .from('sales')
-      .select('*, customers(name)')
-      .order('created_at', { ascending: false })
-      .limit(5);
+  async function loadCustomerKpis(startISO, endISO, myGen) {
+    try {
+      const [totalRes, newRes] = await Promise.all([
+        window.db.from('customers').select('id', { count: 'exact', head: true }),
+        window.db.from('customers').select('id', { count: 'exact', head: true })
+          .gte('created_at', startISO).lte('created_at', endISO)
+      ]);
 
-    // Se o relacionamento com `customers` não existir, tenta sem o join.
-    if (response.error) {
-      console.warn(
-        '[DEV HUB] Consulta com relacionamento "customers" falhou. Tentando sem join.',
-        response.error
+      if (isStale(myGen)) return;
+
+      const total = (totalRes && totalRes.count) || 0;
+      const novos = (newRes && newRes.count) || 0;
+
+      setKpi('customers', total, novos > 0
+        ? '<strong>+' + fmtNum.format(novos) + '</strong> no período'
+        : 'Nenhum novo no período');
+    } catch (e) {
+      if (isStale(myGen)) return;
+      setKpiError('customers');
+    }
+  }
+
+  async function loadSalesAndRevenue(startISO, endISO, myGen) {
+    try {
+      const res = await window.db.from('sales')
+        .select('id, total, status, payment_method, created_at')
+        .gte('created_at', startISO).lte('created_at', endISO);
+
+      if (res.error) throw res.error;
+      if (isStale(myGen)) return;
+
+      const all = res.data || [];
+      const valid = all.filter(function (s) {
+        return CANCELED.indexOf(String(s.status || '').toLowerCase()) === -1;
+      });
+
+      const count = valid.length;
+      const revenue = valid.reduce(function (sum, s) { return sum + toNumber(s.total); }, 0);
+
+      setKpi('sales', count, count > 0
+        ? (count === 1 ? '1 venda no período' : fmtNum.format(count) + ' vendas no período')
+        : 'Sem vendas registradas');
+
+      setKpi('revenue', fmtBRL.format(revenue), count > 0
+        ? 'Ticket médio: ' + fmtBRL.format(revenue / count)
+        : 'Sem faturamento');
+
+      renderRevenueChart(valid, startISO, endISO);
+      renderPaymentsChart(valid);
+    } catch (e) {
+      if (isStale(myGen)) return;
+      setKpiError('sales');
+      setKpiError('revenue');
+      renderEmptyChart('chart-revenue');
+      renderEmptyChart('chart-payments');
+    }
+  }
+
+  async function loadProductKpis(myGen) {
+    try {
+      const res = await window.db.from('products').select('id, stock, minimum_stock, active');
+      if (res.error) throw res.error;
+      if (isStale(myGen)) return;
+
+      const all = res.data || [];
+      const total = all.length;
+      const low = all.filter(function (p) {
+        const s = toNumber(p.stock), m = toNumber(p.minimum_stock);
+        return s > 0 && s <= m;
+      }).length;
+      const out = all.filter(function (p) { return toNumber(p.stock) === 0; }).length;
+
+      const hint = (low + out) > 0
+        ? '<strong>' + fmtNum.format(low + out) + '</strong> em estado crítico'
+        : 'Estoque em nível adequado';
+
+      setKpi('products', total, hint);
+    } catch (e) {
+      if (isStale(myGen)) return;
+      setKpiError('products');
+    }
+  }
+
+  async function loadUserKpis(myGen) {
+    try {
+      const [totalRes, activeRes] = await Promise.all([
+        window.db.from('organization_members').select('id', { count: 'exact', head: true }),
+        window.db.from('organization_members').select('id', { count: 'exact', head: true })
+          .eq('active', true)
+      ]);
+
+      if (isStale(myGen)) return;
+
+      const total = (totalRes && totalRes.count) || 0;
+      const active = (activeRes && activeRes.count) || 0;
+
+      setKpi('users', total, active > 0
+        ? '<strong>' + fmtNum.format(active) + '</strong> ativos'
+        : 'Nenhum ativo');
+    } catch (e) {
+      if (isStale(myGen)) return;
+      setKpiError('users');
+    }
+  }
+
+  async function loadOrgKpis(myGen) {
+    try {
+      const [totalRes, activeRes] = await Promise.all([
+        window.db.from('organizations').select('id', { count: 'exact', head: true }),
+        window.db.from('organizations').select('id', { count: 'exact', head: true }).eq('active', true)
+      ]);
+
+      if (isStale(myGen)) return;
+
+      const total = (totalRes && totalRes.count) || 0;
+      const active = (activeRes && activeRes.count) || 0;
+
+      setKpi('orgs', total, active > 0
+        ? '<strong>' + fmtNum.format(active) + '</strong> ativas'
+        : 'Nenhuma ativa');
+    } catch (e) {
+      if (isStale(myGen)) return;
+      setKpiError('orgs');
+    }
+  }
+
+  /* =========================================================
+     Gráficos
+     ========================================================= */
+  function renderRevenueChart(validSales, startISO, endISO) {
+    const canvas = document.getElementById('chart-revenue');
+    const empty = canvas ? canvas.parentElement.querySelector('[data-empty]') : null;
+    if (!canvas) return;
+
+    if (typeof window.Chart === 'undefined') {
+      if (empty) {
+        empty.hidden = false;
+        const p = empty.querySelector('p');
+        if (p) p.textContent = 'Biblioteca de gráficos não disponível.';
+      }
+      return;
+    }
+
+    // Buckets por dia
+    const start = new Date(startISO);
+    const end = new Date(endISO);
+    const buckets = new Map();
+    const cursor = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+    while (cursor <= end) {
+      const k = toDateKey(cursor);
+      buckets.set(k, { label: fmtDate.format(cursor), total: 0, count: 0 });
+      cursor.setDate(cursor.getDate() + 1);
+    }
+
+    validSales.forEach(function (s) {
+      const k = toDateKey(new Date(s.created_at));
+      const b = buckets.get(k);
+      if (b) { b.total += toNumber(s.total); b.count += 1; }
+    });
+
+    const arr = Array.from(buckets.values());
+    const hasData = arr.some(function (b) { return b.total > 0; });
+
+    if (!hasData) {
+      if (state.charts.revenue) { state.charts.revenue.destroy(); state.charts.revenue = null; }
+      if (empty) empty.hidden = false;
+      canvas.style.display = 'none';
+      return;
+    }
+
+    if (empty) empty.hidden = true;
+    canvas.style.display = '';
+
+    const labels = arr.map(function (b) { return b.label; });
+    const totals = arr.map(function (b) { return b.total; });
+
+    const styles = readChartTheme();
+
+    if (state.charts.revenue) state.charts.revenue.destroy();
+    state.charts.revenue = new window.Chart(canvas.getContext('2d'), {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Faturamento',
+          data: totals,
+          borderColor: '#6366f1',
+          backgroundColor: 'rgba(99,102,241,.12)',
+          fill: true,
+          tension: 0.32,
+          borderWidth: 2,
+          pointRadius: 0,
+          pointHoverRadius: 5,
+          pointHoverBackgroundColor: '#6366f1',
+          pointHoverBorderColor: '#fff',
+          pointHoverBorderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: styles.tooltipBg,
+            titleColor: styles.tooltipTitle,
+            bodyColor: styles.tooltipBody,
+            padding: 10,
+            callbacks: {
+              label: function (ctx) { return 'Faturamento: ' + fmtBRL.format(ctx.parsed.y); }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: { color: styles.tick, font: { size: 11 }, maxRotation: 0, autoSkipPadding: 16 }
+          },
+          y: {
+            beginAtZero: true,
+            grid: { color: styles.grid },
+            ticks: {
+              color: styles.tick,
+              font: { size: 11 },
+              callback: function (v) { return 'R$ ' + fmtNum.format(v); }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  function renderPaymentsChart(validSales) {
+    const canvas = document.getElementById('chart-payments');
+    const empty = canvas ? canvas.parentElement.querySelector('[data-empty]') : null;
+    if (!canvas) return;
+
+    if (typeof window.Chart === 'undefined') {
+      if (empty) empty.hidden = false;
+      return;
+    }
+
+    const map = new Map();
+    validSales.forEach(function (s) {
+      const key = s.payment_method || '';
+      map.set(key, (map.get(key) || 0) + toNumber(s.total));
+    });
+
+    const entries = Array.from(map.entries())
+      .filter(function (e) { return e[1] > 0; })
+      .sort(function (a, b) { return b[1] - a[1]; });
+
+    if (entries.length === 0) {
+      if (state.charts.payments) { state.charts.payments.destroy(); state.charts.payments = null; }
+      if (empty) empty.hidden = false;
+      canvas.style.display = 'none';
+      return;
+    }
+
+    if (empty) empty.hidden = true;
+    canvas.style.display = '';
+
+    const palette = ['#6366f1', '#059669', '#f59e0b', '#ec4899', '#06b6d4', '#8b5cf6', '#94a3b8'];
+    const styles = readChartTheme();
+
+    if (state.charts.payments) state.charts.payments.destroy();
+    state.charts.payments = new window.Chart(canvas.getContext('2d'), {
+      type: 'doughnut',
+      data: {
+        labels: entries.map(function (e) { return PAYMENT_LABELS[e[0]] || e[0] || 'Outro'; }),
+        datasets: [{
+          data: entries.map(function (e) { return e[1]; }),
+          backgroundColor: palette.slice(0, entries.length),
+          borderWidth: 0,
+          hoverOffset: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '62%',
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              boxWidth: 10, boxHeight: 10, usePointStyle: true, pointStyle: 'circle',
+              padding: 12, color: styles.legend,
+              font: { size: 11.5 }
+            }
+          },
+          tooltip: {
+            backgroundColor: styles.tooltipBg,
+            titleColor: styles.tooltipTitle,
+            bodyColor: styles.tooltipBody,
+            padding: 10,
+            callbacks: {
+              label: function (ctx) {
+                const total = ctx.dataset.data.reduce(function (a, b) { return a + b; }, 0);
+                const pct = total > 0 ? (ctx.parsed / total * 100).toFixed(1) : '0';
+                return ctx.label + ': ' + fmtBRL.format(ctx.parsed) + ' (' + pct + '%)';
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  function readChartTheme() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    return {
+      tick: isDark ? '#94a3b8' : '#9ca3af',
+      grid: isDark ? 'rgba(148,163,184,.10)' : '#f3f4f6',
+      legend: isDark ? '#cbd5e1' : '#4b5563',
+      tooltipBg: isDark ? '#0f172a' : '#111827',
+      tooltipTitle: '#fff',
+      tooltipBody: '#e5e7eb'
+    };
+  }
+
+  /* CORREÇÃO #2: 'theme:changed' re-renderiza o chart em vez de
+     só chamar update('none'). Sem isso, as cores dos eixos,
+     tooltips e legendas ficam travadas no tema original. */
+  document.addEventListener('theme:changed', function () {
+    if (!state.charts.revenue && !state.charts.payments) return;
+
+    // Guarda as configs atuais e redesenha
+    try {
+      if (state.charts.revenue) {
+        const cfg = state.charts.revenue.config;
+        const canvas = state.charts.revenue.canvas;
+        state.charts.revenue.destroy();
+        state.charts.revenue = null;
+
+        if (canvas) {
+          const styles = readChartTheme();
+          cfg.options.plugins.tooltip.backgroundColor = styles.tooltipBg;
+          cfg.options.plugins.tooltip.titleColor = styles.tooltipTitle;
+          cfg.options.plugins.tooltip.bodyColor = styles.tooltipBody;
+          if (cfg.options.scales && cfg.options.scales.x) {
+            cfg.options.scales.x.ticks.color = styles.tick;
+          }
+          if (cfg.options.scales && cfg.options.scales.y) {
+            cfg.options.scales.y.ticks.color = styles.tick;
+            cfg.options.scales.y.grid.color = styles.grid;
+          }
+          state.charts.revenue = new window.Chart(canvas.getContext('2d'), cfg);
+        }
+      }
+
+      if (state.charts.payments) {
+        const cfg = state.charts.payments.config;
+        const canvas = state.charts.payments.canvas;
+        state.charts.payments.destroy();
+        state.charts.payments = null;
+
+        if (canvas) {
+          const styles = readChartTheme();
+          cfg.options.plugins.tooltip.backgroundColor = styles.tooltipBg;
+          cfg.options.plugins.tooltip.titleColor = styles.tooltipTitle;
+          cfg.options.plugins.tooltip.bodyColor = styles.tooltipBody;
+          if (cfg.options.plugins.legend && cfg.options.plugins.legend.labels) {
+            cfg.options.plugins.legend.labels.color = styles.legend;
+          }
+          state.charts.payments = new window.Chart(canvas.getContext('2d'), cfg);
+        }
+      }
+    } catch (e) {
+      console.warn('[DEV HUB] Falha ao redesenhar charts no tema:', e);
+    }
+  });
+
+  /* =========================================================
+     Rankings
+     ========================================================= */
+  async function loadTopProducts(startISO, endISO, myGen) {
+    const wrap = document.getElementById('dash-top-products');
+    if (!wrap) return;
+
+    try {
+      const salesRes = await window.db.from('sales').select('id, status')
+        .gte('created_at', startISO).lte('created_at', endISO);
+      if (salesRes.error) throw salesRes.error;
+      if (isStale(myGen)) return;
+
+      const ids = (salesRes.data || [])
+        .filter(function (s) { return CANCELED.indexOf(String(s.status || '').toLowerCase()) === -1; })
+        .map(function (s) { return s.id; });
+
+      if (ids.length === 0) return renderEmptyRank(wrap, 'Nenhuma venda no período.');
+
+      const itemsRes = await window.db.from('sale_items')
+        .select('product_id, product_name, quantity, subtotal').in('sale_id', ids);
+      if (itemsRes.error) throw itemsRes.error;
+      if (isStale(myGen)) return;
+
+      const map = new Map();
+      (itemsRes.data || []).forEach(function (it) {
+        const key = it.product_id || ('name:' + it.product_name);
+        if (!map.has(key)) map.set(key, { name: it.product_name || '—', qty: 0, total: 0 });
+        const e = map.get(key);
+        e.qty += toNumber(it.quantity);
+        e.total += toNumber(it.subtotal);
+      });
+
+      const rows = Array.from(map.values())
+        .sort(function (a, b) { return b.qty - a.qty; })
+        .slice(0, 5);
+
+      if (rows.length === 0) return renderEmptyRank(wrap, 'Sem itens de venda no período.');
+
+      const max = rows[0].qty || 1;
+      wrap.innerHTML = rows.map(function (r, i) {
+        const pct = (r.qty / max) * 100;
+        return (
+          '<div class="rank-item">' +
+            '<div class="rank-item__pos">' + (i + 1) + '</div>' +
+            '<div class="rank-item__body">' +
+              '<span class="rank-item__name">' + escapeHTML(r.name) + '</span>' +
+              '<div class="rank-item__bar"><span style="width:' + pct.toFixed(1) + '%"></span></div>' +
+            '</div>' +
+            '<div class="rank-item__value">' + fmtNum.format(r.qty) +
+              '<small>' + fmtBRL.format(r.total) + '</small>' +
+            '</div>' +
+          '</div>'
+        );
+      }).join('');
+    } catch (e) {
+      if (isStale(myGen)) return;
+      renderEmptyRank(wrap, 'Não foi possível carregar os produtos.');
+    }
+  }
+
+  async function loadTopCustomers(startISO, endISO, myGen) {
+    const wrap = document.getElementById('dash-top-customers');
+    if (!wrap) return;
+
+    try {
+      const salesRes = await window.db.from('sales')
+        .select('customer_id, total, status')
+        .gte('created_at', startISO).lte('created_at', endISO);
+      if (salesRes.error) throw salesRes.error;
+      if (isStale(myGen)) return;
+
+      const valid = (salesRes.data || []).filter(function (s) {
+        return CANCELED.indexOf(String(s.status || '').toLowerCase()) === -1 && s.customer_id;
+      });
+
+      if (valid.length === 0) return renderEmptyRank(wrap, 'Nenhuma venda com cliente no período.');
+
+      const map = new Map();
+      valid.forEach(function (s) {
+        if (!map.has(s.customer_id)) map.set(s.customer_id, { id: s.customer_id, count: 0, total: 0 });
+        const e = map.get(s.customer_id);
+        e.count += 1;
+        e.total += toNumber(s.total);
+      });
+
+      const rows = Array.from(map.values())
+        .sort(function (a, b) { return b.total - a.total; })
+        .slice(0, 5);
+
+      // Busca nomes
+      const ids = rows.map(function (r) { return r.id; });
+      const namesRes = await window.db.from('customers').select('id, name').in('id', ids);
+      if (isStale(myGen)) return;
+
+      const names = {};
+      (namesRes.data || []).forEach(function (c) { names[c.id] = c.name; });
+
+      if (rows.length === 0) return renderEmptyRank(wrap, 'Nenhuma venda com cliente no período.');
+
+      const max = rows[0].total || 1;
+      wrap.innerHTML = rows.map(function (r, i) {
+        const pct = (r.total / max) * 100;
+        const name = names[r.id] || 'Cliente';
+        return (
+          '<div class="rank-item">' +
+            '<div class="rank-item__pos">' + (i + 1) + '</div>' +
+            '<div class="rank-item__body">' +
+              '<span class="rank-item__name">' + escapeHTML(name) + '</span>' +
+              '<div class="rank-item__bar"><span style="width:' + pct.toFixed(1) + '%"></span></div>' +
+            '</div>' +
+            '<div class="rank-item__value">' + fmtBRL.format(r.total) +
+              '<small>' + fmtNum.format(r.count) + (r.count === 1 ? ' compra' : ' compras') + '</small>' +
+            '</div>' +
+          '</div>'
+        );
+      }).join('');
+    } catch (e) {
+      if (isStale(myGen)) return;
+      renderEmptyRank(wrap, 'Não foi possível carregar os clientes.');
+    }
+  }
+
+  function renderEmptyRank(wrap, msg) {
+    wrap.innerHTML = '<p class="dash-empty dash-empty--inline">' + escapeHTML(msg) + '</p>';
+  }
+
+  /* =========================================================
+     Estoque + Alertas
+     ========================================================= */
+  async function loadStockAlerts(myGen) {
+    const alertsWrap = document.getElementById('dash-alerts');
+    const stockWrap = document.getElementById('dash-stock-list');
+
+    try {
+      const res = await window.db.from('products')
+        .select('id, name, stock, minimum_stock, active')
+        .order('stock', { ascending: true });
+
+      if (res.error) throw res.error;
+      if (isStale(myGen)) return;
+
+      const all = res.data || [];
+      const out = all.filter(function (p) { return toNumber(p.stock) === 0; });
+      const low = all.filter(function (p) {
+        const s = toNumber(p.stock), m = toNumber(p.minimum_stock);
+        return s > 0 && s <= m;
+      });
+
+      renderAlerts(alertsWrap, { out, low });
+      renderStockList(stockWrap, { out, low });
+    } catch (e) {
+      if (isStale(myGen)) return;
+      if (alertsWrap) alertsWrap.innerHTML = '<p class="dash-empty dash-empty--inline">Não foi possível carregar os alertas.</p>';
+      if (stockWrap)  stockWrap.innerHTML  = '<p class="dash-empty dash-empty--inline">Não foi possível carregar o estoque.</p>';
+    }
+  }
+
+  function renderAlerts(wrap, data) {
+    if (!wrap) return;
+    const alerts = [];
+
+    if (data.out.length > 0) {
+      alerts.push({
+        kind: 'danger',
+        icon: '<circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/>',
+        text: '<strong>' + data.out.length + '</strong> ' +
+              (data.out.length === 1 ? 'produto está' : 'produtos estão') + ' sem estoque',
+        href: 'estoque.html'
+      });
+    }
+
+    if (data.low.length > 0) {
+      alerts.push({
+        kind: 'warn',
+        icon: '<path d="M10.3 3.6 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/>',
+        text: '<strong>' + data.low.length + '</strong> ' +
+              (data.low.length === 1 ? 'produto está' : 'produtos estão') + ' com estoque baixo',
+        href: 'estoque.html'
+      });
+    }
+
+    if (alerts.length === 0) {
+      wrap.innerHTML = '<p class="dash-empty dash-empty--inline">Tudo em ordem. Nenhum alerta no momento.</p>';
+      return;
+    }
+
+    wrap.innerHTML = alerts.map(function (a) {
+      return (
+        '<div class="alert-item alert-item--' + a.kind + '">' +
+          '<span class="alert-item__icon" aria-hidden="true">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" ' +
+                 'stroke-linecap="round" stroke-linejoin="round">' + a.icon + '</svg>' +
+          '</span>' +
+          '<span class="alert-item__text">' + a.text + '</span>' +
+          '<a class="alert-item__link" href="' + a.href + '">Ver</a>' +
+        '</div>'
       );
+    }).join('');
+  }
 
-      response = await window.db
-        .from('sales')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(5);
-    }
+  /* CORREÇÃO #7: formata quantity com Intl em vez de String(n). */
+  function renderStockList(wrap, data) {
+    if (!wrap) return;
 
-    if (response.error) {
-      console.error('[DEV HUB] Falha ao carregar as últimas vendas:', response.error);
-      showSalesEmpty('Não foi possível carregar as vendas.');
+    const list = data.out.concat(data.low).slice(0, 8);
+
+    if (list.length === 0) {
+      wrap.innerHTML = '<p class="dash-empty dash-empty--inline">Nenhum produto em estado crítico.</p>';
       return;
     }
 
-    renderSales(response.data || []);
-  }
-
-  function renderSales(sales) {
-    const tbody = document.getElementById('sales-body');
-    const emptyRow = document.getElementById('sales-empty');
-    if (!tbody || !emptyRow) return;
-
-    tbody.querySelectorAll('tr:not(#sales-empty)').forEach(function (row) {
-      row.remove();
-    });
-
-    if (sales.length === 0) {
-      showSalesEmpty('Nenhuma venda registrada ainda.');
-      return;
-    }
-
-    const fragment = document.createDocumentFragment();
-
-    sales.forEach(function (sale) {
-      fragment.appendChild(buildSaleRow(sale));
-    });
-
-    tbody.insertBefore(fragment, emptyRow);
-    emptyRow.hidden = true;
-  }
-
-  function showSalesEmpty(message) {
-    const tbody = document.getElementById('sales-body');
-    const emptyRow = document.getElementById('sales-empty');
-    if (!tbody || !emptyRow) return;
-
-    tbody.querySelectorAll('tr:not(#sales-empty)').forEach(function (row) {
-      row.remove();
-    });
-
-    emptyRow.querySelector('td').textContent = message;
-    emptyRow.hidden = false;
-  }
-
-  function buildSaleRow(sale) {
-    const row = document.createElement('tr');
-
-    row.appendChild(createCell(formatSaleNumber(sale), 'cell--mono'));
-    row.appendChild(createCell(getCustomerName(sale)));
-    row.appendChild(createCell(formatDate(sale.created_at), 'cell--muted'));
-    row.appendChild(createCell(currencyFormatter.format(getSaleTotal(sale)), 'cell--num'));
-    row.appendChild(createStatusCell(sale.status));
-
-    return row;
-  }
-
-  function createCell(text, className) {
-    const cell = document.createElement('td');
-    cell.textContent = text;
-    if (className) cell.className = className;
-    return cell;
-  }
-
-  function createStatusCell(status) {
-    const cell = document.createElement('td');
-    const raw = status === null || status === undefined ? '' : String(status).trim();
-
-    if (!raw) {
-      cell.textContent = '—';
-      cell.className = 'cell--muted';
-      return cell;
-    }
-
-    const badge = document.createElement('span');
-    const modifier = STATUS_CLASSES[raw.toLowerCase()];
-    badge.className = 'badge' + (modifier ? ' ' + modifier : '');
-    badge.textContent = raw.charAt(0).toUpperCase() + raw.slice(1);
-    cell.appendChild(badge);
-
-    return cell;
+    wrap.innerHTML = list.map(function (p) {
+      const isOut = toNumber(p.stock) === 0;
+      const cls = isOut ? 'stock-pill--out' : 'stock-pill--low';
+      return (
+        '<a class="stock-pill ' + cls + '" href="estoque.html">' +
+          '<span class="stock-pill__dot"></span>' +
+          '<span class="stock-pill__name">' + escapeHTML(p.name || '—') + '</span>' +
+          '<span class="stock-pill__qty">' + fmtNum.format(toNumber(p.stock)) + ' un.</span>' +
+        '</a>'
+      );
+    }).join('');
   }
 
   /* =========================================================
-     Helpers de dados
+     Activity feed (timeline)
      ========================================================= */
-  function formatSaleNumber(sale) {
-    const candidate =
-      sale.number || sale.numero || sale.code || sale.codigo || sale.id;
+  async function loadActivityFeed(myGen) {
+    const wrap = document.getElementById('dash-feed');
+    if (!wrap) return;
 
-    if (!candidate) return '—';
+    try {
+      const res = await window.db
+        .from('activity_log')
+        .select('id, actor_name, action, entity_type, entity_name, metadata, created_at')
+        .order('created_at', { ascending: false })
+        .limit(12);
 
-    const value = String(candidate);
-    return '#' + (value.length > 10 ? value.slice(0, 8).toUpperCase() : value);
+      if (res.error) throw res.error;
+      if (isStale(myGen)) return;
+
+      const rows = res.data || [];
+
+      if (rows.length === 0) {
+        wrap.innerHTML = '<p class="dash-empty dash-empty--inline">Ainda não há atividades registradas. Quando algo acontecer no sistema, aparecerá aqui.</p>';
+        return;
+      }
+
+      wrap.innerHTML = rows.map(buildFeedItem).join('');
+    } catch (e) {
+      if (isStale(myGen)) return;
+      console.error('[DEV HUB] Falha ao carregar atividade:', e);
+      wrap.innerHTML = '<p class="dash-empty dash-empty--inline">Não foi possível carregar a atividade recente.</p>';
+    }
   }
 
-  function getCustomerName(sale) {
-    const relation = sale.customers;
+  function buildFeedItem(row) {
+    const iconKey = iconForEntity(row.entity_type);
+    const text = describeAction(row);
+    const time = timeAgo(row.created_at);
+    const actor = row.actor_name || 'Sistema';
 
-    if (relation) {
-      const customer = Array.isArray(relation) ? relation[0] : relation;
-      if (customer && customer.name) return customer.name;
+    const iconSVG = FEED_ICONS[iconKey] || FEED_ICONS.default;
+
+    return (
+      '<div class="feed-item">' +
+        '<span class="feed-item__icon feed-item__icon--' + iconKey + '" aria-hidden="true">' +
+          iconSVG +
+        '</span>' +
+        '<div class="feed-item__body">' +
+          '<p class="feed-item__text">' + text + '</p>' +
+          '<p class="feed-item__meta">por <strong>' + escapeHTML(actor) + '</strong></p>' +
+        '</div>' +
+        '<span class="feed-item__time">' + escapeHTML(time) + '</span>' +
+      '</div>'
+    );
+  }
+
+  function iconForEntity(type) {
+    switch (type) {
+      case 'sale':           return 'sale';
+      case 'customer':       return 'customer';
+      case 'product':        return 'product';
+      case 'user':           return 'user';
+      case 'organization':   return 'org';
+      case 'stock_movement': return 'movement';
+      default:               return 'default';
+    }
+  }
+
+  const FEED_ICONS = {
+    sale:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" ' +
+      'stroke-linecap="round" stroke-linejoin="round">' +
+      '<circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/>' +
+      '<path d="M2.5 3.5h2.3l2.3 11.6a1.8 1.8 0 0 0 1.8 1.4h8.8a1.8 1.8 0 0 0 1.8-1.4L21 7.5H6"/></svg>',
+    customer:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" ' +
+      'stroke-linecap="round" stroke-linejoin="round">' +
+      '<path d="M16 20v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20"/>' +
+      '<circle cx="9" cy="7.5" r="3.5"/></svg>',
+    product:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" ' +
+      'stroke-linecap="round" stroke-linejoin="round">' +
+      '<path d="m21 8-9-5-9 5v8l9 5 9-5z"/><path d="m3 8 9 5 9-5"/><path d="M12 21v-8"/></svg>',
+    user:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" ' +
+      'stroke-linecap="round" stroke-linejoin="round">' +
+      '<path d="M16 20v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20"/>' +
+      '<circle cx="9" cy="7.5" r="3.5"/>' +
+      '<path d="M22 20v-1.5a4 4 0 0 0-3-3.87"/></svg>',
+    org:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" ' +
+      'stroke-linecap="round" stroke-linejoin="round">' +
+      '<path d="M3 21h18"/><path d="M5 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16"/>' +
+      '<path d="M15 21V9h4a2 2 0 0 1 2 2v10"/></svg>',
+    movement:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" ' +
+      'stroke-linecap="round" stroke-linejoin="round">' +
+      '<path d="m12 2.5 9 5-9 5-9-5z"/><path d="m3 12.5 9 5 9-5"/><path d="m3 17.5 9 5 9-5"/></svg>',
+    default:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" ' +
+      'stroke-linecap="round" stroke-linejoin="round">' +
+      '<circle cx="12" cy="12" r="9"/><path d="M12 8v5"/><path d="M12 16h.01"/></svg>'
+  };
+
+  /* CORREÇÃO #5: parse defensivo de metadata + CORREÇÃO #8:
+     trata entity_name vazio. */
+  function describeAction(row) {
+    const rawName = row.entity_name;
+    const entity = (rawName && String(rawName).trim())
+      ? escapeHTML(String(rawName))
+      : '<em>(sem nome)</em>';
+
+    const action = row.action;
+    const type = row.entity_type;
+
+    /* metadata pode vir como objeto (jsonb) ou string (text) */
+    let meta = row.metadata || {};
+    if (typeof meta === 'string') {
+      try { meta = JSON.parse(meta) || {}; }
+      catch (e) { meta = {}; }
     }
 
-    return sale.customer_name || sale.cliente || '—';
+    if (type === 'sale') {
+      return 'Nova venda registrada para <em>' + entity + '</em>';
+    }
+    if (type === 'customer') {
+      return action === 'delete'
+        ? 'Cliente <em>' + entity + '</em> foi excluído'
+        : 'Novo cliente cadastrado: <em>' + entity + '</em>';
+    }
+    if (type === 'product') {
+      return action === 'delete'
+        ? 'Produto <em>' + entity + '</em> foi excluído'
+        : 'Novo produto cadastrado: <em>' + entity + '</em>';
+    }
+    if (type === 'user') {
+      return 'Novo usuário vinculado: <em>' + entity + '</em>';
+    }
+    if (type === 'organization') {
+      return 'Nova empresa cadastrada: <em>' + entity + '</em>';
+    }
+    if (type === 'stock_movement') {
+      const t = String(meta.type || '').toLowerCase();
+      const qty = meta.quantity != null ? meta.quantity : '—';
+      const label = t === 'entrada' ? 'entrada'
+                  : t === 'saida'   ? 'saída'
+                  : 'ajuste';
+      return 'Movimentação de estoque (' + label + ' de ' + escapeHTML(String(qty)) + ') em <em>' + entity + '</em>';
+    }
+    return 'Ação em <em>' + entity + '</em>';
   }
 
-  function getSaleTotal(sale) {
-    for (let i = 0; i < TOTAL_FIELDS.length; i += 1) {
-      const value = sale[TOTAL_FIELDS[i]];
+  function timeAgo(iso) {
+    if (!iso) return '';
+    const then = new Date(iso).getTime();
+    if (isNaN(then)) return '';
+    const diff = Math.max(0, Date.now() - then);
+    const s = Math.floor(diff / 1000);
+    if (s < 45)     return 'agora';
+    if (s < 90)     return 'há 1 min';
+    const m = Math.floor(s / 60);
+    if (m < 60)     return 'há ' + m + ' min';
+    const h = Math.floor(m / 60);
+    if (h < 24)     return 'há ' + h + (h === 1 ? ' hora' : ' horas');
+    const d = Math.floor(h / 24);
+    if (d < 7)      return 'há ' + d + (d === 1 ? ' dia' : ' dias');
+    const w = Math.floor(d / 7);
+    if (w < 5)      return 'há ' + w + (w === 1 ? ' semana' : ' semanas');
+    return fmtDateFull.format(new Date(iso));
+  }
 
-      if (typeof value === 'number' && Number.isFinite(value)) return value;
+  /* =========================================================
+     Helpers de KPI
+     ========================================================= */
+  function setKpi(key, value, hint) {
+    const el = document.querySelector('[data-kpi="' + key + '"]');
+    if (!el) return;
+    const valueEl = el.querySelector('[data-value]');
+    const hintEl = el.querySelector('[data-hint]');
 
-      if (typeof value === 'string' && value.trim() !== '') {
-        const parsed = Number(value.replace(',', '.'));
-        if (Number.isFinite(parsed)) return parsed;
+    if (valueEl) {
+      valueEl.classList.remove('skeleton');
+      if (typeof value === 'number') {
+        animateNumber(valueEl, value, function (n) { return fmtNum.format(n); });
+      } else {
+        valueEl.textContent = value;
       }
     }
+    if (hintEl && hint) hintEl.innerHTML = hint;
+  }
 
-    if (!totalFieldWarningShown) {
-      totalFieldWarningShown = true;
-      console.warn(
-        '[DEV HUB] Não foi possível identificar o campo de valor na tabela "sales". ' +
-        'Campos verificados: ' + TOTAL_FIELDS.join(', ')
-      );
+  function setKpiError(key) {
+    const el = document.querySelector('[data-kpi="' + key + '"]');
+    if (!el) return;
+    const valueEl = el.querySelector('[data-value]');
+    const hintEl = el.querySelector('[data-hint]');
+    if (valueEl) { valueEl.classList.remove('skeleton'); valueEl.textContent = '—'; }
+    if (hintEl) hintEl.textContent = 'Indisponível agora';
+  }
+
+  /* CORREÇÃO #3: cancela animação anterior do MESMO elemento
+     (evita duas animações competindo pelo mesmo textContent). */
+  function animateNumber(el, target, format) {
+    const prev = numberAnimations.get(el);
+    if (prev && typeof prev.cancel === 'function') prev.cancel();
+
+    const duration = 700;
+    const startTime = performance.now();
+    let raf = null;
+    let cancelled = false;
+
+    function tick(now) {
+      if (cancelled) return;
+      const t = Math.min(1, (now - startTime) / duration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      el.textContent = format(Math.round(target * eased));
+      if (t < 1) raf = requestAnimationFrame(tick);
+      else {
+        el.textContent = format(target);
+        numberAnimations.delete(el);
+      }
     }
+    raf = requestAnimationFrame(tick);
 
-    return 0;
+    numberAnimations.set(el, {
+      cancel: function () {
+        cancelled = true;
+        if (raf) cancelAnimationFrame(raf);
+        numberAnimations.delete(el);
+      }
+    });
   }
 
-  function formatDate(value) {
-    if (!value) return '—';
-
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return '—';
-
-    return dateFormatter.format(date);
+  function renderEmptyChart(id) {
+    const canvas = document.getElementById(id);
+    if (!canvas) return;
+    const empty = canvas.parentElement.querySelector('[data-empty]');
+    canvas.style.display = 'none';
+    if (empty) empty.hidden = false;
   }
 
-  function setText(elementId, text) {
-    const element = document.getElementById(elementId);
-    if (element) element.textContent = text;
+  /* =========================================================
+     Helpers
+     ========================================================= */
+  function toNumber(v) {
+    if (v === null || v === undefined || v === '') return 0;
+    if (typeof v === 'number') return Number.isFinite(v) ? v : 0;
+    const n = Number(String(v).replace(',', '.'));
+    return Number.isFinite(n) ? n : 0;
   }
+
+  function toDateKey(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return y + '-' + m + '-' + d;
+  }
+
+  function toDateInput(date) { return toDateKey(date); }
+
+  function setText(id, text) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
+  }
+
+  function getInputValue(id) {
+    const el = document.getElementById(id);
+    return el ? el.value : '';
+  }
+
+  function setInputValue(id, value) {
+    const el = document.getElementById(id);
+    if (el) el.value = value;
+  }
+
+  function escapeHTML(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  /* =========================================================
+     Toasts
+     ========================================================= */
+  const TOAST_ICONS = {
+    success: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+    error:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5"/><path d="M12 16h.01"/></svg>',
+    info:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 16v-5"/><path d="M12 8h.01"/></svg>'
+  };
+
+  function showToast(message, type) {
+    const region = document.getElementById('toast-region');
+    if (!region) return;
+    const kind = type === 'success' || type === 'error' || type === 'info' ? type : 'info';
+    const toast = document.createElement('div');
+    toast.className = 'toast toast--' + kind;
+    toast.setAttribute('role', kind === 'error' ? 'alert' : 'status');
+
+    const icon = document.createElement('span');
+    icon.className = 'toast__icon';
+    icon.innerHTML = TOAST_ICONS[kind];
+
+    const text = document.createElement('span');
+    text.className = 'toast__message';
+    text.textContent = message;
+
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'toast__close';
+    close.setAttribute('aria-label', 'Fechar');
+    close.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+    close.addEventListener('click', function () { toast.remove(); });
+
+    toast.appendChild(icon);
+    toast.appendChild(text);
+    toast.appendChild(close);
+    region.appendChild(toast);
+
+    setTimeout(function () {
+      toast.classList.add('is-leaving');
+      setTimeout(function () { toast.remove(); }, 300);
+    }, 4000);
+  }
+
 })();

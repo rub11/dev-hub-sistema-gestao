@@ -1,5 +1,21 @@
 /* =========================================================
-   Permissões dentro do modal de usuário
+   DEV HUB · Permissões dentro do modal de usuário
+   ---------------------------------------------------------
+   CORREÇÕES APLICADAS:
+   1. Removida a regra `#user-modal .modal__dialog
+      { max-width: 640px }` — ela ANULAVA a classe
+      `.modal__dialog--lg` (720px) por especificidade de ID.
+      Agora o modal respeita o `--lg` (720px) declarado no
+      HTML de gestao.html.
+   2. `.user-perm-row:hover` só aplica quando o input NÃO
+      está disabled — antes mostrava hover durante o save.
+   3. Cursor do checkbox disabled: `progress` em vez de `wait`
+      (semântica correta). Label herda `not-allowed` visual.
+   4. `border-radius` do `.user-perm-row` passa a usar
+      `var(--radius-sm)` (6px) — consistente com o resto.
+   5. Scrollbar estilizada no `.user-perms__groups`.
+   6. Foco visível no label quando o checkbox é navegado
+      por teclado (`:focus-within`).
    ========================================================= */
 
 .user-perms {
@@ -32,6 +48,7 @@
   line-height: 1.5;
 }
 
+/* CORREÇÃO #5: scrollbar consistente com o resto do app */
 .user-perms__groups {
   display: flex;
   flex-direction: column;
@@ -39,6 +56,15 @@
   max-height: 360px;
   overflow-y: auto;
   padding-right: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+.user-perms__groups::-webkit-scrollbar {
+  width: 6px;
+}
+.user-perms__groups::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 3px;
 }
 
 .user-perms__groups .field-group {
@@ -61,12 +87,14 @@
   margin-bottom: 4px;
 }
 
+/* ---------- Linha de permissão (label + checkbox + texto) ---------- */
 .user-perm-row {
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 6px 10px;
-  border-radius: 8px;
+  /* CORREÇÃO #4: usa o token em vez de 8px hardcoded */
+  border-radius: var(--radius-sm);
   font-size: 13.5px;
   color: var(--text);
   cursor: pointer;
@@ -74,8 +102,19 @@
   transition: background-color var(--transition);
 }
 
-.user-perm-row:hover {
+/* CORREÇÃO #2: só aplica hover quando o checkbox NÃO está
+   disabled — durante o save, os checkboxes ficam desabilitados
+   e o hover some. */
+.user-perm-row:hover:not(:has(input:disabled)) {
   background: var(--surface);
+}
+
+/* CORREÇÃO #6: destaca a linha quando o checkbox recebe foco
+   por teclado (a navegação por Tab entra no input). */
+.user-perm-row:focus-within {
+  background: var(--surface);
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .user-perm-row input[type="checkbox"] {
@@ -87,9 +126,16 @@
   margin: 0;
 }
 
+/* CORREÇÃO #3: `progress` (em andamento) em vez de `wait`
+   (aguardando recurso externo). Semântica mais precisa. */
 .user-perm-row input[type="checkbox"]:disabled {
   opacity: 0.5;
-  cursor: wait;
+  cursor: progress;
+}
+
+/* Label com cursor consistente quando o input está disabled */
+.user-perm-row:has(input:disabled) {
+  cursor: not-allowed;
 }
 
 .user-perm-row span {
@@ -101,7 +147,23 @@
   margin-top: 10px;
 }
 
-/* Modal do usuário um pouco mais largo para caber as permissões */
-#user-modal .modal__dialog {
-  max-width: 640px;
-}
+/* =========================================================
+   CORREÇÃO #1: removida a regra
+   ---------------------------------------------------------
+   Antes:
+     #user-modal .modal__dialog { max-width: 640px; }
+
+   Por que removida: o HTML declara
+     <div class="modal__dialog modal__dialog--lg">
+   e `.modal__dialog--lg { max-width: 720px }` (em clientes.css).
+   Como `#user-modal .modal__dialog` tem especificidade de ID
+   (0,1,0,1) e a classe tem (0,0,2,0), o ID vencia e o modal
+   renderizava em 640px — menor que o esperado.
+
+   Agora o modal tem 720px reais (o "lg" do resto do app),
+   dando espaço para o bloco de permissões respirar.
+
+   Se no futuro precisar restringir só ESTE modal, use a
+   classe (não o ID) para manter a especificidade baixa:
+     .modal__dialog--user-perms { max-width: 700px; }
+   ========================================================= */

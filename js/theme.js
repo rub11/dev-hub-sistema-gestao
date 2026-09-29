@@ -26,10 +26,22 @@
     return mql && mql.matches ? 'dark' : 'light';
   }
 
+  /* Notifica o resto da aplicação que o tema mudou.
+     Charts, ícones, cores dinâmicas — tudo que precisa
+     se redesenhar escuta este evento. */
+  function dispatchThemeChanged(preference, resolved) {
+    try {
+      document.dispatchEvent(new CustomEvent('theme:changed', {
+        detail: { preference: preference, resolved: resolved }
+      }));
+    } catch (e) { /* CustomEvent indisponível — ignora */ }
+  }
+
   function applyTheme(preference) {
     const resolved = resolveTheme(preference);
     document.documentElement.setAttribute('data-theme', resolved);
     document.documentElement.setAttribute('data-theme-pref', preference);
+    dispatchThemeChanged(preference, resolved);
   }
 
   function setPreference(preference) {
@@ -41,7 +53,9 @@
     applyTheme(preference);
   }
 
-  // Aplica imediatamente (evita flash)
+  // Aplica imediatamente (evita flash).
+  // Obs.: quem escuta 'theme:changed' já registra o listener
+  // no DOMContentLoaded e recebe o estado atual por lá.
   applyTheme(readPreference());
 
   // Reage a mudanças do sistema quando a preferência é "system"
@@ -52,6 +66,13 @@
     if (typeof mql.addEventListener === 'function') mql.addEventListener('change', onChange);
     else if (typeof mql.addListener === 'function') mql.addListener(onChange);
   }
+
+  // Sincroniza entre abas: se o usuário trocar o tema numa aba,
+  // as outras acompanham.
+  window.addEventListener('storage', function (e) {
+    if (e.key !== STORAGE_KEY && e.key !== null) return;
+    applyTheme(readPreference());
+  });
 
   // API pública
   window.Theme = {

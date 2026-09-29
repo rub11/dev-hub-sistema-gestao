@@ -3,10 +3,39 @@
    ---------------------------------------------------------
    Estilos específicos. Componentes genéricos (modal, toast,
    toolbar, search, state-block, row-actions) vêm de clientes.css.
+   ---------------------------------------------------------
+   CORREÇÕES APLICADAS:
+   1. Botão "remover foto" agora fica visível em dispositivos
+      touch (sem hover). Antes, `opacity: 0` + `:hover` deixava
+      o usuário mobile sem como remover fotos.
+   2. `.cell-product` ganha aviso sobre `display: flex` em `<td>`
+      — funciona nos browsers modernos, mas o ideal futuro é
+      reestruturar com um `<div>` wrapper (mudança de HTML).
+   3. Consolidação de seletores duplicados (`.switch` e
+      `.cell-product` apareciam 2× cada).
+   4. Cores hardcoded (`#d0d5dd`, `#ffffff`) mantidas por
+      compatibilidade — já cobertas por `theme.css` no dark.
+      Migração para variáveis sugerida como próximo passo.
    ========================================================= */
 
-/* ---------- Célula principal (nome) ---------- */
-.cell-product { font-weight: 600; color: var(--text); }
+/* ---------- Célula principal (nome + thumb) ---------- */
+/* NOTA: `display: flex` em `<td>` funciona nos browsers
+   modernos, mas substitui `display: table-cell` — o que faz
+   `vertical-align: middle` (herdado de `.panel td`) ser
+   ignorado. Como o flex já centraliza com `align-items`, o
+   resultado visual é equivalente. */
+.cell-product {
+  font-weight: 600;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.cell-product__info {
+  min-width: 0;
+  flex: 1 1 auto;
+}
 
 .cell-product small {
   display: block;
@@ -19,6 +48,23 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* Thumb na lista (substitui ícone) */
+.cell-product__thumb {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex: none;
+  border-radius: 8px;
+  background: var(--surface-2);
+  color: var(--text-muted);
+  overflow: hidden;
+  margin-right: 10px;
+}
+.cell-product__thumb img { width: 100%; height: 100%; object-fit: cover; }
+.cell-product__thumb svg { width: 18px; height: 18px; }
 
 /* ---------- Preço ---------- */
 .cell-price {
@@ -64,6 +110,9 @@
   font-size: 14px;
   font-weight: 500;
   color: var(--text);
+
+  /* Alinha com os inputs do grid (input tem 46px de altura) */
+  padding-top: 6px;
 }
 
 .switch input {
@@ -83,7 +132,7 @@
   width: 38px;
   height: 22px;
   border-radius: 999px;
-  background: #d0d5dd;
+  background: #d0d5dd;   /* sobrescrito por theme.css no dark */
   transition: background-color var(--transition);
   flex: none;
 }
@@ -95,7 +144,7 @@
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: #ffffff;
+  background: #ffffff;   /* sobrescrito por theme.css no dark */
   box-shadow: 0 1px 2px rgba(16, 24, 40, 0.22);
   transition: transform var(--transition);
 }
@@ -110,17 +159,8 @@
 
 .switch__label { color: var(--text-soft); }
 
-/* Ajuste no grid do modal: o toggle fica um pouco mais baixo que os inputs */
-.switch { padding-top: 6px; }
-
-/* ---------- Responsivo ---------- */
-@media (max-width: 720px) {
-  .cell-product small { max-width: 200px; }
-}
-
-
 /* =========================================================
-   Fotos do produto (até 3) + código de barras
+   Fotos do produto (até 3)
    ========================================================= */
 
 /* Slots de foto */
@@ -193,7 +233,15 @@
   transition: opacity var(--transition);
 }
 .product-photo:hover .product-photo__remove { opacity: 1; }
+.product-photo__remove:focus-visible { opacity: 1; }
 .product-photo__remove svg { width: 14px; height: 14px; }
+
+/* CORREÇÃO #1: em dispositivos touch (sem hover), o botão
+   fica sempre visível — senão é impossível remover fotos
+   no mobile. */
+@media (hover: none), (pointer: coarse) {
+  .product-photo__remove { opacity: 1; }
+}
 
 .product-photo__badge {
   position: absolute;
@@ -226,36 +274,14 @@
   pointer-events: none;
 }
 
-/* Thumb na lista (substitui ícone) */
-.cell-product__thumb {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  flex: none;
-  border-radius: 8px;
-  background: var(--surface-2);
-  color: var(--text-muted);
-  overflow: hidden;
-  margin-right: 10px;
-  vertical-align: middle;
-}
-.cell-product__thumb img { width: 100%; height: 100%; object-fit: cover; }
-.cell-product__thumb svg { width: 18px; height: 18px; }
-
-/* Ajuste do cell-product: agora tem thumb + texto */
-.cell-product {
-  display: flex;
-  align-items: center;
-  gap: 0;
-}
-.cell-product__info {
-  min-width: 0;
-  flex: 1 1 auto;
+/* =========================================================
+   Responsivo
+   ========================================================= */
+@media (max-width: 720px) {
+  .cell-product small { max-width: 200px; }
 }
 
 @media (max-width: 640px) {
-  .product-photos { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .product-photos { gap: 8px; }   /* grid continua 3 colunas */
   .product-photo__badge { font-size: 9.5px; padding: 1px 6px; }
 }

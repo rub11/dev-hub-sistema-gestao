@@ -1,24 +1,40 @@
 /* =========================================================
    DEV HUB · Overrides do tema escuro
    Carregar DEPOIS de global.css e dashboard.css.
+   ---------------------------------------------------------
+   CORREÇÕES APLICADAS:
+   1. Toasts (success/info) tinham border claro hardcoded em
+      clientes.css — agora usam tons dark-friendly.
+   2. Tags PF/PJ (clientes.css) — fundo claro fixo.
+   3. Alert items (dashboard-pro.css) — ícones com fundo claro.
+   4. Role tag de admin (funcionarios.css) — border #c7d2fe.
+   5. Status badge de férias (plataforma-usuarios.css) — fundo
+      #eff6ff hardcoded.
+   6. Switch track (produtos.css) — #d0d5dd ficava claro demais.
+   7. Chevrons dos selects — stroke #667085 hardcoded, quase
+      invisível sobre superfície escura.
    ========================================================= */
 
 [data-theme="dark"] {
+  /* Superfícies */
   --bg: #0b0d10;
   --surface: #14171b;
   --surface-2: #1a1e23;
   --border: #24292f;
   --border-strong: #343a42;
 
+  /* Texto */
   --text: #eef1f5;
   --text-soft: #a8b0ba;
   --text-muted: #6f7780;
 
+  /* Marca */
   --accent: #6366f1;
   --accent-hover: #7d7ff2;
   --accent-soft: rgba(99, 102, 241, 0.14);
   --accent-ring: rgba(99, 102, 241, 0.3);
 
+  /* Semânticas */
   --danger: #f97066;
   --danger-soft: rgba(249, 112, 102, 0.12);
   --danger-border: rgba(249, 112, 102, 0.28);
@@ -30,22 +46,26 @@
   --success: #4ade80;
   --success-soft: rgba(74, 222, 128, 0.12);
 
+  /* Sombras */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
   --shadow-md: 0 6px 20px -6px rgba(0, 0, 0, 0.55),
                0 2px 6px -2px rgba(0, 0, 0, 0.35);
 }
 
-/* Topbar com fundo escuro translúcido */
+/* =========================================================
+   Topbar / sidebar overlay
+   ========================================================= */
 [data-theme="dark"] .topbar {
   background: rgba(20, 23, 27, 0.86);
 }
 
-/* Overlay do sidebar mais escuro */
 [data-theme="dark"] .sidebar-overlay {
   background: rgba(0, 0, 0, 0.7);
 }
 
-/* Badges/etiquetas que usavam fundo claro fixo */
+/* =========================================================
+   Badges / etiquetas (base)
+   ========================================================= */
 [data-theme="dark"] .badge,
 [data-theme="dark"] .menu-item__tag,
 [data-theme="dark"] .badge--neutral {
@@ -57,6 +77,156 @@
 [data-theme="dark"] .badge--warning { background: var(--warning-soft); color: var(--warning); }
 [data-theme="dark"] .badge--danger  { background: var(--danger-soft);  color: var(--danger); }
 
-/* Inputs e superfícies herdam via variáveis — nada extra aqui. */
+/* =========================================================
+   CORREÇÃO #1 — Toasts (clientes.css)
+   ---------------------------------------------------------
+   `--border-color` do success/info era tom claro. Sobre o
+   fundo escuro translúcido, a borda some.
+   ========================================================= */
+[data-theme="dark"] .toast--success {
+  border-color: rgba(74, 222, 128, 0.32);
+  background: var(--success-soft);
+  color: var(--success);
+}
 
-/* Sidebar permanece escura nos dois temas (não mexe). */
+[data-theme="dark"] .toast--info {
+  border-color: var(--accent-ring);
+  background: var(--accent-soft);
+  color: var(--accent-hover);
+}
+
+/* (.toast--error já usa var(--danger-border), que é
+   redefinido para dark; nenhum override necessário.) */
+
+/* =========================================================
+   CORREÇÃO #2 — Tags PF/PJ (clientes.css)
+   ---------------------------------------------------------
+   Usa pastéis azul/rosa fixos, próprios para fundo claro.
+   ========================================================= */
+[data-theme="dark"] .tag-pf {
+  background: rgba(59, 130, 246, 0.16);
+  color: #93c5fd;
+  border-color: rgba(59, 130, 246, 0.32);
+}
+
+[data-theme="dark"] .tag-pj {
+  background: rgba(236, 72, 153, 0.16);
+  color: #f9a8d4;
+  border-color: rgba(236, 72, 153, 0.32);
+}
+
+/* =========================================================
+   CORREÇÃO #3 — Alert items (dashboard-pro.css)
+   ---------------------------------------------------------
+   Cada `kind` tinha um fundo `#fef...` claro para o ícone.
+   O `kpi__icon--*` já tem override próprio no dashboard-pro.css;
+   `.alert-item__icon` não tinha nenhum.
+   ========================================================= */
+[data-theme="dark"] .alert-item {
+  background: var(--surface-2);
+  border-color: var(--border);
+}
+
+[data-theme="dark"] .alert-item--danger .alert-item__icon {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+[data-theme="dark"] .alert-item--warn .alert-item__icon {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+[data-theme="dark"] .alert-item--info .alert-item__icon {
+  background: var(--accent-soft);
+  color: var(--accent-hover);
+}
+
+/* =========================================================
+   CORREÇÃO #4 — Role tags (funcionarios.css / gestao.css)
+   ---------------------------------------------------------
+   `.role-tag--admin` tinha `border-color: #c7d2fe` hardcoded.
+   `.role-tag--leader` idem no gestao.css.
+   ========================================================= */
+[data-theme="dark"] .role-tag {
+  background: var(--surface-2);
+  border-color: var(--border);
+  color: var(--text-soft);
+}
+
+[data-theme="dark"] .role-tag--admin {
+  background: var(--accent-soft);
+  border-color: var(--accent-ring);
+  color: var(--accent-hover);
+}
+
+[data-theme="dark"] .role-tag--leader {
+  background: rgba(245, 158, 11, 0.14);
+  border-color: rgba(245, 158, 11, 0.32);
+  color: #fbbf24;
+}
+
+/* =========================================================
+   CORREÇÃO #5 — Status badges (plataforma-usuarios.css)
+   ---------------------------------------------------------
+   `.status-badge--vacation` tinha fundo `#eff6ff` fixo.
+   Os outros usavam variáveis (--success-soft, etc), já OK;
+   mantidos aqui só para centralizar a intenção.
+   ========================================================= */
+[data-theme="dark"] .status-badge--active {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+[data-theme="dark"] .status-badge--vacation {
+  background: rgba(59, 130, 246, 0.16);
+  color: #93c5fd;
+}
+
+[data-theme="dark"] .status-badge--banned {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+[data-theme="dark"] .status-badge--suspended {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+[data-theme="dark"] .status-badge--inactive {
+  background: #1f242a;
+  color: var(--text-muted);
+}
+
+/* =========================================================
+   CORREÇÃO #6 — Switch (produtos.css)
+   ---------------------------------------------------------
+   O track `#d0d5dd` (cinza claro) ficava muito destacado.
+   O thumb `#ffffff` também brilha demais no dark.
+   ========================================================= */
+[data-theme="dark"] .switch__track {
+  background: #2a323b;
+}
+
+[data-theme="dark"] .switch__thumb {
+  background: #cbd5e1;
+}
+
+/* =========================================================
+   CORREÇÃO #7 — Chevrons dos selects
+   ---------------------------------------------------------
+   5 arquivos definem `background-image` com `stroke='%23667085'`
+   (cinza médio). Sobre `--surface` escuro, o chevron tem baixo
+   contraste. Trocamos para `%23a8b0ba` (= --text-soft).
+   ========================================================= */
+[data-theme="dark"] .control-select,
+[data-theme="dark"] .sale-form select,
+[data-theme="dark"] .repeatable-row select,
+[data-theme="dark"] #org-modal select,
+[data-theme="dark"] .org-manage__row select {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a8b0ba' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+}
+
+/* =========================================================
+   Sidebar permanece escura nos dois temas (não mexe).
+   ========================================================= */ 

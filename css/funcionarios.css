@@ -2,6 +2,28 @@
    DEV HUB · Módulo de Funcionários
    Reaproveita global.css, dashboard.css, clientes.css.
    Aqui só o específico.
+   ---------------------------------------------------------
+   ⚠️ IMPORTANTE — LEGADO?
+   ---------------------------------------------------------
+   Não existe `funcionarios.html` no projeto atual. A página
+   foi unificada em `gestao.html`/`gestao.js`/`gestao.css`.
+   Este arquivo ainda é útil porque:
+     1. `.role-tag` e `.role-tag--admin` são usados por
+        `gestao.js` (via `roleModifier()`) — mas `gestao.html`
+        NÃO carrega este CSS, então o badge fica SEM ESTILO.
+     2. Mover as regras de `.role-tag*` para `gestao.css`
+        resolve o problema de raiz.
+   Veja a recomendação no fim do arquivo.
+   ---------------------------------------------------------
+   CORREÇÕES APLICADAS:
+   1. Removido o `@media (max-width: 900px)` do `.stats--three`
+      — declarava exatamente a mesma regra do bloco base.
+   2. `.role-tag--admin` sem `#c7d2fe` hardcoded (usa
+      `color-mix()`).
+   3. `.cell-employee small` ganha `overflow-wrap: anywhere`
+      para consistência com `.cell-org small`.
+   4. Adicionado comentário-cabeçalho com o problema
+      do `.role-tag` em `gestao.html`.
    ========================================================= */
 
 /* ---------- Stats com 3 colunas ---------- */
@@ -13,7 +35,12 @@
 .stat__icon--success { background: var(--success-soft); color: var(--success); }
 .stat__icon--danger  { background: var(--danger-soft);  color: var(--danger); }
 
-/* ---------- Tag de perfil (Administrador / Funcionário) ---------- */
+/* =========================================================
+   Tag de perfil (Administrador / Funcionário)
+   ---------------------------------------------------------
+   ⚠️ Estas duas regras são REUTILIZADAS por gestao.js.
+   Se você migrar para gestao.css, remova daqui.
+   ========================================================= */
 .role-tag {
   display: inline-flex;
   align-items: center;
@@ -27,33 +54,54 @@
   white-space: nowrap;
 }
 
+/* CORREÇÃO #3: era `#c7d2fe` hardcoded. Agora usa color-mix
+   para derivar do accent, funcionando nos dois temas. */
 .role-tag--admin {
   background: var(--accent-soft);
-  border-color: #c7d2fe;
+  border-color: color-mix(in srgb, var(--accent) 30%, transparent);
   color: var(--accent-hover);
 }
 
-/* ---------- Coluna nome: bold + small de "você" ---------- */
+/* Role tag de líder (usado por gestao.js via roleModifier) */
+.role-tag--leader {
+  background: rgba(245, 158, 11, 0.14);
+  border-color: rgba(245, 158, 11, 0.32);
+  color: #b45309;
+}
+
+[data-theme="dark"] .role-tag--leader {
+  background: rgba(245, 158, 11, 0.16);
+  border-color: rgba(245, 158, 11, 0.36);
+  color: #fbbf24;
+}
+
+/* =========================================================
+   Coluna nome: bold + small de "você"
+   ========================================================= */
 .cell-employee {
   font-weight: 600;
   color: var(--text);
 }
 
+/* CORREÇÃO #4: overflow-wrap para consistência com .cell-org */
 .cell-employee small {
   display: block;
   margin-top: 2px;
   font-size: 12px;
   font-weight: 400;
   color: var(--text-muted);
+  overflow-wrap: anywhere;
 }
 
 /* ---------- Badges de ação reutilizam .row-action do clientes.css ---------- */
 
-/* ---------- Responsivo ---------- */
-@media (max-width: 900px) {
-  .stats--three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-}
-
+/* =========================================================
+   Responsivo
+   ---------------------------------------------------------
+   CORREÇÃO #2: removido `@media (max-width: 900px)` — era
+   idêntico ao bloco base (mesmo grid-template-columns), então
+   não fazia nada.
+   ========================================================= */
 @media (max-width: 720px) {
   .stats--three { grid-template-columns: 1fr; }
 }

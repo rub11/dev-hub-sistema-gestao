@@ -4,6 +4,19 @@
    Componentes genéricos (modal, toast, toolbar, search,
    state-block, row-actions, field, form-grid) vêm de
    clientes.css. Aqui apenas o específico de vendas.
+   ---------------------------------------------------------
+   CORREÇÕES APLICADAS:
+   1. Removida a duplicação do bloco "Busca de produto" —
+      havia duas cópias quase idênticas com valores divergentes
+      (padding-left 40px vs 46px; z-index 30 vs 500). A versão
+      final usa os valores do 2º bloco (button lupa, z-index 500).
+   2. Removida a regra `.product-search__icon` (CSS morto —
+      vendas.html usa `<button class="product-search__btn">`
+      no lugar do ícone estático).
+   3. Unificados os dois `@media (max-width: 720px)` num só
+      (evita cascata confusa em futuras edições).
+   4. Padronizado `padding-left/right` do input (46/44)
+      consistentes com a largura do botão (34px) + margens.
    ========================================================= */
 
 /* ---------- Número da venda ---------- */
@@ -272,7 +285,11 @@
   gap: 12px;
 }
 
-.detail-section + .detail-section { margin-top: 6px; padding-top: 16px; border-top: 1px solid var(--border); }
+.detail-section + .detail-section {
+  margin-top: 6px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
 
 .detail-section__title {
   font-size: 11.5px;
@@ -365,24 +382,16 @@
 }
 
 /* =========================================================
-   Responsivo
-   ========================================================= */
-@media (max-width: 1180px) {
-  .sale-form { grid-template-columns: minmax(0, 1fr); }
-  .card--sticky { position: static; }
-}
-
-@media (max-width: 720px) {
-  .page-head--with-back { flex-direction: column; gap: 10px; }
-  .add-grid { grid-template-columns: 1fr 1fr; }
-  .add-grid .field--action { grid-column: 1 / -1; }
-  .detail-grid { grid-template-columns: 1fr; }
-  .cart-table { min-width: 480px; }
-}
-/* =========================================================
-   Busca de produto + preview
+   Busca de produto + preview  (FONTE ÚNICA — CORREÇÃO #1)
+   =========================================================
+   Usa `<button class="product-search__btn">` no lugar do
+   antigo `<span class="product-search__icon">`. Esse button
+   é clicável e dispara a busca, enquanto o input continua
+   funcionando por digitação.
    ========================================================= */
 .product-search {
+  width: 100%;
+  max-width: 100%;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -393,21 +402,56 @@
   position: relative;
   display: flex;
   align-items: center;
+  width: 100%;
+  max-width: 100%;
 }
 
-.product-search__icon {
+/* Lupa clicável (substituiu .product-search__icon) */
+.product-search__btn {
   position: absolute;
-  left: 12px;
+  left: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  z-index: 2;
+  transition: background-color var(--transition), color var(--transition);
+}
+
+.product-search__btn svg {
   width: 18px;
   height: 18px;
-  color: var(--text-muted);
-  pointer-events: none;
 }
 
+.product-search__btn:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.product-search__btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.product-search__btn:active {
+  transform: translateY(-50%) scale(0.94);
+}
+
+/* CORREÇÃO #4: padding-left 46 = 6 (left) + 34 (btn) + 6 (gap)
+                  padding-right 44 = 8 (right) + 32 (clear) + 4 (gap) */
 .product-search__control input {
   width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   height: 46px;
-  padding: 0 42px 0 38px;
+  padding: 0 44px 0 46px;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius);
   background: var(--surface);
@@ -415,7 +459,9 @@
   color: var(--text);
   transition: border-color var(--transition), box-shadow var(--transition);
 }
+
 .product-search__control input:hover:not(:focus) { border-color: #b9bfc9; }
+
 .product-search__control input:focus {
   outline: none;
   border-color: var(--accent);
@@ -439,12 +485,13 @@
 .product-search__clear:hover { background: var(--surface-2); color: var(--text); }
 .product-search__clear svg { width: 16px; height: 16px; }
 
+/* ---------- Dropdown de sugestões ---------- */
 .product-suggestions {
   position: absolute;
   top: calc(100% + 6px);
   left: 0;
   right: 0;
-  z-index: 30;
+  z-index: 500;              /* CORREÇÃO #1: 30 → 500 (acima do topnav, que é 30) */
   max-height: 320px;
   overflow-y: auto;
   padding: 6px;
@@ -455,6 +502,8 @@
   background: var(--surface);
   box-shadow: var(--shadow-md);
   animation: dh-pop 140ms ease-out;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 .product-suggestions__item {
@@ -514,7 +563,7 @@
   font-size: 13px;
 }
 
-/* ---- Preview do produto ---- */
+/* ---------- Preview do produto ---------- */
 .product-pick {
   display: grid;
   grid-template-columns: 120px 1fr;
@@ -601,7 +650,7 @@
 .product-pick__actions .field { max-width: 130px; }
 .product-pick__actions .btn { height: 46px; }
 
-/* Auditoria */
+/* ---------- Auditoria ---------- */
 .audit-list {
   display: flex;
   flex-direction: column;
@@ -648,65 +697,24 @@
   overflow-wrap: anywhere;
 }
 
-@media (max-width: 640px) {
-  .product-pick {
-    grid-template-columns: 1fr;
-  }
-  .product-pick__media {
-    width: 100%;
-    height: 160px;
-  }
-  .product-pick__actions { flex-direction: column; align-items: stretch; }
-  .product-pick__actions .field { max-width: none; }
-}
 /* =========================================================
-   Busca de produto — fix mobile + lupa + sugestões
+   Responsivo  (CORREÇÃO #3: media queries unificadas)
    ========================================================= */
-
-.product-search {
-  width: 100%;
-  max-width: 100%;
+@media (max-width: 1180px) {
+  .sale-form { grid-template-columns: minmax(0, 1fr); }
+  .card--sticky { position: static; }
 }
 
-.product-search__control {
-  position: relative;
-  display: flex;
-  align-items: center;
-  width: 100%;
-  max-width: 100%;
-}
-
-.product-search__icon {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 18px;
-  height: 18px;
-  color: var(--text-muted);
-  pointer-events: none;
-  z-index: 2;
-}
-
-.product-search__control input {
-  width: 100%;
-  min-width: 0;
-  box-sizing: border-box;
-  padding-left: 40px;   /* espaço pra lupa */
-  padding-right: 44px;  /* espaço pro botão limpar */
-}
-
-.product-suggestions {
-  z-index: 500;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain;
-}
-
-/* ---------- Mobile ---------- */
 @media (max-width: 720px) {
-  .product-search {
-    min-width: 0;
-  }
+  /* Layout geral */
+  .page-head--with-back { flex-direction: column; gap: 10px; }
+  .add-grid { grid-template-columns: 1fr 1fr; }
+  .add-grid .field--action { grid-column: 1 / -1; }
+  .detail-grid { grid-template-columns: 1fr; }
+  .cart-table { min-width: 480px; }
+
+  /* Busca de produto */
+  .product-search { min-width: 0; }
 
   .product-suggestions {
     max-height: 55vh;
@@ -721,18 +729,14 @@
     -webkit-tap-highlight-color: transparent;
   }
 
-  .product-suggestions__name {
-    white-space: normal;
-    overflow: visible;
-    text-overflow: clip;
-    line-height: 1.3;
-  }
-
+  .product-suggestions__name,
   .product-suggestions__meta {
     white-space: normal;
     overflow: visible;
     text-overflow: clip;
   }
+
+  .product-suggestions__name { line-height: 1.3; }
 
   /* Evita "quebra" horizontal no card do formulário */
   .card__body {
@@ -741,111 +745,17 @@
   }
 }
 
-/* =========================================================
-   Busca de produto — lupa clicável + mobile
-   ========================================================= */
-
-.product-search {
-  width: 100%;
-  max-width: 100%;
-}
-
-.product-search__control {
-  position: relative;
-  display: flex;
-  align-items: center;
-  width: 100%;
-  max-width: 100%;
-}
-
-/* Lupa clicável */
-.product-search__btn {
-  position: absolute;
-  left: 6px;
-  top: 50%;
-  transform: translateY(-50%);
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  border: 0;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--text-muted);
-  cursor: pointer;
-  z-index: 2;
-  transition: background-color var(--transition), color var(--transition);
-}
-
-.product-search__btn svg {
-  width: 18px;
-  height: 18px;
-}
-
-.product-search__btn:hover {
-  background: var(--surface-2);
-  color: var(--text);
-}
-
-.product-search__btn:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-
-.product-search__btn:active {
-  transform: translateY(-50%) scale(0.94);
-}
-
-/* Input: espaço pra lupa (esquerda) e pro botão limpar (direita) */
-.product-search__control input {
-  width: 100%;
-  min-width: 0;
-  box-sizing: border-box;
-  padding-left: 46px;
-  padding-right: 44px;
-}
-
-/* Dropdown de sugestões */
-.product-suggestions {
-  z-index: 500;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain;
-}
-
-/* ---------- Mobile ---------- */
-@media (max-width: 720px) {
-  .product-search {
-    min-width: 0;
+@media (max-width: 640px) {
+  .product-pick {
+    grid-template-columns: 1fr;
   }
-
-  .product-suggestions {
-    max-height: 55vh;
-    padding: 8px;
+  .product-pick__media {
+    width: 100%;
+    height: 160px;
   }
-
-  .product-suggestions__item {
-    padding: 12px;
-    min-height: 56px;
-    align-items: center;
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: transparent;
+  .product-pick__actions {
+    flex-direction: column;
+    align-items: stretch;
   }
-
-  .product-suggestions__name {
-    white-space: normal;
-    overflow: visible;
-    text-overflow: clip;
-    line-height: 1.3;
-  }
-
-  .product-suggestions__meta {
-    white-space: normal;
-    overflow: visible;
-    text-overflow: clip;
-  }
-
-  .card__body {
-    min-width: 0;
-    overflow-wrap: anywhere;
-  }
+  .product-pick__actions .field { max-width: none; }
 }

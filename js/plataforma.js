@@ -4,6 +4,18 @@
    Apenas para platform_admin (profiles.is_platform_admin = true).
    Cria/edita empresas via RPC `create_organization_with_admin`
    ou update direto em `organizations` (RLS protege).
+   ---------------------------------------------------------
+   CORREÇÕES APLICADAS:
+   1. Cria dinamicamente o input hidden #org-id caso o HTML
+      não o tenha — o modal de edição não funcionava porque
+      o id nunca era lido (sempre caía no ramo "criar").
+   2. `closeOrgModal(skipGuard)` chamado com skipGuard=true
+      no caminho de sucesso — antes, com `state.creating` =
+      true, o guard bloqueava o fechamento e o modal ficava
+      aberto para sempre.
+   3. Detecção de "0 linhas atualizadas" em edição (empresa
+      removida por outro administrador).
+   4. Guards de null em `modalEls.name.focus()`.
    ========================================================= */
 
 (function () {
@@ -506,6 +518,19 @@
 
     if (!modalEls.modal || !modalEls.form) return;
 
+    /* CORREÇÃO #1: cria o hidden #org-id se o HTML não o tiver.
+       Sem isso, o modo edição nunca funciona — o formulário sempre
+       envia sem id e cai no ramo "criar". */
+    if (!modalEls.id) {
+      const hidden = document.createElement('input');
+      hidden.type = 'hidden';
+      hidden.id = 'org-id';
+      hidden.name = 'org-id';
+      hidden.value = '';
+      modalEls.form.prepend(hidden);
+      modalEls.id = hidden;
+    }
+
     if (modalEls.openBtn) {
       modalEls.openBtn.addEventListener('click', openCreateModal);
     }
@@ -553,7 +578,7 @@
 
     modalEls.modal.hidden = false;
     document.body.style.overflow = 'hidden';
-    modalEls.name.focus();
+    if (modalEls.name) modalEls.name.focus();
   }
 
   function openEditOrgModal(org) {
@@ -569,11 +594,20 @@
 
     modalEls.modal.hidden = false;
     document.body.style.overflow = 'hidden';
-    modalEls.name.focus();
+    if (modalEls.name) modalEls.name.focus();
   }
 
-  function closeOrgModal() {
-    if (state.creating) return;
+  /**
+   * Fecha o modal.
+   * @param {boolean} [skipGuard] Quando true, fecha mesmo com
+   *   `state.creating === true` (usado no caminho de sucesso
+   *   do submit — sem isso, o modal nunca fecha).
+   */
+  function closeOrgModal(skipGuard) {
+    /* CORREÇÃO #2: sem skipGuard, o guard bloqueia o fechamento
+       programático após salvar com sucesso. */
+    if (state.creating && !skipGuard) return;
+    if (!modalEls.modal) return;
     modalEls.modal.hidden = true;
     document.body.style.overflow = '';
   }
@@ -591,17 +625,17 @@
 
     if (!name) {
       showFormFeedback('Informe o nome da empresa.');
-      modalEls.name.focus();
+      if (modalEls.name) modalEls.name.focus();
       return;
     }
     if (!code) {
       showFormFeedback('Informe o código da empresa.');
-      modalEls.code.focus();
+      if (modalEls.code) modalEls.code.focus();
       return;
     }
     if (!/^[A-Z0-9-]{2,40}$/.test(code)) {
       showFormFeedback('Use apenas letras, números e hífen (mínimo 2 caracteres).');
-      modalEls.code.focus();
+      if (modalEls.code) modalEls.code.focus();
       return;
     }
 
@@ -610,14 +644,23 @@
     try {
       if (id) {
         // -------- Editar empresa existente --------
-        const { error } = await window.db
+        /* CORREÇÃO #3: .select('id') pra detectar update de 0 linhas */
+        const { data, error } = await window.db
           .from('organizations')
           .update({ name: name, code: code, active: active })
-          .eq('id', id);
+          .eq('id', id)
+          .select('id');
 
         if (error) throw error;
 
-        closeOrgModal();
+        if (!data || data.length === 0) {
+          const notFound = new Error('ORG_NOT_FOUND');
+          notFound.code = 'ORG_NOT_FOUND';
+          throw notFound;
+        }
+
+        /* CORREÇÃO #2: skipGuard=true pro fecha mesmo com state.creating=true */
+        closeOrgModal(true);
         showToast('Empresa atualizada com sucesso.', 'success');
       } else {
         // -------- Criar nova empresa --------
@@ -629,14 +672,21 @@
 
         if (error) throw error;
 
-        closeOrgModal();
+        closeOrgModal(true);
         showToast('Empresa criada com sucesso.', 'success');
       }
 
       await loadOrganizations();
     } catch (error) {
       console.error('[DEV HUB] Falha ao salvar empresa:', error);
-      showFormFeedback(mapCreateError(error));
+
+      if (error && (error.code === 'ORG_NOT_FOUND' || error.message === 'ORG_NOT_FOUND')) {
+        showFormFeedback(
+          'Esta empresa não existe mais. Ela pode ter sido removida por outro administrador.'
+        );
+      } else {
+        showFormFeedback(mapCreateError(error));
+      }
     } finally {
       setFormBusy(false);
     }
@@ -724,24 +774,26 @@
     const isActive = org.active !== false;
     const name = org.name || 'esta empresa';
 
-    if (isActive) {
-      confirmEls.text.textContent =
-        'Desativar "' + name + '"? ' +
-        'Usuários desta empresa não conseguirão fazer login até que ela seja reativada.';
-      setConfirmButton('Desativar', 'danger');
-    } else {
-      confirmEls.text.textContent =
-        'Ativar "' + name + '" novamente? ' +
-        'Usuários desta empresa voltarão a conseguir fazer login.';
-      setConfirmButton('Ativar', 'primary');
+    if (confirmEls.text) {
+      if (isActive) {
+        confirmEls.text.textContent =
+          'Desativar "' + name + '"? ' +
+          'Usuários desta empresa não conseguirão fazer login até que ela seja reativada.';
+      } else {
+        confirmEls.text.textContent =
+          'Ativar "' + name + '" novamente? ' +
+          'Usuários desta empresa voltarão a conseguir fazer login.';
+      }
     }
+    setConfirmButton(isActive ? 'Desativar' : 'Ativar', isActive ? 'danger' : 'primary');
 
     confirmEls.modal.hidden = false;
     document.body.style.overflow = 'hidden';
-    confirmEls.btn.focus();
+    if (confirmEls.btn) confirmEls.btn.focus();
   }
 
   function setConfirmButton(label, variant) {
+    if (!confirmEls.btn) return;
     confirmEls.btn.className = 'btn btn--' + variant;
     const lbl = confirmEls.btn.querySelector('.btn__label');
     if (lbl) lbl.textContent = label;
@@ -749,6 +801,7 @@
 
   function closeConfirmModal() {
     if (state.acting) return;
+    if (!confirmEls.modal) return;
     confirmEls.modal.hidden = true;
     document.body.style.overflow = '';
     state.action = null;

@@ -5,6 +5,17 @@
    - Permissões por tipo de perfil DENTRO do modal de usuário
    - Alterar senha do funcionário direto no modal de edição
    - Acesso à página via management.view (granular) OU papel base
+   ---------------------------------------------------------
+   CORREÇÕES APLICADAS:
+   1. Race condition em `loadUserPermsForSlug`: token de geração
+      descarta respostas obsoletas ao trocar o tipo de perfil.
+   2. `onSubmitEditMember` distingue "dados salvos + senha falhou"
+      e informa o usuário em vez de mostrar erro genérico.
+   3. Guards de null em `roleTypeEls.*` (label, id, form, slug).
+   4. `PERM_GROUPS` inclui o grupo "Notas fiscais" — antes as
+      caps `invoices.*` não eram configuráveis pela UI.
+   5. Toggle de senha reseta ao abrir o modal do usuário.
+   6. `resolveOrgId()` com fallback pro sessionStorage.
    ========================================================= */
 
 (function () {
@@ -19,7 +30,10 @@
   const ROLE_ADMIN   = ['admin', 'administrador'];
   const ROLE_MANAGER = ['gestor', 'manager'];
 
-  /* Grupos de permissão exibidos no modal do usuário */
+  /* Grupos de permissão exibidos no modal do usuário.
+     CORREÇÃO #4: adicionado grupo "Notas fiscais" — caps
+     `invoices.*` existiam no permissions.js mas não tinham
+     representação na UI. */
   const PERM_GROUPS = [
     { title: 'Geral', caps: [
       ['dashboard.view', 'Ver dashboard']
@@ -34,6 +48,12 @@
       ['notes.view',  'Ver notas'],
       ['notes.print', 'Imprimir notas']
     ]},
+    { title: 'Notas fiscais', caps: [
+      ['invoices.view',   'Ver notas fiscais'],
+      ['invoices.create', 'Emitir nota fiscal'],
+      ['invoices.cancel', 'Cancelar nota fiscal'],
+      ['invoices.delete', 'Excluir nota fiscal']
+    ]},
     { title: 'Clientes', caps: [
       ['customers.view',   'Ver clientes'],
       ['customers.create', 'Criar cliente'],
@@ -46,7 +66,7 @@
       ['products.edit',   'Editar produto'],
       ['products.delete', 'Excluir produto']
     ]},
-       { title: 'Estoque', caps: [
+    { title: 'Estoque', caps: [
       ['stock.view',     'Ver estoque'],
       ['stock.movement', 'Movimentar estoque'],
       ['stock.audit',    'Ver auditoria de estoque'],
@@ -84,6 +104,10 @@
     }
   };
 
+  /* CORREÇÃO #1: token de geração para evitar race em
+     loadUserPermsForSlug / fetchAndRenderPerms. */
+  let permsGeneration = 0;
+
   document.addEventListener('DOMContentLoaded', init);
 
   /* =========================================================
@@ -116,7 +140,9 @@
     renderUser(session.user, profile);
 
     state.currentRole = String((profile && profile.role) || '').toLowerCase();
-    state.currentOrgId = profile && profile.organization_id ? profile.organization_id : null;
+
+    /* CORREÇÃO #6: resolveOrgId com fallback pro sessionStorage. */
+    state.currentOrgId = resolveOrgId(profile);
 
     if (window.Perms && typeof window.Perms.load === 'function') {
       try { await window.Perms.load(); } catch (e) { /* fallback */ }
@@ -141,6 +167,19 @@
 
     watchAuthChanges();
     await Promise.all([loadMembers(), loadRoleTypes()]);
+  }
+
+  /* CORREÇÃO #6: fallback se profile.organization_id vier null. */
+  function resolveOrgId(profile) {
+    if (profile && profile.organization_id) return profile.organization_id;
+    try {
+      const raw = sessionStorage.getItem('devhub_user');
+      if (raw) {
+        const ctx = JSON.parse(raw);
+        if (ctx && ctx.organization_id) return ctx.organization_id;
+      }
+    } catch (e) { /* ignora */ }
+    return null;
   }
 
   function hasPerm(cap, fallback) {
@@ -605,7 +644,7 @@
   }
 
   /* =========================================================
-     MODAL: USUÁRIO (com bloco de permissões embutido)
+     MODAL: USUÁRIO
      ========================================================= */
   const modalEls = {};
 
@@ -632,11 +671,7 @@
     if (!modalEls.modal || !modalEls.form) return;
 
     if (modalEls.openBtn) {
-      if (state.perms.users) {
-        modalEls.openBtn.addEventListener('click', function () { openUserModal(null); });
-      } else {
-        modalEls.openBtn.hidden = true;
-      }
+      modalEls.openBtn.addEventListener('click', function () { openUserModal(null); });
     }
 
     modalEls.modal.querySelectorAll('[data-close-modal]').forEach(function (el) {
@@ -686,6 +721,14 @@
     clearPermsFeedback();
     setFormBusy(false);
 
+    /* CORREÇÃO #5: reseta o estado visual dos toggles de senha. */
+    modalEls.modal.querySelectorAll('[data-pw-toggle]').forEach(function (btn) {
+      btn.setAttribute('aria-pressed', 'false');
+      btn.setAttribute('aria-label', 'Mostrar senha');
+    });
+    if (modalEls.currentPassword) modalEls.currentPassword.type = 'password';
+    if (modalEls.newPassword) modalEls.newPassword.type = 'password';
+
     if (modalEls.passwordChangeBlock) {
       modalEls.passwordChangeBlock.hidden = !isEdit;
     }
@@ -711,18 +754,21 @@
 
     modalEls.modal.hidden = false;
     document.body.style.overflow = 'hidden';
-    modalEls.name.focus();
+    if (modalEls.name) modalEls.name.focus();
   }
 
   function closeCreateModal() {
     if (state.creating) return;
     state.editingMember = null;
     state.permsSlug = null;
-    modalEls.modal.hidden = true;
+    /* Invalida qualquer fetch de perms em curso */
+    permsGeneration += 1;
+    if (modalEls.modal) modalEls.modal.hidden = true;
     document.body.style.overflow = '';
   }
 
   function setModalMode(mode) {
+    if (!modalEls.modal) return;
     const title = modalEls.modal.querySelector('.modal__title');
     if (title) title.textContent = mode === 'edit' ? 'Editar usuário' : 'Criar novo usuário';
 
@@ -748,30 +794,43 @@
 
     state.permsSlug = String(slug || '').toLowerCase();
 
+    /* CORREÇÃO #1: cada chamada incrementa a geração. */
+    permsGeneration += 1;
+    const generation = permsGeneration;
+
     if (!state.permsSlug) {
-      modalEls.permsHint.textContent =
-        'Este perfil usa as permissões padrão do papel base. ' +
-        'Para personalizar, crie um "Tipo de perfil" e atribua a este usuário.';
-      modalEls.permsGroups.innerHTML =
-        '<div class="state-block state-block--compact">' +
-        '<p>Selecione um tipo personalizado (ex.: Vendedor) para editar as permissões.</p></div>';
+      if (modalEls.permsHint) {
+        modalEls.permsHint.textContent =
+          'Este perfil usa as permissões padrão do papel base. ' +
+          'Para personalizar, crie um "Tipo de perfil" e atribua a este usuário.';
+      }
+      if (modalEls.permsGroups) {
+        modalEls.permsGroups.innerHTML =
+          '<div class="state-block state-block--compact">' +
+          '<p>Selecione um tipo personalizado (ex.: Vendedor) para editar as permissões.</p></div>';
+      }
       return;
     }
 
-    modalEls.permsHint.textContent =
-      'Marque o que este perfil pode ver e fazer. Salva automaticamente.';
+    if (modalEls.permsHint) {
+      modalEls.permsHint.textContent =
+        'Marque o que este perfil pode ver e fazer. Salva automaticamente.';
+    }
 
-    modalEls.permsGroups.innerHTML =
-      '<div class="state-block state-block--compact">' +
-      '<span class="spinner" aria-hidden="true"></span>' +
-      '<p>Carregando permissões…</p></div>';
+    if (modalEls.permsGroups) {
+      modalEls.permsGroups.innerHTML =
+        '<div class="state-block state-block--compact">' +
+        '<span class="spinner" aria-hidden="true"></span>' +
+        '<p>Carregando permissões…</p></div>';
+    }
 
-    fetchAndRenderPerms(state.permsSlug);
+    fetchAndRenderPerms(state.permsSlug, generation);
   }
 
-  async function fetchAndRenderPerms(slug) {
+  async function fetchAndRenderPerms(slug, generation) {
     if (!state.currentOrgId) {
-      renderPermsGroups({});
+      if (generation !== permsGeneration) return;
+      renderPermsGroups({}, slug);
       return;
     }
 
@@ -782,6 +841,9 @@
         .eq('organization_id', state.currentOrgId)
         .eq('role_slug', slug);
 
+      /* CORREÇÃO #1: descarta resposta obsoleta. */
+      if (generation !== permsGeneration) return;
+
       const map = {};
       if (!error && Array.isArray(data)) {
         data.forEach(function (r) { map[r.capability] = r.allowed === true; });
@@ -789,24 +851,23 @@
         console.warn('[DEV HUB] Falha ao ler role_permissions:', error);
       }
 
-      renderPermsGroups(map);
+      renderPermsGroups(map, slug);
     } catch (e) {
+      if (generation !== permsGeneration) return;
       console.error('[DEV HUB] Erro ao carregar permissões:', e);
-      renderPermsGroups({});
+      renderPermsGroups({}, slug);
     }
   }
 
-  /* ===== ATUALIZADO =====
-     Checkbox reflete o estado EFETIVO:
-       - se há linha no banco → usa o `allowed` gravado
-       - senão → usa o default do papel base (via Perms.DEFAULTS)
-     Assim você vê o que o usuário realmente tem, não só o que está gravado. */
-  function renderPermsGroups(map) {
+  /* CORREÇÃO #1: renderPermsGroups recebe o slug explicitamente
+     para não depender de state.permsSlug (que pode ter mudado). */
+  function renderPermsGroups(map, slug) {
     if (!modalEls.permsGroups) return;
 
-    // Descobre o base_role do slug atual e pega os defaults do Perms
+    const effectiveSlug = slug || state.permsSlug;
+
     const rt = state.roleTypes.find(function (r) {
-      return String(r.slug || '').toLowerCase() === state.permsSlug;
+      return String(r.slug || '').toLowerCase() === effectiveSlug;
     });
     const baseRole = rt ? String(rt.base_role || 'user').toLowerCase() : 'user';
 
@@ -1125,6 +1186,10 @@
 
     setFormBusy(true);
 
+    /* CORREÇÃO #2: rastreia se o update de dados já foi feito,
+       para diferenciar "tudo ok" de "dados salvos, senha falhou". */
+    let userUpdated = false;
+
     try {
       const { error } = await window.db
         .from('organization_members')
@@ -1137,6 +1202,7 @@
         .eq('id', member.id);
 
       if (error) throw error;
+      userUpdated = true;
 
       try {
         await window.db
@@ -1169,7 +1235,23 @@
       await loadMembers();
     } catch (error) {
       console.error('[DEV HUB] Falha ao editar usuário:', error);
-      showFormFeedback(mapActionError(error));
+
+      /* CORREÇÃO #2: se o update dos dados já foi feito mas a
+         troca de senha falhou, fechamos o modal (para não
+         confundir) e mostramos uma mensagem específica. */
+      if (userUpdated && wantsPasswordChange) {
+        modalEls.modal.hidden = true;
+        document.body.style.overflow = '';
+        state.editingMember = null;
+        showToast(
+          'Os dados do usuário foram salvos, mas não foi possível alterar a senha: ' +
+          mapActionError(error),
+          'error'
+        );
+        await loadMembers();
+      } else {
+        showFormFeedback(mapActionError(error));
+      }
     } finally {
       setFormBusy(false);
     }
@@ -1266,11 +1348,7 @@
     if (!roleTypeEls.modal) return;
 
     if (roleTypeEls.openBtn) {
-      if (state.perms.roles) {
-        roleTypeEls.openBtn.addEventListener('click', openRoleTypesModal);
-      } else {
-        roleTypeEls.openBtn.hidden = true;
-      }
+      roleTypeEls.openBtn.addEventListener('click', openRoleTypesModal);
     }
 
     roleTypeEls.modal.querySelectorAll('[data-close-modal]').forEach(function (el) {
@@ -1281,13 +1359,23 @@
       if (e.key === 'Escape' && !roleTypeEls.modal.hidden) closeRoleTypesModal();
     });
 
-    roleTypeEls.form.addEventListener('submit', onSubmitRoleType);
-    roleTypeEls.cancelBtn.addEventListener('click', resetRoleTypeForm);
+    /* CORREÇÃO #3: guards de null em todos os elementos opcionais. */
+    if (roleTypeEls.form) {
+      roleTypeEls.form.addEventListener('submit', onSubmitRoleType);
+    }
 
-    roleTypeEls.label.addEventListener('input', function () {
-      if (roleTypeEls.id.value) return;
-      roleTypeEls.slug.value = slugify(roleTypeEls.label.value);
-    });
+    if (roleTypeEls.cancelBtn) {
+      roleTypeEls.cancelBtn.addEventListener('click', resetRoleTypeForm);
+    }
+
+    if (roleTypeEls.label) {
+      roleTypeEls.label.addEventListener('input', function () {
+        if (roleTypeEls.id && roleTypeEls.id.value) return;
+        if (roleTypeEls.slug) {
+          roleTypeEls.slug.value = slugify(roleTypeEls.label.value);
+        }
+      });
+    }
 
     applyRoleTypeBaseRestrictions();
   }
@@ -1340,20 +1428,26 @@
     renderRoleTypesList();
     roleTypeEls.modal.hidden = false;
     document.body.style.overflow = 'hidden';
-    setTimeout(function () { roleTypeEls.label.focus(); }, 60);
+    setTimeout(function () {
+      if (roleTypeEls.label) roleTypeEls.label.focus();
+    }, 60);
   }
 
   function closeRoleTypesModal() {
+    if (!roleTypeEls.modal) return;
     roleTypeEls.modal.hidden = true;
     document.body.style.overflow = '';
   }
 
   function resetRoleTypeForm() {
+    if (!roleTypeEls.form) return;
     roleTypeEls.form.reset();
-    roleTypeEls.id.value = '';
-    roleTypeEls.cancelBtn.hidden = true;
-    const lbl = roleTypeEls.saveBtn.querySelector('.btn__label');
-    if (lbl) lbl.textContent = 'Adicionar';
+    if (roleTypeEls.id) roleTypeEls.id.value = '';
+    if (roleTypeEls.cancelBtn) roleTypeEls.cancelBtn.hidden = true;
+    if (roleTypeEls.saveBtn) {
+      const lbl = roleTypeEls.saveBtn.querySelector('.btn__label');
+      if (lbl) lbl.textContent = 'Adicionar';
+    }
     clearRoleTypeFeedback();
   }
 
@@ -1435,20 +1529,24 @@
   }
 
   function editRoleType(rt) {
-    roleTypeEls.id.value = rt.id;
-    roleTypeEls.label.value = rt.label;
-    roleTypeEls.slug.value = rt.slug;
+    if (roleTypeEls.id) roleTypeEls.id.value = rt.id;
+    if (roleTypeEls.label) roleTypeEls.label.value = rt.label;
+    if (roleTypeEls.slug) roleTypeEls.slug.value = rt.slug;
 
-    const wanted = String(rt.base_role || 'user').toLowerCase();
-    const exists = Array.from(roleTypeEls.base.options).some(function (o) {
-      return String(o.value).toLowerCase() === wanted;
-    });
-    roleTypeEls.base.value = exists ? wanted : 'user';
+    if (roleTypeEls.base) {
+      const wanted = String(rt.base_role || 'user').toLowerCase();
+      const exists = Array.from(roleTypeEls.base.options).some(function (o) {
+        return String(o.value).toLowerCase() === wanted;
+      });
+      roleTypeEls.base.value = exists ? wanted : 'user';
+    }
 
-    roleTypeEls.cancelBtn.hidden = false;
-    const lbl = roleTypeEls.saveBtn.querySelector('.btn__label');
-    if (lbl) lbl.textContent = 'Salvar alterações';
-    roleTypeEls.label.focus();
+    if (roleTypeEls.cancelBtn) roleTypeEls.cancelBtn.hidden = false;
+    if (roleTypeEls.saveBtn) {
+      const lbl = roleTypeEls.saveBtn.querySelector('.btn__label');
+      if (lbl) lbl.textContent = 'Salvar alterações';
+    }
+    if (roleTypeEls.label) roleTypeEls.label.focus();
   }
 
   async function onSubmitRoleType(event) {
@@ -1460,19 +1558,20 @@
       return;
     }
 
-    const id    = roleTypeEls.id.value;
-    const label = roleTypeEls.label.value.trim();
-    const base  = roleTypeEls.base.value;
-    let   slug  = roleTypeEls.slug.value.trim() || slugify(label);
+    const id    = roleTypeEls.id ? roleTypeEls.id.value : '';
+    const label = roleTypeEls.label ? roleTypeEls.label.value.trim() : '';
+    const base  = roleTypeEls.base ? roleTypeEls.base.value : 'user';
+    let   slug  = roleTypeEls.slug ? roleTypeEls.slug.value.trim() : '';
+    if (!slug) slug = slugify(label);
 
     if (!label) {
       showRoleTypeFeedback('Informe o nome exibido.');
-      roleTypeEls.label.focus();
+      if (roleTypeEls.label) roleTypeEls.label.focus();
       return;
     }
     if (!slug) {
       showRoleTypeFeedback('O identificador interno não pode ficar vazio.');
-      roleTypeEls.slug.focus();
+      if (roleTypeEls.slug) roleTypeEls.slug.focus();
       return;
     }
     if (['admin', 'gestor', 'user'].indexOf(base) === -1) {

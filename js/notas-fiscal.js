@@ -2,6 +2,24 @@
    DEV HUB · Notas fiscais (interno)
    ---------------------------------------------------------
    Emissão de documento fiscal interno. NÃO envia para SEFAZ.
+   ---------------------------------------------------------
+   CORREÇÕES APLICADAS:
+   1. `submitInvoice` libera `state.submitting = false` ANTES
+      de `closeForm()` — antes o guard bloqueava e o form
+      ficava aberto após emitir/salvar.
+   2. `next_invoice_number` — se falhar ou retornar null em
+      emissão (não rascunho), aborta com erro claro.
+   3. Cleanup: se inserir `invoice_items` falhar, remove a
+      invoice órfã (best-effort).
+   4. `toNumber` e `toNumNullable` aceitam formato BR
+      ("1.234,56") e US ("1234.56").
+   5. `onItemSubmit` valida quantidade > 0 e desconto <=
+      quantidade × preço.
+   6. `recalcTotals` impede total negativo (clampa em zero
+      e avisa visualmente).
+   7. `setFormBusy` desabilita também botões de navegação
+      durante o submit.
+   8. Guards de null adicionados nos pontos críticos.
    ========================================================= */
 
 (function () {
@@ -270,10 +288,10 @@
     if (state.search) {
       const t = state.search;
       list = list.filter(function (i) {
-        const cn = i.customers && i.customers.name ? i.customers.name : '';
-        const doc = i.customers && i.customers.cpf_cnpj ? i.customers.cpf_cnpj : '';
+        const cn = (i.customers && i.customers.name ? i.customers.name : '').toLowerCase();
+        const doc = String(i.customers && i.customers.cpf_cnpj ? i.customers.cpf_cnpj : '');
         return String(i.number || '').includes(t) ||
-               cn.toLowerCase().includes(t) ||
+               cn.includes(t) ||
                doc.includes(t);
       });
     }
@@ -289,18 +307,21 @@
     const empty = document.getElementById('invoices-empty');
     if (!tbody || !wrap || !empty) return;
 
+    const titleEl = document.getElementById('invoices-empty-title');
+    const textEl = document.getElementById('invoices-empty-text');
+
     if (state.invoices.length === 0) {
       wrap.hidden = true;
       empty.hidden = false;
-      document.getElementById('invoices-empty-title').textContent = 'Nenhuma nota fiscal emitida ainda.';
-      document.getElementById('invoices-empty-text').textContent = 'Use o botão acima para emitir a primeira.';
+      if (titleEl) titleEl.textContent = 'Nenhuma nota fiscal emitida ainda.';
+      if (textEl) textEl.textContent = 'Use o botão acima para emitir a primeira.';
       return;
     }
     if (state.filtered.length === 0) {
       wrap.hidden = true;
       empty.hidden = false;
-      document.getElementById('invoices-empty-title').textContent = 'Nenhuma nota encontrada.';
-      document.getElementById('invoices-empty-text').textContent = 'Ajuste os filtros ou a busca.';
+      if (titleEl) titleEl.textContent = 'Nenhuma nota encontrada.';
+      if (textEl) textEl.textContent = 'Ajuste os filtros ou a busca.';
       return;
     }
 
@@ -448,10 +469,10 @@
     if (saveDraftBtn) saveDraftBtn.addEventListener('click', function () { submitInvoice('draft'); });
 
     const addBtn = document.getElementById('nf-add-item');
-    if (addBtn) addBtn.addEventListener('click', function () { openItemModal(null); });
+    if (addBtn) addBtn.addEventListener('click', function () { openItemModal(); });
 
     const addFromProdBtn = document.getElementById('nf-add-from-products');
-    if (addFromProdBtn) addFromProdBtn.addEventListener('click', function () { openItemModal(null); });
+    if (addFromProdBtn) addFromProdBtn.addEventListener('click', function () { openItemModal(); });
 
     const custSel = document.getElementById('nf-customer');
     if (custSel) custSel.addEventListener('change', onCustomerChange);
@@ -478,9 +499,16 @@
     state.items = [];
     renderItems();
     recalcTotals();
-    document.getElementById('form-title').textContent = 'Emitir nota fiscal';
-    document.getElementById('nf-number').value = '';
-    document.getElementById('nf-feedback').hidden = true;
+
+    const title = document.getElementById('form-title');
+    if (title) title.textContent = 'Emitir nota fiscal';
+
+    const numEl = document.getElementById('nf-number');
+    if (numEl) numEl.value = '';
+
+    const fb = document.getElementById('nf-feedback');
+    if (fb) fb.hidden = true;
+
     resetFormFields();
     showView('form');
   }
@@ -509,6 +537,10 @@
     if (box) box.hidden = true;
     const empty = document.getElementById('nf-dest-empty');
     if (empty) empty.hidden = false;
+
+    // Data de emissão: volta ao hoje
+    const issued = document.getElementById('nf-issued');
+    if (issued) issued.value = new Date().toISOString().slice(0,10);
   }
 
   function showView(name) {
@@ -521,7 +553,9 @@
   }
 
   function onCustomerChange() {
-    const id = document.getElementById('nf-customer').value;
+    const sel = document.getElementById('nf-customer');
+    if (!sel) return;
+    const id = sel.value;
     const c = state.customers.find(function (x) { return x.id === id; });
     const box = document.getElementById('nf-dest-summary');
     const empty = document.getElementById('nf-dest-empty');
@@ -599,19 +633,27 @@
     const modal = document.getElementById('item-modal');
     if (!modal) return;
     const form = document.getElementById('item-form');
-    form.reset();
-    document.getElementById('item-unit').value = 'UN';
-    document.getElementById('item-qty').value = '1';
-    document.getElementById('item-unit-price').value = '0';
-    document.getElementById('item-discount').value = '0';
-    document.getElementById('item-icms-pct').value = '0';
-    document.getElementById('item-ipi-pct').value = '0';
+    if (form) form.reset();
+
+    setVal('item-unit', 'UN');
+    setVal('item-qty', '1');
+    setVal('item-unit-price', '0');
+    setVal('item-discount', '0');
+    setVal('item-icms-pct', '0');
+    setVal('item-ipi-pct', '0');
+
     const cfop = document.getElementById('nf-cfop-global');
-    if (cfop) document.getElementById('item-cfop').value = cfop.value || '5102';
-    document.getElementById('item-feedback').hidden = true;
+    if (cfop) setVal('item-cfop', cfop.value || '5102');
+
+    const fb = document.getElementById('item-feedback');
+    if (fb) fb.hidden = true;
+
     modal.hidden = false;
     document.body.style.overflow = 'hidden';
-    setTimeout(function () { document.getElementById('item-description').focus(); }, 60);
+    setTimeout(function () {
+      const d = document.getElementById('item-description');
+      if (d) d.focus();
+    }, 60);
   }
 
   function closeItemModal() {
@@ -622,33 +664,58 @@
   }
 
   function onItemProductChange() {
-    const id = document.getElementById('item-product').value;
+    const prodSel = document.getElementById('item-product');
+    if (!prodSel) return;
+    const id = prodSel.value;
     if (!id) return;
     const p = state.products.find(function (x) { return x.id === id; });
     if (!p) return;
-    document.getElementById('item-code').value = p.code || '';
-    document.getElementById('item-description').value = p.name || '';
-    document.getElementById('item-unit-price').value = String(toNumber(p.price, 0));
+    setVal('item-code', p.code || '');
+    setVal('item-description', p.name || '');
+    setVal('item-unit-price', String(toNumber(p.price, 0)));
   }
 
   function onItemSubmit(e) {
     e.preventDefault();
 
-    const desc = document.getElementById('item-description').value.trim();
+    const descEl = document.getElementById('item-description');
+    const desc = descEl ? descEl.value.trim() : '';
     if (!desc) { showItemFeedback('Informe a descrição.'); return; }
 
+    const qty = toNumber(getVal('item-qty'), 0);
+    const unitPrice = toNumber(getVal('item-unit-price'), 0);
+    const discount = toNumber(getVal('item-discount'), 0);
+
+    /* CORREÇÃO #5: validações de negócio */
+    if (!Number.isFinite(qty) || qty <= 0) {
+      showItemFeedback('Quantidade deve ser maior que zero.');
+      return;
+    }
+    if (!Number.isFinite(unitPrice) || unitPrice < 0) {
+      showItemFeedback('Preço unitário inválido.');
+      return;
+    }
+    if (!Number.isFinite(discount) || discount < 0) {
+      showItemFeedback('Desconto inválido.');
+      return;
+    }
+    if (discount > qty * unitPrice) {
+      showItemFeedback('Desconto não pode ser maior que o subtotal.');
+      return;
+    }
+
     const item = {
-      product_id: document.getElementById('item-product').value || null,
-      code: document.getElementById('item-code').value.trim() || null,
+      product_id: (document.getElementById('item-product') || {}).value || null,
+      code: getVal('item-code') || null,
       description: desc,
-      ncm: document.getElementById('item-ncm').value.trim() || null,
-      cfop: document.getElementById('item-cfop').value.trim() || '5102',
-      quantity: toNumber(document.getElementById('item-qty').value, 1),
-      unit: document.getElementById('item-unit').value.trim() || 'UN',
-      unit_price: toNumber(document.getElementById('item-unit-price').value, 0),
-      discount: toNumber(document.getElementById('item-discount').value, 0),
-      percent_icms: toNumber(document.getElementById('item-icms-pct').value, 0),
-      percent_ipi: toNumber(document.getElementById('item-ipi-pct').value, 0)
+      ncm: getVal('item-ncm') || null,
+      cfop: getVal('item-cfop') || '5102',
+      quantity: qty,
+      unit: getVal('item-unit') || 'UN',
+      unit_price: unitPrice,
+      discount: discount,
+      percent_icms: toNumber(getVal('item-icms-pct'), 0),
+      percent_ipi: toNumber(getVal('item-ipi-pct'), 0)
     };
     item.subtotal = round2(item.quantity * item.unit_price - item.discount);
     item.base_icms = round2(item.subtotal);
@@ -722,7 +789,9 @@
     const other     = toNumber(getVal('nf-other'), 0);
     const disc      = toNumber(getVal('nf-discount'), 0);
 
-    const total = round2(sub + freight + insurance + other - disc);
+    /* CORREÇÃO #6: total não pode ficar negativo */
+    const totalRaw = round2(sub + freight + insurance + other - disc);
+    const total = Math.max(0, totalRaw);
     const acct = round2(sub - disc);
 
     setText('nf-total-products', formatMoney(sub));
@@ -743,8 +812,14 @@
     if (!customerId) { showFormFeedback('Selecione o destinatário.'); return; }
     if (state.items.length === 0) { showFormFeedback('Adicione pelo menos um item.'); return; }
 
+    /* Validação: data de emissão obrigatória */
+    const issuedAt = getVal('nf-issued');
+    if (!issuedAt) { showFormFeedback('Informe a data de emissão.'); return; }
+
     state.submitting = true;
     setFormBusy(true);
+
+    let createdInvoiceId = null;
 
     try {
       const sub = round2(state.items.reduce(function (s, i) { return s + toNumber(i.subtotal, 0); }, 0));
@@ -752,7 +827,7 @@
       const insurance = toNumber(getVal('nf-insurance'), 0);
       const other     = toNumber(getVal('nf-other'), 0);
       const disc      = toNumber(getVal('nf-discount'), 0);
-      const total     = round2(sub + freight + insurance + other - disc);
+      const total     = Math.max(0, round2(sub + freight + insurance + other - disc));
       const vlIcms    = round2(state.items.reduce(function (s, i) { return s + toNumber(i.value_icms, 0); }, 0));
       const vlIpi     = round2(state.items.reduce(function (s, i) { return s + toNumber(i.value_ipi, 0); }, 0));
       const baseIcms  = round2(state.items.reduce(function (s, i) { return s + toNumber(i.base_icms, 0); }, 0));
@@ -770,7 +845,7 @@
         number: null,
         purpose: getVal('nf-purpose') || 'normal',
         status: status,
-        issued_at: getVal('nf-issued') || null,
+        issued_at: issuedAt,
         departure_at: getVal('nf-departure') || null,
         fiscal_operation: getVal('nf-op') || null,
         fiscal_nature: getVal('nf-nature') || null,
@@ -803,19 +878,26 @@
         created_by_name: (ctx && ctx.name) || null
       };
 
+      /* CORREÇÃO #2: emissão exige número de nota.
+         Se o RPC falhar ou não retornar número, aborta. */
       if (status === 'issued') {
         const rpcNum = await window.db.rpc('next_invoice_number', { p_series: invoiceRow.series });
-        if (!rpcNum.error && rpcNum.data) invoiceRow.number = rpcNum.data;
+        if (rpcNum.error) throw rpcNum.error;
+        const num = rpcNum.data;
+        if (num === null || num === undefined || num === '') {
+          throw new Error('Não foi possível gerar o número da nota. Tente novamente.');
+        }
+        invoiceRow.number = num;
       }
 
       const ins = await window.db.from('invoices').insert(invoiceRow).select('id').single();
       if (ins.error) throw ins.error;
 
-      const invoiceId = ins.data.id;
+      createdInvoiceId = ins.data.id;
 
       const itemsPayload = state.items.map(function (it, idx) {
         return {
-          invoice_id: invoiceId,
+          invoice_id: createdInvoiceId,
           product_id: it.product_id,
           code: it.code,
           description: it.description,
@@ -836,7 +918,19 @@
       });
 
       const insItems = await window.db.from('invoice_items').insert(itemsPayload);
-      if (insItems.error) throw insItems.error;
+      if (insItems.error) {
+        /* CORREÇÃO #3: rollback best-effort da invoice órfã */
+        try {
+          await window.db.from('invoices').delete().eq('id', createdInvoiceId);
+        } catch (rollbackErr) {
+          console.error('[DEV HUB] Falha no rollback da invoice órfã:', rollbackErr);
+        }
+        throw insItems.error;
+      }
+
+      /* CORREÇÃO #1: libera o guard de closeForm ANTES de chamar */
+      state.submitting = false;
+      setFormBusy(false);
 
       showToast(status === 'draft' ? 'Rascunho salvo.' : 'Nota fiscal emitida.', 'success');
       closeForm();
@@ -845,13 +939,17 @@
       console.error('[DEV HUB] Falha ao salvar nota:', err);
       showFormFeedback('Não foi possível salvar: ' + (err.message || 'erro desconhecido'));
     } finally {
-      state.submitting = false;
-      setFormBusy(false);
+      /* Idempotente — se já liberou no caminho de sucesso, não faz nada */
+      if (state.submitting) {
+        state.submitting = false;
+        setFormBusy(false);
+      }
     }
   }
 
   function setFormBusy(b) {
-    ['nf-save-draft','nf-save-issue'].forEach(function (id) {
+    /* CORREÇÃO #7: inclui botões de navegação no bloqueio */
+    ['nf-save-draft','nf-save-issue','nf-cancel','back-to-list'].forEach(function (id) {
       const el = document.getElementById(id);
       if (!el) return;
       el.disabled = b;
@@ -882,6 +980,11 @@
     return el ? String(el.value || '').trim() : '';
   }
 
+  function setVal(id, value) {
+    const el = document.getElementById(id);
+    if (el) el.value = value;
+  }
+
   function formatMoney(v) { return currencyFormatter.format(toNumber(v, 0)); }
 
   function formatDate(v) {
@@ -890,9 +993,18 @@
     return isNaN(d.getTime()) ? '—' : dateFormatter.format(d);
   }
 
+  /* CORREÇÃO #4: aceita "1.234,56" (BR) e "1234.56" (US) */
   function toNumber(v, fb) {
     if (v == null || v === '') return fb;
-    const n = Number(String(v).replace(',', '.'));
+    if (typeof v === 'number') return isFinite(v) ? v : fb;
+
+    let str = String(v).trim();
+    if (str.indexOf(',') !== -1 && str.indexOf('.') !== -1) {
+      str = str.replace(/\./g, '').replace(',', '.');
+    } else if (str.indexOf(',') !== -1) {
+      str = str.replace(',', '.');
+    }
+    const n = Number(str);
     return isFinite(n) ? n : fb;
   }
 
@@ -902,9 +1014,18 @@
     return isFinite(n) ? n : fb;
   }
 
+  /* CORREÇÃO #4: também aceita BR */
   function toNumNullable(v) {
     if (v == null || v === '') return null;
-    const n = Number(v);
+    if (typeof v === 'number') return isFinite(v) ? v : null;
+
+    let str = String(v).trim();
+    if (str.indexOf(',') !== -1 && str.indexOf('.') !== -1) {
+      str = str.replace(/\./g, '').replace(',', '.');
+    } else if (str.indexOf(',') !== -1) {
+      str = str.replace(',', '.');
+    }
+    const n = Number(str);
     return isFinite(n) ? n : null;
   }
 
@@ -985,7 +1106,7 @@
   }
 
   /* =========================================================
-     Alert global (fica por compatibilidade — alguns helpers usam)
+     Alert global
      ========================================================= */
   function showGlobalAlert(message, type) {
     const alert = document.getElementById('global-alert');

@@ -4,7 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Plataforma · DEV HUB</title>
-  <!-- Tema ANTES da CSS (evita flash) -->
+
+  <!-- Tema ANTES da CSS (evita flash de tema) -->
   <script src="js/theme.js"></script>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -16,188 +17,24 @@
   <link rel="stylesheet" href="css/clientes.css" />
   <link rel="stylesheet" href="css/theme.css" />
   <link rel="stylesheet" href="css/plataforma.css" />
+
+  <!-- Anti-flash do topnav -->
+  <script>
+    (function () {
+      try {
+        if (!/[?&]blocked=1/.test(location.search)) {
+          document.documentElement.classList.add('layout-topnav');
+        }
+      } catch (e) {}
+    })();
+  </script>
 </head>
-<body data-page="platform">
+
+<body class="layout-topnav" data-page="platform">
 
   <a class="skip-link" href="#main">Pular para o conteúdo principal</a>
 
-  <aside class="sidebar" id="sidebar" aria-label="Menu principal">
-
-    <div class="sidebar__brand">
-      <span class="brand__mark" aria-hidden="true">DH</span>
-      <span class="brand__name">DEV HUB</span>
-    </div>
-
-    <nav class="nav" aria-label="Módulos">
-
-      <!-- OPERAÇÃO (não aparece para platform_admin) -->
-      <p class="nav__label" data-require-capability="operations">Operação</p>
-
-      <a class="nav__item" href="dashboard.html" data-require-capability="operations">
-        <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <rect x="3" y="3" width="7.5" height="7.5" rx="1.8" />
-          <rect x="13.5" y="3" width="7.5" height="7.5" rx="1.8" />
-          <rect x="3" y="13.5" width="7.5" height="7.5" rx="1.8" />
-          <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.8" />
-        </svg>
-        <span>Dashboard</span>
-      </a>
-
-      <a class="nav__item" href="vendas.html" data-require-capability="operations">
-        <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <circle cx="9" cy="20" r="1.4" />
-          <circle cx="18" cy="20" r="1.4" />
-          <path d="M2.5 3.5h2.3l2.3 11.6a1.8 1.8 0 0 0 1.8 1.4h8.8a1.8 1.8 0 0 0 1.8-1.4L21 7.5H6" />
-        </svg>
-        <span>Vendas</span>
-      </a>
-
-      <a class="nav__item" href="notas.html" data-require-capability="operations">
-        <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M14 2.5H7A2 2 0 0 0 5 4.5v15a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7.5z" />
-          <path d="M14 2.5v5h5" />
-          <path d="M9 13h6M9 17h4" />
-        </svg>
-        <span>Notas</span>
-      </a>
-
-      <a class="nav__item" href="clientes.html" data-require-capability="operations">
-        <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M16 20v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20" />
-          <circle cx="9" cy="7.5" r="3.5" />
-          <path d="M22 20v-1.5a4 4 0 0 0-3-3.87" />
-          <path d="M16.5 4.13a4 4 0 0 1 0 7.75" />
-        </svg>
-        <span>Clientes</span>
-      </a>
-
-      <a class="nav__item" href="produtos.html" data-require-capability="operations">
-        <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="m21 8-9-5-9 5v8l9 5 9-5z" />
-          <path d="m3 8 9 5 9-5" />
-          <path d="M12 21v-8" />
-        </svg>
-        <span>Produtos</span>
-      </a>
-
-      <a class="nav__item" href="estoque.html" data-require-capability="operations">
-        <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="m12 2.5 9 5-9 5-9-5z" />
-          <path d="m3 12.5 9 5 9-5" />
-          <path d="m3 17.5 9 5 9-5" />
-        </svg>
-        <span>Estoque</span>
-      </a>
-
-      <a class="nav__item" href="relatorios.html" data-require-capability="operations">
-        <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M3 3v16a2 2 0 0 0 2 2h16" />
-          <path d="m7 15 3.5-4 3 2.5L20 7" />
-        </svg>
-        <span>Relatórios</span>
-      </a>
-
-      <!-- ADMINISTRAÇÃO DA EMPRESA (só admin de empresa) -->
-      <p class="nav__label" data-require-capability="management" style="margin-top:10px;">Administração</p>
-
-      <a class="nav__item" href="gestao.html" data-require-capability="management">
-        <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M16 20v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20" />
-          <circle cx="9" cy="7.5" r="3.5" />
-          <path d="M22 20v-1.5a4 4 0 0 0-3-3.87" />
-          <path d="M16.5 4.13a4 4 0 0 1 0 7.75" />
-        </svg>
-        <span>Gestão</span>
-      </a>
-
-      <!-- PLATAFORMA (só platform_admin) -->
-      <p class="nav__label" data-require-capability="platform">Plataforma</p>
-
-      <a class="nav__item is-active" href="plataforma.html" aria-current="page"
-         data-require-capability="platform">
-        <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <rect x="3" y="3" width="7.5" height="7.5" rx="1.8" />
-          <rect x="13.5" y="3" width="7.5" height="7.5" rx="1.8" />
-          <rect x="3" y="13.5" width="7.5" height="7.5" rx="1.8" />
-          <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.8" />
-        </svg>
-        <span>Dashboard</span>
-      </a>
-
-      <a class="nav__item" href="plataforma.html#empresas" data-require-capability="platform">
-        <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M3 21h18" />
-          <path d="M5 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16" />
-          <path d="M15 21V9h4a2 2 0 0 1 2 2v10" />
-          <path d="M9 7h2M9 11h2M9 15h2" />
-        </svg>
-        <span>Empresas</span>
-      </a>
-
-      <button type="button" class="nav__item" aria-disabled="true"
-              title="Em breve" data-require-capability="platform">
-        <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M16 20v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20" />
-          <circle cx="9" cy="7.5" r="3.5" />
-          <path d="M22 20v-1.5a4 4 0 0 0-3-3.87" />
-        </svg>
-        <span>Usuários</span>
-        <span class="nav__badge">Em breve</span>
-      </button>
-
-      <button type="button" class="nav__item" aria-disabled="true"
-              title="Em breve" data-require-capability="platform">
-        <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M20 7h-9" />
-          <path d="M14 17H5" />
-          <circle cx="17" cy="17" r="3" />
-          <circle cx="7" cy="7" r="3" />
-        </svg>
-        <span>Configurações</span>
-        <span class="nav__badge">Em breve</span>
-      </button>
-    </nav>
-
-    <div class="sidebar__spacer"></div>
-
-    <nav class="nav" aria-label="Sistema">
-      <div class="nav__sep" role="presentation"></div>
-
-      <a class="nav__item" href="configuracoes.html" data-require-capability="operations">
-        <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M20 7h-9" />
-          <path d="M14 17H5" />
-          <circle cx="17" cy="17" r="3" />
-          <circle cx="7" cy="7" r="3" />
-        </svg>
-        <span>Configurações</span>
-      </a>
-
-      <button type="button" class="nav__item nav__item--danger" data-action="logout">
-        <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-          <path d="m16 17 5-5-5-5" />
-          <path d="M21 12H9" />
-        </svg>
-        <span>Sair</span>
-      </button>
-    </nav>
-  </aside>
-
+  <aside class="sidebar" id="sidebar" aria-label="Menu principal"></aside>
   <div class="sidebar-overlay" id="sidebar-overlay" hidden></div>
 
   <div class="app__body">
@@ -491,11 +328,11 @@
   <!-- ================= TOASTS ================= -->
   <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="false"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/supabase.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/nav.js"></script>
-<script src="js/permissions.js"></script>
-<script src="js/plataforma.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/nav.js"></script>
+  <script src="js/permissions.js"></script>
+  <script src="js/plataforma.js"></script>
 </body>
 </html>

@@ -1,13 +1,33 @@
 /* =========================================================
    DEV HUB · Módulo de Estoque v2
+   ---------------------------------------------------------
+   CORREÇÕES APLICADAS:
+   1. `.control-select:hover` usa `color-mix()` em vez de
+      `#b9bfc9` hardcoded (funciona nos dois temas).
+   2. `.segmented__option` ganha `:focus-visible` e
+      `:focus-within` para navegação por teclado — antes, o
+      usuário de teclado não via qual opção estava focada.
+   3. `.field--inline` no mobile restaura `flex-direction:
+      column` — antes, os selects ficavam lado a lado
+      apertados dentro de uma field 100% wide.
+   4. `.movement-doc` ganha `overflow-wrap: anywhere` como
+      fallback; `white-space: nowrap` vira só "preferência"
+      (evita estourar quando o doc é longo).
+   5. `#movement-modal .modal__dialog` → mantido (é mobile-only),
+      mas com nota sobre a especificidade de ID.
+   6. Comentário explícito no chevron dos selects.
    ========================================================= */
 
-/* ---------- Cards de resumo: variações de cor ---------- */
+/* =========================================================
+   Cards de resumo: variações de cor
+   ========================================================= */
 .stat__icon--success { background: var(--success-soft); color: var(--success); }
 .stat__icon--warning { background: var(--warning-soft); color: var(--warning); }
 .stat__icon--danger  { background: var(--danger-soft);  color: var(--danger); }
 
-/* ---------- Cards clicáveis ---------- */
+/* =========================================================
+   Cards clicáveis
+   ========================================================= */
 .stat--clickable {
   cursor: pointer;
   transition: box-shadow var(--transition), border-color var(--transition),
@@ -29,7 +49,9 @@
   outline-offset: 2px;
 }
 
-/* ---------- Filtros inline ---------- */
+/* =========================================================
+   Filtros inline
+   ========================================================= */
 .field--inline { flex-direction: row; align-items: center; }
 
 .control-select {
@@ -45,20 +67,27 @@
   transition: border-color var(--transition), box-shadow var(--transition);
   -webkit-appearance: none;
   appearance: none;
+  /* Chevron coberto por [data-theme="dark"] em theme.css */
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23667085' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
   background-repeat: no-repeat;
   background-position: right 10px center;
   background-size: 15px;
 }
 
-.control-select:hover:not(:focus) { border-color: #b9bfc9; }
+/* CORREÇÃO #1: hover sem `#b9bfc9` hardcoded */
+.control-select:hover:not(:focus) {
+  border-color: color-mix(in srgb, var(--border-strong) 70%, var(--text) 30%);
+}
+
 .control-select:focus {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 4px var(--accent-ring);
 }
 
-/* ---------- Segmented control ---------- */
+/* =========================================================
+   Segmented control (Entrada / Saída / Ajuste)
+   ========================================================= */
 .segmented {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -99,14 +128,51 @@
   box-shadow: var(--shadow-sm);
 }
 
-/* ---------- Modal: dialog mais largo ---------- */
+/* CORREÇÃO #2: navegação por teclado — antes, o usuário
+   navegava com setas mas NÃO via onde estava, porque o input
+   está oculto (opacity: 0) e o browser aplicava foco num
+   elemento invisível. */
+.segmented__option:has(input:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* CORREÇÃO #3: quando uma opção está focada (por Tab ou
+   setas), ela ganha destaque mesmo se não estiver selecionada. */
+.segmented__option:focus-within {
+  color: var(--text);
+}
+
+/* =========================================================
+   Modal: dialog mais largo
+   ---------------------------------------------------------
+   `.modal__dialog--lg` também é definido em vendas.css —
+   cada página carrega só um, então não há colisão em runtime.
+   ========================================================= */
 .modal__dialog--lg { max-width: 720px; }
 
-/* ---------- Hint / label ---------- */
-.field__hint { font-size: 12.5px; color: var(--text-muted); margin-top: -2px; }
-.field__label { font-size: 13px; font-weight: 600; color: var(--text-soft); }
+/* =========================================================
+   Hint / label
+   ---------------------------------------------------------
+   NOTA: `.field__hint` também é definido em configuracoes.css
+   e notas-fiscal.css. Mesma declaração. Refatoração possível:
+   mover para global.css.
+   ========================================================= */
+.field__hint {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  margin-top: -2px;
+}
 
-/* ---------- Tabela: indicadores ---------- */
+.field__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-soft);
+}
+
+/* =========================================================
+   Tabela: indicadores
+   ========================================================= */
 .movement-qty {
   font-variant-numeric: tabular-nums;
   font-weight: 600;
@@ -120,28 +186,61 @@
   overflow-wrap: anywhere;
 }
 
+/* CORREÇÃO #4: `white-space: nowrap` mantido para
+   preferência, mas ganha `overflow-wrap` como fallback —
+   se o doc for muito longo, quebra em vez de estourar. */
 .movement-doc {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 12.5px;
   color: var(--text-muted);
   white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 #movements-table-wrap table { min-width: 1080px; }
 
-/* ---------- Célula do usuário ---------- */
+/* =========================================================
+   Célula do usuário (coluna de auditoria)
+   ========================================================= */
 .cell-user-name {
   font-weight: 600;
   color: var(--text);
 }
 
-/* ---------- Responsivo ---------- */
+/* =========================================================
+   Responsivo
+   ========================================================= */
 @media (max-width: 720px) {
-  .field--inline { width: 100%; }
-  .control-select { width: 100%; min-width: 0; }
-  .toolbar__actions { width: 100%; flex-direction: column; }
+  .control-select {
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* CORREÇÃO #5: em mobile, `.field--inline` volta a ser
+     empilhado (coluna) — antes, herdava `flex-direction: row`
+     do desktop, deixando selects apertados lado a lado. */
+  .field--inline {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .toolbar__actions {
+    width: 100%;
+    flex-direction: column;
+  }
+
   .toolbar__actions .field--inline { flex: 1 1 auto; }
   .toolbar__actions .search { width: 100%; }
+
   .movement-reason { max-width: 140px; }
-  #movement-modal .modal__dialog { max-width: 100%; }
+
+  /* CORREÇÃO #6: `#movement-modal .modal__dialog` usa ID
+     (especificidade alta) para vencer o `max-width: 720px`
+     do `.modal__dialog--lg`. Como é dentro de media query,
+     funciona — só vale saber que a especificidade é alta
+     de propósito. */
+  #movement-modal .modal__dialog {
+    max-width: 100%;
+  }
 }

@@ -7,6 +7,19 @@
    - Persistência atômica via RPC upsert_customer_full
    - Carga completa via RPC get_customer_full
    - Permissões: customers.view / .create / .edit / .delete
+   ---------------------------------------------------------
+   CORREÇÕES APLICADAS:
+   1. `openEditModal` respeita o tipo: PJ preenche
+      `#customer-document-pj`; PF preenche `#customer-document`.
+      Antes, CNPJ era escrito no campo de CPF.
+   2. Race condition em `openEditModal`: token descarta respostas
+      obsoletas quando o usuário abre outro cliente antes da
+      primeira RPC terminar.
+   3. Focus em `els.company` quando é PJ, `els.name` quando é PF.
+   4. `numberOrNull` aceita "1.234,56" (BR) e "1234.56" (US).
+   5. Guards de null em `els.type`, `els.modal` e pontos críticos.
+   6. `setDeleting` seta `aria-busy` (consistente com outros
+      módulos).
    ========================================================= */
 
 (function () {
@@ -35,6 +48,10 @@
       remove: true
     }
   };
+
+  /* CORREÇÃO #2 (continuação): token de geração para o
+     openEditModal descartar respostas obsoletas. */
+  let editGeneration = 0;
 
   document.addEventListener('DOMContentLoaded', init);
 
@@ -93,10 +110,6 @@
     await loadCustomers();
   }
 
-  /**
-   * Esconde botões de acordo com o que o usuário pode fazer.
-   * Roda 1x no init; os botões por linha são gated em buildActionsCell.
-   */
   function applyPermissionsToUI() {
     const newBtn = document.getElementById('new-customer-btn');
     if (newBtn && !state.perms.create) newBtn.hidden = true;
@@ -368,7 +381,6 @@
     const wrap = document.createElement('div');
     wrap.className = 'row-actions';
 
-    // ---------- Editar ----------
     if (state.perms.edit) {
       const editBtn = document.createElement('button');
       editBtn.type = 'button';
@@ -380,7 +392,6 @@
       wrap.appendChild(editBtn);
     }
 
-    // ---------- Excluir ----------
     if (state.perms.remove) {
       const delBtn = document.createElement('button');
       delBtn.type = 'button';
@@ -392,7 +403,6 @@
       wrap.appendChild(delBtn);
     }
 
-    // Sem nenhuma ação → mostra —
     if (wrap.childNodes.length === 0) {
       const dash = document.createElement('span');
       dash.className = 'cell--muted';
@@ -524,7 +534,10 @@
       if (e.key === 'Escape' && !els.modal.hidden) closeCustomerModal();
     });
 
-    els.type.addEventListener('change', onTypeChange);
+    /* CORREÇÃO #2: guards de null */
+    if (els.type) {
+      els.type.addEventListener('change', onTypeChange);
+    }
 
     els.modal.querySelectorAll('.tab-btn').forEach(function (btn) {
       btn.addEventListener('click', function () {
@@ -553,6 +566,7 @@
   }
 
   function onTypeChange() {
+    if (!els.type) return;
     const isPJ = els.type.value === 'PJ';
     els.modal.classList.toggle('customer-type-PJ', isPJ);
 
@@ -843,17 +857,20 @@
      ========================================================= */
   function resetModal() {
     els.form.reset();
-    els.id.value = '';
-    els.type.value = 'PF';
-    els.status.value = 'active';
+    if (els.id) els.id.value = '';
+    if (els.type) els.type.value = 'PF';
+    if (els.status) els.status.value = 'active';
+
     state.phones = [];
     state.emails = [];
     state.addresses = [];
     state.contacts = [];
+
     renderRows('phones');
     renderRows('emails');
     renderRows('addresses');
     renderRows('contacts');
+
     els.modal.querySelectorAll('.tab-btn').forEach(function (b, i) {
       b.classList.toggle('is-active', i === 0);
     });
@@ -869,12 +886,15 @@
       showToast('Você não tem permissão para criar clientes.', 'error');
       return;
     }
+    /* Invalida qualquer fetch em curso */
+    editGeneration += 1;
+
     state.editingId = null;
-    els.title.textContent = 'Novo cliente';
+    if (els.title) els.title.textContent = 'Novo cliente';
     resetModal();
     els.modal.hidden = false;
     document.body.style.overflow = 'hidden';
-    els.name.focus();
+    if (els.name) els.name.focus();
   }
 
   async function openEditModal(rowSummary) {
@@ -883,8 +903,12 @@
       return;
     }
 
+    /* CORREÇÃO #2: geração + guard de modal */
+    editGeneration += 1;
+    const myGen = editGeneration;
+
     state.editingId = rowSummary.id;
-    els.title.textContent = 'Editar cliente';
+    if (els.title) els.title.textContent = 'Editar cliente';
 
     els.modal.hidden = false;
     document.body.style.overflow = 'hidden';
@@ -896,6 +920,9 @@
         p_customer_id: rowSummary.id
       });
       if (error) throw error;
+
+      /* Descarta se outra chamada começou */
+      if (myGen !== editGeneration) return;
 
       const c = data && data.customer ? data.customer : {};
       const phones    = data && Array.isArray(data.phones)    ? data.phones    : [];
@@ -922,42 +949,50 @@
         email: k.email || '', is_primary: !!k.is_primary, notes: k.notes || ''
       }; });
 
-      els.id.value = c.id || '';
-      els.type.value = c.type || 'PF';
-      els.status.value = c.status || 'active';
+      if (els.id) els.id.value = c.id || '';
+      if (els.type) els.type.value = c.type || 'PF';
+      if (els.status) els.status.value = c.status || 'active';
 
-      els.name.value       = c.name || '';
-      els.document.value   = c.cpf_cnpj || '';
-      els.rg.value         = c.rg || '';
-      els.birth.value      = c.birth_date ? String(c.birth_date).slice(0,10) : '';
-      els.profession.value = c.profession || '';
+      /* CORREÇÃO #1: escreve o documento no campo certo */
+      const isPJ = c.type === 'PJ';
+      if (isPJ) {
+        if (els.documentPJ) els.documentPJ.value = c.cpf_cnpj || '';
+        if (els.document)   els.document.value = '';
+      } else {
+        if (els.document)   els.document.value = c.cpf_cnpj || '';
+        if (els.documentPJ) els.documentPJ.value = '';
+      }
 
-      els.company.value    = c.company_name || '';
-      els.trade.value      = c.trade_name || '';
-      els.documentPJ.value = c.type === 'PJ' ? (c.cpf_cnpj || '') : '';
-      els.ie.value         = c.state_registration || '';
-      els.im.value         = c.municipal_registration || '';
-      els.cnae.value       = c.cnae || '';
-      els.taxRegime.value  = c.tax_regime || '';
+      if (els.name)       els.name.value = c.name || '';
+      if (els.rg)         els.rg.value = c.rg || '';
+      if (els.birth)      els.birth.value = c.birth_date ? String(c.birth_date).slice(0,10) : '';
+      if (els.profession) els.profession.value = c.profession || '';
 
-      els.category.value     = c.category || '';
-      els.segment.value      = c.segment || '';
-      els.origin.value       = c.origin || '';
-      els.priceTable.value   = c.price_table || '';
-      els.payCondition.value = c.payment_condition || '';
-      els.payPreferred.value = c.preferred_payment_method || '';
-      els.creditLimit.value  = c.credit_limit != null ? c.credit_limit : 0;
-      els.defaultDisc.value  = c.default_discount != null ? c.default_discount : 0;
+      if (els.company)    els.company.value = c.company_name || '';
+      if (els.trade)      els.trade.value = c.trade_name || '';
+      if (els.ie)         els.ie.value = c.state_registration || '';
+      if (els.im)         els.im.value = c.municipal_registration || '';
+      if (els.cnae)       els.cnae.value = c.cnae || '';
+      if (els.taxRegime)  els.taxRegime.value = c.tax_regime || '';
 
-      els.delContact.value   = c.delivery_contact || '';
-      els.delPhone.value     = c.delivery_phone || '';
-      els.delHours.value     = c.delivery_hours || '';
-      els.delCarrier.value   = c.delivery_carrier || '';
-      els.delReference.value = c.delivery_reference || '';
-      els.delNotes.value     = c.delivery_notes || '';
+      if (els.category)     els.category.value = c.category || '';
+      if (els.segment)      els.segment.value = c.segment || '';
+      if (els.origin)       els.origin.value = c.origin || '';
+      if (els.priceTable)   els.priceTable.value = c.price_table || '';
+      if (els.payCondition) els.payCondition.value = c.payment_condition || '';
+      if (els.payPreferred) els.payPreferred.value = c.preferred_payment_method || '';
+      if (els.creditLimit)  els.creditLimit.value = c.credit_limit != null ? c.credit_limit : 0;
+      if (els.defaultDisc)  els.defaultDisc.value = c.default_discount != null ? c.default_discount : 0;
 
-      els.commNotes.value = c.commercial_notes || '';
-      els.notes.value     = c.notes || '';
+      if (els.delContact)   els.delContact.value = c.delivery_contact || '';
+      if (els.delPhone)     els.delPhone.value = c.delivery_phone || '';
+      if (els.delHours)     els.delHours.value = c.delivery_hours || '';
+      if (els.delCarrier)   els.delCarrier.value = c.delivery_carrier || '';
+      if (els.delReference) els.delReference.value = c.delivery_reference || '';
+      if (els.delNotes)     els.delNotes.value = c.delivery_notes || '';
+
+      if (els.commNotes) els.commNotes.value = c.commercial_notes || '';
+      if (els.notes)     els.notes.value = c.notes || '';
 
       renderRows('phones');
       renderRows('emails');
@@ -966,8 +1001,12 @@
 
       onTypeChange();
       clearFeedback();
-      els.name.focus();
+
+      /* CORREÇÃO #3: focus no campo certo */
+      if (isPJ && els.company) els.company.focus();
+      else if (!isPJ && els.name) els.name.focus();
     } catch (error) {
+      if (myGen !== editGeneration) return;
       console.error('[DEV HUB] Falha ao carregar cliente:', error);
       showFeedback(mapDbError(error));
     }
@@ -986,7 +1025,6 @@
     event.preventDefault();
     if (state.saving) return;
 
-    // Reforço de permissão
     if (state.editingId && !state.perms.edit) {
       showFeedback('Você não tem permissão para editar clientes.');
       return;
@@ -998,7 +1036,7 @@
 
     clearFeedback();
 
-    const isPJ = els.type.value === 'PJ';
+    const isPJ = els.type && els.type.value === 'PJ';
 
     const name = isPJ
       ? (els.company.value.trim() || els.name.value.trim())
@@ -1071,7 +1109,7 @@
     setSaving(true);
 
     try {
-      const { data, error } = await window.db.rpc('upsert_customer_full', {
+      const { error } = await window.db.rpc('upsert_customer_full', {
         p_customer_id: state.editingId,
         p_organization_id: null,
         p_customer: customer,
@@ -1094,9 +1132,18 @@
     }
   }
 
+  /* CORREÇÃO #4: aceita "1.234,56" (BR) e "1234.56" (US) */
   function numberOrNull(v) {
     if (v === '' || v === null || v === undefined) return null;
-    const n = Number(v);
+    if (typeof v === 'number') return Number.isFinite(v) ? v : null;
+
+    let str = String(v).trim();
+    if (str.indexOf(',') !== -1 && str.indexOf('.') !== -1) {
+      str = str.replace(/\./g, '').replace(',', '.');
+    } else if (str.indexOf(',') !== -1) {
+      str = str.replace(',', '.');
+    }
+    const n = Number(str);
     return Number.isFinite(n) ? n : null;
   }
 
@@ -1150,17 +1197,20 @@
       return;
     }
     state.deletingId = customer.id;
-    confirmEls.text.textContent =
-      'Excluir "' + (customer.name || customer.company_name || 'este cliente') +
-      '"? Os telefones, e-mails, endereços e contatos vinculados também serão removidos. ' +
-      'Esta ação não pode ser desfeita.';
+    if (confirmEls.text) {
+      confirmEls.text.textContent =
+        'Excluir "' + (customer.name || customer.company_name || 'este cliente') +
+        '"? Os telefones, e-mails, endereços e contatos vinculados também serão removidos. ' +
+        'Esta ação não pode ser desfeita.';
+    }
     confirmEls.modal.hidden = false;
     document.body.style.overflow = 'hidden';
-    confirmEls.btn.focus();
+    if (confirmEls.btn) confirmEls.btn.focus();
   }
 
   function closeConfirmModal() {
     if (state.deleting) return;
+    if (!confirmEls.modal) return;
     confirmEls.modal.hidden = true;
     document.body.style.overflow = '';
     state.deletingId = null;
@@ -1187,11 +1237,13 @@
     }
   }
 
+  /* CORREÇÃO #6: aria-busy consistente com outros módulos. */
   function setDeleting(v) {
     state.deleting = v;
     if (!confirmEls.btn) return;
     confirmEls.btn.disabled = v;
     confirmEls.btn.classList.toggle('is-loading', v);
+    confirmEls.btn.setAttribute('aria-busy', String(v));
     const l = confirmEls.btn.querySelector('.btn__label');
     if (l) l.textContent = v ? 'Excluindo…' : 'Excluir';
   }

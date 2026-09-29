@@ -1,7 +1,20 @@
 /* =========================================================
    DEV HUB · Módulo de Configurações
    ---------------------------------------------------------
-   Usa apenas window.db. Protegido por sessão (getUser()).
+   Usa apenas window.db. Protegido por sessão (requireSession).
+   ---------------------------------------------------------
+   CORREÇÕES APLICADAS:
+   1. `init()` usa `Auth.requireSession()` — antes pulava o
+      guard de status (banned/suspended/vacation) chamando
+      `getUser()` direto.
+   2. `setupSignOut()` roda ANTES de `setupLogoutButtons()`
+      para garantir que `outEls.modal` esteja populado.
+   3. `openPasswordModal` reseta o estado visual dos toggles
+      de senha (aria-pressed / aria-label / type).
+   4. `onSubmitProfile` sincroniza `organization_members.name`
+      e `sessionStorage.devhub_user` (best-effort).
+   5. Guards de null em vários pontos.
+   6. `mapDbError` trata duplicate/unique.
    ========================================================= */
 
 (function () {
@@ -29,7 +42,7 @@
      Init
      ========================================================= */
   async function init() {
-    if (!window.db || window.DEV_HUB_CONFIGURED !== true) {
+    if (!window.db || !window.Auth || !window.Auth.isConfigured()) {
       showGlobalAlert(
         'Não foi possível conectar ao Supabase. Verifique as credenciais em js/supabase.js.',
         'error'
@@ -37,30 +50,23 @@
       return;
     }
 
+    /* CORREÇÃO #2: setupSignOut roda antes para popular outEls.modal. */
+    setupSignOut();
     setupSidebar();
     setupUserMenu();
-    setupLogoutButtons();
     setupProfileForm();
     setupPasswordModal();
     setupThemeControls();
     setupAvatar();
-    setupSignOut();
+    setupLogoutButtons();
 
-    // Verificação de sessão via getUser (como pedido)
-    try {
-      const result = await window.db.auth.getUser();
-      const user = result && result.data ? result.data.user : null;
+    /* CORREÇÃO #1: requireSession roda o guard de status.
+       Antes usávamos getUser(), que não bloqueia usuário
+       banido/suspenso/em férias. */
+    const session = await window.Auth.requireSession();
+    if (!session) return;
 
-      if (!user) {
-        window.location.replace('index.html');
-        return;
-      }
-      state.user = user;
-    } catch (error) {
-      console.error('[DEV HUB] Falha ao verificar sessão:', error);
-      window.location.replace('index.html');
-      return;
-    }
+    state.user = session.user;
 
     watchAuthChanges();
 
@@ -89,7 +95,8 @@
   }
 
   function isSigningOut() {
-    return state.signingOut || (window.Auth && window.Auth.isSigningOut && window.Auth.isSigningOut());
+    return state.signingOut ||
+           (window.Auth && window.Auth.isSigningOut && window.Auth.isSigningOut());
   }
 
   async function loadProfile(userId) {
@@ -143,6 +150,7 @@
   function renderProfileForm() {
     const user = state.user;
     const profile = state.profile;
+    if (!user) return;
 
     const displayName =
       (profile && profile.name) ||
@@ -163,6 +171,7 @@
   function renderAccountInfo() {
     const user = state.user;
     const profile = state.profile;
+    if (!user) return;
 
     setText('account-email', user.email || '—');
     setText('account-role', roleLabel((profile && profile.role) || ''));
@@ -196,6 +205,7 @@
     clearProfileFeedback();
 
     const input = document.getElementById('profile-name');
+    if (!input) return;
     const name = input.value.trim();
 
     if (!name) {
@@ -220,7 +230,20 @@
 
       if (error) throw error;
 
-      // Atualiza estado local
+      /* CORREÇÃO #4: sincroniza organization_members (best-effort)
+         e sessionStorage.devhub_user — sem isso o topnav continua
+         mostrando o nome antigo até próximo login. */
+      try {
+        await window.db
+          .from('organization_members')
+          .update({ name: name })
+          .eq('user_id', userId);
+      } catch (syncErr) {
+        console.warn('[DEV HUB] Falha ao sincronizar organization_members:', syncErr);
+      }
+
+      syncSessionUserName(name);
+
       state.profile = Object.assign({}, state.profile || {}, { name: name });
 
       renderUser(state.user, state.profile);
@@ -232,6 +255,21 @@
       showProfileFeedback(mapDbError(error));
     } finally {
       setProfileSaving(false);
+    }
+  }
+
+  /* CORREÇÃO #4 (continuação): escreve o novo nome no
+     sessionStorage usado por nav.js. */
+  function syncSessionUserName(name) {
+    try {
+      const raw = sessionStorage.getItem('devhub_user');
+      if (!raw) return;
+      const ctx = JSON.parse(raw);
+      if (!ctx || typeof ctx !== 'object') return;
+      ctx.name = name;
+      sessionStorage.setItem('devhub_user', JSON.stringify(ctx));
+    } catch (e) {
+      console.warn('[DEV HUB] Falha ao sincronizar nome no sessionStorage:', e);
     }
   }
 
@@ -311,15 +349,25 @@
     pwEls.form.addEventListener('submit', onSubmitPassword);
   }
 
+  /* CORREÇÃO #3: reseta o estado visual dos toggles ao reabrir. */
   function openPasswordModal() {
     pwEls.form.reset();
-    pwEls.new.type = 'password';
-    pwEls.confirm.type = 'password';
+
+    if (pwEls.new) pwEls.new.type = 'password';
+    if (pwEls.confirm) pwEls.confirm.type = 'password';
+
+    pwEls.modal.querySelectorAll('[data-pw-toggle]').forEach(function (btn) {
+      btn.setAttribute('aria-pressed', 'false');
+      btn.setAttribute('aria-label', 'Mostrar senha');
+    });
+
     clearPasswordFeedback();
 
     pwEls.modal.hidden = false;
     document.body.style.overflow = 'hidden';
-    pwEls.new.focus();
+
+    /* CORREÇÃO #5: guard de null */
+    if (pwEls.new) pwEls.new.focus();
   }
 
   function closePasswordModal() {
@@ -521,14 +569,7 @@
       // Estado local
       state.profile = Object.assign({}, state.profile || {}, { avatar_url: publicUrl });
 
-      try {
-        const raw = sessionStorage.getItem('devhub_user');
-        if (raw) {
-          const u = JSON.parse(raw);
-          u.avatar_url = publicUrl;
-          sessionStorage.setItem('devhub_user', JSON.stringify(u));
-        }
-      } catch (e) { /* ignora */ }
+      syncSessionAvatar(publicUrl);
 
       renderAvatarPreview(publicUrl);
       applyTopbarAvatar(publicUrl);
@@ -578,14 +619,7 @@
       // Estado local
       state.profile = Object.assign({}, state.profile || {}, { avatar_url: null });
 
-      try {
-        const raw = sessionStorage.getItem('devhub_user');
-        if (raw) {
-          const u = JSON.parse(raw);
-          delete u.avatar_url;
-          sessionStorage.setItem('devhub_user', JSON.stringify(u));
-        }
-      } catch (e) { /* ignora */ }
+      syncSessionAvatar(null);
 
       renderAvatarPreview(null);
       applyTopbarAvatar(null);
@@ -596,6 +630,23 @@
       showAvatarFeedback('Não foi possível remover a foto.');
     } finally {
       setAvatarBusy(false);
+    }
+  }
+
+  /* Sincroniza sessionStorage.avatar_url com fallback seguro. */
+  function syncSessionAvatar(url) {
+    try {
+      const raw = sessionStorage.getItem('devhub_user');
+      if (!raw) return;
+      const ctx = JSON.parse(raw);
+      if (!ctx || typeof ctx !== 'object') return;
+
+      if (url) ctx.avatar_url = url;
+      else delete ctx.avatar_url;
+
+      sessionStorage.setItem('devhub_user', JSON.stringify(ctx));
+    } catch (e) {
+      console.warn('[DEV HUB] Falha ao sincronizar avatar no sessionStorage:', e);
     }
   }
 
@@ -708,6 +759,7 @@
   }
 
   function openSignOutModal() {
+    if (!outEls.modal) return;
     outEls.modal.hidden = false;
     document.body.style.overflow = 'hidden';
     if (outEls.confirm) outEls.confirm.focus();
@@ -715,6 +767,7 @@
 
   function closeSignOutModal() {
     if (state.signingOut) return;
+    if (!outEls.modal) return;
     outEls.modal.hidden = true;
     document.body.style.overflow = '';
   }
@@ -732,6 +785,10 @@
     }
 
     try {
+      if (window.Auth && typeof window.Auth.signOut === 'function') {
+        await window.Auth.signOut();
+        return;
+      }
       await window.db.auth.signOut();
     } catch (error) {
       console.error('[DEV HUB] Falha ao encerrar sessão:', error);
@@ -816,7 +873,7 @@
     });
   }
 
-  // Botões data-action="logout" (na sidebar e no user menu) — abrem a confirmação
+  // Botões data-action="logout" — abrem a confirmação
   function setupLogoutButtons() {
     document.querySelectorAll('[data-action="logout"]').forEach(function (button) {
       button.addEventListener('click', function (event) {
@@ -875,6 +932,10 @@
     }
     if (message.includes('violates not-null')) {
       return 'Preencha todos os campos obrigatórios.';
+    }
+    /* CORREÇÃO #7: trata duplicate/unique. */
+    if (message.includes('duplicate') || message.includes('unique')) {
+      return 'Já existe um registro com esses dados.';
     }
     return 'Não foi possível salvar. Tente novamente.';
   }

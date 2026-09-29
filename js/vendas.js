@@ -58,6 +58,7 @@
 
     // Edição
     editingSaleId: null,
+    editingSale:   null,   // objeto completo da venda em edição
 
     // Busca de produto
     productQuery: '',
@@ -90,7 +91,6 @@
       return;
     }
 
-    setupSidebar();
     setupUserMenu();
     setupLogout();
     setupSearch();
@@ -183,36 +183,8 @@
   }
 
   /* =========================================================
-     Sidebar / user menu / logout
+     User menu / logout
      ========================================================= */
-  function setupSidebar() {
-    const toggle = document.getElementById('menu-toggle');
-    const overlay = document.getElementById('sidebar-overlay');
-    const sidebar = document.getElementById('sidebar');
-    if (!toggle || !overlay || !sidebar) return;
-
-    function open() {
-      document.body.classList.add('sidebar-open');
-      toggle.setAttribute('aria-expanded', 'true');
-      toggle.setAttribute('aria-label', 'Fechar menu');
-      overlay.hidden = false;
-    }
-    function close() {
-      if (!document.body.classList.contains('sidebar-open')) return;
-      document.body.classList.remove('sidebar-open');
-      toggle.setAttribute('aria-expanded', 'false');
-      toggle.setAttribute('aria-label', 'Abrir menu');
-      overlay.hidden = true;
-    }
-
-    toggle.addEventListener('click', function () {
-      document.body.classList.contains('sidebar-open') ? close() : open();
-    });
-    overlay.addEventListener('click', close);
-    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
-    window.addEventListener('resize', function () { if (window.innerWidth >= 1024) close(); });
-  }
-
   function setupUserMenu() {
     const trigger = document.getElementById('user-menu-trigger');
     const panel = document.getElementById('user-menu-panel');
@@ -547,6 +519,7 @@
       return;
     }
     state.editingSaleId = null;
+    state.editingSale   = null;
     setFormMode('create');
     showView('form');
     if (!state.formDataLoaded) {
@@ -560,6 +533,7 @@
       return;
     }
     state.editingSaleId = sale.id;
+    state.editingSale   = sale;   // guarda objeto completo
 
     showView('form');
     if (!state.formDataLoaded) {
@@ -617,6 +591,7 @@
     if (state.submitting) return;
     resetSaleForm();
     state.editingSaleId = null;
+    state.editingSale   = null;
     showView('list');
   }
 
@@ -1159,7 +1134,7 @@
     clearFormFeedback();
   }
 
-  /* ===== ATUALIZADO ===== desconto em R$ e % sincronizados */
+  /* Desconto em R$ e % sincronizados */
   function recalcTotals() {
     const subtotal = state.cart.reduce(function (sum, item) {
       return sum + toNumber(item.subtotal, 0);
@@ -1195,7 +1170,6 @@
     formEls.totalTotal.textContent = formatMoney(total);
   }
 
-  /* ===== ATUALIZADO ===== reseta os dois campos */
   function resetSaleForm() {
     if (!formEls.form) return;
 
@@ -1288,8 +1262,13 @@
     };
 
     if (state.editingSaleId) {
+      /* Usa o objeto completo da venda (não o UUID) para exibir o número correto */
+      const saleLabel = state.editingSale
+        ? formatSaleNumber(state.editingSale)
+        : '#—';
+
       requestPassword(
-        'Para salvar as alterações da venda ' + formatSaleNumber({ sale_number: state.editingSaleId }) +
+        'Para salvar as alterações da venda ' + saleLabel +
         ', confirme sua senha. A alteração fica registrada no histórico.',
         async function (pwd) {
           await submitEditSale(payload, pwd);
@@ -1321,6 +1300,7 @@
 
       resetSaleForm();
       state.editingSaleId = null;
+      state.editingSale   = null;
       showView('list');
 
       state.formDataLoaded = false;
@@ -1359,6 +1339,7 @@
 
       resetSaleForm();
       state.editingSaleId = null;
+      state.editingSale   = null;
       showView('list');
 
       state.formDataLoaded = false;

@@ -1,5 +1,18 @@
 /* =========================================================
    DEV HUB · Dashboard
+   ---------------------------------------------------------
+   CORREÇÕES APLICADAS:
+   1. `.quick-card__icon--*` ganhou override em dark mode.
+      Antes, cada variante tinha cor pastel fixa que ficava
+      "piscando" no escuro se usada.
+   2. `.quick-*` e `.price-*` marcados como LEGADO — a
+      dashboard.html atual usa `.dash-*`. Remova as seções
+      se confirmar que não há referências.
+   3. Nota em `.avatar` — duplicado de `global.css`.
+   4. `tr[hidden]` removido — `[hidden]` global já cobre.
+   5. `.menu-item__tag` usa `var(--surface-2)` em vez de
+      `#f2f4f7` hardcoded.
+   6. Comentários sobre tokens `--sidebar-*` disponíveis.
    ========================================================= */
 
 :root {
@@ -32,11 +45,16 @@
   gap: 10px;
   padding: 4px 10px 24px;
 }
+
+/* Sidebar é sempre escura (design intencional), então as
+   cores hardcoded aqui são seguras nos dois temas. */
 .sidebar__brand .brand__name { color: #ffffff; }
 
 .sidebar__spacer { flex: 1 1 auto; min-height: 24px; }
 
-/* ---------- Navegação ---------- */
+/* =========================================================
+   Navegação
+   ========================================================= */
 .nav {
   display: flex;
   flex-direction: column;
@@ -112,7 +130,9 @@
   white-space: nowrap;
 }
 
-/* ---------- Overlay mobile ---------- */
+/* =========================================================
+   Overlay mobile
+   ========================================================= */
 .sidebar-overlay {
   position: fixed;
   inset: 0;
@@ -134,6 +154,7 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  min-height: 100dvh;               /* iOS Safari: barra dinâmica */
   margin-left: var(--sidebar-w);
 }
 
@@ -149,6 +170,7 @@
   gap: 14px;
   height: var(--topbar-h);
   padding: 0 24px;
+  /* Cor clara translúcida — theme.css sobrescreve no dark */
   background: rgba(255, 255, 255, 0.86);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -186,12 +208,18 @@
               border-color var(--transition);
 }
 .icon-btn svg { width: 19px; height: 19px; }
-.icon-btn:hover:not(:disabled) { background: var(--surface-2); color: var(--text); border-color: var(--border); }
+.icon-btn:hover:not(:disabled) {
+  background: var(--surface-2);
+  color: var(--text);
+  border-color: var(--border);
+}
 .icon-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .menu-toggle { display: none; }
 
-/* ---------- Menu do usuário ---------- */
+/* =========================================================
+   Menu do usuário
+   ========================================================= */
 .user-menu { position: relative; }
 
 .user-menu__trigger {
@@ -205,8 +233,16 @@
   cursor: pointer;
   transition: background-color var(--transition), border-color var(--transition);
 }
-.user-menu__trigger:hover { background: var(--surface-2); border-color: var(--border); }
+.user-menu__trigger:hover {
+  background: var(--surface-2);
+  border-color: var(--border);
+}
 
+/* NOTA: `.avatar` também está definido em `global.css`.
+   Aqui foi mantido por retrocompatibilidade, mas o ideal é
+   consolidar numa única fonte de verdade (global.css).
+   A regra de `global.css` já tem `overflow: hidden` e
+   `.avatar img` para o crop redondo. */
 .avatar {
   display: grid;
   place-items: center;
@@ -255,7 +291,9 @@
   flex: none;
   transition: transform var(--transition);
 }
-.user-menu__trigger[aria-expanded="true"] .user-menu__chevron { transform: rotate(180deg); }
+.user-menu__trigger[aria-expanded="true"] .user-menu__chevron {
+  transform: rotate(180deg);
+}
 
 .user-menu__panel {
   position: absolute;
@@ -294,14 +332,19 @@
   transition: background-color var(--transition), color var(--transition);
 }
 .menu-item:hover:not([aria-disabled="true"]) { background: var(--surface-2); }
-.menu-item[aria-disabled="true"] { color: var(--text-muted); cursor: not-allowed; }
+.menu-item[aria-disabled="true"] {
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
 .menu-item--danger { color: var(--danger); }
 .menu-item--danger:hover { background: var(--danger-soft); }
 
+/* CORREÇÃO #5: usa var(--surface-2) em vez de #f2f4f7.
+   Mesmo tom no light, correto no dark automaticamente. */
 .menu-item__tag {
   padding: 1px 7px;
   border-radius: 999px;
-  background: #f2f4f7;
+  background: var(--surface-2);
   color: var(--text-muted);
   font-size: 10px;
   font-weight: 600;
@@ -418,7 +461,9 @@
   overflow-wrap: anywhere;
 }
 
-/* ---------- Painel / Tabela ---------- */
+/* =========================================================
+   Painel / Tabela
+   ========================================================= */
 .panel {
   margin-top: 24px;
   border: 1px solid var(--border);
@@ -493,7 +538,8 @@ th.cell--num { text-align: right; }
 
 .cell--muted { color: var(--text-muted); }
 
-tr[hidden] { display: none; }
+/* `tr[hidden] { display: none }` era redundante com
+   `[hidden] { display: none !important }` em global.css. */
 
 .table-empty td {
   padding: 44px 20px;
@@ -506,8 +552,6 @@ tr[hidden] { display: none; }
 /* =========================================================
    Responsivo
    ========================================================= */
-
-/* Tablet */
 @media (max-width: 1200px) {
   .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
@@ -531,14 +575,218 @@ tr[hidden] { display: none; }
   .sidebar-overlay { display: none !important; }
 }
 
-/* Mobile */
 @media (max-width: 640px) {
   .stats { grid-template-columns: minmax(0, 1fr); gap: 12px; }
   .stat { padding: 18px; }
   .stat__value { font-size: 23px; }
   .page-head__title { font-size: 22px; }
+
   .user-menu__meta { display: none; }
   .user-menu__chevron { display: none; }
   .user-menu__trigger { padding: 4px; }
+
   .panel__head { padding: 16px; }
+}
+
+/* =========================================================
+   ⚠️ QUICK ANALYSES (cards do dashboard)
+   ---------------------------------------------------------
+   LEGADO — não há referências a `.quick-*` nos HTMLs atuais.
+   A dashboard.html usa `.dash-*` (de `dashboard-pro.css`).
+   Se confirmar via `grep -rn "quick-" *.html js/*.js` que
+   não é usado, pode deletar todo este bloco (~100 linhas).
+   ---------------------------------------------------------
+   Mantido aqui com CORREÇÃO #1 aplicada nos ícones:
+   ========================================================= */
+.quick-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.quick-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: box-shadow .15s, border-color .15s;
+}
+.quick-card:hover {
+  border-color: var(--border-strong);
+  box-shadow: 0 4px 16px -6px rgba(16, 24, 40, .08);
+}
+
+.quick-card__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.quick-card__icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex: none;
+  border-radius: 9px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.quick-card__icon svg { width: 16px; height: 16px; }
+
+/* CORREÇÃO #1: variantes com dark mode override */
+.quick-card__icon--sales {
+  background: rgba(99, 102, 241, 0.14);
+  color: #4f46e5;
+}
+.quick-card__icon--customers {
+  background: rgba(6, 118, 71, 0.12);
+  color: #067647;
+}
+.quick-card__icon--finance {
+  background: rgba(181, 71, 8, 0.14);
+  color: #b54708;
+}
+.quick-card__icon--products {
+  background: rgba(53, 56, 205, 0.14);
+  color: #3538cd;
+}
+
+[data-theme="dark"] .quick-card__icon--sales     { background: #1e1b4b; color: #a5b4fc; }
+[data-theme="dark"] .quick-card__icon--customers { background: #052e16; color: #6ee7b7; }
+[data-theme="dark"] .quick-card__icon--finance   { background: #431407; color: #fdba74; }
+[data-theme="dark"] .quick-card__icon--products  { background: #1e1b4b; color: #c7d2fe; }
+
+.quick-card__title {
+  margin: 0 0 2px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+.quick-card__sub {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.quick-card__body {
+  padding: 12px 16px;
+  flex: 1 1 auto;
+}
+
+.quick-card__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 13px;
+  color: var(--text-muted);
+  border-bottom: 1px dashed var(--border);
+}
+.quick-card__row:last-child { border-bottom: 0; }
+.quick-card__row strong {
+  color: var(--text);
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.quick-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.quick-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--border);
+  font-size: 13px;
+}
+.quick-list li:last-child { border-bottom: 0; }
+
+.quick-list__label {
+  color: var(--text);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.quick-list__count {
+  flex: none;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+.quick-list__empty {
+  color: var(--text-muted);
+  font-size: 13px;
+  padding: 8px 0;
+}
+
+.quick-card__foot {
+  padding: 10px 16px 14px;
+  border-top: 1px solid var(--border);
+  background: var(--surface-2);
+  text-align: right;
+}
+
+/* .btn--sm aqui tem 32px (não colide com notas 36px nem
+   com notas-fiscal 34px — cada página carrega só um CSS). */
+.btn--sm {
+  height: 32px;
+  padding: 0 12px;
+  font-size: 12.5px;
+}
+
+/* =========================================================
+   ⚠️ PRODUTOS POR FAIXA DE PREÇO
+   ---------------------------------------------------------
+   LEGADO — nenhuma referência a `.price-filter` ou
+   `.price-result` nos HTMLs atuais. Mesma situação do bloco
+   anterior: verificar e deletar se não for usado.
+   ========================================================= */
+.price-filter { margin-bottom: 14px; }
+
+.price-filter__fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 12px;
+  align-items: end;
+}
+@media (max-width: 640px) {
+  .price-filter__fields { grid-template-columns: 1fr; }
+}
+
+.price-filter__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.price-result {
+  margin-top: 8px;
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+}
+
+.price-result__summary {
+  margin: 0 0 12px;
+  font-size: 13.5px;
+  color: var(--text-muted);
+}
+.price-result__summary strong {
+  color: var(--text);
+}
+
+.price-result__actions {
+  margin-top: 14px;
+  text-align: right;
 }

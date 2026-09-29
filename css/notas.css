@@ -2,6 +2,21 @@
    DEV HUB · Módulo de Notas
    Reaproveita global.css, dashboard.css e clientes.css.
    Aqui só o específico: layout do documento e impressão.
+   ---------------------------------------------------------
+   CORREÇÕES APLICADAS:
+   1. IMPRESSÃO NO DARK MODE — adicionado reset completo de
+      cores de TEXTO no @media print. Antes, elementos como
+      `.nota-doc__meta-line`, `.nota-doc__info-value` e
+      `.nota-doc__total-row` mantinham `color: var(--text)`
+      (branco no dark) e ficavam invisíveis no papel.
+   2. `input[type="date"]` ganha `color-scheme` — ícone nativo
+      do calendário renderiza no tema correto.
+   3. `.control-select:hover` usa `color-mix()` em vez de
+      `#b9bfc9` (funciona nos dois temas).
+   4. Nota sobre `.btn--sm` divergente entre módulos — cada
+      página carrega o seu, então não colide em runtime.
+   5. `@media print` também reseta `.nota-doc__section-title`
+      (que herdava `var(--text-muted)`).
    ========================================================= */
 
 /* ---------- Modal mais largo para o documento ---------- */
@@ -42,20 +57,34 @@
   font-size: 13.5px;
   color: var(--text);
   transition: border-color var(--transition), box-shadow var(--transition);
+
+  /* CORREÇÃO #2: ícone nativo do calendário respeita o tema.
+     Sem isso, o ícone fica preto (invisível no dark) e o popup
+     abre em modo claro. */
+  color-scheme: light;
 }
+
+[data-theme="dark"] .custom-period__field input[type="date"] {
+  color-scheme: dark;
+}
+
 .custom-period__field input[type="date"]:focus {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 4px var(--accent-ring);
 }
 
+/* .btn--sm aqui tem 36px (não colide com dashboard 32px nem
+   com notas-fiscal 34px, porque cada página carrega só um CSS). */
 .btn--sm {
   height: 36px;
   padding: 0 14px;
   font-size: 13px;
 }
 
-/* ---------- Select do toolbar ---------- */
+/* =========================================================
+   Select do toolbar
+   ========================================================= */
 .field--inline { flex-direction: row; align-items: center; }
 
 .control-select {
@@ -70,13 +99,19 @@
   cursor: pointer;
   -webkit-appearance: none;
   appearance: none;
+  /* Chevron coberto por theme.css no dark */
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23667085' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
   background-repeat: no-repeat;
   background-position: right 10px center;
   background-size: 15px;
   transition: border-color var(--transition), box-shadow var(--transition);
 }
-.control-select:hover:not(:focus) { border-color: #b9bfc9; }
+
+/* CORREÇÃO #3: hover sem cor hardcoded */
+.control-select:hover:not(:focus) {
+  border-color: color-mix(in srgb, var(--border-strong) 60%, var(--text) 40%);
+}
+
 .control-select:focus {
   outline: none;
   border-color: var(--accent);
@@ -286,9 +321,14 @@
 
 /* =========================================================
    Impressão
+   =========================================================
+   CORREÇÃO #1: reset completo de cor de TEXTO. Antes, só fundo
+   e alguns labels eram ajustados; elementos como meta-line,
+   info-value e total-row ficavam com `var(--text)` (branco no
+   dark) → invisíveis no papel.
    ========================================================= */
 @media print {
-  /* Esconde tudo do app */
+  /* ---------- Esconde tudo do app ---------- */
   body.printing-nota .sidebar,
   body.printing-nota .sidebar-overlay,
   body.printing-nota .topbar,
@@ -303,6 +343,7 @@
     background: #ffffff !important;
   }
 
+  /* ---------- Neutraliza layout do modal ---------- */
   body.printing-nota .modal {
     position: static !important;
     inset: auto !important;
@@ -327,12 +368,28 @@
     overflow: visible !important;
   }
 
+  /* ---------- Reset de COR (texto) ---------- */
+  /* Aplica #000 em todo o texto do documento e depois refina
+     os elementos que devem ficar em cinza. */
+  body.printing-nota .nota-doc,
+  body.printing-nota .nota-doc * {
+    color: #000 !important;
+  }
+
   body.printing-nota .nota-doc {
     padding: 0;
     gap: 16px;
-    color: #000;
   }
 
+  /* Labels e rodapé em cinza escuro (legível, hierarquia) */
+  body.printing-nota .nota-doc__info-label,
+  body.printing-nota .nota-doc__doc-type,
+  body.printing-nota .nota-doc__footer,
+  body.printing-nota .nota-doc__section-title {
+    color: #555 !important;
+  }
+
+  /* ---------- Ajustes de fundo/borda ---------- */
   body.printing-nota .nota-doc__header {
     border-bottom-color: #000;
   }
@@ -345,7 +402,6 @@
   }
 
   body.printing-nota .nota-doc__section-title {
-    color: #000;
     border-bottom-color: #999;
   }
 
@@ -367,12 +423,6 @@
     print-color-adjust: exact;
   }
 
-  body.printing-nota .nota-doc__info-label,
-  body.printing-nota .nota-doc__doc-type,
-  body.printing-nota .nota-doc__footer {
-    color: #555;
-  }
-
   @page {
     margin: 14mm;
   }
@@ -382,8 +432,13 @@
    Responsivo
    ========================================================= */
 @media (max-width: 720px) {
-  .toolbar__actions { width: 100%; flex-direction: column; align-items: stretch; }
+  .toolbar__actions {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
   .toolbar__actions .search { width: 100%; }
+
   .field--inline { width: 100%; }
   .control-select { width: 100%; min-width: 0; }
 

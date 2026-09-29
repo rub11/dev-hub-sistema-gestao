@@ -2,6 +2,20 @@
    DEV HUB · Módulo de Relatórios
    Reaproveita global.css + dashboard.css + clientes.css.
    Aqui só o específico.
+   ---------------------------------------------------------
+   CORREÇÕES APLICADAS:
+   1. `input[type="date"]`: adicionado `color-scheme` que troca
+      conforme o tema. Sem isso, o ícone nativo do calendário
+      fica invisível e o popup abre em modo claro mesmo em dark.
+   2. `.control-select:hover` não usa mais `#b9bfc9` hardcoded —
+      usa `color-mix()` que funciona nos dois temas.
+   3. `.badge--neutral` usa `--surface-2` (variável) em vez de
+      `#f2f4f7` (hardcoded) — mesma cor no light, correta no dark.
+   4. Observação: `.control-select`, `.field--inline`,
+      `.movement-qty`, `.movement-reason` estão duplicados em
+      `estoque.css`, `notas.css` e `relatorios.css`. Refatoração
+      possível: mover para `clientes.css` (base compartilhada).
+      Aqui mantido para não alterar o contrato entre arquivos.
    ========================================================= */
 
 /* ---------- Cabeçalho com ações ---------- */
@@ -113,7 +127,17 @@
   font-size: 13.5px;
   color: var(--text);
   transition: border-color var(--transition), box-shadow var(--transition);
+
+  /* CORREÇÃO #1: renderiza o ícone nativo do calendário
+     conforme o tema. Sem isso, o ícone fica preto (invisível
+     sobre fundo escuro) e o popup abre em modo claro. */
+  color-scheme: light;
 }
+
+[data-theme="dark"] .period-custom input[type="date"] {
+  color-scheme: dark;
+}
+
 .period-custom input[type="date"]:focus {
   outline: none;
   border-color: var(--accent);
@@ -222,13 +246,20 @@ main .report-grid + .panel {
   cursor: pointer;
   -webkit-appearance: none;
   appearance: none;
+  /* Chevron: coberto por [data-theme="dark"] em theme.css */
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23667085' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
   background-repeat: no-repeat;
   background-position: right 10px center;
   background-size: 15px;
   transition: border-color var(--transition), box-shadow var(--transition);
 }
-.control-select:hover:not(:focus) { border-color: #b9bfc9; }
+
+/* CORREÇÃO #2: hover com color-mix() funciona nos dois temas.
+   Antes: `#b9bfc9` hardcoded (cinza-claro) — destoava no dark. */
+.control-select:hover:not(:focus) {
+  border-color: color-mix(in srgb, var(--border-strong) 60%, var(--text) 40%);
+}
+
 .control-select:focus {
   outline: none;
   border-color: var(--accent);
@@ -236,7 +267,8 @@ main .report-grid + .panel {
 }
 
 /* ---------- Badges auxiliares ---------- */
-.badge--neutral { background: #f2f4f7; color: var(--text-soft); }
+/* CORREÇÃO #3: usa variável em vez de #f2f4f7 (hardcoded). */
+.badge--neutral { background: var(--surface-2); color: var(--text-soft); }
 
 /* ---------- Estado vazio compacto ---------- */
 .state-block--compact { padding: 32px 20px; }

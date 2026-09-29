@@ -1,5 +1,21 @@
 /* =========================================================
    DEV HUB · Notas fiscais — visual estilo ERP
+   ---------------------------------------------------------
+   CORREÇÕES APLICADAS:
+   1. Inputs `date` e `time` ganham `color-scheme` — o ícone
+      nativo do navegador agora respeita o tema. Sem isso,
+      em dark mode, o ícone fica invisível sobre --surface
+      escuro e o popup abre em modo claro.
+   2. `.nf-items-table select` ganhou chevron customizado
+      (consistente com `.control-select`). Antes, se algum
+      select fosse inserido na tabela via JS, ficaria com o
+      chevron nativo destoando do resto do app.
+   3. `.nf-grid-2` passa a usar `minmax(0, 1fr)` — mesma
+      proteção do `.nf-grid-3`.
+   4. `.nf-tabs` ganha padding lateral base (`0 12px`),
+      consistente com o mobile.
+   5. `.nf-form__actions` ganha `justify-content: stretch`
+      no mobile (antes, `flex-end` era redundante).
    ========================================================= */
 
 .stats--four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
@@ -17,9 +33,14 @@
   overflow: hidden;
 }
 
+/* =========================================================
+   Tabs
+   ========================================================= */
 .nf-tabs {
   display: flex;
   gap: 0;
+  /* CORREÇÃO #4: padding lateral base (antes só mobile tinha) */
+  padding: 0 12px;
   border-bottom: 1px solid var(--border);
   background: var(--surface-2);
   overflow-x: auto;
@@ -46,6 +67,9 @@
   background: var(--surface);
 }
 
+/* =========================================================
+   Painéis
+   ========================================================= */
 .nf-panel {
   display: none;
   flex-direction: column;
@@ -54,18 +78,38 @@
 }
 .nf-panel.is-active { display: flex; }
 
-.nf-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-.nf-grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+/* CORREÇÃO #3: minmax(0, 1fr) em ambas as grids */
+.nf-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.nf-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
 
+/* =========================================================
+   Destinatário
+   ========================================================= */
 .nf-dest-summary {
   padding: 14px 16px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--surface-2);
 }
-.nf-dest-summary__line { margin: 0 0 6px 0; font-size: 13.5px; color: var(--text); }
+.nf-dest-summary__line {
+  margin: 0 0 6px 0;
+  font-size: 13.5px;
+  color: var(--text);
+}
 .nf-dest-summary__line:last-child { margin-bottom: 0; }
-.nf-dest-summary__line strong { color: var(--text-muted); font-weight: 600; margin-right: 6px; }
+.nf-dest-summary__line strong {
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-right: 6px;
+}
 
 .nf-dest-empty {
   padding: 14px 16px;
@@ -76,6 +120,9 @@
   text-align: center;
 }
 
+/* =========================================================
+   Tabela de itens
+   ========================================================= */
 .nf-itens-toolbar { display: flex; justify-content: flex-end; }
 
 .nf-items-wrap {
@@ -91,65 +138,141 @@
   border-collapse: collapse;
   font-size: 13px;
 }
+
 .nf-items-table th {
-  position: sticky; top: 0; z-index: 1;
+  position: sticky;
+  top: 0;
+  z-index: 1;
   padding: 8px 8px;
   background: var(--surface-2);
   border-bottom: 1px solid var(--border);
-  font-size: 11px; font-weight: 700;
-  letter-spacing: 0.04em; text-transform: uppercase;
-  color: var(--text-muted); text-align: left; white-space: nowrap;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  text-align: left;
+  white-space: nowrap;
 }
+
 .nf-items-table td {
   padding: 6px 8px;
   border-bottom: 1px solid var(--border);
   vertical-align: middle;
 }
 .nf-items-table tr:last-child td { border-bottom: 0; }
+
 .nf-items-table .c { text-align: center; }
 .nf-items-table .r { text-align: right; font-variant-numeric: tabular-nums; }
 
 .nf-items-empty td {
-  padding: 32px 12px; text-align: center;
-  color: var(--text-muted); font-size: 13px;
+  padding: 32px 12px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
 }
 
 .nf-item-remove {
-  display: grid; place-items: center;
-  width: 28px; height: 28px;
-  border: 0; border-radius: 6px;
-  background: transparent; color: var(--text-muted);
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
   cursor: pointer;
+  transition: background-color var(--transition), color var(--transition);
 }
-.nf-item-remove:hover { background: var(--danger-soft); color: var(--danger); }
+.nf-item-remove:hover {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
 .nf-item-remove svg { width: 14px; height: 14px; }
 
 .nf-items-actions { display: flex; justify-content: flex-start; }
 
+/* CORREÇÃO #2: inputs e selects DENTRO da tabela ganham o
+   mesmo tratamento visual do resto do app. Antes, se o
+   renderItems() evoluísse para incluir edição inline, os
+   controles ficariam "crus". */
+.nf-items-table input,
+.nf-items-table select {
+  width: 100%;
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: var(--surface);
+  font-size: 12.5px;
+  color: var(--text);
+  box-sizing: border-box;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.nf-items-table input:focus,
+.nf-items-table select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+
+.nf-items-table select {
+  -webkit-appearance: none;
+  appearance: none;
+  padding-right: 28px;
+  /* Chevron coberto por theme.css no dark */
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23667085' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 6px center;
+  background-size: 12px;
+  cursor: pointer;
+}
+
+/* =========================================================
+   Totais
+   ========================================================= */
 .nf-totals-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px; margin-top: 8px;
+  gap: 12px;
+  margin-top: 8px;
 }
+
 .nf-total-card {
-  display: flex; flex-direction: column; gap: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   padding: 12px 14px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--surface-2);
 }
 .nf-total-card span {
-  font-size: 11.5px; font-weight: 600;
-  letter-spacing: 0.04em; text-transform: uppercase;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   color: var(--text-muted);
 }
 .nf-total-card strong {
-  font-size: 15px; font-weight: 700;
-  color: var(--text); font-variant-numeric: tabular-nums;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
 }
-.nf-total-card--grand { border-color: var(--accent); background: var(--accent-soft); }
-.nf-total-card--grand strong { font-size: 18px; color: var(--accent-hover); }
+.nf-total-card--grand {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.nf-total-card--grand strong {
+  font-size: 18px;
+  color: var(--accent-hover);
+}
 
+/* =========================================================
+   Ajuda / rodapé do form
+   ========================================================= */
 .nf-help {
   padding: 10px 12px;
   border-radius: var(--radius);
@@ -159,35 +282,64 @@
 }
 
 .nf-form__actions {
-  display: flex; justify-content: flex-end; gap: 10px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
   padding: 16px 22px;
   border-top: 1px solid var(--border);
   background: var(--surface-2);
 }
 
-.btn--sm { height: 34px; padding: 0 12px; font-size: 13px; }
+/* .btn--sm aqui tem 34px (não colide com dashboard 32px nem
+   com notas 36px, porque cada página carrega só um CSS). */
+.btn--sm {
+  height: 34px;
+  padding: 0 12px;
+  font-size: 13px;
+}
 
+/* =========================================================
+   CORREÇÃO #1: inputs date/time com color-scheme
+   ---------------------------------------------------------
+   Sem isso, o ícone nativo do navegador (calendário / relógio)
+   fica invisível sobre --surface escuro, e o popup do picker
+   abre em modo claro mesmo em dark.
+   ========================================================= */
+.nf-panel input[type="date"],
+.nf-panel input[type="time"],
+.nf-panel input[type="datetime-local"] {
+  color-scheme: light;
+}
+
+[data-theme="dark"] .nf-panel input[type="date"],
+[data-theme="dark"] .nf-panel input[type="time"],
+[data-theme="dark"] .nf-panel input[type="datetime-local"] {
+  color-scheme: dark;
+}
+
+/* =========================================================
+   Responsivo
+   ========================================================= */
 @media (max-width: 900px) {
   .stats--four { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .nf-grid-3 { grid-template-columns: 1fr 1fr; }
+  .nf-grid-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .nf-totals-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
 @media (max-width: 720px) {
   .stats--four { grid-template-columns: 1fr; }
-  .nf-grid-2, .nf-grid-3 { grid-template-columns: 1fr; }
+  .nf-grid-2,
+  .nf-grid-3 { grid-template-columns: 1fr; }
   .nf-totals-grid { grid-template-columns: 1fr; }
-  .nf-form__actions { flex-direction: column; }
+
+  /* CORREÇÃO #5: no mobile, alinhamento natural dos botões
+     (o `flex-end` do desktop era redundante e confundia). */
+  .nf-form__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
   .nf-form__actions .btn { width: 100%; }
+
   .nf-tabs { padding: 0 6px; }
   .nf-tab { padding: 10px 12px; font-size: 12.5px; }
-}
-
-.nf-items-table input,
-.nf-items-table select {
-  width: 100%; height: 32px; padding: 0 6px;
-  border: 1px solid var(--border-strong);
-  border-radius: 6px;
-  background: var(--surface);
-  font-size: 12.5px; color: var(--text);
-  box-sizing: border-box;
 }

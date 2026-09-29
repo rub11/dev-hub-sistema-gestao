@@ -5,6 +5,16 @@
      - platform_settings (nome da plataforma, e-mail de suporte)
      - próprio perfil (nome, senha)
      - preferências (tema)
+   ---------------------------------------------------------
+   CORREÇÕES APLICADAS:
+   1. `onSubmitPlatform` detecta quando a linha de
+      `platform_settings` não existe (UPDATE afeta 0 linhas)
+      e faz INSERT — antes, falhava em silêncio e mostrava
+      toast de sucesso falso.
+   2. `openPasswordModal` reseta o estado visual do toggle
+      de senha (aria-pressed / aria-label).
+   3. Guards de null em `pwEls.new.focus()`.
+   4. Comentário duplicado removido.
    ========================================================= */
 
 (function () {
@@ -45,7 +55,6 @@
     setupSignOut();
 
     // Guard: só platform_admin
-      // Guard: só platform_admin
     const context = await window.Auth.requirePlatformAdmin();
     if (!context) return;
 
@@ -54,7 +63,7 @@
 
     state.user = session.user;
 
-    // Confirma no banco
+    // Confirma no banco (defesa em profundidade)
     const allowed = await checkPlatformAdmin(session.user.id);
     if (!allowed) {
       window.location.replace('dashboard.html');
@@ -240,6 +249,7 @@
 
     const nameInput = document.getElementById('platform-name');
     const emailInput = document.getElementById('platform-support-email');
+    if (!nameInput || !emailInput) return;
 
     const name = nameInput.value.trim();
     const email = emailInput.value.trim();
@@ -258,16 +268,33 @@
     setPlatformBusy(true);
 
     try {
-      const { error } = await window.db
+      /* CORREÇÃO #1: detecta se a linha singleton existe.
+         Se o UPDATE não afetar nenhuma linha, faz INSERT. */
+      const { data, error } = await window.db
         .from('platform_settings')
         .update({
           platform_name: name,
           support_email: email || null
         })
-        .eq('id', 1);
+        .eq('id', 1)
+        .select('id');
 
       if (error) throw error;
 
+      if (!data || data.length === 0) {
+        // Linha não existia — cria agora
+        const { error: insErr } = await window.db
+          .from('platform_settings')
+          .insert({
+            id: 1,
+            platform_name: name,
+            support_email: email || null
+          });
+
+        if (insErr) throw insErr;
+      }
+
+      state.settings = state.settings || {};
       state.settings.platform_name = name;
       state.settings.support_email = email || null;
 
@@ -317,6 +344,7 @@
   function renderProfileForm() {
     const user = state.user;
     const profile = state.profile;
+    if (!user) return;
 
     const displayName =
       (profile && profile.name) ||
@@ -345,6 +373,7 @@
     clearProfileFeedback();
 
     const input = document.getElementById('profile-name');
+    if (!input) return;
     const name = input.value.trim();
 
     if (!name) {
@@ -370,10 +399,14 @@
       if (error) throw error;
 
       // Atualiza também em organization_members (best-effort)
-      await window.db
-        .from('organization_members')
-        .update({ name: name })
-        .eq('user_id', userId);
+      try {
+        await window.db
+          .from('organization_members')
+          .update({ name: name })
+          .eq('user_id', userId);
+      } catch (syncErr) {
+        console.warn('[DEV HUB] profile sincronizado só em profiles:', syncErr);
+      }
 
       state.profile = Object.assign({}, state.profile || {}, { name: name });
       renderUser(state.user, state.profile);
@@ -460,13 +493,22 @@
 
   function openPasswordModal() {
     pwEls.form.reset();
-    pwEls.new.type = 'password';
-    pwEls.confirm.type = 'password';
+
+    /* CORREÇÃO #2: reseta o estado visual dos toggles */
+    if (pwEls.new) pwEls.new.type = 'password';
+    if (pwEls.confirm) pwEls.confirm.type = 'password';
+    pwEls.modal.querySelectorAll('[data-pw-toggle]').forEach(function (btn) {
+      btn.setAttribute('aria-pressed', 'false');
+      btn.setAttribute('aria-label', 'Mostrar senha');
+    });
+
     clearPasswordFeedback();
 
     pwEls.modal.hidden = false;
     document.body.style.overflow = 'hidden';
-    pwEls.new.focus();
+
+    /* CORREÇÃO #3: guard de null */
+    if (pwEls.new) pwEls.new.focus();
   }
 
   function closePasswordModal() {
@@ -642,6 +684,7 @@
     if (msg.includes('failed to fetch') || msg.includes('network')) return 'Não foi possível conectar ao servidor.';
     if (msg.includes('row-level security') || msg.includes('permission denied')) return 'Você não tem permissão para esta ação.';
     if (msg.includes('violates not-null')) return 'Preencha todos os campos obrigatórios.';
+    if (msg.includes('duplicate') || msg.includes('unique')) return 'Já existe um registro com esses dados.';
     return 'Não foi possível salvar. Tente novamente.';
   }
 
