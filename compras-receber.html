@@ -4,31 +4,90 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Receber compras · DEV HUB</title>
+
   <script src="js/theme.js"></script>
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
   <link rel="stylesheet" href="css/global.css" />
   <link rel="stylesheet" href="css/theme.css" />
- 
-  <link rel="stylesheet" href="css/compras.css" />
+  <link rel="stylesheet" href="css/compras-receber.css" />
 </head>
+
 <body data-page="compras-receber">
   <div class="app__body">
-    <main class="content">
-      <header class="page-head">
-        <div class="page-head__eyebrow"><span>Estoque</span></div>
-        <h1 class="page-head__title">Receber compras</h1>
-        <p class="page-head__sub">Confirme a entrada dos produtos no estoque.</p>
+    <main class="content cmp-content">
+
+      <!-- ============== HEADER ============== -->
+      <header class="rcv-head">
+        <div class="rcv-head__text">
+          <span class="rcv-head__eyebrow">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="m12 2.5 9 5-9 5-9-5z"/><path d="m3 12.5 9 5 9-5"/><path d="m3 17.5 9 5 9-5"/>
+            </svg>
+            Estoque
+          </span>
+          <h1 class="rcv-head__title">Receber compras</h1>
+          <p class="rcv-head__sub">Confira, registre divergências e dê entrada no estoque.</p>
+        </div>
       </header>
 
-      <div id="cmp-receive-list"></div>
+      <!-- ============== DASHBOARD CARDS ============== -->
+      <section class="rcv-kpis" id="rcv-kpis" aria-label="Resumo">
+        <!-- JS preenche -->
+      </section>
+
+      <!-- ============== TOOLBAR ============== -->
+      <section class="rcv-toolbar" aria-label="Filtros">
+        <label class="rcv-search" for="rcv-search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>
+          </svg>
+          <input type="search" id="rcv-search" placeholder="Buscar por pedido, fornecedor, NF-e..." autocomplete="off" />
+        </label>
+
+        <select id="rcv-status" class="control-select rcv-toolbar__select" aria-label="Status">
+          <option value="">Todos os status</option>
+          <option value="pendente_recebimento">Aguardando recebimento</option>
+          <option value="recebida_parcial">Recebida parcial</option>
+          <option value="recebida">Recebida</option>
+        </select>
+
+        <button type="button" class="cmp-btn cmp-btn--ghost" id="rcv-clear">
+          Limpar filtros
+        </button>
+      </section>
+
+      <!-- ============== LISTA ============== -->
+      <section class="rcv-panel" aria-label="Compras para receber">
+        <div class="rcv-panel__scroll">
+          <table class="rcv-table">
+            <thead>
+              <tr>
+                <th scope="col">Status</th>
+                <th scope="col">Pedido</th>
+                <th scope="col">Fornecedor</th>
+                <th scope="col">Data</th>
+                <th scope="col">Previsão</th>
+                <th scope="col" class="cell--num">Valor</th>
+                <th scope="col" class="cell--right">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="rcv-tbody">
+              <tr><td colspan="7"><div class="rcv-loading">Carregando...</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
     </main>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase.js"></script>
- <script src="js/nav.js"></script>
-  <script src="js/compras.js"></script>
+  <script src="js/nav.js"></script>
+  <script src="js/compras-receber.js"></script>
 </body>
 </html>

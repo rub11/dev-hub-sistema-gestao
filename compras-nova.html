@@ -27,6 +27,24 @@
        
         
         </section>
+        <!-- ============== IDENTIFICAÇÃO ============== -->
+<section class="cmp-section">
+  <h2 class="cmp-section__title">Identificação</h2>
+  <div class="cmp-grid cmp-grid--3">
+    <div class="field">
+      <label for="cmp-code">Código</label>
+      <input id="cmp-code" type="text" readonly />
+    </div>
+    <div class="field">
+      <label for="cmp-date">Data da compra</label>
+      <input id="cmp-date" type="date" />
+    </div>
+    <div class="field">
+      <label for="cmp-expected">Previsão de entrega</label>
+      <input id="cmp-expected" type="date" />
+    </div>
+  </div>
+</section>
 
      <!-- ============== FORNECEDOR ============== -->
 <section class="cmp-section">
@@ -164,13 +182,51 @@
         </section>
 
         <!-- Ações -->
-        <div class="cmp-form__actions">
-          <select id="cmp-save-mode" class="control-select" style="min-width:220px;height:46px">
-            <option value="rascunho">Salvar como rascunho</option>
-            <option value="pendente_recebimento">Enviar como pendente de recebimento</option>
-          </select>
-          <button type="submit" class="btn btn--primary" id="cmp-submit">Salvar compra</button>
+           <!-- ============== BARRA DE AÇÕES ============== -->
+      <div class="cmp-action-bar">
+
+        <!-- Modo de salvamento (segmented control) -->
+        <div class="cmp-save-mode" role="radiogroup" aria-label="Modo de salvamento">
+          <span class="cmp-save-mode__label">Salvar como</span>
+          <div class="cmp-save-mode__group">
+            <label class="cmp-save-option">
+              <input type="radio" name="save-mode" value="rascunho" checked />
+              <span class="cmp-save-option__box">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/>
+                  <path d="M17 21v-8H7v8M7 3v5h8"/>
+                </svg>
+                <span>Rascunho</span>
+              </span>
+            </label>
+
+            <label class="cmp-save-option">
+              <input type="radio" name="save-mode" value="pendente_recebimento" />
+              <span class="cmp-save-option__box">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M3 3h2l2.4 12.4a2 2 0 0 0 2 1.6h9.2a2 2 0 0 0 2-1.6L22 7H6"/>
+                  <path d="m13 11 3 3 5-5"/>
+                </svg>
+                <span>Enviar para recebimento</span>
+              </span>
+            </label>
+          </div>
         </div>
+
+        <!-- Ações -->
+        <div class="cmp-action-bar__buttons">
+          <a href="compras.html" class="cmp-btn cmp-btn--ghost">Cancelar</a>
+          <button type="submit" class="cmp-btn cmp-btn--primary cmp-btn--lg" id="cmp-submit">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M5 12l5 5L20 7"/>
+            </svg>
+            <span>Salvar compra</span>
+          </button>
+        </div>
+
+        <!-- Campo oculto que o JS lê (compatibilidade) -->
+        <input type="hidden" id="cmp-save-mode" value="rascunho" />
+      </div>
 
       </form>
       <!-- ============================================================
@@ -273,5 +329,6 @@
   <script src="js/supabase.js"></script>
   <script src="js/nav.js"></script>
   <script src="js/compras.js"></script>
+  <script src="js/auth.js"></script>
 </body>
 </html>

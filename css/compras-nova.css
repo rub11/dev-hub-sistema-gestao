@@ -980,3 +980,146 @@ body[data-page="compras-nova"] input.is-autofilled {
     justify-content: center;
   }
 }
+/* =========================================================
+   BARRA DE AÇÕES DO FORMULÁRIO
+   ========================================================= */
+.cmp-action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding: 18px 22px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+}
+
+/* ---------- Modo de salvamento (segmented) ---------- */
+.cmp-save-mode {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.cmp-save-mode__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-soft);
+  white-space: nowrap;
+}
+
+.cmp-save-mode__group {
+  display: inline-flex;
+  padding: 4px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  gap: 2px;
+}
+
+.cmp-save-option {
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+}
+
+.cmp-save-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.cmp-save-option__box {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text-soft);
+  white-space: nowrap;
+  transition: background-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+
+.cmp-save-option__box svg {
+  width: 15px;
+  height: 15px;
+  flex: none;
+}
+
+.cmp-save-option:hover .cmp-save-option__box {
+  color: var(--text);
+}
+
+.cmp-save-option input:checked + .cmp-save-option__box {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.08),
+              0 0 0 1px color-mix(in srgb, var(--border) 80%, transparent);
+}
+
+.cmp-save-option input:focus-visible + .cmp-save-option__box {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---------- Botões ---------- */
+.cmp-action-bar__buttons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.cmp-btn--lg {
+  height: 46px;
+  padding: 0 22px;
+  font-size: 14.5px;
+  font-weight: 600;
+}
+
+.cmp-btn--lg svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ---------- Responsivo ---------- */
+@media (max-width: 720px) {
+  .cmp-action-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+  .cmp-save-mode {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .cmp-save-mode__group {
+    width: 100%;
+  }
+  .cmp-save-option {
+    flex: 1;
+  }
+  .cmp-save-option__box {
+    width: 100%;
+    justify-content: center;
+  }
+  .cmp-action-bar__buttons {
+    width: 100%;
+  }
+  .cmp-action-bar__buttons .cmp-btn {
+    flex: 1;
+    justify-content: center;
+  }
+}
+
+/* ---------- Dark mode ---------- */
+[data-theme="dark"] .cmp-save-option input:checked + .cmp-save-option__box {
+  background: color-mix(in srgb, var(--surface) 90%, #ffffff 10%);
+}

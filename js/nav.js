@@ -1,13 +1,6 @@
 /* =========================================================
    DEV HUB · Navegação em ABAS (estilo navegador)
    ---------------------------------------------------------
-   - UMA única barra: abas + botão "+" + busca + usuário
-   - Topbar antigo é ESCONDIDO (a barra de abas vira header)
-   - Botão "+" abre dropdown com todos os módulos
-   - Abas podem ser fechadas (× ou clique do meio)
-   - Guard de permissão: modal "Acesso negado"
-   - Ao fechar a última aba → welcome.html
-   ---------------------------------------------------------
    CORREÇÕES NESTA VERSÃO:
    1. Dropdown do usuário: position fixed + movido pro <body>.
    2. Reposicionamento automático em scroll/resize.
@@ -15,13 +8,13 @@
    4. Logo substituída por imagem (img/logo.png) clicável.
    5. Clicar na marca → HOME_URL.
    6. Ícone "Fechar todas as abas" no tamanho correto.
-   7. Módulo Compras adicionado (grupo Suprimentos):
-      • compras.html          → purchases.view
-      • compras-receber.html  → stock.receive
-      • fornecedores.html     → purchases.view
-   8. ** NOVO ** hasCapability prioriza window.Perms (banco)
-      em vez do fallback hardcoded. Isso faz o grupo
-      Suprimentos aparecer pra quem tem a permissão.
+   7. Módulo Compras adicionado (grupo Suprimentos).
+   8. hasCapability fail-open: só bloqueia se o fallback
+      por role TAMBÉM negar.
+   9. ** NOVO ** Fallback generoso por role: quando o Perms
+      não carrega (ex: esqueceu o <script src="js/auth.js">),
+      o nav ainda libera as capabilities padrão do role.
+      Isso evita o menu aparecer só com PLATAFORMA.
    ========================================================= */
 
 (function () {
@@ -44,7 +37,12 @@
   })();
 
   /* =========================================================
-     Fallback por role (usado SOMENTE se window.Perms não carregar)
+     Fallback por role
+     ---------------------------------------------------------
+     CAPABILITIES  → tags genéricas (usadas para management,
+                     platform, etc)
+     BASE_CAPS     → capabilities reais (.view, .create, etc)
+                     quando o Perms não carrega
      ========================================================= */
   const CAPABILITIES = {
     platform_admin: ['platform'],
@@ -55,6 +53,92 @@
     user: ['operations'],
     usuario: ['operations'],
     'usuário': ['operations']
+  };
+
+  /* Capabilities reais esperadas por role — usadas quando
+     window.Perms NÃO está carregado na página. */
+  const BASE_CAPS = {
+    admin: [
+      'dashboard.view',
+      'sales.view', 'sales.create', 'sales.edit', 'sales.delete',
+      'notes.view', 'notes.create',
+      'invoices.view',
+      'customers.view', 'customers.create', 'customers.edit',
+      'products.view', 'products.create', 'products.edit', 'products.delete',
+      'stock.view', 'stock.receive', 'stock.movements',
+      'reports.view',
+      'management.view',
+      'purchases.view', 'purchases.create', 'purchases.approve', 'purchases.cancel',
+      'finance.pay',
+      'platform'
+    ],
+    administrador: [
+      'dashboard.view',
+      'sales.view', 'sales.create', 'sales.edit', 'sales.delete',
+      'notes.view', 'notes.create',
+      'invoices.view',
+      'customers.view', 'customers.create', 'customers.edit',
+      'products.view', 'products.create', 'products.edit', 'products.delete',
+      'stock.view', 'stock.receive', 'stock.movements',
+      'reports.view',
+      'management.view',
+      'purchases.view', 'purchases.create', 'purchases.approve', 'purchases.cancel',
+      'finance.pay',
+      'platform'
+    ],
+    gestor: [
+      'dashboard.view',
+      'sales.view', 'sales.create', 'sales.edit',
+      'notes.view',
+      'invoices.view',
+      'customers.view', 'customers.create', 'customers.edit',
+      'products.view', 'products.create', 'products.edit',
+      'stock.view', 'stock.receive', 'stock.movements',
+      'reports.view',
+      'management.view',
+      'purchases.view', 'purchases.create', 'purchases.approve',
+      'finance.pay'
+    ],
+    manager: [
+      'dashboard.view',
+      'sales.view', 'sales.create', 'sales.edit',
+      'notes.view',
+      'invoices.view',
+      'customers.view', 'customers.create', 'customers.edit',
+      'products.view', 'products.create', 'products.edit',
+      'stock.view', 'stock.receive', 'stock.movements',
+      'reports.view',
+      'management.view',
+      'purchases.view', 'purchases.create', 'purchases.approve',
+      'finance.pay'
+    ],
+    user: [
+      'dashboard.view',
+      'sales.view',
+      'notes.view',
+      'customers.view',
+      'products.view',
+      'stock.view',
+      'purchases.view'
+    ],
+    usuario: [
+      'dashboard.view',
+      'sales.view',
+      'notes.view',
+      'customers.view',
+      'products.view',
+      'stock.view',
+      'purchases.view'
+    ],
+    'usuário': [
+      'dashboard.view',
+      'sales.view',
+      'notes.view',
+      'customers.view',
+      'products.view',
+      'stock.view',
+      'purchases.view'
+    ]
   };
 
   const ROLE_LABELS = {
@@ -82,7 +166,6 @@
     empresas:         'platform',
     'plat-usuarios':  'platform',
     'plat-config':    'platform',
-    /* ---- Módulo Compras ---- */
     compras:          'purchases.view',
     'compras-receber':'stock.receive',
     fornecedores:     'purchases.view'
@@ -126,6 +209,17 @@
     return capsForRole(ctx.role, ctx.isPlatform);
   }
 
+  /* Retorna as caps BASE do role (reais: .view, .create...) */
+  function baseCapsForRole() {
+    const ctx = readContext();
+    const r = String(ctx.role || '').toLowerCase();
+    const caps = BASE_CAPS[r] || BASE_CAPS.user;
+    if (ctx.isPlatform && caps.indexOf('platform') === -1) {
+      return caps.concat(['platform']);
+    }
+    return caps;
+  }
+
   const DHRoles = {
     current() { return readContext().role; },
     currentSlug() { return readContext().roleSlug; },
@@ -155,30 +249,48 @@
   /* =========================================================
      Permissões
      ---------------------------------------------------------
-     Prioridade:
-       1. window.Perms (banco) — fonte de verdade
-       2. Fallback hardcoded por role (se Perms não carregou)
+     Ordem de decisão:
+       1. 'platform' → só platform_admin
+       2. Se window.Perms tem dados:
+          - Perms.has(cap) === true  → libera
+          - Perms.has(cap) === false → cai no próximo passo
+       3. Fallback de role (BASE_CAPS): se a cap está lá, libera
+       4. Caso contrário, bloqueia
      ========================================================= */
   function hasCapability(cap) {
     if (!cap) return true;
     if (cap === 'platform') return readContext().isPlatform;
 
-    // Se Perms está carregado E tem dados, ele manda
+    const c = String(cap).toLowerCase();
+
+    /* Camada 1: tenta Perms (banco) */
     if (window.Perms && typeof window.Perms.has === 'function') {
-      if (typeof window.Perms.list === 'function') {
-        const list = window.Perms.list();
-        if (list && Object.keys(list).length > 0) {
-          return window.Perms.has(cap);
+      try {
+        const list = (typeof window.Perms.list === 'function') ? window.Perms.list() : null;
+        const listEmpty = !list || Object.keys(list).length === 0;
+
+        if (!listEmpty) {
+          const r = window.Perms.has(c);
+          if (r === true)  return true;
+          /* Se r === false, cai no fallback */
         }
+      } catch (e) {
+        console.warn('[nav] Perms.has falhou para', c, e);
       }
     }
 
-    // Fallback: usa o hardcoded do role
-    const caps = currentCapabilities();
-    return caps.indexOf(String(cap || '').toLowerCase()) !== -1;
+    /* Camada 2: fallback generoso por role */
+    const baseCaps = baseCapsForRole();
+    if (baseCaps.indexOf(c) !== -1) return true;
+
+    /* Camada 3: caps genéricas (management, operations, etc.) */
+    const genericCaps = currentCapabilities();
+    if (genericCaps.indexOf(c) !== -1) return true;
+
+    /* Camada 4: nega */
+    return false;
   }
 
-  // Mantém o nome antigo por compatibilidade
   function hasPermission(cap) {
     return hasCapability(cap);
   }
@@ -241,20 +353,9 @@
     return null;
   }
 
-  /* =========================================================
-     Filtro dos itens visíveis
-     ---------------------------------------------------------
-     A ordem importa:
-       1. Checa a capability PRÓPRIA do item (ex: purchases.view)
-          → usa hasCapability, que consulta window.Perms primeiro
-       2. Checa a permissão do ITEM_PERM[id]
-          → mesma função, mesma prioridade
-     ========================================================= */
   function visibleItems() {
     return TOPNAV.filter(function (it) {
-      // 1) Capability própria do item
       if (it.capability && !hasCapability(it.capability)) return false;
-      // 2) Permissão do mapa ITEM_PERM
       if (!hasPermission(ITEM_PERM[it.id])) return false;
       return true;
     });
@@ -278,7 +379,6 @@
       configuracoes: 'configuracoes',
       'plataforma-configuracoes': 'plat-config',
       'plataforma-usuarios': 'plat-usuarios',
-      /* ---- Compras ---- */
       compras: 'compras',
       'compras-nova': 'compras',
       'compras-receber': 'compras-receber',
@@ -452,8 +552,6 @@
     const plusBtn = document.getElementById('app-tabs-new');
     if (!plusBtn) return;
 
-    /* Reconstrói o menu a cada abertura pra refletir o estado atual
-       das permissões (importante quando Perms carrega depois). */
     if (menuEl && menuEl.parentNode) menuEl.parentNode.removeChild(menuEl);
     menuEl = buildModuleMenu();
     document.body.appendChild(menuEl);
@@ -810,9 +908,6 @@
     if (document.getElementById('devhub-topnav-styles')) return;
 
     const css = `
-      /* =====================================================
-         ESCONDE O SIDEBAR / TOPBAR ANTIGOS
-         ===================================================== */
       html.layout-topnav .sidebar,
       html.layout-topnav .sidebar-overlay,
       html.layout-topnav .menu-toggle,
@@ -820,184 +915,105 @@
       body.layout-topnav .sidebar,
       body.layout-topnav .sidebar-overlay,
       body.layout-topnav .menu-toggle,
-      body.layout-topnav .topbar {
-        display: none !important;
-      }
+      body.layout-topnav .topbar { display: none !important; }
       html.layout-topnav .app__body,
-      body.layout-topnav .app__body {
-        margin-left: 0 !important;
-      }
+      body.layout-topnav .app__body { margin-left: 0 !important; }
 
-      /* =====================================================
-         BARRA ÚNICA (header)
-         ===================================================== */
       .app-tabs {
-        display: flex;
-        align-items: stretch;
-        height: 56px;
-        min-height: 56px;
+        display: flex; align-items: stretch;
+        height: 56px; min-height: 56px;
         padding: 0 16px;
         background: var(--surface-2);
         border-bottom: 1px solid var(--border);
-        position: sticky;
-        top: 0;
-        z-index: 40;
+        position: sticky; top: 0; z-index: 40;
         overflow: hidden;
       }
 
-      /* ---------- Marca ---------- */
       .app-tabs__brand {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        flex: none;
-        padding-right: 18px;
-        margin-right: 6px;
+        display: flex; align-items: center; gap: 10px;
+        flex: none; padding-right: 18px; margin-right: 6px;
         border-right: 1px solid var(--border);
-        height: 32px;
-        align-self: center;
-        user-select: none;
-        text-decoration: none;
-        color: inherit;
-        cursor: pointer;
-        transition: opacity var(--transition);
+        height: 32px; align-self: center;
+        user-select: none; text-decoration: none; color: inherit;
+        cursor: pointer; transition: opacity var(--transition);
       }
       .app-tabs__brand:hover { opacity: 0.85; }
       .app-tabs__brand:focus-visible {
-        outline: 2px solid var(--accent);
-        outline-offset: 3px;
-        border-radius: 8px;
+        outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 8px;
       }
-
       .app-tabs__brand-mark {
-        display: grid;
-        place-items: center;
-        width: 32px;
-        height: 32px;
-        border-radius: 9px;
-        background: transparent;
-        overflow: hidden;
-        flex: none;
+        display: grid; place-items: center;
+        width: 32px; height: 32px; border-radius: 9px;
+        background: transparent; overflow: hidden; flex: none;
       }
-      .app-tabs__brand-mark img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        display: block;
-      }
+      .app-tabs__brand-mark img { width: 100%; height: 100%; object-fit: cover; display: block; }
       .app-tabs__brand-text {
-        font-size: 13px;
-        font-weight: 800;
-        letter-spacing: 0.1em;
-        color: var(--text);
-        white-space: nowrap;
+        font-size: 13px; font-weight: 800; letter-spacing: 0.1em;
+        color: var(--text); white-space: nowrap;
       }
 
       .app-tabs__scroll {
-        display: flex;
-        align-items: center;
-        gap: 2px;
-        flex: 1 1 auto;
-        min-width: 0;
-        overflow-x: auto;
-        overflow-y: hidden;
-        scrollbar-width: none;
-        padding: 8px 0;
+        display: flex; align-items: center; gap: 2px;
+        flex: 1 1 auto; min-width: 0;
+        overflow-x: auto; overflow-y: hidden;
+        scrollbar-width: none; padding: 8px 0;
       }
       .app-tabs__scroll::-webkit-scrollbar { display: none; }
 
       .app-tabs__empty {
-        padding: 0 10px;
-        font-size: 12.5px;
-        color: var(--text-muted);
-        font-style: italic;
+        padding: 0 10px; font-size: 12.5px;
+        color: var(--text-muted); font-style: italic;
       }
 
       .app-tab {
         flex: 0 0 auto;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        height: 36px;
-        padding: 0 6px 0 12px;
-        border: 1px solid transparent;
-        border-radius: 8px;
-        background: transparent;
-        color: var(--text-soft);
-        font-size: 12.5px;
-        font-weight: 500;
-        cursor: pointer;
-        max-width: 220px;
-        min-width: 0;
+        display: inline-flex; align-items: center; gap: 8px;
+        height: 36px; padding: 0 6px 0 12px;
+        border: 1px solid transparent; border-radius: 8px;
+        background: transparent; color: var(--text-soft);
+        font-size: 12.5px; font-weight: 500;
+        cursor: pointer; max-width: 220px; min-width: 0;
         transition: background-color var(--transition), color var(--transition),
                     border-color var(--transition);
         position: relative;
       }
       .app-tab:hover {
-        background: var(--surface);
-        color: var(--text);
-        border-color: var(--border);
+        background: var(--surface); color: var(--text); border-color: var(--border);
       }
       .app-tab.is-active {
-        background: var(--surface);
-        color: var(--text);
-        border-color: var(--border);
+        background: var(--surface); color: var(--text); border-color: var(--border);
         box-shadow: 0 -2px 0 0 var(--accent) inset;
       }
-
       .app-tab__icon {
-        display: inline-flex;
-        flex: none;
-        width: 14px;
-        height: 14px;
+        display: inline-flex; flex: none; width: 14px; height: 14px;
         color: var(--text-muted);
       }
       .app-tab__icon svg { width: 14px; height: 14px; }
       .app-tab.is-active .app-tab__icon { color: var(--accent); }
-
       .app-tab__label {
-        flex: 1 1 auto;
-        min-width: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+        flex: 1 1 auto; min-width: 0;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
       }
-
       .app-tab__close {
-        flex: none;
-        display: grid;
-        place-items: center;
-        width: 20px;
-        height: 20px;
-        border: 0;
-        border-radius: 5px;
-        background: transparent;
-        color: var(--text-muted);
-        cursor: pointer;
-        opacity: 0.55;
+        flex: none; display: grid; place-items: center;
+        width: 20px; height: 20px;
+        border: 0; border-radius: 5px;
+        background: transparent; color: var(--text-muted);
+        cursor: pointer; opacity: 0.55;
         transition: opacity var(--transition), background-color var(--transition),
                     color var(--transition);
       }
       .app-tab__close svg { width: 11px; height: 11px; }
       .app-tab__close:hover {
-        opacity: 1;
-        background: var(--danger-soft);
-        color: var(--danger);
+        opacity: 1; background: var(--danger-soft); color: var(--danger);
       }
       .app-tab.is-active .app-tab__close { opacity: 0.75; }
 
       .app-tabs__new {
-        flex: none;
-        display: grid;
-        place-items: center;
-        align-self: center;
-        width: 34px;
-        height: 34px;
-        margin: 0 6px 0 6px;
-        border: 1px solid transparent;
-        border-radius: 8px;
-        background: transparent;
-        color: var(--text-muted);
+        flex: none; display: grid; place-items: center; align-self: center;
+        width: 34px; height: 34px; margin: 0 6px 0 6px;
+        border: 1px solid transparent; border-radius: 8px;
+        background: transparent; color: var(--text-muted);
         cursor: pointer;
         transition: background-color var(--transition), color var(--transition),
                     border-color var(--transition);
@@ -1005,229 +1021,130 @@
       .app-tabs__new svg { width: 15px; height: 15px; }
       .app-tabs__new:hover,
       .app-tabs__new[aria-expanded="true"] {
-        background: var(--surface);
-        border-color: var(--border);
-        color: var(--text);
+        background: var(--surface); border-color: var(--border); color: var(--text);
       }
-      .app-tabs__new:focus-visible {
-        outline: 2px solid var(--accent);
-        outline-offset: 2px;
-      }
+      .app-tabs__new:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-      .app-tabs__spacer {
-        flex: 0 0 12px;
-      }
+      .app-tabs__spacer { flex: 0 0 12px; }
 
       .app-tabs__search {
-        position: relative;
-        flex: 0 0 260px;
-        display: flex;
-        align-items: center;
-        align-self: center;
-        height: 36px;
-        margin: 0 8px;
-        background: var(--surface);
-        border: 1px solid var(--border);
+        position: relative; flex: 0 0 260px;
+        display: flex; align-items: center; align-self: center;
+        height: 36px; margin: 0 8px;
+        background: var(--surface); border: 1px solid var(--border);
         border-radius: 8px;
         transition: border-color var(--transition), box-shadow var(--transition);
       }
       .app-tabs__search:focus-within {
-        border-color: var(--accent);
-        box-shadow: 0 0 0 3px var(--accent-ring);
+        border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-ring);
       }
       .app-tabs__search .tnav-search__icon {
-        position: absolute;
-        left: 10px;
-        display: grid;
-        place-items: center;
-        width: 14px;
-        height: 14px;
-        color: var(--text-muted);
-        pointer-events: none;
+        position: absolute; left: 10px;
+        display: grid; place-items: center; width: 14px; height: 14px;
+        color: var(--text-muted); pointer-events: none;
       }
       .app-tabs__search .tnav-search__icon svg { width: 14px; height: 14px; }
-
       .app-tabs__search .tnav-search__input {
-        width: 100%;
-        height: 100%;
+        width: 100%; height: 100%;
         padding: 0 28px 0 32px;
-        border: 0;
-        background: transparent;
-        font-size: 12.5px;
-        color: var(--text);
-        outline: none;
+        border: 0; background: transparent;
+        font-size: 12.5px; color: var(--text); outline: none;
         border-radius: 8px;
       }
       .app-tabs__search .tnav-search__input::placeholder { color: var(--text-muted); }
-
       .app-tabs__search .tnav-search__clear {
-        position: absolute;
-        right: 4px;
-        display: none;
-        place-items: center;
-        width: 22px;
-        height: 22px;
-        border: 0;
-        border-radius: 5px;
-        background: transparent;
-        color: var(--text-muted);
+        position: absolute; right: 4px;
+        display: none; place-items: center;
+        width: 22px; height: 22px;
+        border: 0; border-radius: 5px;
+        background: transparent; color: var(--text-muted);
         cursor: pointer;
       }
       .app-tabs__search .tnav-search__clear:hover {
-        background: var(--surface-2);
-        color: var(--text);
+        background: var(--surface-2); color: var(--text);
       }
       .app-tabs__search .tnav-search__clear svg { width: 12px; height: 12px; }
       .app-tabs__search.has-value .tnav-search__clear { display: grid; }
 
       .tnav-search__results {
-        position: absolute;
-        top: calc(100% + 6px);
-        right: 0;
-        min-width: 320px;
-        max-height: 400px;
-        overflow-y: auto;
+        position: absolute; top: calc(100% + 6px); right: 0;
+        min-width: 320px; max-height: 400px; overflow-y: auto;
         padding: 6px;
-        border: 1px solid var(--border);
-        border-radius: 10px;
+        border: 1px solid var(--border); border-radius: 10px;
         background: var(--surface);
         box-shadow: 0 10px 30px -8px rgba(16, 24, 40, 0.18);
         z-index: 1000;
       }
       .tnav-search__results[hidden] { display: none !important; }
-
       .tnav-search__empty {
-        padding: 18px 12px;
-        text-align: center;
-        font-size: 13px;
-        color: var(--text-muted);
+        padding: 18px 12px; text-align: center;
+        font-size: 13px; color: var(--text-muted);
       }
-
       .tnav-search__item {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 9px 12px;
-        border-radius: 7px;
-        color: var(--text);
-        font-size: 13.5px;
-        font-weight: 500;
-        text-decoration: none;
-        cursor: pointer;
+        display: flex; align-items: center; gap: 10px;
+        padding: 9px 12px; border-radius: 7px;
+        color: var(--text); font-size: 13.5px; font-weight: 500;
+        text-decoration: none; cursor: pointer;
         transition: background-color var(--transition), color var(--transition);
       }
       .tnav-search__item svg {
-        width: 16px;
-        height: 16px;
-        flex: none;
-        color: var(--text-muted);
+        width: 16px; height: 16px; flex: none; color: var(--text-muted);
       }
       .tnav-search__item:hover,
       .tnav-search__item.is-selected {
-        background: var(--accent-soft);
-        color: var(--accent-hover);
+        background: var(--accent-soft); color: var(--accent-hover);
       }
       .tnav-search__item:hover svg,
       .tnav-search__item.is-selected svg { color: var(--accent); }
-
       .tnav-search__module {
-        margin-left: auto;
-        padding: 2px 8px;
-        border-radius: 999px;
-        background: var(--surface-2);
-        color: var(--text-muted);
-        font-size: 11px;
-        font-weight: 600;
-        letter-spacing: 0.02em;
-        white-space: nowrap;
+        margin-left: auto; padding: 2px 8px;
+        border-radius: 999px; background: var(--surface-2);
+        color: var(--text-muted); font-size: 11px; font-weight: 600;
+        letter-spacing: 0.02em; white-space: nowrap;
       }
 
-      /* =====================================================
-         BOTÃO DO USUÁRIO
-         ===================================================== */
       .app-tabs__user {
-        position: relative;
-        flex: none;
-        align-self: center;
-        margin-left: 8px;
+        position: relative; flex: none; align-self: center; margin-left: 8px;
       }
-
       .app-tabs__user-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 10px;
-        height: 42px;
-        padding: 0 12px 0 4px;
-        border: 1px solid transparent;
-        border-radius: 10px;
-        background: transparent;
-        color: var(--text);
-        cursor: pointer;
-        font-family: inherit;
+        display: inline-flex; align-items: center; gap: 10px;
+        height: 42px; padding: 0 12px 0 4px;
+        border: 1px solid transparent; border-radius: 10px;
+        background: transparent; color: var(--text);
+        cursor: pointer; font-family: inherit;
         transition: background-color var(--transition), border-color var(--transition);
       }
       .app-tabs__user-btn:hover,
       .app-tabs__user-btn[aria-expanded="true"] {
-        background: var(--surface);
-        border-color: var(--border);
+        background: var(--surface); border-color: var(--border);
       }
-      .app-tabs__user-btn:focus-visible {
-        outline: 2px solid var(--accent);
-        outline-offset: 2px;
-      }
+      .app-tabs__user-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
       .app-tabs__user-avatar {
-        display: grid;
-        place-items: center;
-        width: 32px;
-        height: 32px;
-        flex: none;
+        display: grid; place-items: center;
+        width: 32px; height: 32px; flex: none;
         border-radius: 50%;
         background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
-        color: #ffffff;
-        font-size: 12px;
-        font-weight: 700;
-        text-transform: uppercase;
-        overflow: hidden;
+        color: #ffffff; font-size: 12px; font-weight: 700;
+        text-transform: uppercase; overflow: hidden;
       }
       .app-tabs__user-avatar img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        display: block;
+        width: 100%; height: 100%; object-fit: cover; display: block;
       }
-
       .app-tabs__user-info {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        line-height: 1.15;
-        max-width: 140px;
-        min-width: 0;
+        display: flex; flex-direction: column; align-items: flex-start;
+        line-height: 1.15; max-width: 140px; min-width: 0;
       }
       .app-tabs__user-name {
-        font-size: 12.5px;
-        font-weight: 700;
-        color: var(--text);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        max-width: 100%;
+        font-size: 12.5px; font-weight: 700; color: var(--text);
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
       }
       .app-tabs__user-role {
-        font-size: 10.5px;
-        color: var(--text-muted);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        max-width: 100%;
+        font-size: 10.5px; color: var(--text-muted);
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
       }
-
       .app-tabs__user-chevron {
-        display: inline-flex;
-        flex: none;
-        width: 14px;
-        height: 14px;
+        display: inline-flex; flex: none; width: 14px; height: 14px;
         color: var(--text-muted);
         transition: transform var(--transition);
       }
@@ -1237,75 +1154,41 @@
       }
 
       .app-tabs__user-menu {
-        position: fixed;
-        top: 0;
-        left: 0;
-        z-index: 9999;
-        min-width: 210px;
-        padding: 6px;
-        border: 1px solid var(--border);
-        border-radius: 12px;
+        position: fixed; top: 0; left: 0; z-index: 9999;
+        min-width: 210px; padding: 6px;
+        border: 1px solid var(--border); border-radius: 12px;
         background: var(--surface);
         box-shadow: 0 12px 32px -8px rgba(16, 24, 40, 0.24);
         animation: tnav-pop 140ms ease-out;
       }
       .app-tabs__user-menu[hidden] { display: none !important; }
-
       .app-tabs__user-item {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        width: 100%;
-        padding: 9px 12px;
-        border: 0;
-        border-radius: 8px;
-        background: transparent;
-        color: var(--text);
-        font-size: 13px;
-        font-weight: 500;
-        text-align: left;
-        text-decoration: none;
-        cursor: pointer;
+        display: flex; align-items: center; gap: 10px;
+        width: 100%; padding: 9px 12px;
+        border: 0; border-radius: 8px;
+        background: transparent; color: var(--text);
+        font-size: 13px; font-weight: 500;
+        text-align: left; text-decoration: none; cursor: pointer;
         font-family: inherit;
         transition: background-color var(--transition), color var(--transition);
       }
       .app-tabs__user-item svg {
-        width: 16px;
-        height: 16px;
-        flex: none;
-        color: var(--text-muted);
+        width: 16px; height: 16px; flex: none; color: var(--text-muted);
       }
-      .app-tabs__user-item:hover {
-        background: var(--surface-2);
-      }
-      .app-tabs__user-item--danger {
-        color: var(--danger);
-      }
+      .app-tabs__user-item:hover { background: var(--surface-2); }
+      .app-tabs__user-item--danger { color: var(--danger); }
       .app-tabs__user-item--danger svg { color: var(--danger); }
-      .app-tabs__user-item--danger:hover {
-        background: var(--danger-soft);
-      }
-
+      .app-tabs__user-item--danger:hover { background: var(--danger-soft); }
       .app-tabs__user-sep {
-        height: 1px;
-        margin: 4px 6px;
-        background: var(--border);
+        height: 1px; margin: 4px 6px; background: var(--border);
       }
 
-      /* =====================================================
-         DROPDOWN DE MÓDULOS (botão "+")
-         ===================================================== */
       .tnav-menu {
-        position: fixed;
-        top: 0;
-        left: 0;
-        min-width: 280px;
-        max-height: 80vh;
-        overflow-y: auto;
+        position: fixed; top: 0; left: 0;
+        min-width: 280px; max-height: 80vh; overflow-y: auto;
         overscroll-behavior: contain;
         padding: 6px;
-        border: 1px solid var(--border);
-        border-radius: 12px;
+        border: 1px solid var(--border); border-radius: 12px;
         background: var(--surface);
         box-shadow: 0 12px 32px -8px rgba(16, 24, 40, 0.24);
         z-index: 9999;
@@ -1316,150 +1199,82 @@
         from { opacity: 0; transform: translateY(-4px); }
         to   { opacity: 1; transform: translateY(0); }
       }
-
       .tnav-menu__group {
         padding: 10px 12px 4px;
-        font-size: 10.5px;
-        font-weight: 700;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
+        font-size: 10.5px; font-weight: 700;
+        letter-spacing: 0.08em; text-transform: uppercase;
         color: var(--text-muted);
       }
-
       .tnav-menu__item {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        width: 100%;
-        padding: 9px 12px;
-        border: 0;
-        border-radius: 8px;
-        background: transparent;
-        color: var(--text);
-        font-size: 13.5px;
-        font-weight: 500;
-        text-align: left;
-        cursor: pointer;
-        white-space: nowrap;
+        display: flex; align-items: center; gap: 10px;
+        width: 100%; padding: 9px 12px;
+        border: 0; border-radius: 8px;
+        background: transparent; color: var(--text);
+        font-size: 13.5px; font-weight: 500;
+        text-align: left; cursor: pointer; white-space: nowrap;
         transition: background-color var(--transition), color var(--transition);
       }
       .tnav-menu__item--indent { padding-left: 14px; }
-      .tnav-menu__item:hover {
-        background: var(--surface-2);
-      }
+      .tnav-menu__item:hover { background: var(--surface-2); }
       .tnav-menu__item.is-active {
-        background: var(--accent-soft);
-        color: var(--accent-hover);
+        background: var(--accent-soft); color: var(--accent-hover);
       }
       .tnav-menu__item > svg {
-        width: 16px;
-        height: 16px;
-        flex: none;
-        color: var(--text-muted);
+        width: 16px; height: 16px; flex: none; color: var(--text-muted);
       }
-
       .tnav-menu__icon {
-        display: inline-flex;
-        flex: none;
-        width: 16px;
-        height: 16px;
+        display: inline-flex; flex: none; width: 16px; height: 16px;
         color: var(--text-muted);
       }
       .tnav-menu__icon svg { width: 16px; height: 16px; }
       .tnav-menu__item.is-active .tnav-menu__icon { color: var(--accent); }
-
-      .tnav-menu__label {
-        flex: 1 1 auto;
-        min-width: 0;
-      }
-
+      .tnav-menu__label { flex: 1 1 auto; min-width: 0; }
       .tnav-menu__dot {
-        flex: none;
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        background: var(--accent);
-        opacity: 0.7;
+        flex: none; width: 6px; height: 6px; border-radius: 50%;
+        background: var(--accent); opacity: 0.7;
       }
-
       .tnav-menu__sep {
-        height: 1px;
-        margin: 6px 8px;
-        background: var(--border);
+        height: 1px; margin: 6px 8px; background: var(--border);
       }
-
-      .tnav-menu__item--danger {
-        color: var(--danger);
-      }
-      .tnav-menu__item--danger:hover {
-        background: var(--danger-soft);
-      }
+      .tnav-menu__item--danger { color: var(--danger); }
+      .tnav-menu__item--danger:hover { background: var(--danger-soft); }
       .tnav-menu__item--danger .tnav-menu__icon svg,
       .tnav-menu__item--danger svg { color: var(--danger); }
 
-      /* =====================================================
-         MODAL DE ACESSO NEGADO
-         ===================================================== */
       .perm-denied__icon {
-        display: grid;
-        place-items: center;
-        width: 48px;
-        height: 48px;
-        margin: 0 auto 6px;
+        display: grid; place-items: center;
+        width: 48px; height: 48px; margin: 0 auto 6px;
         border-radius: 12px;
-        background: var(--danger-soft);
-        color: var(--danger);
+        background: var(--danger-soft); color: var(--danger);
       }
       .perm-denied__icon svg { width: 22px; height: 22px; }
-
       .perm-denied__text {
-        margin: 0;
-        text-align: center;
-        font-size: 14.5px;
-        color: var(--text);
-        line-height: 1.55;
+        margin: 0; text-align: center;
+        font-size: 14.5px; color: var(--text); line-height: 1.55;
       }
       .perm-denied__text strong { color: var(--text); font-weight: 700; }
-
       .perm-denied__hint {
-        margin: 6px 0 0;
-        text-align: center;
-        font-size: 13px;
-        color: var(--text-soft);
-        line-height: 1.5;
+        margin: 6px 0 0; text-align: center;
+        font-size: 13px; color: var(--text-soft); line-height: 1.5;
       }
 
-      /* =====================================================
-         Dark mode
-         ===================================================== */
-      [data-theme="dark"] .app-tabs {
-        background: rgba(0, 0, 0, 0.20);
-      }
-      [data-theme="dark"] .app-tabs__search {
-        background: rgba(255, 255, 255, 0.03);
-      }
+      [data-theme="dark"] .app-tabs { background: rgba(0, 0, 0, 0.20); }
+      [data-theme="dark"] .app-tabs__search { background: rgba(255, 255, 255, 0.03); }
 
-      /* =====================================================
-         Responsivo
-         ===================================================== */
       @media (max-width: 1024px) {
         .app-tabs__brand-text { display: none; }
         .app-tabs__brand { padding-right: 12px; margin-right: 4px; border-right: 0; }
       }
-
       @media (max-width: 900px) {
         .app-tabs__search { flex: 1 1 auto; min-width: 140px; }
         .app-tabs__user-info { display: none; }
         .app-tabs__user-chevron { display: none; }
         .app-tabs__user-btn { padding: 0 4px 0 2px; height: 38px; }
       }
-
       @media (max-width: 720px) {
         .app-tabs {
-          height: 52px;
-          min-height: 52px;
-          padding: 0 8px;
-          gap: 4px;
+          height: 52px; min-height: 52px;
+          padding: 0 8px; gap: 4px;
         }
         .app-tabs__brand { display: none; }
         .app-tab { max-width: 140px; font-size: 12px; height: 32px; }
@@ -1635,10 +1450,7 @@
       searchState.wrap.classList.toggle('has-value', q.length > 0);
     }
 
-    if (!q) {
-      closeResults();
-      return;
-    }
+    if (!q) { closeResults(); return; }
 
     const words = q.split(/\s+/).filter(Boolean);
 
