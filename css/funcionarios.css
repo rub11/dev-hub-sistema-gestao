@@ -105,3 +105,129 @@
 @media (max-width: 720px) {
   .stats--three { grid-template-columns: 1fr; }
 }
+
+/* =========================================================
+   FINANCEIRO · Navegação contextual (tabs principais)
+   ========================================================= */
+
+/* ---------- Ícone do header (contexto muda por aba) ---------- */
+.fin-head__eyebrow-icon {
+  display: inline-flex;
+  width: 14px;
+  height: 14px;
+  flex: none;
+  transition: color 220ms ease;
+}
+.fin-head__eyebrow-icon svg { width: 100%; height: 100%; }
+.fin-head__eyebrow-icon.is-swapping {
+  animation: fin-icon-pop 340ms cubic-bezier(.2,.9,.3,1);
+}
+@keyframes fin-icon-pop {
+  0%   { opacity: 0; transform: scale(0.7) rotate(-8deg); }
+  60%  { opacity: 1; transform: scale(1.05) rotate(0); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* ---------- Título / subtítulo: swap animado ---------- */
+.fin-head__title,
+.fin-head__sub {
+  will-change: transform, opacity;
+}
+.fin-head__title.is-leaving,
+.fin-head__sub.is-leaving {
+  animation: fin-head-out 180ms ease forwards;
+}
+.fin-head__title.is-entering,
+.fin-head__sub.is-entering {
+  animation: fin-head-in 280ms cubic-bezier(.2,.9,.3,1) forwards;
+}
+@keyframes fin-head-out {
+  from { opacity: 1; transform: translateY(0);   filter: blur(0); }
+  to   { opacity: 0; transform: translateY(-6px);filter: blur(2px); }
+}
+@keyframes fin-head-in {
+  from { opacity: 0; transform: translateY(8px); filter: blur(2px); }
+  to   { opacity: 1; transform: translateY(0);   filter: blur(0); }
+}
+
+/* ---------- Indicador deslizante ---------- */
+.fin-tabs--main {
+  position: relative;
+  isolation: isolate;
+}
+.fin-tabs__indicator {
+  position: absolute;
+  top: 4px;
+  left: 0;
+  height: calc(100% - 8px);
+  width: 0;
+  border-radius: 8px;
+  background: var(--accent);
+  box-shadow: 0 2px 8px -2px color-mix(in srgb, var(--accent) 55%, transparent);
+  pointer-events: none;
+  z-index: 0;
+  will-change: transform, width;
+  transition:
+    transform 320ms cubic-bezier(.2,.9,.3,1),
+    width     320ms cubic-bezier(.2,.9,.3,1);
+}
+
+/* A aba ativa não tem mais fundo próprio (o indicador é o fundo) */
+.fin-tabs--main .fin-tab {
+  position: relative;
+  z-index: 1;
+  background: transparent;
+  transition: color 220ms ease, opacity 220ms ease;
+}
+.fin-tabs--main .fin-tab.is-active {
+  background: transparent;
+  color: #fff;
+  font-weight: 600;
+}
+
+/* Micro-bump no label quando a aba vira ativa */
+.fin-tabs--main .fin-tab.is-active .fin-tab__label {
+  animation: fin-tab-label-bump 340ms cubic-bezier(.2,.9,.3,1);
+}
+@keyframes fin-tab-label-bump {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+
+/* ---------- Contador: bump quando o número muda ---------- */
+.fin-tab__count.is-bumping {
+  animation: fin-count-bump 320ms cubic-bezier(.2,.9,.3,1);
+}
+@keyframes fin-count-bump {
+  0%   { transform: scale(1);   opacity: 1; }
+  40%  { transform: scale(1.22); opacity: .8; }
+  100% { transform: scale(1);   opacity: 1; }
+}
+
+/* Contador dentro da aba ativa (fica branco por cima do indicador) */
+.fin-tabs--main .fin-tab.is-active .fin-tab__count {
+  background: rgba(255, 255, 255, 0.24);
+  color: #fff;
+}
+
+/* ---------- Responsivo ---------- */
+@media (max-width: 720px) {
+  .fin-tabs--main { gap: 2px; }
+  .fin-tabs__indicator { transition-duration: 260ms; }
+  .fin-tab__count { font-size: 11px; min-width: 18px; height: 18px; }
+}
+
+/* ---------- Acessibilidade: reduzir movimento ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .fin-tabs__indicator,
+  .fin-head__title,
+  .fin-head__sub,
+  .fin-head__eyebrow-icon,
+  .fin-tab__count,
+  .fin-tabs--main .fin-tab.is-active .fin-tab__label {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

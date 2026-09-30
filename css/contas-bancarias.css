@@ -1,0 +1,244 @@
+/* =========================================================
+   DEV HUB · Contas Bancárias
+   ========================================================= */
+
+body[data-page="contas-bancarias"] .fin-content {
+  width: 100% !important;
+  max-width: 1400px !important;
+  margin: 0 auto !important;
+  padding: 28px 32px 56px !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+}
+@media (max-width: 960px) {
+  body[data-page="contas-bancarias"] .fin-content { padding: 20px 16px 32px !important; }
+}
+
+/* Fix chevron */
+body[data-page="contas-bancarias"] select {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  background-color: var(--surface) !important;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 12px center !important;
+  background-size: 16px 16px !important;
+  padding-right: 38px !important;
+}
+[data-theme="dark"] body[data-page="contas-bancarias"] select {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a8b0ba' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>") !important;
+}
+
+/* =========================================================
+   KPIs
+   ========================================================= */
+.cb-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+.cb-kpi {
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 18px 20px;
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  border-left: 3px solid var(--accent);
+  border-radius: 12px;
+}
+.cb-kpi--balance   { border-left-color: #10b981; }
+.cb-kpi--active    { border-left-color: #6366f1; }
+.cb-kpi--top       { border-left-color: #f59e0b; }
+.cb-kpi--movements { border-left-color: #8b5cf6; }
+
+.cb-kpi__label {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.05em;
+  text-transform: uppercase; color: var(--text-muted);
+}
+.cb-kpi__value {
+  font-size: 22px; font-weight: 700;
+  letter-spacing: -0.02em; color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.cb-kpi__value--pos { color: #10b981; }
+.cb-kpi__value--neg { color: #ef4444; }
+.cb-kpi__hint { font-size: 12px; color: var(--text-muted); }
+
+/* =========================================================
+   TABELA
+   ========================================================= */
+.cb-panel {
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.cb-panel__scroll { overflow-x: auto; }
+.cb-table {
+  width: 100%; min-width: 1000px;
+  border-collapse: separate; border-spacing: 0;
+}
+.cb-table thead th {
+  padding: 12px 16px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+  font-size: 11px; font-weight: 600; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--text-muted);
+  text-align: left; white-space: nowrap;
+}
+.cb-table thead th.cell--num,
+.cb-table thead th.cell--right { text-align: right; }
+.cb-table tbody td {
+  padding: 14px 16px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+  font-size: 13.5px; color: var(--text); vertical-align: middle;
+}
+.cb-table tbody tr:last-child td { border-bottom: 0; }
+.cb-table tbody tr:hover td { background: var(--surface-2); }
+.cb-table .cell--num { text-align: right; font-variant-numeric: tabular-nums; }
+.cb-table .cell--right { text-align: right; }
+
+/* Célula conta (logo + nome) */
+.cb-acc {
+  display: flex; align-items: center; gap: 12px;
+  min-width: 0;
+}
+.cb-acc__logo {
+  flex: none;
+  display: grid; place-items: center;
+  width: 38px; height: 38px;
+  border-radius: 10px;
+  font-size: 12px; font-weight: 800;
+  color: #fff; letter-spacing: 0.02em;
+  background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
+  text-transform: uppercase;
+}
+.cb-acc__logo--nubank   { background: linear-gradient(135deg, #820ad1 0%, #5b0495 100%); }
+.cb-acc__logo--itau     { background: linear-gradient(135deg, #ec7000 0%, #c85a00 100%); }
+.cb-acc__logo--bb       { background: linear-gradient(135deg, #fbe300 0%, #e0c400 100%); color: #003a8c; }
+.cb-acc__logo--bradesco { background: linear-gradient(135deg, #cc092f 0%, #9a0422 100%); }
+.cb-acc__logo--santander{ background: linear-gradient(135deg, #ec0000 0%, #a80000 100%); }
+.cb-acc__logo--caixa    { background: linear-gradient(135deg, #0070af 0%, #004f80 100%); }
+.cb-acc__logo--inter    { background: linear-gradient(135deg, #ff7a00 0%, #e65c00 100%); }
+.cb-acc__logo--c6       { background: linear-gradient(135deg, #3d3d3d 0%, #1a1a1a 100%); }
+.cb-acc__logo--dinheiro { background: linear-gradient(135deg, #10b981 0%, #047857 100%); }
+.cb-acc__info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cb-acc__name {
+  font-size: 13.5px; font-weight: 600; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  max-width: 260px;
+}
+.cb-acc__meta { font-size: 11.5px; color: var(--text-muted); }
+
+/* Tipo */
+.cb-type {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 10px; border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text-soft);
+  font-size: 11.5px; font-weight: 600;
+}
+
+/* Valores */
+.cb-money {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.cb-money--pos { color: #10b981; }
+.cb-money--neg { color: #ef4444; }
+.cb-money--soft { color: var(--text-muted); font-weight: 500; }
+
+/* Ações */
+.cb-actions { display: inline-flex; gap: 4px; justify-content: flex-end; }
+
+/* =========================================================
+   MODAL · CONTA (novo/editar)
+   ========================================================= */
+.cb-modal .fin-modal__body .fin-field input,
+.cb-modal .fin-modal__body .fin-field select {
+  height: 44px;
+}
+
+/* =========================================================
+   MODAL · MOVIMENTAÇÕES
+   ========================================================= */
+.cb-mov-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  padding: 14px;
+  background: var(--surface-2);
+  border-radius: 12px;
+  margin-bottom: 4px;
+}
+.cb-mov-summary > div { display: flex; flex-direction: column; gap: 3px; }
+.cb-mov-summary span:first-child {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.05em;
+  text-transform: uppercase; color: var(--text-muted);
+}
+.cb-mov-summary span:last-child {
+  font-size: 16px; font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.cb-mov-summary__pos { color: #10b981; }
+.cb-mov-summary__neg { color: #ef4444; }
+
+.cb-mov-list {
+  display: flex; flex-direction: column;
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.cb-mov-item {
+  display: grid;
+  grid-template-columns: 70px 1fr auto;
+  gap: 14px;
+  align-items: center;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.cb-mov-item:last-child { border-bottom: 0; }
+.cb-mov-item:hover { background: var(--surface-2); }
+
+.cb-mov-date {
+  font-size: 12px; font-weight: 600; color: var(--text-soft);
+  font-variant-numeric: tabular-nums;
+}
+.cb-mov-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cb-mov-desc {
+  font-size: 13px; font-weight: 500; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.cb-mov-origin { font-size: 11.5px; color: var(--text-muted); }
+.cb-mov-value {
+  font-size: 13.5px; font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.cb-mov-value--in  { color: #10b981; }
+.cb-mov-value--out { color: #ef4444; }
+
+@media (max-width: 560px) {
+  .cb-mov-summary { grid-template-columns: 1fr; }
+  .cb-mov-item { grid-template-columns: 60px 1fr; }
+  .cb-mov-value { grid-column: 2; text-align: right; }
+}
+
+/* =========================================================
+   EMPTY
+   ========================================================= */
+.cb-empty {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 12px; padding: 72px 24px; text-align: center;
+}
+.cb-empty__icon {
+  display: grid; place-items: center;
+  width: 64px; height: 64px; border-radius: 18px;
+  background: var(--accent-soft); color: var(--accent);
+}
+.cb-empty__icon svg { width: 28px; height: 28px; }
+.cb-empty__title { margin: 0; font-size: 16px; font-weight: 700; }
+.cb-empty__text { margin: 0; font-size: 14px; color: var(--text-soft); max-width: 380px; }

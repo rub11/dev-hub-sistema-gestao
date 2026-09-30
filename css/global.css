@@ -474,3 +474,19 @@ html.layout-topnav .app__body,
 body.layout-topnav .app__body {
   margin-left: 0 !important;
 }
+/* Esconde scrollbar em todo o sistema (opcional) */
+* {
+  scrollbar-width: thin;              /* Firefox: fina em vez de escondida */
+  scrollbar-color: var(--border) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}

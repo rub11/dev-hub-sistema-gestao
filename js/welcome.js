@@ -5,7 +5,15 @@
    - Busca com filtro em tempo real
    - Atalhos de teclado 1-9 para abrir rapidamente
    - Enter abre o primeiro resultado
-   - Enter com resultado vazio → aviso
+   ---------------------------------------------------------
+   CORREÇÃO (v2):
+   - `hasPerm` e `hasCapability` agora replicam o FALLBACK
+     do nav.js (BASE_CAPS). Antes, capabilities como
+     `purchases.view`, `finance.view`, `stock.receive` e
+     `purchases.approve` não estavam em `Perms.DEFAULTS`
+     (permissions.js) e por isso Compras, Fornecedores,
+     Financeiro, Aprovações etc. eram filtrados fora do
+     welcome — mesmo aparecendo no menu "+".
    ========================================================= */
 
 (function () {
@@ -17,11 +25,171 @@
   let filtered = [];
   let searchQuery = '';
 
-  document.addEventListener('DOMContentLoaded', init);
+  /* =========================================================
+     FALLBACK DE CAPABILITIES (espelho do nav.js)
+     ---------------------------------------------------------
+     Estrutura idêntica ao nav.js para manter consistência
+     entre a barra de abas (+ menu) e a tela inicial.
+     ========================================================= */
+  const CAPABILITIES = {
+    platform_admin: ['platform'],
+    admin:          ['operations', 'management', 'admin_settings'],
+    administrador:  ['operations', 'management', 'admin_settings'],
+    gestor:         ['operations', 'management'],
+    manager:        ['operations', 'management'],
+    user:           ['operations'],
+    usuario:        ['operations'],
+    'usuário':      ['operations']
+  };
+
+  const BASE_CAPS = {
+    admin: [
+      'dashboard.view',
+      'sales.view', 'sales.create', 'sales.edit', 'sales.delete',
+      'notes.view', 'notes.create',
+      'invoices.view',
+      'customers.view', 'customers.create', 'customers.edit',
+      'products.view', 'products.create', 'products.edit', 'products.delete',
+      'stock.view', 'stock.receive', 'stock.movements',
+      'reports.view',
+      'management.view',
+      'purchases.view', 'purchases.create', 'purchases.approve', 'purchases.cancel',
+      'purchases.receive', 'purchases.dispute', 'purchases.return', 'purchases.reject',
+      'finance.view', 'finance.create', 'finance.pay', 'finance.edit',
+      'finance.settle', 'finance.reverse', 'finance.transfer', 'finance.reconcile', 'finance.cancel',
+      'platform'
+    ],
+    administrador: [
+      'dashboard.view',
+      'sales.view', 'sales.create', 'sales.edit', 'sales.delete',
+      'notes.view', 'notes.create',
+      'invoices.view',
+      'customers.view', 'customers.create', 'customers.edit',
+      'products.view', 'products.create', 'products.edit', 'products.delete',
+      'stock.view', 'stock.receive', 'stock.movements',
+      'reports.view',
+      'management.view',
+      'purchases.view', 'purchases.create', 'purchases.approve', 'purchases.cancel',
+      'purchases.receive', 'purchases.dispute', 'purchases.return', 'purchases.reject',
+      'finance.view', 'finance.create', 'finance.pay', 'finance.edit',
+      'finance.settle', 'finance.reverse', 'finance.transfer', 'finance.reconcile', 'finance.cancel',
+      'platform'
+    ],
+    gestor: [
+      'dashboard.view',
+      'sales.view', 'sales.create', 'sales.edit',
+      'notes.view', 'invoices.view',
+      'customers.view', 'customers.create', 'customers.edit',
+      'products.view', 'products.create', 'products.edit',
+      'stock.view', 'stock.receive', 'stock.movements',
+      'reports.view', 'management.view',
+      'purchases.view', 'purchases.create', 'purchases.approve',
+      'purchases.receive', 'purchases.dispute', 'purchases.return',
+      'finance.view', 'finance.create', 'finance.pay', 'finance.edit',
+      'finance.settle', 'finance.reverse', 'finance.transfer'
+    ],
+    manager: [
+      'dashboard.view',
+      'sales.view', 'sales.create', 'sales.edit',
+      'notes.view', 'invoices.view',
+      'customers.view', 'customers.create', 'customers.edit',
+      'products.view', 'products.create', 'products.edit',
+      'stock.view', 'stock.receive', 'stock.movements',
+      'reports.view', 'management.view',
+      'purchases.view', 'purchases.create', 'purchases.approve',
+      'purchases.receive', 'purchases.dispute', 'purchases.return',
+      'finance.view', 'finance.create', 'finance.pay', 'finance.edit',
+      'finance.settle', 'finance.reverse', 'finance.transfer'
+    ],
+    user: [
+      'dashboard.view', 'sales.view', 'notes.view',
+      'customers.view', 'products.view', 'stock.view',
+      'purchases.view', 'finance.view'
+    ],
+    usuario: [
+      'dashboard.view', 'sales.view', 'notes.view',
+      'customers.view', 'products.view', 'stock.view',
+      'purchases.view', 'finance.view'
+    ],
+    'usuário': [
+      'dashboard.view', 'sales.view', 'notes.view',
+      'customers.view', 'products.view', 'stock.view',
+      'purchases.view', 'finance.view'
+    ]
+  };
+
+  /* ---------- Contexto do usuário (sessionStorage) ---------- */
+  function readContext() {
+    let role = '';
+    let isPlatform = false;
+    try {
+      const raw = sessionStorage.getItem('devhub_user');
+      if (raw) {
+        const data = JSON.parse(raw);
+        role = String(data.role || '').toLowerCase();
+        isPlatform = data.is_platform_admin === true;
+      }
+    } catch (e) { /* ignora */ }
+    return { role, isPlatform };
+  }
+
+  function capsForRole(role, isPlatform) {
+    const baseCaps = CAPABILITIES[String(role || '').toLowerCase()] || ['operations'];
+    if (isPlatform && baseCaps.indexOf('platform') === -1) {
+      return baseCaps.concat(['platform']);
+    }
+    return baseCaps;
+  }
+
+  function baseCapsForRole() {
+    const ctx = readContext();
+    const r = String(ctx.role || '').toLowerCase();
+    const caps = BASE_CAPS[r] || BASE_CAPS.user;
+    if (ctx.isPlatform && caps.indexOf('platform') === -1) {
+      return caps.concat(['platform']);
+    }
+    return caps;
+  }
+
+  /**
+   * Verificação de capability com fallback — MESMA lógica
+   * do nav.js `hasCapability()`. Substitui o uso direto de
+   * `Perms.has()`, que não conhecia `purchases.*`, `finance.*`
+   * nem `stock.receive`.
+   */
+  function hasCapWithFallback(cap) {
+    if (!cap) return true;
+    if (cap === 'platform') return readContext().isPlatform;
+
+    const c = String(cap).toLowerCase();
+    const baseCaps = baseCapsForRole();
+    const inFallback = baseCaps.indexOf(c) !== -1;
+
+    if (window.Perms && typeof window.Perms.has === 'function') {
+      try {
+        const list = (typeof window.Perms.list === 'function') ? window.Perms.list() : null;
+        const listEmpty = !list || Object.keys(list).length === 0;
+
+        if (!listEmpty) {
+          const r = window.Perms.has(c);
+          if (r === true)  return true;
+          if (r === false) return inFallback;
+        }
+      } catch (e) {
+        console.warn('[welcome] Perms.has falhou para', c, e);
+      }
+    }
+
+    const genericCaps = capsForRole(readContext().role, readContext().isPlatform);
+    if (genericCaps.indexOf(c) !== -1) return true;
+    return inFallback;
+  }
 
   /* =========================================================
      Init
      ========================================================= */
+  document.addEventListener('DOMContentLoaded', init);
+
   async function init() {
     const Auth = window.Auth;
     if (!Auth || !Auth.isConfigured() || !window.db) return;
@@ -60,7 +228,7 @@
     els.search.addEventListener('input', onSearchInput);
     els.search.addEventListener('keydown', onSearchKeydown);
 
-    /* Ctrl+K foca a busca — só se não estiver em outro input */
+    /* Ctrl+K foca a busca */
     document.addEventListener('keydown', function (e) {
       const isK = String(e.key || '').toLowerCase() === 'k';
       if (!isK) return;
@@ -99,30 +267,17 @@
     const ITEM_PERM = window.DHItemPerm || {};
 
     index = all.filter(function (item) {
-      if (item.capability && !hasCapability(item.capability)) return false;
+      /* Capability do próprio módulo (ex.: 'purchases.approve') */
+      if (item.capability && !hasCapWithFallback(item.capability)) return false;
+
+      /* Capability extra do map ITEM_PERM (ex.: 'finance.view') */
       const cap = ITEM_PERM[item.id];
-      if (cap && !hasPerm(cap)) return false;
+      if (cap && !hasCapWithFallback(cap)) return false;
+
       return true;
     });
 
     filtered = index.slice();
-  }
-
-  function hasPerm(cap) {
-    if (window.Perms && typeof window.Perms.has === 'function') return window.Perms.has(cap);
-    return true;
-  }
-
-  function hasCapability(cap) {
-    if (cap === 'platform') {
-      const ctx = window.Auth && window.Auth.getStoredUser
-        ? window.Auth.getStoredUser() : null;
-      return Boolean(ctx && ctx.is_platform_admin === true);
-    }
-    if (window.DHRoles && typeof window.DHRoles.hasCapability === 'function') {
-      return window.DHRoles.hasCapability(cap);
-    }
-    return true;
   }
 
   /* =========================================================
@@ -137,7 +292,8 @@
     }
     els.empty.hidden = true;
 
-    const order = ['Comercial', 'Catálogo', 'Análise', 'Administração', 'Plataforma'];
+    const order = ['Comercial', 'Catálogo', 'Suprimentos', 'Financeiro',
+                   'Análise', 'Administração', 'Plataforma'];
     const dashboardItem = items.find(function (i) { return i.id === 'dashboard'; });
     const grouped = {};
 
@@ -169,7 +325,6 @@
 
     els.grid.appendChild(frag);
 
-    /* Redistribui atalhos 1-9 */
     updateShortcuts();
   }
 
@@ -330,6 +485,8 @@
     configuracoes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg>',
     empresas: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16"/><path d="M15 21V9h4a2 2 0 0 1 2 2v10"/><path d="M9 7h2M9 11h2M9 15h2"/></svg>',
     usuarios: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M16 20v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20"/><circle cx="9" cy="7.5" r="3.5"/><path d="M22 20v-1.5a4 4 0 0 0-3-3.87"/></svg>',
+    check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+    finance: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2"/><path d="M2.5 10h19"/><circle cx="17" cy="14" r="1"/></svg>',
     default: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5"/><path d="M12 16h.01"/></svg>'
   };
 

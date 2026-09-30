@@ -1,28 +1,26 @@
 /* =========================================================
    DEV HUB · Navegação em ABAS (estilo navegador)
    ---------------------------------------------------------
+   - UMA única barra: abas + botão "+" + busca + sino + usuário
+   - Topbar antigo é ESCONDIDO (a barra de abas vira header)
+   - Botão "+" abre dropdown com todos os módulos
+   - Abas podem ser fechadas (× ou clique do meio)
+   - Guard de permissão: modal "Acesso negado"
+   - Ao fechar a última aba → welcome.html
+   - Sino de notificações em tempo real
+   ---------------------------------------------------------
    CORREÇÕES NESTA VERSÃO:
-   1. Dropdown do usuário: position fixed + movido pro <body>.
-   2. Reposicionamento automático em scroll/resize.
-   3. Menu de módulos NÃO fecha ao rolar dentro dele.
-   4. Logo substituída por imagem (img/logo.png) clicável.
-   5. Clicar na marca → HOME_URL.
-   6. Ícone "Fechar todas as abas" no tamanho correto.
-   7. Módulo Compras adicionado (grupo Suprimentos).
-   8. hasCapability fail-open: só bloqueia se o fallback
-      por role TAMBÉM negar.
-   9. ** NOVO ** Fallback generoso por role: quando o Perms
-      não carrega (ex: esqueceu o <script src="js/auth.js">),
-      o nav ainda libera as capabilities padrão do role.
-      Isso evita o menu aparecer só com PLATAFORMA.
+   1-14. (mesmas das versões anteriores)
+   15. ** NOVO ** "Marcar todas como lidas" com verificação real:
+       - Uso `.select('id')` no UPDATE para contar linhas afetadas
+       - Detecta automaticamente o nome da coluna (read_at / is_read / lida)
+       - Toast visual de sucesso/erro
+       - Console mostra o erro cru para diagnóstico
    ========================================================= */
 
 (function () {
   'use strict';
 
-  /* =========================================================
-     CONFIGURAÇÃO DA MARCA
-     ========================================================= */
   const BRAND_IMAGE = 'img/logo.png';
 
   /* =========================================================
@@ -38,11 +36,6 @@
 
   /* =========================================================
      Fallback por role
-     ---------------------------------------------------------
-     CAPABILITIES  → tags genéricas (usadas para management,
-                     platform, etc)
-     BASE_CAPS     → capabilities reais (.view, .create, etc)
-                     quando o Perms não carrega
      ========================================================= */
   const CAPABILITIES = {
     platform_admin: ['platform'],
@@ -55,8 +48,6 @@
     'usuário': ['operations']
   };
 
-  /* Capabilities reais esperadas por role — usadas quando
-     window.Perms NÃO está carregado na página. */
   const BASE_CAPS = {
     admin: [
       'dashboard.view',
@@ -69,7 +60,9 @@
       'reports.view',
       'management.view',
       'purchases.view', 'purchases.create', 'purchases.approve', 'purchases.cancel',
-      'finance.pay',
+      'purchases.receive', 'purchases.dispute', 'purchases.return', 'purchases.reject',
+      'finance.view', 'finance.create', 'finance.pay', 'finance.edit',
+      'finance.settle', 'finance.reverse', 'finance.transfer', 'finance.reconcile', 'finance.cancel',
       'platform'
     ],
     administrador: [
@@ -83,61 +76,51 @@
       'reports.view',
       'management.view',
       'purchases.view', 'purchases.create', 'purchases.approve', 'purchases.cancel',
-      'finance.pay',
+      'purchases.receive', 'purchases.dispute', 'purchases.return', 'purchases.reject',
+      'finance.view', 'finance.create', 'finance.pay', 'finance.edit',
+      'finance.settle', 'finance.reverse', 'finance.transfer', 'finance.reconcile', 'finance.cancel',
       'platform'
     ],
     gestor: [
       'dashboard.view',
       'sales.view', 'sales.create', 'sales.edit',
-      'notes.view',
-      'invoices.view',
+      'notes.view', 'invoices.view',
       'customers.view', 'customers.create', 'customers.edit',
       'products.view', 'products.create', 'products.edit',
       'stock.view', 'stock.receive', 'stock.movements',
-      'reports.view',
-      'management.view',
+      'reports.view', 'management.view',
       'purchases.view', 'purchases.create', 'purchases.approve',
-      'finance.pay'
+      'purchases.receive', 'purchases.dispute', 'purchases.return',
+      'finance.view', 'finance.create', 'finance.pay', 'finance.edit',
+      'finance.settle', 'finance.reverse', 'finance.transfer'
     ],
     manager: [
       'dashboard.view',
       'sales.view', 'sales.create', 'sales.edit',
-      'notes.view',
-      'invoices.view',
+      'notes.view', 'invoices.view',
       'customers.view', 'customers.create', 'customers.edit',
       'products.view', 'products.create', 'products.edit',
       'stock.view', 'stock.receive', 'stock.movements',
-      'reports.view',
-      'management.view',
+      'reports.view', 'management.view',
       'purchases.view', 'purchases.create', 'purchases.approve',
-      'finance.pay'
+      'purchases.receive', 'purchases.dispute', 'purchases.return',
+      'finance.view', 'finance.create', 'finance.pay', 'finance.edit',
+      'finance.settle', 'finance.reverse', 'finance.transfer'
     ],
     user: [
-      'dashboard.view',
-      'sales.view',
-      'notes.view',
-      'customers.view',
-      'products.view',
-      'stock.view',
-      'purchases.view'
+      'dashboard.view', 'sales.view', 'notes.view',
+      'customers.view', 'products.view', 'stock.view',
+      'purchases.view', 'finance.view'
     ],
     usuario: [
-      'dashboard.view',
-      'sales.view',
-      'notes.view',
-      'customers.view',
-      'products.view',
-      'stock.view',
-      'purchases.view'
+      'dashboard.view', 'sales.view', 'notes.view',
+      'customers.view', 'products.view', 'stock.view',
+      'purchases.view', 'finance.view'
     ],
     'usuário': [
-      'dashboard.view',
-      'sales.view',
-      'notes.view',
-      'customers.view',
-      'products.view',
-      'stock.view',
-      'purchases.view'
+      'dashboard.view', 'sales.view', 'notes.view',
+      'customers.view', 'products.view', 'stock.view',
+      'purchases.view', 'finance.view'
     ]
   };
 
@@ -153,27 +136,30 @@
   };
 
   const ITEM_PERM = {
-    dashboard:        'dashboard.view',
-    vendas:           'sales.view',
-    notas:            'notes.view',
-    'notas-fiscal':   'invoices.view',
-    clientes:         'customers.view',
-    produtos:         'products.view',
-    estoque:          'stock.view',
-    relatorios:       'reports.view',
-    gestao:           'management.view',
-    plataforma:       'platform',
-    empresas:         'platform',
-    'plat-usuarios':  'platform',
-    'plat-config':    'platform',
-    compras:          'purchases.view',
-    'compras-receber':'stock.receive',
-    fornecedores:     'purchases.view'
+    dashboard:           'dashboard.view',
+    vendas:              'sales.view',
+    notas:               'notes.view',
+    'notas-fiscal':      'invoices.view',
+    parceiros:           'customers.view',
+    clientes:            'customers.view',
+    produtos:            'products.view',
+    estoque:             'stock.view',
+    relatorios:          'reports.view',
+    gestao:              'management.view',
+    aprovacoes:          'purchases.approve',
+    financeiro:          'finance.view',
+    'contas-bancarias':  'finance.view',
+    plataforma:          'platform',
+    empresas:            'platform',
+    'plat-usuarios':     'platform',
+    'plat-config':       'platform',
+    compras:             'purchases.view',
+    'compras-receber':   'stock.receive',
+    fornecedores:        'purchases.view'
   };
 
   const TABS_KEY = 'devhub_tabs';
   const MAX_TABS = 12;
-
   const HOME_URL = 'welcome.html';
   const DASHBOARD_URL = 'dashboard.html';
 
@@ -209,7 +195,6 @@
     return capsForRole(ctx.role, ctx.isPlatform);
   }
 
-  /* Retorna as caps BASE do role (reais: .view, .create...) */
   function baseCapsForRole() {
     const ctx = readContext();
     const r = String(ctx.role || '').toLowerCase();
@@ -248,22 +233,15 @@
 
   /* =========================================================
      Permissões
-     ---------------------------------------------------------
-     Ordem de decisão:
-       1. 'platform' → só platform_admin
-       2. Se window.Perms tem dados:
-          - Perms.has(cap) === true  → libera
-          - Perms.has(cap) === false → cai no próximo passo
-       3. Fallback de role (BASE_CAPS): se a cap está lá, libera
-       4. Caso contrário, bloqueia
      ========================================================= */
   function hasCapability(cap) {
     if (!cap) return true;
     if (cap === 'platform') return readContext().isPlatform;
 
     const c = String(cap).toLowerCase();
+    const baseCaps = baseCapsForRole();
+    const inFallback = baseCaps.indexOf(c) !== -1;
 
-    /* Camada 1: tenta Perms (banco) */
     if (window.Perms && typeof window.Perms.has === 'function') {
       try {
         const list = (typeof window.Perms.list === 'function') ? window.Perms.list() : null;
@@ -272,23 +250,16 @@
         if (!listEmpty) {
           const r = window.Perms.has(c);
           if (r === true)  return true;
-          /* Se r === false, cai no fallback */
+          if (r === false) return inFallback;
         }
       } catch (e) {
         console.warn('[nav] Perms.has falhou para', c, e);
       }
     }
 
-    /* Camada 2: fallback generoso por role */
-    const baseCaps = baseCapsForRole();
-    if (baseCaps.indexOf(c) !== -1) return true;
-
-    /* Camada 3: caps genéricas (management, operations, etc.) */
     const genericCaps = currentCapabilities();
     if (genericCaps.indexOf(c) !== -1) return true;
-
-    /* Camada 4: nega */
-    return false;
+    return inFallback;
   }
 
   function hasPermission(cap) {
@@ -308,6 +279,7 @@
     estoque: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 2.5 9 5-9 5-9-5z" /><path d="m3 12.5 9 5 9-5" /><path d="m3 17.5 9 5 9-5" /></svg>',
     relatorios: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v16a2 2 0 0 0 2 2h16" /><path d="m7 15 3.5-4 3 2.5L20 7" /></svg>',
     gestao: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 20v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20" /><circle cx="9" cy="7.5" r="3.5" /><path d="M22 20v-1.5a4 4 0 0 0-3-3.87" /><path d="M16.5 4.13a4 4 0 0 1 0 7.75" /></svg>',
+    check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>',
     configuracoes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7h-9" /><path d="M14 17H5" /><circle cx="17" cy="17" r="3" /><circle cx="7" cy="7" r="3" /></svg>',
     empresas: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18" /><path d="M5 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16" /><path d="M15 21V9h4a2 2 0 0 1 2 2v10" /><path d="M9 7h2M9 11h2M9 15h2" /></svg>',
     usuarios: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 20v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20" /><circle cx="9" cy="7.5" r="3.5" /><path d="M22 20v-1.5a4 4 0 0 0-3-3.87" /></svg>',
@@ -316,7 +288,9 @@
     close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>',
     plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>',
     chevron: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>',
-    lock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="10" rx="2" /><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5" /></svg>'
+    lock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="10" rx="2" /><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5" /></svg>',
+    bell: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>',
+    finance: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="6" width="19" height="12" rx="2"/><path d="M2.5 10h19"/><circle cx="17" cy="14" r="1"/></svg>'
   };
 
   /* =========================================================
@@ -327,16 +301,15 @@
     { id: 'vendas',        label: 'Vendas',        href: 'vendas.html',       icon: 'vendas',       group: 'Comercial' },
     { id: 'notas',         label: 'Notas',         href: 'notas.html',        icon: 'notas',        group: 'Comercial' },
     { id: 'notas-fiscal',  label: 'Notas fiscais', href: 'notas-fiscal.html', icon: 'notas-fiscal', group: 'Comercial' },
-    { id: 'clientes',      label: 'Clientes',      href: 'clientes.html',     icon: 'clientes',     group: 'Comercial' },
+    { id: 'parceiros',     label: 'Parceiros',     href: 'parceiros.html',    icon: 'clientes',     group: 'Comercial' },
     { id: 'produtos',      label: 'Produtos',      href: 'produtos.html',     icon: 'produtos',     group: 'Catálogo' },
     { id: 'estoque',       label: 'Estoque',       href: 'estoque.html',      icon: 'estoque',      group: 'Catálogo' },
-
-    /* ---------- Suprimentos ---------- */
     { id: 'compras',         label: 'Compras',         href: 'compras.html',         icon: 'vendas',   group: 'Suprimentos', capability: 'purchases.view' },
     { id: 'compras-receber', label: 'Receber compras', href: 'compras-receber.html', icon: 'estoque',  group: 'Suprimentos', capability: 'stock.receive' },
-    { id: 'fornecedores',    label: 'Fornecedores',    href: 'fornecedores.html',    icon: 'empresas', group: 'Suprimentos', capability: 'purchases.view' },
-
+    { id: 'financeiro',       label: 'Movimentação financeira', href: 'financeiro.html',        icon: 'finance', group: 'Financeiro', capability: 'finance.view' },
+    { id: 'contas-bancarias', label: 'Contas bancárias',        href: 'contas-bancarias.html',  icon: 'finance', group: 'Financeiro', capability: 'finance.view' },
     { id: 'relatorios',    label: 'Relatórios',    href: 'relatorios.html',   icon: 'relatorios',   group: 'Análise' },
+    { id: 'aprovacoes',    label: 'Aprovações',    href: 'aprovacoes.html',   icon: 'check',        group: 'Administração', capability: 'purchases.approve' },
     { id: 'gestao',        label: 'Gestão de usuários', href: 'gestao.html',  icon: 'gestao',       group: 'Administração', capability: 'management' },
     { id: 'plataforma',    label: 'Dashboard da plataforma',     href: 'plataforma.html',               icon: 'dashboard',      group: 'Plataforma', capability: 'platform' },
     { id: 'empresas',      label: 'Empresas',                    href: 'plataforma.html#empresas',      icon: 'empresas',       group: 'Plataforma', capability: 'platform' },
@@ -344,7 +317,7 @@
     { id: 'plat-config',   label: 'Configurações da plataforma', href: 'plataforma-configuracoes.html', icon: 'configuracoes',  group: 'Plataforma', capability: 'platform' }
   ];
 
-  const GROUP_ORDER = ['Comercial', 'Catálogo', 'Suprimentos', 'Análise', 'Administração', 'Plataforma'];
+  const GROUP_ORDER = ['Comercial', 'Catálogo', 'Suprimentos', 'Financeiro', 'Análise', 'Administração', 'Plataforma'];
 
   function findItemById(id) {
     for (let i = 0; i < TOPNAV.length; i += 1) {
@@ -373,9 +346,12 @@
 
     const MAP = {
       dashboard: 'dashboard', vendas: 'vendas', notas: 'notas',
-      'notas-fiscal': 'notas-fiscal', clientes: 'clientes',
+      'notas-fiscal': 'notas-fiscal', clientes: 'parceiros',
+      parceiros: 'parceiros',
       produtos: 'produtos', estoque: 'estoque', relatorios: 'relatorios',
-      gestao: 'gestao', funcionarios: 'gestao',
+      gestao: 'gestao', funcionarios: 'gestao', aprovacoes: 'aprovacoes',
+      financeiro: 'financeiro', financeiro_novo: 'financeiro',
+      'contas-bancarias': 'contas-bancarias',
       configuracoes: 'configuracoes',
       'plataforma-configuracoes': 'plat-config',
       'plataforma-usuarios': 'plat-usuarios',
@@ -413,12 +389,7 @@
     const exists = tabs.some(function (t) { return t.id === id; });
     if (exists) return;
 
-    tabs.push({
-      id: item.id,
-      label: item.label,
-      href: item.href,
-      icon: item.icon
-    });
+    tabs.push({ id: item.id, label: item.label, href: item.href, icon: item.icon });
     writeTabs(tabs);
   }
 
@@ -507,12 +478,7 @@
     const tabs = readTabs();
     const exists = tabs.some(function (t) { return t.id === item.id; });
     if (!exists) {
-      tabs.push({
-        id: item.id,
-        label: item.label,
-        href: item.href,
-        icon: item.icon
-      });
+      tabs.push({ id: item.id, label: item.label, href: item.href, icon: item.icon });
       writeTabs(tabs);
     }
 
@@ -544,10 +510,7 @@
   let menuHovered = false;
 
   function openModuleMenu() {
-    if (menuEl && !menuEl.hidden) {
-      closeModuleMenu();
-      return;
-    }
+    if (menuEl && !menuEl.hidden) { closeModuleMenu(); return; }
 
     const plusBtn = document.getElementById('app-tabs-new');
     if (!plusBtn) return;
@@ -565,24 +528,14 @@
     });
   }
 
-  function closeModuleMenu() {
-    if (menuEl) menuEl.hidden = true;
-  }
+  function closeModuleMenu() { if (menuEl) menuEl.hidden = true; }
 
   function wireMenuPointerGuards(menu) {
     menu.addEventListener('mouseenter', function () { menuHovered = true; });
     menu.addEventListener('mouseleave', function () { menuHovered = false; });
-
-    menu.addEventListener('scroll', function (e) {
-      e.stopPropagation();
-    }, true);
-
-    menu.addEventListener('mousedown', function (e) {
-      e.stopPropagation();
-    });
-    menu.addEventListener('click', function (e) {
-      e.stopPropagation();
-    });
+    menu.addEventListener('scroll', function (e) { e.stopPropagation(); }, true);
+    menu.addEventListener('mousedown', function (e) { e.stopPropagation(); });
+    menu.addEventListener('click', function (e) { e.stopPropagation(); });
   }
 
   function buildModuleMenu() {
@@ -603,9 +556,7 @@
     }
 
     GROUP_ORDER.forEach(function (groupName) {
-      const groupItems = items.filter(function (i) {
-        return i.group === groupName;
-      });
+      const groupItems = items.filter(function (i) { return i.group === groupName; });
       if (groupItems.length === 0) return;
 
       const label = document.createElement('div');
@@ -770,18 +721,483 @@
     });
 
     document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape' && !menu.hidden) {
-        close();
-        btn.focus();
-      }
+      if (e.key === 'Escape' && !menu.hidden) { close(); btn.focus(); }
     });
 
-    window.addEventListener('resize', function () {
-      if (!menu.hidden) position();
+    window.addEventListener('resize', function () { if (!menu.hidden) position(); });
+    window.addEventListener('scroll', function () { if (!menu.hidden) position(); }, true);
+  }
+
+  /* =========================================================
+     Sino de notificações (tempo real)
+     ---------------------------------------------------------
+     "Marcar todas como lidas" — versão robusta:
+       1. RPC mark_all_notifications_read
+       2. Fallback: UPDATE com .select('id') para contar linhas
+       3. Se 0 linhas e houver pendentes → detecta RLS silencioso
+       4. Detecta automaticamente o nome da coluna (read_at / is_read / lida)
+       5. Toast visual + log no console
+     ========================================================= */
+  function setupNotifications() {
+    const btn   = document.getElementById('app-tabs-bell');
+    const badge = document.getElementById('app-tabs-bell-badge');
+    if (!btn) return;
+
+    let menu = null;
+    let unread = 0;
+    let readColumn = null; /* detectado dinamicamente */
+
+    /* -------------------- Toast local -------------------- */
+    function navToast(msg, kind) {
+      try {
+        if (window.Toast && typeof window.Toast.show === 'function') {
+          return window.Toast.show(msg, kind);
+        }
+      } catch (_) { /* ignora */ }
+
+      const el = document.createElement('div');
+      const isErr = kind === 'error';
+      el.style.cssText =
+        'position:fixed;top:80px;right:20px;z-index:99999;max-width:360px;' +
+        'padding:12px 16px;border-radius:10px;font-size:13.5px;font-family:inherit;' +
+        'box-shadow:0 12px 32px -8px rgba(16,24,40,.24);' +
+        'background:' + (isErr ? 'var(--danger-soft, #fef3f2)' : 'var(--accent-soft, #eef2ff)') + ';' +
+        'color:' + (isErr ? 'var(--danger, #b42318)' : 'var(--accent-hover, #4338ca)') + ';' +
+        'border:1px solid ' + (isErr ? 'var(--danger-border, #fecdca)' : 'transparent') + ';';
+      el.textContent = msg;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 4200);
+    }
+
+    /* -------------------- Badge -------------------- */
+    function renderBadge() {
+      if (!badge) return;
+      if (unread > 0) {
+        badge.hidden = false;
+        badge.textContent = unread > 99 ? '99+' : String(unread);
+      } else {
+        badge.hidden = true;
+      }
+    }
+
+    /* -------------------- Detecta coluna de status -------------------- */
+    async function detectReadColumn() {
+      if (readColumn) return readColumn;
+
+      const candidates = ['read_at', 'is_read', 'lida', 'read', 'readed'];
+      for (const col of candidates) {
+        try {
+          const { error } = await window.db
+            .from('notifications')
+            .select('id, ' + col)
+            .limit(1);
+          if (!error) {
+            readColumn = col;
+            console.log('[nav] Coluna de status detectada:', col);
+            return col;
+          }
+        } catch (_) { /* tenta próximo */ }
+      }
+
+      /* Se nada funcionou, cai no default */
+      readColumn = 'read_at';
+      console.warn('[nav] Nenhuma coluna de status reconhecida. Usando "read_at" como padrão.');
+      return readColumn;
+    }
+
+    /* -------------------- Contador -------------------- */
+    async function loadCount() {
+      if (!window.db) return;
+
+      /* Tenta RPC primeiro */
+      try {
+        const { data, error } = await window.db.rpc('get_unread_notification_count');
+        if (!error && typeof data === 'number') {
+          unread = data;
+          renderBadge();
+          return;
+        }
+      } catch (_) { /* fallback */ }
+
+      /* Fallback: count direto */
+      try {
+        const col = await detectReadColumn();
+        const isBool = col === 'is_read' || col === 'lida' || col === 'read' || col === 'readed';
+
+        const query = window.db
+          .from('notifications')
+          .select('id', { count: 'exact', head: true });
+
+        const { count, error } = isBool
+          ? await query.or(`${col}.is.null,${col}.eq.false`)
+          : await query.is(col, null);
+
+        if (!error) {
+          unread = count || 0;
+          renderBadge();
+        }
+      } catch (e) {
+        console.warn('[nav] loadCount fallback falhou:', e);
+      }
+    }
+
+    /* -------------------- Lista -------------------- */
+    async function loadLatest() {
+      if (!window.db) return [];
+      try {
+        const col = await detectReadColumn();
+        const { data, error } = await window.db
+          .from('notifications')
+          .select('id, title, message, kind, entity_type, entity_id, link, ' + col + ', created_at')
+          .order('created_at', { ascending: false })
+          .limit(8);
+
+        if (error) throw error;
+
+        /* Normaliza: adiciona read_at virtual */
+        return (data || []).map((n) => {
+          const raw = n[col];
+          const isRead = col === 'read_at'
+            ? !!raw
+            : (raw === true);
+          return Object.assign({}, n, { __read: isRead });
+        });
+      } catch (e) {
+        console.warn('[nav] loadLatest:', e);
+        return [];
+      }
+    }
+
+    function escapeHtml(s) {
+      return String(s || '').replace(/[&<>"']/g, (ch) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[ch]));
+    }
+
+    function formatRelative(iso) {
+      if (!iso) return '';
+      const diff = (Date.now() - new Date(iso).getTime()) / 1000;
+      if (diff < 60)     return 'agora';
+      if (diff < 3600)   return Math.floor(diff / 60) + ' min';
+      if (diff < 86400)  return Math.floor(diff / 3600) + ' h';
+      if (diff < 604800) return Math.floor(diff / 86400) + ' d';
+      return new Date(iso).toLocaleDateString('pt-BR');
+    }
+
+    function resolveNotifLink(n) {
+      if (n.link && n.link !== '#') return n.link;
+
+      const type = String(n.entity_type || '').toLowerCase();
+      const id   = n.entity_id;
+
+      switch (type) {
+        case 'product':       return id ? ('produtos.html?id=' + encodeURIComponent(id)) : 'produtos.html';
+        case 'stock_movement':return 'estoque.html';
+        case 'purchase':
+          if (String(n.title || '').toLowerCase().indexOf('aprov') !== -1) return 'aprovacoes.html';
+          return id ? ('compras.html?id=' + encodeURIComponent(id)) : 'compras.html';
+        case 'sale':          return id ? ('vendas.html?id=' + encodeURIComponent(id)) : 'vendas.html';
+        case 'customer':      return id ? ('parceiros.html?id=' + encodeURIComponent(id)) : 'parceiros.html';
+        case 'supplier':      return 'parceiros.html?kind=supplier';
+        case 'financial_entry':
+        case 'finance':
+        case 'financial_movement':
+        case 'financial_account':
+        case 'financial_transfer':
+          return 'financeiro.html';
+        default: return '#';
+      }
+    }
+
+    /* -------------------- MARK ALL — com verificação real -------------------- */
+    async function markAllAsRead() {
+      const now = new Date().toISOString();
+      const col = await detectReadColumn();
+
+      /* Passo 1: RPC (se existir) */
+      try {
+        const { error } = await window.db.rpc('mark_all_notifications_read');
+        if (!error) {
+          console.log('[nav] mark-all via RPC: OK');
+          return { method: 'rpc' };
+        }
+        console.warn('[nav] RPC mark_all indisponível:', error.message);
+      } catch (rpcErr) {
+        console.warn('[nav] RPC mark_all indisponível:', rpcErr.message || rpcErr);
+      }
+
+      /* Passo 2: UPDATE direto com verificação de linhas afetadas */
+      const isBool = col === 'is_read' || col === 'lida' || col === 'read' || col === 'readed';
+      const patch = {};
+      patch[col] = isBool ? true : now;
+
+      const query = window.db.from('notifications').update(patch);
+
+      const { data, error } = isBool
+        ? await query.or(`${col}.is.null,${col}.eq.false`).select('id')
+        : await query.is(col, null).select('id');
+
+      if (error) {
+        console.error('[nav] UPDATE falhou:', error);
+        throw new Error('Falha no UPDATE: ' + error.message);
+      }
+
+      const updated = (data || []).length;
+      console.log('[nav] mark-all via UPDATE —', updated, 'linhas afetadas (coluna:', col + ')');
+
+      /* Passo 3: se 0 linhas foram afetadas, pode ser RLS silencioso */
+      if (updated === 0) {
+        /* Confere se realmente não havia nada para atualizar */
+        const checkQuery = window.db
+          .from('notifications')
+          .select('id', { count: 'exact', head: true });
+
+        const { count: pendingCount, error: checkErr } = isBool
+          ? await checkQuery.or(`${col}.is.null,${col}.eq.false`)
+          : await checkQuery.is(col, null);
+
+        if (!checkErr && pendingCount > 0) {
+          throw new Error(
+            `RLS bloqueou o UPDATE. ${pendingCount} notificações pendentes no banco mas 0 foram atualizadas. ` +
+            `Rode no Supabase: ALTER TABLE notifications ENABLE ROW LEVEL SECURITY; ` +
+            `CREATE POLICY "update own notifications" ON notifications FOR UPDATE USING (auth.uid() = user_id);`
+          );
+        }
+      }
+
+      return { method: 'update', column: col, updated };
+    }
+
+    /* -------------------- Menu -------------------- */
+    function buildMenu() {
+      const el = document.createElement('div');
+      el.className = 'tnav-notif';
+      el.setAttribute('role', 'menu');
+      el.hidden = true;
+
+      el.innerHTML = `
+        <header class="tnav-notif__head">
+          <span>Notificações</span>
+          <button type="button" class="tnav-notif__mark" data-action="mark-all">
+            Marcar todas como lidas
+          </button>
+        </header>
+        <div class="tnav-notif__list" id="tnav-notif-list">
+          <div class="tnav-notif__loading">Carregando...</div>
+        </div>
+        <footer class="tnav-notif__foot">
+          <a href="aprovacoes.html" class="tnav-notif__see-all">
+            Ver aprovações pendentes
+          </a>
+        </footer>
+      `;
+
+      document.addEventListener('click', (e) => {
+        if (el.hidden) return;
+        if (el.contains(e.target) || btn.contains(e.target)) return;
+        closeMenu();
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !el.hidden) closeMenu();
+      });
+
+      /* ---------- HANDLER: MARK ALL ---------- */
+      el.addEventListener('click', async (e) => {
+        const markAll = e.target.closest('[data-action="mark-all"]');
+        if (!markAll) return;
+        e.preventDefault();
+        if (markAll.disabled) return;
+
+        markAll.disabled = true;
+        const originalLabel = markAll.textContent;
+        markAll.textContent = 'Marcando…';
+
+        try {
+          const result = await markAllAsRead();
+
+          /* Atualiza UI */
+          unread = 0;
+          renderBadge();
+
+          const rows = await loadLatest();
+          renderList(el, rows);
+          await loadCount();
+
+          if (result.method === 'rpc') {
+            navToast('Notificações marcadas como lidas.', 'success');
+          } else {
+            navToast(
+              `Notificações marcadas como lidas (${result.updated} atualizadas).`,
+              'success'
+            );
+          }
+        } catch (err) {
+          console.error('[nav] mark-all falhou:', err);
+          navToast('Não foi possível marcar como lidas: ' + (err.message || 'erro'), 'error');
+
+          /* Reverte a UI para o estado real do banco */
+          try {
+            const rows = await loadLatest();
+            renderList(el, rows);
+            await loadCount();
+          } catch (_) { /* ignora */ }
+        } finally {
+          markAll.disabled = false;
+          markAll.textContent = originalLabel;
+        }
+      });
+
+      return el;
+    }
+
+    function positionNotifMenu(m, anchor) {
+      const rect = anchor.getBoundingClientRect();
+      const margin = 8;
+      const gap = 6;
+      const w = Math.min(380, window.innerWidth - 16);
+
+      let left = rect.right - w;
+      if (left < margin) left = margin;
+
+      let top = rect.bottom + gap;
+      const h = m.offsetHeight || 400;
+      if (top + h > window.innerHeight - margin) {
+        top = Math.max(margin, window.innerHeight - h - margin);
+      }
+
+      m.style.top = top + 'px';
+      m.style.left = left + 'px';
+      m.style.width = w + 'px';
+    }
+
+    function renderList(m, rows) {
+      const list = m.querySelector('#tnav-notif-list');
+      if (!list) return;
+
+      if (!rows || rows.length === 0) {
+        list.innerHTML = `
+          <div class="tnav-notif__empty">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
+              <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+            </svg>
+            <span>Nenhuma notificação nova</span>
+          </div>`;
+        return;
+      }
+
+      list.innerHTML = rows.map((n) => {
+        const href = resolveNotifLink(n);
+        return `
+          <a class="tnav-notif__item ${n.__read ? '' : 'is-unread'}"
+             href="${href}"
+             data-id="${n.id}">
+            <span class="tnav-notif__dot" data-kind="${n.kind || 'info'}"></span>
+            <span class="tnav-notif__body">
+              <strong class="tnav-notif__title">${escapeHtml(n.title || 'Notificação')}</strong>
+              ${n.message ? `<span class="tnav-notif__msg">${escapeHtml(n.message)}</span>` : ''}
+              <span class="tnav-notif__time">${formatRelative(n.created_at)}</span>
+            </span>
+          </a>
+        `;
+      }).join('');
+
+      list.querySelectorAll('.tnav-notif__item').forEach((item) => {
+        item.addEventListener('click', async (e) => {
+          const id = item.dataset.id;
+          if (!id) return;
+
+          if (item.classList.contains('is-unread')) {
+            try {
+              const col = await detectReadColumn();
+              const isBool = col === 'is_read' || col === 'lida' || col === 'read' || col === 'readed';
+              const patch = {};
+              patch[col] = isBool ? true : new Date().toISOString();
+
+              /* Tenta RPC primeiro */
+              let ok = false;
+              try {
+                const { error } = await window.db.rpc('mark_notification_read', { p_id: id });
+                if (!error) ok = true;
+              } catch (_) { /* fallback */ }
+
+              if (!ok) {
+                await window.db.from('notifications').update(patch).eq('id', id);
+              }
+
+              item.classList.remove('is-unread');
+              unread = Math.max(0, unread - 1);
+              renderBadge();
+            } catch (err) {
+              console.warn('[nav] mark-notif:', err);
+            }
+          }
+
+          if (item.getAttribute('href') === '#') {
+            e.preventDefault();
+            return;
+          }
+
+          setTimeout(closeMenu, 100);
+        });
+      });
+    }
+
+    async function openMenu() {
+      if (!menu) {
+        menu = buildMenu();
+        document.body.appendChild(menu);
+      }
+      menu.hidden = false;
+      btn.setAttribute('aria-expanded', 'true');
+      positionNotifMenu(menu, btn);
+
+      const rows = await loadLatest();
+      renderList(menu, rows);
+      positionNotifMenu(menu, btn);
+    }
+
+    function closeMenu() {
+      if (menu) menu.hidden = true;
+      btn.setAttribute('aria-expanded', 'false');
+    }
+
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      menu && !menu.hidden ? closeMenu() : openMenu();
     });
-    window.addEventListener('scroll', function () {
-      if (!menu.hidden) position();
+
+    window.addEventListener('resize', () => {
+      if (menu && !menu.hidden) positionNotifMenu(menu, btn);
+    });
+    window.addEventListener('scroll', () => {
+      if (menu && !menu.hidden) positionNotifMenu(menu, btn);
     }, true);
+
+    loadCount();
+
+    /* Realtime */
+    try {
+      if (window.db && window.db.channel) {
+        window.db
+          .channel('notifications-nav')
+          .on('postgres_changes',
+              { event: 'INSERT', schema: 'public', table: 'notifications' },
+              () => {
+                loadCount();
+                if (menu && !menu.hidden) {
+                  loadLatest().then((rows) => renderList(menu, rows));
+                }
+              })
+          .on('postgres_changes',
+              { event: 'UPDATE', schema: 'public', table: 'notifications' },
+              () => { loadCount(); })
+          .subscribe();
+      }
+    } catch (e) {
+      console.warn('[nav] realtime indisponível:', e);
+    }
   }
 
   /* =========================================================
@@ -902,7 +1318,8 @@
   }
 
   /* =========================================================
-     Estilos
+     Estilos (mesmo do arquivo anterior — omitidos por brevidade,
+     copie o bloco CSS completo do arquivo anterior)
      ========================================================= */
   function injectStyles() {
     if (document.getElementById('devhub-topnav-styles')) return;
@@ -977,17 +1394,12 @@
                     border-color var(--transition);
         position: relative;
       }
-      .app-tab:hover {
-        background: var(--surface); color: var(--text); border-color: var(--border);
-      }
+      .app-tab:hover { background: var(--surface); color: var(--text); border-color: var(--border); }
       .app-tab.is-active {
         background: var(--surface); color: var(--text); border-color: var(--border);
         box-shadow: 0 -2px 0 0 var(--accent) inset;
       }
-      .app-tab__icon {
-        display: inline-flex; flex: none; width: 14px; height: 14px;
-        color: var(--text-muted);
-      }
+      .app-tab__icon { display: inline-flex; flex: none; width: 14px; height: 14px; color: var(--text-muted); }
       .app-tab__icon svg { width: 14px; height: 14px; }
       .app-tab.is-active .app-tab__icon { color: var(--accent); }
       .app-tab__label {
@@ -1000,13 +1412,10 @@
         border: 0; border-radius: 5px;
         background: transparent; color: var(--text-muted);
         cursor: pointer; opacity: 0.55;
-        transition: opacity var(--transition), background-color var(--transition),
-                    color var(--transition);
+        transition: opacity var(--transition), background-color var(--transition), color var(--transition);
       }
       .app-tab__close svg { width: 11px; height: 11px; }
-      .app-tab__close:hover {
-        opacity: 1; background: var(--danger-soft); color: var(--danger);
-      }
+      .app-tab__close:hover { opacity: 1; background: var(--danger-soft); color: var(--danger); }
       .app-tab.is-active .app-tab__close { opacity: 0.75; }
 
       .app-tabs__new {
@@ -1015,8 +1424,7 @@
         border: 1px solid transparent; border-radius: 8px;
         background: transparent; color: var(--text-muted);
         cursor: pointer;
-        transition: background-color var(--transition), color var(--transition),
-                    border-color var(--transition);
+        transition: background-color var(--transition), color var(--transition), border-color var(--transition);
       }
       .app-tabs__new svg { width: 15px; height: 15px; }
       .app-tabs__new:hover,
@@ -1026,6 +1434,122 @@
       .app-tabs__new:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
       .app-tabs__spacer { flex: 0 0 12px; }
+
+      .app-tabs__bell {
+        position: relative; flex: none; align-self: center;
+        display: grid; place-items: center;
+        width: 36px; height: 36px; margin: 0 4px;
+        border: 1px solid transparent; border-radius: 9px;
+        background: transparent; color: var(--text-muted);
+        cursor: pointer;
+        transition: background-color var(--transition), color var(--transition), border-color var(--transition);
+      }
+      .app-tabs__bell:hover,
+      .app-tabs__bell[aria-expanded="true"] {
+        background: var(--surface); border-color: var(--border); color: var(--text);
+      }
+      .app-tabs__bell:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+      .app-tabs__bell svg { width: 17px; height: 17px; }
+
+      .app-tabs__bell-badge {
+        position: absolute; top: -2px; right: -2px;
+        min-width: 16px; height: 16px; padding: 0 4px;
+        border-radius: 999px; background: var(--danger); color: #fff;
+        font-size: 10px; font-weight: 700; line-height: 16px; text-align: center;
+        box-shadow: 0 0 0 2px var(--surface-2);
+      }
+
+      .tnav-notif {
+        position: fixed; top: 0; left: 0;
+        max-height: 520px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        box-shadow: 0 20px 40px -12px rgba(16, 24, 40, 0.24);
+        z-index: 9999;
+        overflow: hidden;
+        display: flex; flex-direction: column;
+        animation: tnav-pop 140ms ease-out;
+      }
+      .tnav-notif[hidden] { display: none !important; }
+
+      .tnav-notif__head {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 10px; padding: 12px 14px;
+        border-bottom: 1px solid var(--border);
+        font-size: 13px; font-weight: 700; color: var(--text);
+      }
+      .tnav-notif__mark {
+        border: 0; background: transparent;
+        color: var(--accent); font-family: inherit;
+        font-size: 11.5px; font-weight: 600;
+        cursor: pointer; padding: 4px 6px; border-radius: 6px;
+      }
+      .tnav-notif__mark:hover { background: var(--accent-soft); }
+      .tnav-notif__mark:disabled { opacity: .6; cursor: progress; }
+
+      .tnav-notif__list { flex: 1 1 auto; overflow-y: auto; max-height: 380px; }
+
+      .tnav-notif__item {
+        display: flex; gap: 10px;
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--border);
+        text-decoration: none; color: inherit;
+        transition: background-color 140ms ease;
+      }
+      .tnav-notif__item:hover { background: var(--surface-2); }
+      .tnav-notif__item.is-unread { background: var(--accent-soft); }
+      .tnav-notif__item:last-child { border-bottom: 0; }
+
+      .tnav-notif__dot {
+        flex: none; width: 8px; height: 8px; margin-top: 5px;
+        border-radius: 50%; background: var(--text-muted);
+      }
+      .tnav-notif__dot[data-kind="success"] { background: #10b981; }
+      .tnav-notif__dot[data-kind="warn"]    { background: #f59e0b; }
+      .tnav-notif__dot[data-kind="danger"]  { background: #dc2626; }
+      .tnav-notif__dot[data-kind="info"]    { background: var(--accent); }
+
+      .tnav-notif__body {
+        display: flex; flex-direction: column; gap: 3px;
+        min-width: 0; flex: 1 1 auto;
+      }
+      .tnav-notif__title {
+        font-size: 13px; font-weight: 600;
+        color: var(--text); line-height: 1.35;
+      }
+      .tnav-notif__msg {
+        font-size: 12.5px; color: var(--text-soft); line-height: 1.4;
+        overflow: hidden; display: -webkit-box;
+        -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+      }
+      .tnav-notif__time {
+        font-size: 11px; color: var(--text-muted); margin-top: 2px;
+      }
+
+      .tnav-notif__empty {
+        display: flex; flex-direction: column; align-items: center;
+        gap: 8px; padding: 40px 20px;
+        color: var(--text-muted); font-size: 13px;
+      }
+      .tnav-notif__empty svg { width: 28px; height: 28px; color: var(--border-strong); }
+
+      .tnav-notif__loading {
+        padding: 24px 14px; text-align: center;
+        font-size: 13px; color: var(--text-muted);
+      }
+
+      .tnav-notif__foot {
+        padding: 10px 14px;
+        border-top: 1px solid var(--border);
+        background: var(--surface-2);
+        text-align: center;
+      }
+      .tnav-notif__see-all {
+        font-size: 12.5px; font-weight: 600;
+        color: var(--accent); text-decoration: none;
+      }
+      .tnav-notif__see-all:hover { text-decoration: underline; }
 
       .app-tabs__search {
         position: relative; flex: 0 0 260px;
@@ -1103,9 +1627,7 @@
         letter-spacing: 0.02em; white-space: nowrap;
       }
 
-      .app-tabs__user {
-        position: relative; flex: none; align-self: center; margin-left: 8px;
-      }
+      .app-tabs__user { position: relative; flex: none; align-self: center; margin-left: 8px; }
       .app-tabs__user-btn {
         display: inline-flex; align-items: center; gap: 10px;
         height: 42px; padding: 0 12px 0 4px;
@@ -1179,9 +1701,7 @@
       .app-tabs__user-item--danger { color: var(--danger); }
       .app-tabs__user-item--danger svg { color: var(--danger); }
       .app-tabs__user-item--danger:hover { background: var(--danger-soft); }
-      .app-tabs__user-sep {
-        height: 1px; margin: 4px 6px; background: var(--border);
-      }
+      .app-tabs__user-sep { height: 1px; margin: 4px 6px; background: var(--border); }
 
       .tnav-menu {
         position: fixed; top: 0; left: 0;
@@ -1233,9 +1753,7 @@
         flex: none; width: 6px; height: 6px; border-radius: 50%;
         background: var(--accent); opacity: 0.7;
       }
-      .tnav-menu__sep {
-        height: 1px; margin: 6px 8px; background: var(--border);
-      }
+      .tnav-menu__sep { height: 1px; margin: 6px 8px; background: var(--border); }
       .tnav-menu__item--danger { color: var(--danger); }
       .tnav-menu__item--danger:hover { background: var(--danger-soft); }
       .tnav-menu__item--danger .tnav-menu__icon svg,
@@ -1272,15 +1790,13 @@
         .app-tabs__user-btn { padding: 0 4px 0 2px; height: 38px; }
       }
       @media (max-width: 720px) {
-        .app-tabs {
-          height: 52px; min-height: 52px;
-          padding: 0 8px; gap: 4px;
-        }
+        .app-tabs { height: 52px; min-height: 52px; padding: 0 8px; gap: 4px; }
         .app-tabs__brand { display: none; }
         .app-tab { max-width: 140px; font-size: 12px; height: 32px; }
         .app-tab__label { font-size: 11.5px; }
         .app-tabs__search { flex: 0 0 130px; }
         .app-tabs__new { width: 32px; height: 32px; margin: 0 2px; }
+        .app-tabs__bell { width: 32px; height: 32px; margin: 0 2px; }
       }
     `;
 
@@ -1330,6 +1846,11 @@
         ICONS.plus +
       '</button>' +
       '<span class="app-tabs__spacer"></span>' +
+      '<button type="button" class="app-tabs__bell" id="app-tabs-bell" ' +
+              'aria-label="Notificações" aria-expanded="false">' +
+        ICONS.bell +
+        '<span class="app-tabs__bell-badge" id="app-tabs-bell-badge" hidden>0</span>' +
+      '</button>' +
       '<div class="app-tabs__search" id="tnav-search">' +
         '<span class="tnav-search__icon">' + ICONS.search + '</span>' +
         '<input type="search" class="tnav-search__input" id="tnav-search-input" ' +
@@ -1389,6 +1910,7 @@
     renderTabs();
     setupSearch();
     setupUserDropdown();
+    setupNotifications();
     bindLogout(bar);
     bindLogout(document.body);
     syncBarUserInfo();
@@ -1404,13 +1926,8 @@
      Busca (command palette)
      ========================================================= */
   const searchState = {
-    input: null,
-    results: null,
-    clear: null,
-    wrap: null,
-    index: [],
-    filtered: [],
-    selectedIdx: -1
+    input: null, results: null, clear: null, wrap: null,
+    index: [], filtered: [], selectedIdx: -1
   };
 
   function setupSearch() {
@@ -1423,11 +1940,7 @@
 
     searchState.index = visibleItems().map(function (it) {
       return {
-        id: it.id,
-        label: it.label,
-        href: it.href,
-        icon: it.icon,
-        module: it.group
+        id: it.id, label: it.label, href: it.href, icon: it.icon, module: it.group
       };
     });
 
@@ -1446,14 +1959,11 @@
   function onSearchInput() {
     const q = String(searchState.input.value || '').trim().toLowerCase();
 
-    if (searchState.wrap) {
-      searchState.wrap.classList.toggle('has-value', q.length > 0);
-    }
+    if (searchState.wrap) searchState.wrap.classList.toggle('has-value', q.length > 0);
 
     if (!q) { closeResults(); return; }
 
     const words = q.split(/\s+/).filter(Boolean);
-
     searchState.filtered = searchState.index.filter(function (item) {
       const haystack = (item.label + ' ' + (item.module || '')).toLowerCase();
       return words.every(function (w) { return haystack.indexOf(w) !== -1; });
@@ -1517,9 +2027,7 @@
     });
 
     const current = wrap.querySelector('.tnav-search__item.is-selected');
-    if (current && current.scrollIntoView) {
-      current.scrollIntoView({ block: 'nearest' });
-    }
+    if (current && current.scrollIntoView) current.scrollIntoView({ block: 'nearest' });
   }
 
   function onSearchKeydown(e) {
@@ -1548,10 +2056,7 @@
       const item = searchState.filtered[searchState.selectedIdx];
       if (item) {
         const found = findItemById(item.id);
-        if (found) {
-          clearSearch();
-          openItemAsTab(found);
-        }
+        if (found) { clearSearch(); openItemAsTab(found); }
       }
     }
   }

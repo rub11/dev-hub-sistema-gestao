@@ -1123,3 +1123,204 @@ body[data-page="compras-nova"] input.is-autofilled {
 [data-theme="dark"] .cmp-save-option input:checked + .cmp-save-option__box {
   background: color-mix(in srgb, var(--surface) 90%, #ffffff 10%);
 }
+/* =========================================================
+   MODAL · FORNECEDOR (cadastro inline)
+   ---------------------------------------------------------
+   Usado em:
+     • compras-nova.html (botão "+ Novo" ao lado do select)
+     • fornecedores.html (botão "Novo fornecedor")
+   ========================================================= */
+
+/* ---------- Linha CNPJ: input + botão lado a lado ---------- */
+.cmp-cnpj {
+  display: flex !important;
+  align-items: flex-end;
+  gap: 10px;
+  width: 100%;
+}
+
+.cmp-cnpj__field {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.cmp-cnpj__field > label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-soft);
+}
+
+.cmp-cnpj__field > input {
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background-color: var(--surface);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14.5px;
+  outline: none;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+.cmp-cnpj__field > input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-ring);
+}
+
+.cmp-cnpj__btn {
+  flex: none;
+  height: 44px;
+  min-width: 148px;
+  padding: 0 18px;
+  gap: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #fff;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 160ms ease, box-shadow 160ms ease;
+}
+.cmp-cnpj__btn:hover { background: var(--accent-hover); }
+.cmp-cnpj__btn:disabled { opacity: 0.65; cursor: progress; }
+.cmp-cnpj__btn svg { width: 15px; height: 15px; flex: none; }
+
+/* ---------- Hint abaixo da linha CNPJ ---------- */
+.cmp-cnpj__hint {
+  margin: 10px 0 0 !important;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+.cmp-cnpj__hint strong { color: var(--text-soft); font-weight: 600; }
+
+/* ---------- Corpo do modal: espaçamento uniforme ---------- */
+.cmp-modal__body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* ---------- Grid do modal (2 colunas) ---------- */
+.cmp-modal__body .cmp-grid--2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+/* Campo que ocupa a linha toda */
+.cmp-modal__body .field[style*="grid-column"] {
+  grid-column: 1 / -1;
+}
+
+/* ---------- Campos dentro do modal ---------- */
+.cmp-modal__body .field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.cmp-modal__body .field > label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-soft);
+  line-height: 1.35;
+}
+.cmp-modal__body .field > input,
+.cmp-modal__body .field > select,
+.cmp-modal__body .field > textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background-color: var(--surface);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14.5px;
+  outline: none;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+.cmp-modal__body .field > input::placeholder {
+  color: var(--text-muted);
+}
+.cmp-modal__body .field > input:hover {
+  border-color: var(--border-strong);
+}
+.cmp-modal__body .field > input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-ring);
+}
+
+/* ---------- Erro inline ---------- */
+.cmp-modal__body .cmp-error {
+  margin: 0;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: var(--danger-soft);
+  border: 1px solid var(--danger-border);
+  color: var(--danger);
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+/* ---------- Spinner do botão (loading) ---------- */
+.cmp-cnpj__spinner {
+  display: none;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255,255,255,0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: cmp-spin 700ms linear infinite;
+}
+.cmp-cnpj__btn.is-loading .cmp-cnpj__spinner,
+#f-save.is-loading .cmp-cnpj__spinner,
+#sup-save.is-loading .cmp-cnpj__spinner {
+  display: inline-block;
+}
+.cmp-cnpj__btn.is-loading .cmp-cnpj__icon-search {
+  display: none;
+}
+@keyframes cmp-spin { to { transform: rotate(360deg); } }
+
+/* ---------- Destaque quando campo é autopreenchido ---------- */
+@keyframes cmp-field-filled {
+  from { background-color: var(--accent-soft); }
+  to   { background-color: var(--surface); }
+}
+.cmp-modal__body input.is-autofilled {
+  animation: cmp-field-filled 1200ms ease-out;
+}
+
+/* ---------- Responsivo: empilha em telas pequenas ---------- */
+@media (max-width: 560px) {
+  .cmp-cnpj {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .cmp-cnpj__btn {
+    width: 100%;
+  }
+  .cmp-modal__body .cmp-grid--2 {
+    grid-template-columns: 1fr;
+  }
+  .cmp-modal__body .field[style*="grid-column"] {
+    grid-column: auto;
+  }
+}
+
+/* ---------- Dark mode: ajustes finos ---------- */
+[data-theme="dark"] .cmp-cnpj__field > input:focus,
+[data-theme="dark"] .cmp-modal__body .field > input:focus {
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.28);
+}

@@ -11,15 +11,16 @@
    CORREÇÕES APLICADAS:
    1. `openEditModal` respeita o tipo: PJ preenche
       `#customer-document-pj`; PF preenche `#customer-document`.
-      Antes, CNPJ era escrito no campo de CPF.
    2. Race condition em `openEditModal`: token descarta respostas
       obsoletas quando o usuário abre outro cliente antes da
       primeira RPC terminar.
    3. Focus em `els.company` quando é PJ, `els.name` quando é PF.
    4. `numberOrNull` aceita "1.234,56" (BR) e "1234.56" (US).
    5. Guards de null em `els.type`, `els.modal` e pontos críticos.
-   6. `setDeleting` seta `aria-busy` (consistente com outros
-      módulos).
+   6. `setDeleting` seta `aria-busy` (consistente com outros módulos).
+   7. Filtra `is_customer = true` — desde a migração de "Parceiros",
+      a tabela `customers` guarda clientes, fornecedores, etc.
+      Esta tela deve listar apenas clientes.
    ========================================================= */
 
 (function () {
@@ -49,8 +50,7 @@
     }
   };
 
-  /* CORREÇÃO #2 (continuação): token de geração para o
-     openEditModal descartar respostas obsoletas. */
+  /* Token de geração para o openEditModal descartar respostas obsoletas. */
   let editGeneration = 0;
 
   document.addEventListener('DOMContentLoaded', init);
@@ -255,7 +255,7 @@
   function matches(v, t) { return v && String(v).toLowerCase().includes(t); }
 
   /* =========================================================
-     Carregar clientes
+     Carregar clientes (apenas is_customer = true)
      ========================================================= */
   async function loadCustomers() {
     showLoading(true);
@@ -269,6 +269,7 @@
         customer_emails(email, is_primary),
         customer_addresses(city, state, is_primary)
       `)
+      .eq('is_customer', true)
       .order('created_at', { ascending: false });
 
     showLoading(false);
@@ -534,7 +535,6 @@
       if (e.key === 'Escape' && !els.modal.hidden) closeCustomerModal();
     });
 
-    /* CORREÇÃO #2: guards de null */
     if (els.type) {
       els.type.addEventListener('change', onTypeChange);
     }
@@ -886,7 +886,6 @@
       showToast('Você não tem permissão para criar clientes.', 'error');
       return;
     }
-    /* Invalida qualquer fetch em curso */
     editGeneration += 1;
 
     state.editingId = null;
@@ -903,7 +902,6 @@
       return;
     }
 
-    /* CORREÇÃO #2: geração + guard de modal */
     editGeneration += 1;
     const myGen = editGeneration;
 
@@ -921,7 +919,6 @@
       });
       if (error) throw error;
 
-      /* Descarta se outra chamada começou */
       if (myGen !== editGeneration) return;
 
       const c = data && data.customer ? data.customer : {};
@@ -953,7 +950,6 @@
       if (els.type) els.type.value = c.type || 'PF';
       if (els.status) els.status.value = c.status || 'active';
 
-      /* CORREÇÃO #1: escreve o documento no campo certo */
       const isPJ = c.type === 'PJ';
       if (isPJ) {
         if (els.documentPJ) els.documentPJ.value = c.cpf_cnpj || '';
@@ -1002,7 +998,6 @@
       onTypeChange();
       clearFeedback();
 
-      /* CORREÇÃO #3: focus no campo certo */
       if (isPJ && els.company) els.company.focus();
       else if (!isPJ && els.name) els.name.focus();
     } catch (error) {
@@ -1101,6 +1096,8 @@
       commercial_notes: els.commNotes.value.trim() || null,
       notes: els.notes.value.trim() || null,
       status: els.status.value || 'active',
+      /* Marca como cliente — desde a migração de Parceiros. */
+      is_customer: true,
       phone: phones[0] ? phones[0].phone : null,
       email: emails[0] ? emails[0].email : null,
       address: addresses[0] ? [addresses[0].street, addresses[0].number].filter(Boolean).join(', ') : null
@@ -1132,7 +1129,6 @@
     }
   }
 
-  /* CORREÇÃO #4: aceita "1.234,56" (BR) e "1234.56" (US) */
   function numberOrNull(v) {
     if (v === '' || v === null || v === undefined) return null;
     if (typeof v === 'number') return Number.isFinite(v) ? v : null;
@@ -1237,7 +1233,6 @@
     }
   }
 
-  /* CORREÇÃO #6: aria-busy consistente com outros módulos. */
   function setDeleting(v) {
     state.deleting = v;
     if (!confirmEls.btn) return;
@@ -1328,4 +1323,4 @@
     const el = document.getElementById(id);
     if (el) el.textContent = text;
   }
-})();
+})(); 
