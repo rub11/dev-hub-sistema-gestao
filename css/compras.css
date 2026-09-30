@@ -1093,3 +1093,25 @@ body[data-page="fornecedores"] .cmp-content {
   .cmp-modal__dialog,
   .cmp-loading::after { animation: none !important; }
 }
+
+/* =========================================================
+   MODAL DE PAGAMENTO E CANCELAMENTO
+   ========================================================= */
+.cmp-modal textarea {
+  width: 100%;
+  min-height: 90px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background-color: var(--surface);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14.5px;
+  resize: vertical;
+  line-height: 1.5;
+}
+.cmp-modal textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-ring);
+}

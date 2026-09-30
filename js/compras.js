@@ -2,18 +2,12 @@
    DEV HUB · Módulo Compras · UI + integração Supabase
    ---------------------------------------------------------
    Índice:
-     1. Helpers (DOM, formatação, toast)
+     1. Helpers (DOM, formatação, toast, val/setVal)
      2. Constantes (labels)
      3. API (wrappers Supabase)
-     4. CNPJ + SupplierModal (cadastro inline)
+     4. CNPJ (validação, máscara, lookup, SupplierModal)
      5. Páginas (uma função por data-page)
      6. Bootstrap
-   ---------------------------------------------------------
-   Roteia por body[data-page]:
-     • compras           → lista
-     • compras-nova      → lançar
-     • compras-receber   → estoquista
-     • fornecedores      → CRUD
    ========================================================= */
 
 (function () {
@@ -24,6 +18,22 @@
      ========================================================= */
   const $  = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+
+  /* Lê .value com segurança — retorna '' se o elemento não existir */
+  const val = (sel, fallback = '') => {
+    const el = $(sel);
+    if (!el) {
+      console.warn('[compras] elemento não encontrado:', sel);
+      return fallback;
+    }
+    return el.value == null ? fallback : el.value;
+  };
+
+  /* Escreve .value com segurança */
+  const setVal = (sel, v) => {
+    const el = $(sel);
+    if (el) el.value = v == null ? '' : v;
+  };
 
   const db = () => {
     if (window.db && window.db.from) return window.db;
@@ -94,7 +104,7 @@
   };
 
   /* =========================================================
-     3) API (wrappers Supabase)
+     3) API
      ========================================================= */
   const API = {
     async hasCapability(cap) {
@@ -105,7 +115,6 @@
       } catch (e) { console.error(e); return false; }
     },
 
-    /* ---------- Compras ---------- */
     async listPurchases(filters = {}) {
       let q = db().from('purchases').select(`
         id, code, status, supplier_name, supplier_id,
@@ -246,7 +255,6 @@
       return data;
     },
 
-    /* ---------- Fornecedores ---------- */
     async listSuppliers(search) {
       let q = db().from('suppliers')
         .select('id, name, doc, email, phone, active, created_at')
@@ -291,7 +299,6 @@
       if (error) throw error;
     },
 
-    /* ---------- Produtos ---------- */
     async listProducts(search) {
       let q = db().from('products')
         .select('id, name, code, price, stock')
@@ -306,21 +313,14 @@
   };
 
   /* =========================================================
-     4) CNPJ + SUPPLIER MODAL (cadastro inline)
-     ---------------------------------------------------------
-     Usado pela tela de Nova Compra para cadastrar fornecedor
-     sem sair do fluxo, com consulta automática por CNPJ.
+     4) CNPJ
      ========================================================= */
-
-  /* ---------- Validação local de CNPJ (dígitos verificadores) ---------- */
   function validateCNPJ(cnpj) {
     const n = String(cnpj || '').replace(/\D/g, '');
     if (n.length !== 14) return false;
     if (/^(\d)\1{13}$/.test(n)) return false;
-
     const calc = (base) => {
-      let sum = 0;
-      let pos = base.length - 7;
+      let sum = 0, pos = base.length - 7;
       for (let i = 0; i < base.length; i++) {
         sum += Number(base[i]) * pos--;
         if (pos < 2) pos = 9;
@@ -328,13 +328,11 @@
       const r = sum % 11;
       return r < 2 ? 0 : 11 - r;
     };
-
     const d1 = calc(n.slice(0, 12));
     const d2 = calc(n.slice(0, 12) + d1);
     return n.endsWith(String(d1) + String(d2));
   }
 
-  /* ---------- Máscara visual de CNPJ ---------- */
   function maskCNPJ(v) {
     const n = String(v || '').replace(/\D/g, '').slice(0, 14);
     return n
@@ -344,14 +342,12 @@
       .replace(/(\d{4})(\d)/, '$1-$2');
   }
 
-  /* ---------- Máscara simples para telefone ---------- */
   function maskPhone(v) {
     const n = String(v || '').replace(/\D/g, '').slice(0, 11);
     if (n.length <= 10) return n.replace(/^(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3').trim();
     return n.replace(/^(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3').trim();
   }
 
-  /* ---------- Normaliza endereço da BrasilAPI/ReceitaWS ---------- */
   function buildAddress(d) {
     const parts = [];
     if (d.logradouro) parts.push(d.logradouro + (d.numero ? ', ' + d.numero : ''));
@@ -366,7 +362,6 @@
     return parts.filter(Boolean).join(' · ');
   }
 
-  /* ---------- Consulta CNPJ (BrasilAPI → ReceitaWS) ---------- */
   async function lookupCNPJ(cnpjRaw) {
     const cnpj = String(cnpjRaw || '').replace(/\D/g, '');
     if (cnpj.length !== 14) throw new Error('CNPJ deve ter 14 dígitos.');
@@ -427,7 +422,6 @@
     throw new Error('Não foi possível consultar o CNPJ agora. Preencha manualmente.');
   }
 
-  /* ---------- Helpers de UI ---------- */
   function setLoading(btn, on) {
     if (!btn) return;
     btn.classList.toggle('is-loading', !!on);
@@ -443,18 +437,12 @@
 
   /* ---------- SupplierModal ---------- */
   const SupplierModal = (() => {
-    let modal = null;
-    let $sup = null;
-    let onSaved = null;
-    let bound = false;
+    let modal = null, $sup = null, onSaved = null, bound = false;
 
     function init() {
       if (bound) return true;
       modal = document.getElementById('supplier-modal');
-      if (!modal) {
-        console.warn('[compras] modal de fornecedor não encontrado no HTML.');
-        return false;
-      }
+      if (!modal) { console.warn('[compras] modal de fornecedor não encontrado.'); return false; }
 
       $sup = {
         cnpj:    document.getElementById('sup-cnpj'),
@@ -470,36 +458,19 @@
         save:    document.getElementById('sup-save')
       };
 
-      /* Fechar */
       modal.querySelectorAll('[data-close]').forEach((el) =>
         el.addEventListener('click', close)
       );
       document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && !modal.hidden) close();
       });
-
-      /* Máscara CNPJ */
-      $sup.cnpj && $sup.cnpj.addEventListener('input', (e) => {
-        e.target.value = maskCNPJ(e.target.value);
+      $sup.cnpj    && $sup.cnpj.addEventListener('input', (e) => { e.target.value = maskCNPJ(e.target.value); });
+      $sup.cnpj    && $sup.cnpj.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); doSearch(); }
       });
-
-      /* Enter no campo dispara busca */
-      $sup.cnpj && $sup.cnpj.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          doSearch();
-        }
-      });
-
-      /* Máscara telefone */
-      $sup.phone && $sup.phone.addEventListener('input', (e) => {
-        e.target.value = maskPhone(e.target.value);
-      });
-
-      /* Buscar / Salvar */
-      $sup.search && $sup.search.addEventListener('click', doSearch);
-      $sup.save   && $sup.save.addEventListener('click', doSave);
-
+      $sup.phone   && $sup.phone.addEventListener('input', (e) => { e.target.value = maskPhone(e.target.value); });
+      $sup.search  && $sup.search.addEventListener('click', doSearch);
+      $sup.save    && $sup.save.addEventListener('click', doSave);
       bound = true;
       return true;
     }
@@ -509,39 +480,26 @@
       const raw = $sup.cnpj.value;
       hideError();
       if ($sup.hint) $sup.hint.innerHTML = 'Consultando Receita Federal...';
-
       if (!raw.replace(/\D/g, '').length) {
         showError('Digite um CNPJ para buscar.');
-        if ($sup.hint) {
-          $sup.hint.innerHTML =
-            'Digite o CNPJ e clique em <strong>Buscar dados</strong> para preencher automaticamente.';
-        }
+        if ($sup.hint) $sup.hint.innerHTML = 'Digite o CNPJ e clique em <strong>Buscar dados</strong>.';
         return;
       }
-
       setLoading($sup.search, true);
       try {
         const info = await lookupCNPJ(raw);
-
         if (info.name    && $sup.name)    $sup.name.value    = info.name;
         if (info.fantasy && $sup.fantasy) $sup.fantasy.value = info.fantasy;
         if (info.email   && $sup.email)   $sup.email.value   = info.email;
         if (info.phone   && $sup.phone)   $sup.phone.value   = maskPhone(info.phone);
         if (info.address && $sup.address) $sup.address.value = info.address;
-
-        [$sup.name, $sup.fantasy, $sup.email, $sup.phone, $sup.address]
-          .forEach(flashFilled);
-
-        if ($sup.hint) {
-          $sup.hint.innerHTML =
-            `Dados preenchidos via <strong>${info.fantasy || info.name}</strong>. Confira e ajuste se precisar.`;
-        }
+        [$sup.name, $sup.fantasy, $sup.email, $sup.phone, $sup.address].forEach(flashFilled);
+        if ($sup.hint) $sup.hint.innerHTML =
+          `Dados preenchidos via <strong>${info.fantasy || info.name}</strong>.`;
       } catch (e) {
         console.warn(e);
         showError(e.message);
-        if ($sup.hint) {
-          $sup.hint.innerHTML = 'Se a busca falhar, preencha os campos manualmente.';
-        }
+        if ($sup.hint) $sup.hint.innerHTML = 'Se a busca falhar, preencha manualmente.';
       } finally {
         setLoading($sup.search, false);
       }
@@ -550,14 +508,8 @@
     async function doSave() {
       if (!$sup) return;
       hideError();
-
       const name = ($sup.name && $sup.name.value || '').trim();
-      if (!name) {
-        showError('Informe a razão social ou nome.');
-        $sup.name && $sup.name.focus();
-        return;
-      }
-
+      if (!name) { showError('Informe a razão social ou nome.'); $sup.name && $sup.name.focus(); return; }
       setLoading($sup.save, true);
       try {
         const created = await API.createSupplier({
@@ -569,10 +521,8 @@
           notes:   ($sup.contact && $sup.contact.value || '').trim() || null,
           active:  true
         });
-
         if (typeof onSaved === 'function') onSaved(created);
-        close();
-        reset();
+        close(); reset();
         toast('Fornecedor cadastrado com sucesso.');
       } catch (e) {
         console.error(e);
@@ -590,13 +540,11 @@
       setTimeout(() => $sup.cnpj && $sup.cnpj.focus(), 60);
       return true;
     }
-
     function close() {
       if (!modal) return;
       modal.hidden = true;
       document.body.style.overflow = '';
     }
-
     function reset() {
       if (!$sup) return;
       ['cnpj','name','fantasy','email','phone','contact','address'].forEach((k) => {
@@ -604,12 +552,9 @@
         if (el && 'value' in el) el.value = '';
       });
       hideError();
-      if ($sup.hint) {
-        $sup.hint.innerHTML =
-          'Digite o CNPJ e clique em <strong>Buscar dados</strong> para preencher automaticamente.';
-      }
+      if ($sup.hint) $sup.hint.innerHTML =
+        'Digite o CNPJ e clique em <strong>Buscar dados</strong>.';
     }
-
     function showError(msg) {
       if (!$sup || !$sup.error) return;
       $sup.error.textContent = msg;
@@ -620,17 +565,13 @@
       $sup.error.hidden = true;
       $sup.error.textContent = '';
     }
-
     return { init, open, close, reset };
   })();
 
-  /* ---------- Integração com o formulário de nova compra ---------- */
   function initSupplierInline(selectEl) {
     if (!selectEl) return;
-
     const newBtn = document.getElementById('cmp-new-supplier');
     if (!newBtn) return;
-
     newBtn.addEventListener('click', () => {
       const ok = SupplierModal.open((created) => {
         const opt = document.createElement('option');
@@ -641,10 +582,7 @@
         selectEl.value = created.id;
         selectEl.dispatchEvent(new Event('change'));
       });
-
-      if (!ok) {
-        toast('Não foi possível abrir o cadastro. Recarregue a página.', 'error');
-      }
+      if (!ok) toast('Não foi possível abrir o cadastro. Recarregue a página.', 'error');
     });
   }
 
@@ -692,8 +630,7 @@
               <div class="cmp-empty__icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M3 3h2l2.4 12.4a2 2 0 0 0 2 1.6h9.2a2 2 0 0 0 2-1.6L22 7H6"/>
-                  <circle cx="9" cy="20" r="1.4"/>
-                  <circle cx="18" cy="20" r="1.4"/>
+                  <circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/>
                 </svg>
               </div>
               <h3 class="cmp-empty__title">
@@ -778,24 +715,25 @@
 
     /* Código sequencial */
     try {
-      $('#cmp-code').value = await API.nextPurchaseCode();
+      const code = await API.nextPurchaseCode();
+      setVal('#cmp-code', code);
     } catch (e) { /* ignora */ }
 
-    /* Fornecedores (com fallback se falhar) */
+    /* Fornecedores */
     const supplierSel = $('#cmp-supplier');
-    try {
-      const list = await API.listSuppliers();
-      supplierSel.innerHTML = '<option value="">— Selecione —</option>' +
-        list.map((s) =>
-          `<option value="${s.id}" data-doc="${escapeHTML(s.doc || '')}">${escapeHTML(s.name)}</option>`
-        ).join('');
-    } catch (e) {
-      console.error(e);
-      supplierSel.innerHTML = '<option value="">Erro ao carregar fornecedores</option>';
+    if (supplierSel) {
+      try {
+        const list = await API.listSuppliers();
+        supplierSel.innerHTML = '<option value="">— Selecione —</option>' +
+          list.map((s) =>
+            `<option value="${s.id}" data-doc="${escapeHTML(s.doc || '')}">${escapeHTML(s.name)}</option>`
+          ).join('');
+      } catch (e) {
+        console.error(e);
+        supplierSel.innerHTML = '<option value="">Erro ao carregar fornecedores</option>';
+      }
+      initSupplierInline(supplierSel);
     }
-
-    /* Ativa cadastro inline SEMPRE (independente do carregamento acima) */
-    initSupplierInline(supplierSel);
 
     /* Itens */
     const itemsWrap = $('#cmp-items-body');
@@ -812,17 +750,21 @@
         const el = document.querySelector(`[data-line-total="${i}"]`);
         if (el) el.textContent = fmtBRL(it.total_cents);
       });
-      const disc  = parseBRLToCents($('#cmp-discount').value);
-      const ship  = parseBRLToCents($('#cmp-shipping').value);
-      const other = parseBRLToCents($('#cmp-other').value);
+      const disc  = parseBRLToCents(val('#cmp-discount'));
+      const ship  = parseBRLToCents(val('#cmp-shipping'));
+      const other = parseBRLToCents(val('#cmp-other'));
       const total = Math.max(0, subtotal - disc + ship + other);
 
-      $('#cmp-subtotal').textContent = fmtBRL(subtotal);
-      $('#cmp-total').textContent    = fmtBRL(total);
+      const subEl   = $('#cmp-subtotal');
+      const totalEl = $('#cmp-total');
+      if (subEl)   subEl.textContent   = fmtBRL(subtotal);
+      if (totalEl) totalEl.textContent = fmtBRL(total);
+
       return { subtotal, disc, ship, other, total };
     }
 
     function renderItems() {
+      if (!itemsWrap) return;
       itemsWrap.innerHTML = items.map((it, i) => `
         <div class="cmp-items__row" data-row="${i}">
           <select data-field="product_id" data-idx="${i}">
@@ -877,35 +819,40 @@
       });
     }
 
-    $('#cmp-add-item').addEventListener('click', () => {
-      items.push({ description: '', unit: 'un', quantity: 1, unit_price_cents: 0, discount_cents: 0 });
-      renderItems();
-      recalcTotals();
-    });
+    const addBtn = $('#cmp-add-item');
+    if (addBtn) {
+      addBtn.addEventListener('click', () => {
+        items.push({ description: '', unit: 'un', quantity: 1, unit_price_cents: 0, discount_cents: 0 });
+        renderItems();
+        recalcTotals();
+      });
+    }
 
     ['cmp-discount', 'cmp-shipping', 'cmp-other'].forEach((id) => {
-      document.getElementById(id).addEventListener('input', recalcTotals);
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('input', recalcTotals);
     });
 
     renderItems();
     recalcTotals();
 
-    supplierSel.addEventListener('change', () => {
-      const opt = supplierSel.selectedOptions[0];
-      $('#cmp-supplier-doc').value = opt ? (opt.dataset.doc || '') : '';
-    });
+    if (supplierSel) {
+      supplierSel.addEventListener('change', () => {
+        const opt = supplierSel.selectedOptions[0];
+        setVal('#cmp-supplier-doc', opt ? (opt.dataset.doc || '') : '');
+      });
+    }
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const btn = $('#cmp-submit');
-      btn.disabled = true;
-      btn.textContent = 'Salvando...';
+      if (btn) { btn.disabled = true; btn.textContent = 'Salvando...'; }
 
       try {
-        const supplierId = supplierSel.value || null;
-        const supplierName = supplierSel.selectedOptions[0] && supplierSel.value
+        const supplierId = supplierSel ? (supplierSel.value || null) : null;
+        const supplierName = supplierSel && supplierSel.selectedOptions[0] && supplierSel.value
           ? supplierSel.selectedOptions[0].textContent
-          : ($('#cmp-supplier-name-manual').value || '');
+          : (val('#cmp-supplier-name-manual') || '');
 
         if (!supplierId && !supplierName) throw new Error('Selecione um fornecedor.');
 
@@ -913,28 +860,28 @@
         if (!validItems.length) throw new Error('Adicione pelo menos 1 item com quantidade e descrição.');
 
         const totals = recalcTotals();
-        const status = $('#cmp-save-mode').value || 'rascunho';
+        const status = val('#cmp-save-mode') || 'rascunho';
 
         const payload = {
-          code:             $('#cmp-code').value.trim(),
+          code:             (val('#cmp-code') || '').trim() || ('COMP-' + Date.now()),
           status,
           supplier_id:      supplierId,
           supplier_name:    supplierName,
-          supplier_doc:     $('#cmp-supplier-doc').value.trim() || null,
-          supplier_contact: $('#cmp-supplier-contact').value.trim() || null,
+          supplier_doc:     (val('#cmp-supplier-doc') || '').trim() || null,
+          supplier_contact: (val('#cmp-supplier-contact') || '').trim() || null,
           subtotal_cents:   totals.subtotal,
           discount_cents:   totals.disc,
           shipping_cents:   totals.ship,
           other_cents:      totals.other,
           total_cents:      totals.total,
-          payment_method:   $('#cmp-payment-method').value || null,
-          payment_terms:    $('#cmp-payment-terms').value || null,
-          installments:     Number($('#cmp-installments').value) || 1,
-          first_due_date:   $('#cmp-first-due').value || null,
-          purchase_date:    $('#cmp-date').value || null,
-          expected_date:    $('#cmp-expected').value || null,
-          notes:            $('#cmp-notes').value.trim() || null,
-          invoice_number:   $('#cmp-invoice').value.trim() || null,
+          payment_method:   val('#cmp-payment-method') || null,
+          payment_terms:    val('#cmp-payment-terms') || null,
+          installments:     Number(val('#cmp-installments')) || 1,
+          first_due_date:   val('#cmp-first-due') || null,
+          purchase_date:    val('#cmp-date') || null,
+          expected_date:    val('#cmp-expected') || null,
+          notes:            (val('#cmp-notes') || '').trim() || null,
+          invoice_number:   (val('#cmp-invoice') || '').trim() || null,
           items: validItems.map((it) => ({
             product_id:       it.product_id,
             description:      it.description || (products.find((p) => p.id === it.product_id) || {}).name || 'Item',
@@ -952,8 +899,7 @@
       } catch (err) {
         console.error(err);
         toast('Erro ao salvar: ' + err.message, 'error');
-        btn.disabled = false;
-        btn.textContent = 'Salvar compra';
+        if (btn) { btn.disabled = false; btn.textContent = 'Salvar compra'; }
       }
     });
   }
@@ -970,7 +916,6 @@
         const pending = all.filter((p) =>
           p.status === 'pendente_recebimento' || p.status === 'recebida_parcial'
         );
-
         if (!pending.length) {
           wrap.innerHTML = `
             <div class="cmp-panel">
@@ -981,12 +926,11 @@
                   </svg>
                 </div>
                 <h3 class="cmp-empty__title">Nada para receber</h3>
-                <p class="cmp-empty__text">Não há compras pendentes de recebimento no momento.</p>
+                <p class="cmp-empty__text">Não há compras pendentes de recebimento.</p>
               </div>
             </div>`;
           return;
         }
-
         wrap.innerHTML = pending.map((p) => `
           <div class="cmp-panel" style="margin-bottom:14px">
             <div style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:flex-start;padding:20px 24px">
@@ -1005,7 +949,6 @@
             </div>
           </div>
         `).join('');
-
         wrap.querySelectorAll('[data-action="open"]').forEach((btn) => {
           btn.addEventListener('click', () => openReceiveModal(btn.dataset.id));
         });
@@ -1018,7 +961,6 @@
     async function openReceiveModal(purchaseId) {
       try {
         const { purchase, items } = await API.getPurchase(purchaseId);
-
         const modal = document.createElement('div');
         modal.className = 'cmp-modal';
         modal.innerHTML = `
@@ -1032,7 +974,7 @@
             </header>
             <div class="cmp-modal__body">
               <p style="font-size:13.5px;color:var(--text-soft);margin:0">
-                Informe a quantidade recebida de cada item. Deixe 0 para o que ainda não chegou.
+                Informe a quantidade recebida de cada item.
               </p>
               <div id="cmp-receive-items">
                 ${items.map((it) => {
@@ -1069,7 +1011,6 @@
           const btn = $('#cmp-receive-confirm');
           btn.disabled = true;
           btn.textContent = 'Salvando...';
-
           try {
             const receivedItems = [];
             modal.querySelectorAll('.cmp-receive-item').forEach((row) => {
@@ -1077,9 +1018,7 @@
               const qty = Number(row.querySelector('[data-qty]').value) || 0;
               if (qty > 0) receivedItems.push({ item_id: itemId, qty });
             });
-
             if (!receivedItems.length) throw new Error('Nenhuma quantidade para receber.');
-
             const res = await API.receivePurchase(purchase.id, receivedItems);
             toast(`Recebido! Status: ${STATUS_LABEL[res.status] || res.status}`);
             close();
@@ -1100,7 +1039,7 @@
     await load();
   }
 
-  /* ---------- Fornecedores ---------- */
+  /* ---------- Fornecedores (com busca CNPJ) ---------- */
   async function pageFornecedores() {
     const tbody = $('#forn-tbody');
     const searchInput = $('#forn-search');
@@ -1192,7 +1131,7 @@
       modal.className = 'cmp-modal';
       modal.innerHTML = `
         <div class="cmp-modal__backdrop" data-close></div>
-        <div class="cmp-modal__dialog">
+        <div class="cmp-modal__dialog cmp-modal__dialog--lg">
           <header class="cmp-modal__head">
             <h3 class="cmp-modal__title">${isEdit ? 'Editar' : 'Novo'} fornecedor</h3>
             <button class="cmp-modal__close" data-close aria-label="Fechar">
@@ -1200,54 +1139,153 @@
             </button>
           </header>
           <div class="cmp-modal__body">
-            <div class="field">
-              <label for="f-name">Nome *</label>
-              <input id="f-name" type="text" value="${escapeHTML(supplier ? supplier.name : '')}" />
+            <div class="cmp-cnpj">
+              <div class="field cmp-cnpj__field">
+                <label for="f-doc">CNPJ</label>
+                <input id="f-doc" type="text" inputmode="numeric" placeholder="00.000.000/0000-00" maxlength="18" autocomplete="off" value="${escapeHTML(supplier && supplier.doc ? supplier.doc : '')}" />
+              </div>
+              <button type="button" class="cmp-btn cmp-btn--primary cmp-cnpj__btn" id="f-cnpj-search" title="Buscar dados do CNPJ automaticamente">
+                <span class="cmp-cnpj__spinner" aria-hidden="true"></span>
+                <svg class="cmp-cnpj__icon-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>
+                </svg>
+                <span>Buscar dados</span>
+              </button>
             </div>
-            <div class="field">
-              <label for="f-doc">CNPJ / CPF</label>
-              <input id="f-doc" type="text" value="${escapeHTML(supplier ? supplier.doc : '')}" />
+            <p class="cmp-cnpj__hint" id="f-cnpj-hint">
+              Digite o CNPJ e clique em <strong>Buscar dados</strong> para preencher automaticamente.
+            </p>
+            <div class="cmp-grid cmp-grid--2">
+              <div class="field" style="grid-column: 1 / -1">
+                <label for="f-name">Razão social / Nome *</label>
+                <input id="f-name" type="text" value="${escapeHTML(supplier ? supplier.name : '')}" />
+              </div>
+              <div class="field">
+                <label for="f-fantasy">Nome fantasia</label>
+                <input id="f-fantasy" type="text" />
+              </div>
+              <div class="field">
+                <label for="f-phone">Telefone</label>
+                <input id="f-phone" type="text" value="${escapeHTML(supplier ? supplier.phone : '')}" />
+              </div>
+              <div class="field">
+                <label for="f-email">E-mail</label>
+                <input id="f-email" type="email" value="${escapeHTML(supplier ? supplier.email : '')}" />
+              </div>
+              <div class="field">
+                <label for="f-contact">Contato responsável</label>
+                <input id="f-contact" type="text" placeholder="Nome de quem atende" />
+              </div>
+              <div class="field" style="grid-column: 1 / -1">
+                <label for="f-address">Endereço</label>
+                <input id="f-address" type="text" placeholder="Rua, número, bairro, cidade/UF, CEP" />
+              </div>
             </div>
-            <div class="field">
-              <label for="f-phone">Telefone</label>
-              <input id="f-phone" type="text" value="${escapeHTML(supplier ? supplier.phone : '')}" />
-            </div>
-            <div class="field">
-              <label for="f-email">E-mail</label>
-              <input id="f-email" type="email" value="${escapeHTML(supplier ? supplier.email : '')}" />
-            </div>
+            <div class="cmp-error" id="f-error" hidden></div>
           </div>
           <footer class="cmp-modal__foot">
             <button type="button" class="cmp-btn cmp-btn--ghost" data-close>Cancelar</button>
-            <button type="button" class="cmp-btn cmp-btn--primary" id="f-save">Salvar</button>
+            <button type="button" class="cmp-btn cmp-btn--primary" id="f-save">
+              <span class="cmp-cnpj__spinner" aria-hidden="true"></span>
+              <span>Salvar</span>
+            </button>
           </footer>
         </div>`;
       document.body.appendChild(modal);
 
-      const close = () => modal.remove();
-      modal.querySelectorAll('[data-close]').forEach((el) => el.addEventListener('click', close));
+      const $f = {
+        cnpj:    $('#f-doc', modal),
+        search:  $('#f-cnpj-search', modal),
+        hint:    $('#f-cnpj-hint', modal),
+        name:    $('#f-name', modal),
+        fantasy: $('#f-fantasy', modal),
+        phone:   $('#f-phone', modal),
+        email:   $('#f-email', modal),
+        contact: $('#f-contact', modal),
+        address: $('#f-address', modal),
+        error:   $('#f-error', modal),
+        save:    $('#f-save', modal)
+      };
 
-      $('#f-save').addEventListener('click', async () => {
-        const payload = {
-          name:  $('#f-name').value.trim(),
-          doc:   $('#f-doc').value.trim(),
-          phone: $('#f-phone').value.trim(),
-          email: $('#f-email').value.trim()
-        };
-        if (!payload.name) { toast('Informe o nome.', 'error'); return; }
+      const close = () => {
+        modal.remove();
+        document.removeEventListener('keydown', onEsc);
+      };
+      const onEsc = (e) => { if (e.key === 'Escape') close(); };
+      modal.querySelectorAll('[data-close]').forEach((el) => el.addEventListener('click', close));
+      document.addEventListener('keydown', onEsc);
+
+      $f.cnpj.addEventListener('input', (e) => { e.target.value = maskCNPJ(e.target.value); });
+      $f.cnpj.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); doSearch(); }
+      });
+      $f.phone.addEventListener('input', (e) => { e.target.value = maskPhone(e.target.value); });
+      $f.search.addEventListener('click', doSearch);
+      $f.save.addEventListener('click', doSave);
+
+      async function doSearch() {
+        $f.error.hidden = true;
+        const raw = $f.cnpj.value;
+        $f.hint.innerHTML = 'Consultando Receita Federal...';
+        if (!raw.replace(/\D/g, '').length) {
+          showError('Digite um CNPJ para buscar.');
+          $f.hint.innerHTML = 'Digite o CNPJ e clique em <strong>Buscar dados</strong>.';
+          return;
+        }
+        setLoading($f.search, true);
         try {
+          const info = await lookupCNPJ(raw);
+          if (info.name)    $f.name.value    = info.name;
+          if (info.fantasy && $f.fantasy)  $f.fantasy.value = info.fantasy;
+          if (info.email)   $f.email.value   = info.email;
+          if (info.phone)   $f.phone.value   = maskPhone(info.phone);
+          if (info.address && $f.address)  $f.address.value = info.address;
+          [$f.name, $f.fantasy, $f.email, $f.phone, $f.address].forEach(flashFilled);
+          $f.hint.innerHTML = `Dados preenchidos via <strong>${info.fantasy || info.name}</strong>.`;
+        } catch (e) {
+          console.warn(e);
+          showError(e.message);
+          $f.hint.innerHTML = 'Se a busca falhar, preencha manualmente.';
+        } finally {
+          setLoading($f.search, false);
+        }
+      }
+
+      async function doSave() {
+        $f.error.hidden = true;
+        const name = ($f.name.value || '').trim();
+        if (!name) { showError('Informe a razão social ou nome.'); $f.name.focus(); return; }
+        setLoading($f.save, true);
+        try {
+          const payload = {
+            name,
+            doc:     ($f.cnpj.value || '').replace(/\D/g, '') || null,
+            email:   ($f.email.value || '').trim()   || null,
+            phone:   ($f.phone.value || '').trim()   || null,
+            address: ($f.address.value || '').trim() || null,
+            notes:   ($f.contact.value || '').trim() || null
+          };
           if (isEdit) await API.updateSupplier(supplier.id, payload);
           else        await API.createSupplier(payload);
           close();
           await load();
           toast('Fornecedor salvo.');
-        } catch (e) { toast('Erro: ' + e.message, 'error'); }
-      });
+        } catch (e) {
+          console.error(e);
+          showError('Erro ao salvar: ' + e.message);
+        } finally {
+          setLoading($f.save, false);
+        }
+      }
+
+      function showError(msg) {
+        $f.error.textContent = msg;
+        $f.error.hidden = false;
+      }
     }
 
     searchInput.addEventListener('input', render);
     $('#forn-new').addEventListener('click', () => openSupplierModal(null));
-
     await load();
   }
 
@@ -1267,7 +1305,6 @@
     if (fn) fn().catch((e) => console.error('[compras] erro em "' + page + '":', e));
   });
 
-  /* Expõe API pra debug no console */
   window.ComprasAPI = API;
   window.ComprasFmt = { fmtBRL, fmtDate, parseBRLToCents };
 
