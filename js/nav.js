@@ -1,17 +1,39 @@
 /* =========================================================
-   DEV HUB · Navegação horizontal + ABAS TIPO NAVEGADOR
+   DEV HUB · Navegação em ABAS (estilo navegador)
    ---------------------------------------------------------
-   - Topnav horizontal com dropdowns por módulo
-   - Barra de abas (chrome-style) abaixo do topnav
-   - Command palette (busca) que abre itens como abas
-   - Guard de permissão por item: mostra modal se negado
+   - UMA única barra: abas + botão "+" + busca + usuário
+   - Topbar antigo é ESCONDIDO (a barra de abas vira header)
+   - Botão "+" abre dropdown com todos os módulos
+   - Abas podem ser fechadas (× ou clique do meio)
+   - Guard de permissão: modal "Acesso negado"
+   - Ao fechar a última aba → welcome.html
+   ---------------------------------------------------------
+   CORREÇÕES NESTA VERSÃO:
+   1. Dropdown do usuário: position fixed + movido pro <body>.
+   2. Reposicionamento automático em scroll/resize.
+   3. Menu de módulos NÃO fecha ao rolar dentro dele.
+   4. Logo substituída por imagem (img/logo.png) clicável.
+   5. Clicar na marca → HOME_URL.
+   6. Ícone "Fechar todas as abas" no tamanho correto.
+   7. Módulo Compras adicionado (grupo Suprimentos):
+      • compras.html          → purchases.view
+      • compras-receber.html  → stock.receive
+      • fornecedores.html     → purchases.view
+   8. ** NOVO ** hasCapability prioriza window.Perms (banco)
+      em vez do fallback hardcoded. Isso faz o grupo
+      Suprimentos aparecer pra quem tem a permissão.
    ========================================================= */
 
 (function () {
   'use strict';
 
   /* =========================================================
-     ANTI-FLASH · Aplica o layout topnav o mais cedo possível
+     CONFIGURAÇÃO DA MARCA
+     ========================================================= */
+  const BRAND_IMAGE = 'img/logo.png';
+
+  /* =========================================================
+     ANTI-FLASH
      ========================================================= */
   (function applyEarlyTopnavLayout() {
     try {
@@ -22,7 +44,7 @@
   })();
 
   /* =========================================================
-     Fallback por role
+     Fallback por role (usado SOMENTE se window.Perms não carregar)
      ========================================================= */
   const CAPABILITIES = {
     platform_admin: ['platform'],
@@ -59,17 +81,21 @@
     plataforma:       'platform',
     empresas:         'platform',
     'plat-usuarios':  'platform',
-    'plat-config':    'platform'
+    'plat-config':    'platform',
+    /* ---- Módulo Compras ---- */
+    compras:          'purchases.view',
+    'compras-receber':'stock.receive',
+    fornecedores:     'purchases.view'
   };
 
-  /* =========================================================
-     Chave de persistência das abas
-     ========================================================= */
   const TABS_KEY = 'devhub_tabs';
-  const MAX_TABS = 12; // trava de segurança
+  const MAX_TABS = 12;
+
+  const HOME_URL = 'welcome.html';
+  const DASHBOARD_URL = 'dashboard.html';
 
   /* =========================================================
-     Leitura de contexto
+     Contexto
      ========================================================= */
   function readContext() {
     let role = '';
@@ -100,9 +126,6 @@
     return capsForRole(ctx.role, ctx.isPlatform);
   }
 
-  /* =========================================================
-     DHRoles
-     ========================================================= */
   const DHRoles = {
     current() { return readContext().role; },
     currentSlug() { return readContext().roleSlug; },
@@ -131,19 +154,33 @@
 
   /* =========================================================
      Permissões
+     ---------------------------------------------------------
+     Prioridade:
+       1. window.Perms (banco) — fonte de verdade
+       2. Fallback hardcoded por role (se Perms não carregou)
      ========================================================= */
-  function hasPermission(cap) {
+  function hasCapability(cap) {
     if (!cap) return true;
     if (cap === 'platform') return readContext().isPlatform;
 
+    // Se Perms está carregado E tem dados, ele manda
     if (window.Perms && typeof window.Perms.has === 'function') {
       if (typeof window.Perms.list === 'function') {
         const list = window.Perms.list();
-        if (list && Object.keys(list).length === 0) return true;
+        if (list && Object.keys(list).length > 0) {
+          return window.Perms.has(cap);
+        }
       }
-      return window.Perms.has(cap);
     }
-    return true;
+
+    // Fallback: usa o hardcoded do role
+    const caps = currentCapabilities();
+    return caps.indexOf(String(cap || '').toLowerCase()) !== -1;
+  }
+
+  // Mantém o nome antigo por compatibilidade
+  function hasPermission(cap) {
+    return hasCapability(cap);
   }
 
   /* =========================================================
@@ -163,68 +200,65 @@
     empresas: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18" /><path d="M5 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16" /><path d="M15 21V9h4a2 2 0 0 1 2 2v10" /><path d="M9 7h2M9 11h2M9 15h2" /></svg>',
     usuarios: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 20v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20" /><circle cx="9" cy="7.5" r="3.5" /><path d="M22 20v-1.5a4 4 0 0 0-3-3.87" /></svg>',
     logout: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="m16 17 5-5-5-5" /><path d="M21 12H9" /></svg>',
-    chevron: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>',
     search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>',
     close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>',
-    plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>',
+    plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>',
+    chevron: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>',
     lock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="10" rx="2" /><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5" /></svg>'
   };
 
   /* =========================================================
-     Estrutura do topnav
+     Estrutura de módulos
      ========================================================= */
   const TOPNAV = [
-    { id: 'dashboard', label: 'Dashboard', href: 'dashboard.html', icon: 'dashboard' },
-    {
-      id: 'comercial',
-      label: 'Comercial',
-      icon: 'vendas',
-      items: [
-        { id: 'vendas',        label: 'Vendas',        href: 'vendas.html',       icon: 'vendas' },
-        { id: 'notas',         label: 'Notas',         href: 'notas.html',        icon: 'notas' },
-        { id: 'notas-fiscal',  label: 'Notas fiscais', href: 'notas-fiscal.html', icon: 'notas-fiscal' },
-        { id: 'clientes',      label: 'Clientes',      href: 'clientes.html',     icon: 'clientes' }
-      ]
-    },
-    {
-      id: 'catalogo',
-      label: 'Catálogo',
-      icon: 'produtos',
-      items: [
-        { id: 'produtos', label: 'Produtos', href: 'produtos.html', icon: 'produtos' },
-        { id: 'estoque',  label: 'Estoque',  href: 'estoque.html',  icon: 'estoque' }
-      ]
-    },
-    {
-      id: 'analise',
-      label: 'Análise',
-      icon: 'relatorios',
-      items: [
-        { id: 'relatorios', label: 'Relatórios', href: 'relatorios.html', icon: 'relatorios' }
-      ]
-    },
-    {
-      id: 'administracao',
-      label: 'Administração',
-      capability: 'management',
-      icon: 'gestao',
-      items: [
-        { id: 'gestao', label: 'Gestão de usuários', href: 'gestao.html', icon: 'gestao' }
-      ]
-    },
-    {
-      id: 'plataforma',
-      label: 'Plataforma',
-      capability: 'platform',
-      icon: 'configuracoes',
-      items: [
-        { id: 'plataforma',    label: 'Dashboard da plataforma',     href: 'plataforma.html',               icon: 'dashboard' },
-        { id: 'empresas',      label: 'Empresas',                    href: 'plataforma.html#empresas',      icon: 'empresas' },
-        { id: 'plat-usuarios', label: 'Usuários da plataforma',      href: 'plataforma-usuarios.html',      icon: 'usuarios' },
-        { id: 'plat-config',   label: 'Configurações da plataforma', href: 'plataforma-configuracoes.html', icon: 'configuracoes' }
-      ]
-    }
+    { id: 'dashboard', label: 'Dashboard', href: 'dashboard.html', icon: 'dashboard', group: null },
+    { id: 'vendas',        label: 'Vendas',        href: 'vendas.html',       icon: 'vendas',       group: 'Comercial' },
+    { id: 'notas',         label: 'Notas',         href: 'notas.html',        icon: 'notas',        group: 'Comercial' },
+    { id: 'notas-fiscal',  label: 'Notas fiscais', href: 'notas-fiscal.html', icon: 'notas-fiscal', group: 'Comercial' },
+    { id: 'clientes',      label: 'Clientes',      href: 'clientes.html',     icon: 'clientes',     group: 'Comercial' },
+    { id: 'produtos',      label: 'Produtos',      href: 'produtos.html',     icon: 'produtos',     group: 'Catálogo' },
+    { id: 'estoque',       label: 'Estoque',       href: 'estoque.html',      icon: 'estoque',      group: 'Catálogo' },
+
+    /* ---------- Suprimentos ---------- */
+    { id: 'compras',         label: 'Compras',         href: 'compras.html',         icon: 'vendas',   group: 'Suprimentos', capability: 'purchases.view' },
+    { id: 'compras-receber', label: 'Receber compras', href: 'compras-receber.html', icon: 'estoque',  group: 'Suprimentos', capability: 'stock.receive' },
+    { id: 'fornecedores',    label: 'Fornecedores',    href: 'fornecedores.html',    icon: 'empresas', group: 'Suprimentos', capability: 'purchases.view' },
+
+    { id: 'relatorios',    label: 'Relatórios',    href: 'relatorios.html',   icon: 'relatorios',   group: 'Análise' },
+    { id: 'gestao',        label: 'Gestão de usuários', href: 'gestao.html',  icon: 'gestao',       group: 'Administração', capability: 'management' },
+    { id: 'plataforma',    label: 'Dashboard da plataforma',     href: 'plataforma.html',               icon: 'dashboard',      group: 'Plataforma', capability: 'platform' },
+    { id: 'empresas',      label: 'Empresas',                    href: 'plataforma.html#empresas',      icon: 'empresas',       group: 'Plataforma', capability: 'platform' },
+    { id: 'plat-usuarios', label: 'Usuários da plataforma',      href: 'plataforma-usuarios.html',      icon: 'usuarios',       group: 'Plataforma', capability: 'platform' },
+    { id: 'plat-config',   label: 'Configurações da plataforma', href: 'plataforma-configuracoes.html', icon: 'configuracoes',  group: 'Plataforma', capability: 'platform' }
   ];
+
+  const GROUP_ORDER = ['Comercial', 'Catálogo', 'Suprimentos', 'Análise', 'Administração', 'Plataforma'];
+
+  function findItemById(id) {
+    for (let i = 0; i < TOPNAV.length; i += 1) {
+      if (TOPNAV[i].id === id) return TOPNAV[i];
+    }
+    return null;
+  }
+
+  /* =========================================================
+     Filtro dos itens visíveis
+     ---------------------------------------------------------
+     A ordem importa:
+       1. Checa a capability PRÓPRIA do item (ex: purchases.view)
+          → usa hasCapability, que consulta window.Perms primeiro
+       2. Checa a permissão do ITEM_PERM[id]
+          → mesma função, mesma prioridade
+     ========================================================= */
+  function visibleItems() {
+    return TOPNAV.filter(function (it) {
+      // 1) Capability própria do item
+      if (it.capability && !hasCapability(it.capability)) return false;
+      // 2) Permissão do mapa ITEM_PERM
+      if (!hasPermission(ITEM_PERM[it.id])) return false;
+      return true;
+    });
+  }
 
   /* =========================================================
      Página atual
@@ -243,60 +277,18 @@
       gestao: 'gestao', funcionarios: 'gestao',
       configuracoes: 'configuracoes',
       'plataforma-configuracoes': 'plat-config',
-      'plataforma-usuarios': 'plat-usuarios'
+      'plataforma-usuarios': 'plat-usuarios',
+      /* ---- Compras ---- */
+      compras: 'compras',
+      'compras-nova': 'compras',
+      'compras-receber': 'compras-receber',
+      fornecedores: 'fornecedores'
     };
     return MAP[file] || file;
   }
 
   /* =========================================================
-     Busca um item do TOPNAV pelo id (retorna entry ou item)
-     ========================================================= */
-  function findEntryById(id) {
-    for (let i = 0; i < TOPNAV.length; i += 1) {
-      const entry = TOPNAV[i];
-      if (!entry.items) {
-        if (entry.id === id) return entry;
-        continue;
-      }
-      for (let j = 0; j < entry.items.length; j += 1) {
-        const it = entry.items[j];
-        if (it.id === id) return it;
-      }
-    }
-    return null;
-  }
-
-  /* =========================================================
-     Índice plano para busca
-     ========================================================= */
-  function buildSearchIndex() {
-    const index = [];
-    TOPNAV.forEach(function (entry) {
-      if (!entry.items) {
-        index.push({
-          id: entry.id,
-          label: entry.label,
-          href: entry.href,
-          icon: entry.icon,
-          module: null
-        });
-        return;
-      }
-      entry.items.forEach(function (it) {
-        index.push({
-          id: it.id,
-          label: it.label,
-          href: it.href,
-          icon: it.icon,
-          module: entry.label
-        });
-      });
-    });
-    return index;
-  }
-
-  /* =========================================================
-     ABAS · persistência
+     Abas · persistência
      ========================================================= */
   function readTabs() {
     try {
@@ -312,34 +304,29 @@
     } catch (e) { /* ignora */ }
   }
 
-  /**
-   * Garante que a página atual tem uma aba registrada.
-   * Roda no bootstrap. Se a página não estiver no menu (ex.:
-   * configuracoes.html), não cria aba — mas também não quebra.
-   */
   function syncCurrentTab() {
     const id = currentPageId();
-    const entry = findEntryById(id);
-    if (!entry) return;
+    const item = findItemById(id);
+    if (!item) return;
 
     const tabs = readTabs();
     const exists = tabs.some(function (t) { return t.id === id; });
     if (exists) return;
 
     tabs.push({
-      id: entry.id,
-      label: entry.label,
-      href: entry.href,
-      icon: entry.icon
+      id: item.id,
+      label: item.label,
+      href: item.href,
+      icon: item.icon
     });
     writeTabs(tabs);
   }
 
   /* =========================================================
-     ABAS · render
+     Abas · render
      ========================================================= */
   function renderTabs() {
-    const wrap = document.getElementById('app-tabs');
+    const wrap = document.getElementById('app-tabs-scroll');
     if (!wrap) return;
 
     const tabs = readTabs();
@@ -347,32 +334,17 @@
 
     wrap.innerHTML = '';
 
-    /* -------- faixa rolável de abas -------- */
-    const scroll = document.createElement('div');
-    scroll.className = 'app-tabs__scroll';
-
     if (tabs.length === 0) {
       const empty = document.createElement('span');
       empty.className = 'app-tabs__empty';
       empty.textContent = 'Nenhuma aba aberta';
-      scroll.appendChild(empty);
-    } else {
-      tabs.forEach(function (tab) {
-        scroll.appendChild(buildTabEl(tab, tab.id === activeId));
-      });
+      wrap.appendChild(empty);
+      return;
     }
 
-    /* -------- botão "+" (abre o picker) -------- */
-    const newBtn = document.createElement('button');
-    newBtn.type = 'button';
-    newBtn.className = 'app-tabs__new';
-    newBtn.setAttribute('aria-label', 'Abrir nova aba');
-    newBtn.title = 'Abrir nova aba';
-    newBtn.innerHTML = ICONS.plus;
-    newBtn.addEventListener('click', openTabPicker);
-
-    wrap.appendChild(scroll);
-    wrap.appendChild(newBtn);
+    tabs.forEach(function (tab) {
+      wrap.appendChild(buildTabEl(tab, tab.id === activeId));
+    });
   }
 
   function buildTabEl(tab, isActive) {
@@ -383,11 +355,9 @@
     el.setAttribute('tabindex', isActive ? '0' : '-1');
     if (isActive) el.setAttribute('aria-current', 'page');
 
-    const iconSvg = ICONS[tab.icon] || '';
-
     const icon = document.createElement('span');
     icon.className = 'app-tab__icon';
-    icon.innerHTML = iconSvg;
+    icon.innerHTML = ICONS[tab.icon] || '';
     icon.setAttribute('aria-hidden', 'true');
 
     const label = document.createElement('span');
@@ -416,43 +386,39 @@
     });
 
     el.addEventListener('auxclick', function (ev) {
-      if (ev.button === 1) closeTab(tab.id);   // botão do meio fecha
+      if (ev.button === 1) closeTab(tab.id);
     });
 
     return el;
   }
 
   /* =========================================================
-     ABAS · abrir
+     Abrir / fechar abas
      ========================================================= */
-  function openEntryAsTab(entry) {
-    if (!entry) return;
+  function openItemAsTab(item) {
+    if (!item) return;
 
-    /* Guard de permissão */
-    const cap = ITEM_PERM[entry.id];
+    const cap = ITEM_PERM[item.id];
     if (cap && !hasPermission(cap)) {
-      showPermissionDenied(entry.label);
+      showPermissionDenied(item.label);
       return;
     }
 
     const tabs = readTabs();
-    const exists = tabs.some(function (t) { return t.id === entry.id; });
+    const exists = tabs.some(function (t) { return t.id === item.id; });
     if (!exists) {
       tabs.push({
-        id: entry.id,
-        label: entry.label,
-        href: entry.href,
-        icon: entry.icon
+        id: item.id,
+        label: item.label,
+        href: item.href,
+        icon: item.icon
       });
       writeTabs(tabs);
     }
 
-    window.location.href = entry.href;
+    window.location.href = item.href;
   }
 
-  /* =========================================================
-     ABAS · fechar
-     ========================================================= */
   function closeTab(id) {
     const tabs = readTabs();
     const idx = tabs.findIndex(function (t) { return t.id === id; });
@@ -463,13 +429,8 @@
     writeTabs(tabs);
 
     if (isActive) {
-      /* Escolhe a próxima aba: direita, esquerda, ou dashboard */
       const next = tabs[idx] || tabs[idx - 1] || tabs[tabs.length - 1];
-      if (next) {
-        window.location.href = next.href;
-      } else {
-        window.location.href = 'dashboard.html';
-      }
+      window.location.href = next ? next.href : HOME_URL;
       return;
     }
 
@@ -477,7 +438,307 @@
   }
 
   /* =========================================================
-     MODAL · Acesso negado
+     Dropdown de módulos (botão "+")
+     ========================================================= */
+  let menuEl = null;
+  let menuHovered = false;
+
+  function openModuleMenu() {
+    if (menuEl && !menuEl.hidden) {
+      closeModuleMenu();
+      return;
+    }
+
+    const plusBtn = document.getElementById('app-tabs-new');
+    if (!plusBtn) return;
+
+    /* Reconstrói o menu a cada abertura pra refletir o estado atual
+       das permissões (importante quando Perms carrega depois). */
+    if (menuEl && menuEl.parentNode) menuEl.parentNode.removeChild(menuEl);
+    menuEl = buildModuleMenu();
+    document.body.appendChild(menuEl);
+    wireMenuPointerGuards(menuEl);
+
+    menuEl.hidden = false;
+    positionMenu(menuEl, plusBtn);
+
+    requestAnimationFrame(function () {
+      if (menuEl && !menuEl.hidden) positionMenu(menuEl, plusBtn);
+    });
+  }
+
+  function closeModuleMenu() {
+    if (menuEl) menuEl.hidden = true;
+  }
+
+  function wireMenuPointerGuards(menu) {
+    menu.addEventListener('mouseenter', function () { menuHovered = true; });
+    menu.addEventListener('mouseleave', function () { menuHovered = false; });
+
+    menu.addEventListener('scroll', function (e) {
+      e.stopPropagation();
+    }, true);
+
+    menu.addEventListener('mousedown', function (e) {
+      e.stopPropagation();
+    });
+    menu.addEventListener('click', function (e) {
+      e.stopPropagation();
+    });
+  }
+
+  function buildModuleMenu() {
+    const el = document.createElement('div');
+    el.className = 'tnav-menu';
+    el.setAttribute('role', 'menu');
+    el.hidden = true;
+
+    const items = visibleItems();
+    const activeId = currentPageId();
+    const openTabs = {};
+    readTabs().forEach(function (t) { openTabs[t.id] = true; });
+
+    const dashItem = items.find(function (i) { return i.id === 'dashboard'; });
+    if (dashItem) {
+      el.appendChild(buildMenuItem(dashItem, activeId, openTabs, false));
+      el.appendChild(makeSep());
+    }
+
+    GROUP_ORDER.forEach(function (groupName) {
+      const groupItems = items.filter(function (i) {
+        return i.group === groupName;
+      });
+      if (groupItems.length === 0) return;
+
+      const label = document.createElement('div');
+      label.className = 'tnav-menu__group';
+      label.textContent = groupName;
+      el.appendChild(label);
+
+      groupItems.forEach(function (it) {
+        el.appendChild(buildMenuItem(it, activeId, openTabs, true));
+      });
+    });
+
+    el.appendChild(makeSep());
+
+    const closeAll = document.createElement('button');
+    closeAll.type = 'button';
+    closeAll.className = 'tnav-menu__item tnav-menu__item--danger';
+    closeAll.setAttribute('role', 'menuitem');
+    closeAll.innerHTML =
+      '<span class="tnav-menu__icon">' + ICONS.close + '</span>' +
+      '<span class="tnav-menu__label">Fechar todas as abas</span>';
+    closeAll.addEventListener('click', function () {
+      closeModuleMenu();
+      clearAllTabs();
+    });
+    el.appendChild(closeAll);
+
+    return el;
+  }
+
+  function buildMenuItem(item, activeId, openTabs, indent) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'tnav-menu__item';
+    if (indent) btn.classList.add('tnav-menu__item--indent');
+    if (item.id === activeId) btn.classList.add('is-active');
+    if (openTabs[item.id]) btn.classList.add('is-open');
+    btn.setAttribute('role', 'menuitem');
+
+    const icon = document.createElement('span');
+    icon.className = 'tnav-menu__icon';
+    icon.innerHTML = ICONS[item.icon] || '';
+
+    const label = document.createElement('span');
+    label.className = 'tnav-menu__label';
+    label.textContent = item.label;
+
+    btn.appendChild(icon);
+    btn.appendChild(label);
+
+    if (openTabs[item.id] && item.id !== activeId) {
+      const dot = document.createElement('span');
+      dot.className = 'tnav-menu__dot';
+      dot.title = 'Aba aberta';
+      btn.appendChild(dot);
+    }
+
+    btn.addEventListener('click', function () {
+      closeModuleMenu();
+      openItemAsTab(item);
+    });
+
+    return btn;
+  }
+
+  function makeSep() {
+    const sep = document.createElement('div');
+    sep.className = 'tnav-menu__sep';
+    sep.setAttribute('role', 'separator');
+    return sep;
+  }
+
+  function clearAllTabs() {
+    writeTabs([]);
+    closeModuleMenu();
+    window.location.href = HOME_URL;
+  }
+
+  function positionMenu(menu, anchor) {
+    if (!menu || !anchor) return;
+    const rect = anchor.getBoundingClientRect();
+    const margin = 8;
+
+    let top = rect.bottom + 6;
+    let left = rect.left;
+
+    const mRect = menu.getBoundingClientRect();
+
+    if (left + mRect.width > window.innerWidth - margin) {
+      left = window.innerWidth - mRect.width - margin;
+    }
+    if (left < margin) left = margin;
+
+    if (top + mRect.height > window.innerHeight - margin) {
+      const above = rect.top - 6 - mRect.height;
+      if (above >= margin) {
+        top = above;
+      } else {
+        top = Math.max(margin, window.innerHeight - mRect.height - margin);
+      }
+    }
+
+    menu.style.top = top + 'px';
+    menu.style.left = left + 'px';
+  }
+
+  /* =========================================================
+     Dropdown do usuário
+     ========================================================= */
+  function setupUserDropdown() {
+    const btn  = document.getElementById('app-tabs-user-btn');
+    const menu = document.getElementById('app-tabs-user-menu');
+    if (!btn || !menu) return;
+
+    function position() {
+      const rect = btn.getBoundingClientRect();
+      const margin = 8;
+      const gap = 6;
+
+      let top = rect.bottom + gap;
+      let left = rect.right - menu.offsetWidth;
+
+      if (left < margin) left = rect.left;
+      if (left < margin) left = margin;
+
+      const menuW = menu.offsetWidth || 0;
+      if (left + menuW > window.innerWidth - margin) {
+        left = window.innerWidth - menuW - margin;
+      }
+
+      const menuH = menu.offsetHeight || 0;
+      if (menuH && top + menuH > window.innerHeight - margin) {
+        const above = rect.top - gap - menuH;
+        if (above >= margin) top = above;
+      }
+
+      menu.style.top = top + 'px';
+      menu.style.left = left + 'px';
+    }
+
+    function open() {
+      menu.hidden = false;
+      position();
+      btn.setAttribute('aria-expanded', 'true');
+      const first = menu.querySelector('.app-tabs__user-item');
+      if (first) first.focus();
+    }
+    function close() {
+      menu.hidden = true;
+      btn.setAttribute('aria-expanded', 'false');
+    }
+
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      menu.hidden ? open() : close();
+    });
+
+    document.addEventListener('click', function (e) {
+      if (menu.hidden) return;
+      if (menu.contains(e.target) || btn.contains(e.target)) return;
+      close();
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !menu.hidden) {
+        close();
+        btn.focus();
+      }
+    });
+
+    window.addEventListener('resize', function () {
+      if (!menu.hidden) position();
+    });
+    window.addEventListener('scroll', function () {
+      if (!menu.hidden) position();
+    }, true);
+  }
+
+  /* =========================================================
+     Sincroniza avatar + nome + role
+     ========================================================= */
+  function syncBarUserInfo() {
+    applyBarAvatar();
+
+    try {
+      const raw = sessionStorage.getItem('devhub_user');
+      if (!raw) return;
+      const ctx = JSON.parse(raw);
+
+      const fullName = ctx.name || '';
+      const first = String(fullName).trim().split(/\s+/)[0] || '';
+      const initial = first.charAt(0).toUpperCase() || '?';
+
+      const nameEl = document.getElementById('user-name-bar');
+      const roleEl = document.getElementById('user-role-bar');
+      const avatarEl = document.getElementById('user-avatar-bar');
+
+      if (nameEl) nameEl.textContent = fullName || 'Usuário';
+
+      if (roleEl) {
+        const roleText = window.Auth && window.Auth.roleLabel
+          ? window.Auth.roleLabel(ctx.role || '')
+          : (ctx.role || '');
+        roleEl.textContent = roleText;
+      }
+
+      if (avatarEl && !avatarEl.dataset.avatarUrl) {
+        avatarEl.textContent = initial;
+      }
+    } catch (e) { /* ignora */ }
+  }
+
+  function applyBarAvatar() {
+    const el = document.getElementById('user-avatar-bar');
+    if (!el) return;
+    if (el.dataset.avatarUrl) return;
+
+    const cached = readCachedAvatar();
+    if (cached) {
+      el.style.background = 'none';
+      el.innerHTML = '';
+      const img = document.createElement('img');
+      img.src = cached;
+      img.alt = '';
+      el.dataset.avatarUrl = cached;
+      el.appendChild(img);
+    }
+  }
+
+  /* =========================================================
+     Modal · Acesso negado
      ========================================================= */
   function injectPermissionModal() {
     if (document.getElementById('perm-denied-modal')) return;
@@ -543,66 +804,6 @@
   }
 
   /* =========================================================
-     PICKER · escolher qual aba abrir (menu "+")
-     ========================================================= */
-  function openTabPicker() {
-    /* Estratégia: reusa o command palette — foca a busca
-       com um filtro que só mostra itens ainda não abertos.
-       Dessa forma não duplicamos UI. */
-    const input = document.getElementById('tnav-search-input');
-    if (!input) return;
-
-    /* Fecha o modal de permissão se estiver aberto */
-    closePermissionModal();
-
-    /* Foca e limpa a busca para o usuário ver tudo */
-    input.value = '';
-    input.focus();
-    input.select();
-
-    /* Dispara o input pra popular os resultados */
-    input.dispatchEvent(new Event('input', { bubbles: true }));
-  }
-
-  /* =========================================================
-     Posiciona o dropdown (position: fixed) abaixo do botão
-     ========================================================= */
-  function positionDropdown(dd, btn) {
-    const rect = btn.getBoundingClientRect();
-    const margin = 8;
-    const gap = 4;
-
-    const ddWidth = Math.max(dd.offsetWidth || 0, 240);
-
-    let left = rect.left;
-    if (left + ddWidth > window.innerWidth - margin) {
-      left = Math.max(margin, window.innerWidth - ddWidth - margin);
-    }
-
-    let top = rect.bottom + gap;
-    const ddHeight = dd.offsetHeight || 0;
-    if (ddHeight && top + ddHeight > window.innerHeight - margin) {
-      const above = rect.top - gap - ddHeight;
-      if (above >= margin) top = above;
-    }
-
-    dd.style.top = top + 'px';
-    dd.style.left = left + 'px';
-  }
-
-  function closeAllDropdowns() {
-    document.querySelectorAll('.tnav-group').forEach(function (g) {
-      const dd = g.querySelector('.tnav-dropdown');
-      const btn = g.querySelector('.tnav-item');
-      if (dd && !dd.hidden) {
-        dd.hidden = true;
-        g.classList.remove('is-open');
-        if (btn) btn.setAttribute('aria-expanded', 'false');
-      }
-    });
-  }
-
-  /* =========================================================
      Estilos
      ========================================================= */
   function injectStyles() {
@@ -610,14 +811,16 @@
 
     const css = `
       /* =====================================================
-         ESCONDE O SIDEBAR ANTIGO
+         ESCONDE O SIDEBAR / TOPBAR ANTIGOS
          ===================================================== */
       html.layout-topnav .sidebar,
       html.layout-topnav .sidebar-overlay,
       html.layout-topnav .menu-toggle,
+      html.layout-topnav .topbar,
       body.layout-topnav .sidebar,
       body.layout-topnav .sidebar-overlay,
-      body.layout-topnav .menu-toggle {
+      body.layout-topnav .menu-toggle,
+      body.layout-topnav .topbar {
         display: none !important;
       }
       html.layout-topnav .app__body,
@@ -626,24 +829,71 @@
       }
 
       /* =====================================================
-         TOPNAV
+         BARRA ÚNICA (header)
          ===================================================== */
-      .app-topnav {
+      .app-tabs {
+        display: flex;
+        align-items: stretch;
+        height: 56px;
+        min-height: 56px;
+        padding: 0 16px;
+        background: var(--surface-2);
+        border-bottom: 1px solid var(--border);
+        position: sticky;
+        top: 0;
+        z-index: 40;
+        overflow: hidden;
+      }
+
+      /* ---------- Marca ---------- */
+      .app-tabs__brand {
         display: flex;
         align-items: center;
-        gap: 2px;
-        height: 48px;
-        min-height: 48px;
-        padding: 0 16px;
-        background: var(--surface);
-        border-bottom: 1px solid var(--border);
-        overflow: visible;
-        position: relative;
-        z-index: 30;
+        gap: 10px;
+        flex: none;
+        padding-right: 18px;
+        margin-right: 6px;
+        border-right: 1px solid var(--border);
+        height: 32px;
+        align-self: center;
+        user-select: none;
+        text-decoration: none;
+        color: inherit;
+        cursor: pointer;
+        transition: opacity var(--transition);
       }
-      .app-topnav:empty { visibility: hidden; }
+      .app-tabs__brand:hover { opacity: 0.85; }
+      .app-tabs__brand:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 3px;
+        border-radius: 8px;
+      }
 
-      .tnav-scroll {
+      .app-tabs__brand-mark {
+        display: grid;
+        place-items: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 9px;
+        background: transparent;
+        overflow: hidden;
+        flex: none;
+      }
+      .app-tabs__brand-mark img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+      .app-tabs__brand-text {
+        font-size: 13px;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        color: var(--text);
+        white-space: nowrap;
+      }
+
+      .app-tabs__scroll {
         display: flex;
         align-items: center;
         gap: 2px;
@@ -651,176 +901,190 @@
         min-width: 0;
         overflow-x: auto;
         overflow-y: hidden;
-        scrollbar-width: thin;
+        scrollbar-width: none;
+        padding: 8px 0;
       }
-      .tnav-scroll::-webkit-scrollbar { height: 3px; }
-      .tnav-scroll::-webkit-scrollbar-thumb {
-        background: var(--border-strong);
-        border-radius: 2px;
+      .app-tabs__scroll::-webkit-scrollbar { display: none; }
+
+      .app-tabs__empty {
+        padding: 0 10px;
+        font-size: 12.5px;
+        color: var(--text-muted);
+        font-style: italic;
       }
 
-      .tnav-item {
-        position: relative;
+      .app-tab {
         flex: 0 0 auto;
         display: inline-flex;
         align-items: center;
-        gap: 7px;
-        height: 34px;
-        padding: 0 14px;
-        border: 0;
+        gap: 8px;
+        height: 36px;
+        padding: 0 6px 0 12px;
+        border: 1px solid transparent;
         border-radius: 8px;
         background: transparent;
         color: var(--text-soft);
-        font-size: 13px;
-        font-weight: 600;
-        cursor: pointer;
-        white-space: nowrap;
-        text-decoration: none;
-        transition: background-color var(--transition), color var(--transition);
-      }
-      .tnav-item svg { width: 16px; height: 16px; flex: none; }
-
-      .tnav-item:hover {
-        background: var(--surface-2);
-        color: var(--text);
-      }
-      .tnav-item.is-active {
-        background: var(--accent-soft);
-        color: var(--accent-hover);
-      }
-
-      .tnav-item .tnav-chevron {
-        width: 12px;
-        height: 12px;
-        opacity: 0.6;
-        transition: transform var(--transition);
-        display: inline-flex;
-      }
-      .tnav-group { position: relative; }
-      .tnav-group.is-open > .tnav-item .tnav-chevron {
-        transform: rotate(180deg);
-      }
-
-      /* Dropdown */
-      .tnav-dropdown {
-        position: fixed;
-        top: 0;
-        left: 0;
-        min-width: 240px;
-        padding: 6px;
-        border: 1px solid var(--border);
-        border-radius: 10px;
-        background: var(--surface);
-        box-shadow: 0 10px 30px -8px rgba(16, 24, 40, 0.18);
-        z-index: 9999;
-        animation: tnav-pop 140ms ease-out;
-      }
-      @keyframes tnav-pop {
-        from { opacity: 0; transform: translateY(-4px); }
-        to   { opacity: 1; transform: translateY(0); }
-      }
-      .tnav-dropdown[hidden] { display: none !important; }
-
-      .tnav-dropdown__item {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 9px 12px;
-        border-radius: 7px;
-        color: var(--text);
-        font-size: 13.5px;
+        font-size: 12.5px;
         font-weight: 500;
-        text-decoration: none;
-        transition: background-color var(--transition), color var(--transition);
         cursor: pointer;
+        max-width: 220px;
+        min-width: 0;
+        transition: background-color var(--transition), color var(--transition),
+                    border-color var(--transition);
+        position: relative;
       }
-      .tnav-dropdown__item svg {
-        width: 16px;
-        height: 16px;
+      .app-tab:hover {
+        background: var(--surface);
+        color: var(--text);
+        border-color: var(--border);
+      }
+      .app-tab.is-active {
+        background: var(--surface);
+        color: var(--text);
+        border-color: var(--border);
+        box-shadow: 0 -2px 0 0 var(--accent) inset;
+      }
+
+      .app-tab__icon {
+        display: inline-flex;
         flex: none;
+        width: 14px;
+        height: 14px;
         color: var(--text-muted);
       }
-      .tnav-dropdown__item:hover { background: var(--surface-2); }
-      .tnav-dropdown__item.is-active {
-        background: var(--accent-soft);
-        color: var(--accent-hover);
-      }
-      .tnav-dropdown__item.is-active svg { color: var(--accent); }
+      .app-tab__icon svg { width: 14px; height: 14px; }
+      .app-tab.is-active .app-tab__icon { color: var(--accent); }
 
-      .tnav-item--ghost { color: var(--text-muted); font-weight: 500; }
-      .tnav-item--ghost:hover { color: var(--text); }
-      .tnav-item--danger:hover {
-        color: var(--danger);
+      .app-tab__label {
+        flex: 1 1 auto;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .app-tab__close {
+        flex: none;
+        display: grid;
+        place-items: center;
+        width: 20px;
+        height: 20px;
+        border: 0;
+        border-radius: 5px;
+        background: transparent;
+        color: var(--text-muted);
+        cursor: pointer;
+        opacity: 0.55;
+        transition: opacity var(--transition), background-color var(--transition),
+                    color var(--transition);
+      }
+      .app-tab__close svg { width: 11px; height: 11px; }
+      .app-tab__close:hover {
+        opacity: 1;
         background: var(--danger-soft);
+        color: var(--danger);
+      }
+      .app-tab.is-active .app-tab__close { opacity: 0.75; }
+
+      .app-tabs__new {
+        flex: none;
+        display: grid;
+        place-items: center;
+        align-self: center;
+        width: 34px;
+        height: 34px;
+        margin: 0 6px 0 6px;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        background: transparent;
+        color: var(--text-muted);
+        cursor: pointer;
+        transition: background-color var(--transition), color var(--transition),
+                    border-color var(--transition);
+      }
+      .app-tabs__new svg { width: 15px; height: 15px; }
+      .app-tabs__new:hover,
+      .app-tabs__new[aria-expanded="true"] {
+        background: var(--surface);
+        border-color: var(--border);
+        color: var(--text);
+      }
+      .app-tabs__new:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
       }
 
-      /* ---------- BUSCA ---------- */
-      .tnav-search {
-        position: relative;
-        flex: 0 0 300px;
-        margin-right: 12px;
+      .app-tabs__spacer {
+        flex: 0 0 12px;
       }
-      .tnav-search__control {
+
+      .app-tabs__search {
         position: relative;
+        flex: 0 0 260px;
         display: flex;
         align-items: center;
+        align-self: center;
         height: 36px;
-        background: var(--surface-2);
+        margin: 0 8px;
+        background: var(--surface);
         border: 1px solid var(--border);
         border-radius: 8px;
         transition: border-color var(--transition), box-shadow var(--transition);
       }
-      .tnav-search__control:focus-within {
+      .app-tabs__search:focus-within {
         border-color: var(--accent);
         box-shadow: 0 0 0 3px var(--accent-ring);
-        background: var(--surface);
       }
-      .tnav-search__icon {
+      .app-tabs__search .tnav-search__icon {
         position: absolute;
         left: 10px;
         display: grid;
         place-items: center;
-        width: 16px;
-        height: 16px;
+        width: 14px;
+        height: 14px;
         color: var(--text-muted);
         pointer-events: none;
       }
-      .tnav-search__icon svg { width: 16px; height: 16px; }
+      .app-tabs__search .tnav-search__icon svg { width: 14px; height: 14px; }
 
-      .tnav-search__input {
+      .app-tabs__search .tnav-search__input {
         width: 100%;
         height: 100%;
-        padding: 0 32px 0 34px;
+        padding: 0 28px 0 32px;
         border: 0;
         background: transparent;
-        font-size: 13.5px;
+        font-size: 12.5px;
         color: var(--text);
         outline: none;
+        border-radius: 8px;
       }
-      .tnav-search__input::placeholder { color: var(--text-muted); }
+      .app-tabs__search .tnav-search__input::placeholder { color: var(--text-muted); }
 
-      .tnav-search__clear {
+      .app-tabs__search .tnav-search__clear {
         position: absolute;
-        right: 6px;
+        right: 4px;
         display: none;
         place-items: center;
-        width: 24px;
-        height: 24px;
+        width: 22px;
+        height: 22px;
         border: 0;
-        border-radius: 6px;
+        border-radius: 5px;
         background: transparent;
         color: var(--text-muted);
         cursor: pointer;
       }
-      .tnav-search__clear:hover { background: var(--surface); color: var(--text); }
-      .tnav-search__clear svg { width: 14px; height: 14px; }
-      .tnav-search.has-value .tnav-search__clear { display: grid; }
+      .app-tabs__search .tnav-search__clear:hover {
+        background: var(--surface-2);
+        color: var(--text);
+      }
+      .app-tabs__search .tnav-search__clear svg { width: 12px; height: 12px; }
+      .app-tabs__search.has-value .tnav-search__clear { display: grid; }
 
       .tnav-search__results {
         position: absolute;
         top: calc(100% + 6px);
-        left: 0;
         right: 0;
+        min-width: 320px;
         max-height: 400px;
         overflow-y: auto;
         padding: 6px;
@@ -829,7 +1093,6 @@
         background: var(--surface);
         box-shadow: 0 10px 30px -8px rgba(16, 24, 40, 0.18);
         z-index: 1000;
-        animation: tnav-pop 140ms ease-out;
       }
       .tnav-search__results[hidden] { display: none !important; }
 
@@ -878,154 +1141,261 @@
         letter-spacing: 0.02em;
         white-space: nowrap;
       }
-      .tnav-search__item.is-selected .tnav-search__module {
-        background: var(--surface);
-      }
 
       /* =====================================================
-         BARRA DE ABAS (browser-style)
+         BOTÃO DO USUÁRIO
          ===================================================== */
-      .app-tabs {
-        display: flex;
-        align-items: stretch;
-        height: 38px;
-        min-height: 38px;
-        padding: 0 8px;
-        background: var(--surface-2);
-        border-bottom: 1px solid var(--border);
-        overflow: hidden;
+      .app-tabs__user {
         position: relative;
-        z-index: 29;
-      }
-      .app-tabs:empty { display: none; }
-
-      .app-tabs__scroll {
-        display: flex;
-        align-items: center;
-        gap: 2px;
-        flex: 1 1 auto;
-        min-width: 0;
-        overflow-x: auto;
-        overflow-y: hidden;
-        scrollbar-width: none;
-        padding: 4px 0;
-      }
-      .app-tabs__scroll::-webkit-scrollbar { display: none; }
-
-      .app-tabs__empty {
-        padding: 0 10px;
-        font-size: 12.5px;
-        color: var(--text-muted);
+        flex: none;
+        align-self: center;
+        margin-left: 8px;
       }
 
-      .app-tab {
-        flex: 0 0 auto;
+      .app-tabs__user-btn {
         display: inline-flex;
         align-items: center;
-        gap: 8px;
-        height: 30px;
-        padding: 0 6px 0 10px;
+        gap: 10px;
+        height: 42px;
+        padding: 0 12px 0 4px;
         border: 1px solid transparent;
-        border-radius: 8px 8px 0 0;
+        border-radius: 10px;
         background: transparent;
-        color: var(--text-soft);
-        font-size: 12.5px;
-        font-weight: 500;
+        color: var(--text);
         cursor: pointer;
-        max-width: 220px;
-        min-width: 0;
-        transition: background-color var(--transition), color var(--transition),
-                    border-color var(--transition);
-        position: relative;
+        font-family: inherit;
+        transition: background-color var(--transition), border-color var(--transition);
       }
-      .app-tab:hover {
+      .app-tabs__user-btn:hover,
+      .app-tabs__user-btn[aria-expanded="true"] {
         background: var(--surface);
-        color: var(--text);
         border-color: var(--border);
-        border-bottom-color: transparent;
       }
-      .app-tab.is-active {
-        background: var(--surface);
-        color: var(--text);
-        border-color: var(--border);
-        border-bottom-color: transparent;
-        box-shadow: 0 -1px 0 0 var(--accent) inset;
-      }
-      .app-tab.is-active::before {
-        content: "";
-        position: absolute;
-        inset: -1px -1px auto -1px;
-        height: 2px;
-        background: var(--accent);
-        border-radius: 8px 8px 0 0;
+      .app-tabs__user-btn:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
       }
 
-      .app-tab__icon {
+      .app-tabs__user-avatar {
+        display: grid;
+        place-items: center;
+        width: 32px;
+        height: 32px;
+        flex: none;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
+        color: #ffffff;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        overflow: hidden;
+      }
+      .app-tabs__user-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+
+      .app-tabs__user-info {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        line-height: 1.15;
+        max-width: 140px;
+        min-width: 0;
+      }
+      .app-tabs__user-name {
+        font-size: 12.5px;
+        font-weight: 700;
+        color: var(--text);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+      }
+      .app-tabs__user-role {
+        font-size: 10.5px;
+        color: var(--text-muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+      }
+
+      .app-tabs__user-chevron {
         display: inline-flex;
         flex: none;
         width: 14px;
         height: 14px;
         color: var(--text-muted);
+        transition: transform var(--transition);
       }
-      .app-tab__icon svg { width: 14px; height: 14px; }
-      .app-tab.is-active .app-tab__icon { color: var(--accent); }
-
-      .app-tab__label {
-        flex: 1 1 auto;
-        min-width: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+      .app-tabs__user-chevron svg { width: 14px; height: 14px; }
+      .app-tabs__user-btn[aria-expanded="true"] .app-tabs__user-chevron {
+        transform: rotate(180deg);
       }
 
-      .app-tab__close {
-        flex: none;
-        display: grid;
-        place-items: center;
-        width: 20px;
-        height: 20px;
+      .app-tabs__user-menu {
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 9999;
+        min-width: 210px;
+        padding: 6px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--surface);
+        box-shadow: 0 12px 32px -8px rgba(16, 24, 40, 0.24);
+        animation: tnav-pop 140ms ease-out;
+      }
+      .app-tabs__user-menu[hidden] { display: none !important; }
+
+      .app-tabs__user-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        padding: 9px 12px;
         border: 0;
-        border-radius: 5px;
-        background: transparent;
-        color: var(--text-muted);
-        cursor: pointer;
-        opacity: 0.6;
-        transition: opacity var(--transition), background-color var(--transition),
-                    color var(--transition);
-      }
-      .app-tab__close svg { width: 11px; height: 11px; }
-      .app-tab__close:hover {
-        opacity: 1;
-        background: var(--danger-soft);
-        color: var(--danger);
-      }
-      .app-tab.is-active .app-tab__close { opacity: 0.8; }
-
-      .app-tabs__new {
-        flex: none;
-        display: grid;
-        place-items: center;
-        width: 30px;
-        height: 30px;
-        margin: 4px 4px 4px 6px;
-        border: 1px solid transparent;
         border-radius: 8px;
         background: transparent;
-        color: var(--text-muted);
-        cursor: pointer;
-        transition: background-color var(--transition), color var(--transition),
-                    border-color var(--transition);
-      }
-      .app-tabs__new svg { width: 14px; height: 14px; }
-      .app-tabs__new:hover {
-        background: var(--surface);
-        border-color: var(--border);
         color: var(--text);
+        font-size: 13px;
+        font-weight: 500;
+        text-align: left;
+        text-decoration: none;
+        cursor: pointer;
+        font-family: inherit;
+        transition: background-color var(--transition), color var(--transition);
       }
-      .app-tabs__new:focus-visible {
-        outline: 2px solid var(--accent);
-        outline-offset: 2px;
+      .app-tabs__user-item svg {
+        width: 16px;
+        height: 16px;
+        flex: none;
+        color: var(--text-muted);
       }
+      .app-tabs__user-item:hover {
+        background: var(--surface-2);
+      }
+      .app-tabs__user-item--danger {
+        color: var(--danger);
+      }
+      .app-tabs__user-item--danger svg { color: var(--danger); }
+      .app-tabs__user-item--danger:hover {
+        background: var(--danger-soft);
+      }
+
+      .app-tabs__user-sep {
+        height: 1px;
+        margin: 4px 6px;
+        background: var(--border);
+      }
+
+      /* =====================================================
+         DROPDOWN DE MÓDULOS (botão "+")
+         ===================================================== */
+      .tnav-menu {
+        position: fixed;
+        top: 0;
+        left: 0;
+        min-width: 280px;
+        max-height: 80vh;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        padding: 6px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--surface);
+        box-shadow: 0 12px 32px -8px rgba(16, 24, 40, 0.24);
+        z-index: 9999;
+        animation: tnav-pop 140ms ease-out;
+      }
+      .tnav-menu[hidden] { display: none !important; }
+      @keyframes tnav-pop {
+        from { opacity: 0; transform: translateY(-4px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+
+      .tnav-menu__group {
+        padding: 10px 12px 4px;
+        font-size: 10.5px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+      }
+
+      .tnav-menu__item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        padding: 9px 12px;
+        border: 0;
+        border-radius: 8px;
+        background: transparent;
+        color: var(--text);
+        font-size: 13.5px;
+        font-weight: 500;
+        text-align: left;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background-color var(--transition), color var(--transition);
+      }
+      .tnav-menu__item--indent { padding-left: 14px; }
+      .tnav-menu__item:hover {
+        background: var(--surface-2);
+      }
+      .tnav-menu__item.is-active {
+        background: var(--accent-soft);
+        color: var(--accent-hover);
+      }
+      .tnav-menu__item > svg {
+        width: 16px;
+        height: 16px;
+        flex: none;
+        color: var(--text-muted);
+      }
+
+      .tnav-menu__icon {
+        display: inline-flex;
+        flex: none;
+        width: 16px;
+        height: 16px;
+        color: var(--text-muted);
+      }
+      .tnav-menu__icon svg { width: 16px; height: 16px; }
+      .tnav-menu__item.is-active .tnav-menu__icon { color: var(--accent); }
+
+      .tnav-menu__label {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+
+      .tnav-menu__dot {
+        flex: none;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--accent);
+        opacity: 0.7;
+      }
+
+      .tnav-menu__sep {
+        height: 1px;
+        margin: 6px 8px;
+        background: var(--border);
+      }
+
+      .tnav-menu__item--danger {
+        color: var(--danger);
+      }
+      .tnav-menu__item--danger:hover {
+        background: var(--danger-soft);
+      }
+      .tnav-menu__item--danger .tnav-menu__icon svg,
+      .tnav-menu__item--danger svg { color: var(--danger); }
 
       /* =====================================================
          MODAL DE ACESSO NEGADO
@@ -1063,32 +1433,39 @@
          Dark mode
          ===================================================== */
       [data-theme="dark"] .app-tabs {
-        background: rgba(0, 0, 0, 0.18);
+        background: rgba(0, 0, 0, 0.20);
       }
-      [data-theme="dark"] .app-tab:hover,
-      [data-theme="dark"] .app-tab.is-active {
-        background: var(--surface);
+      [data-theme="dark"] .app-tabs__search {
+        background: rgba(255, 255, 255, 0.03);
       }
 
       /* =====================================================
          Responsivo
          ===================================================== */
-      @media (max-width: 900px) {
-        .tnav-search { flex: 1 1 auto; min-width: 160px; margin-right: 6px; }
+      @media (max-width: 1024px) {
+        .app-tabs__brand-text { display: none; }
+        .app-tabs__brand { padding-right: 12px; margin-right: 4px; border-right: 0; }
       }
 
-      @media (max-width: 640px) {
-        .app-topnav { padding: 0 8px; gap: 0; }
-        .tnav-item { padding: 0 8px; font-size: 12px; }
-        .tnav-item span.tnav-label { display: none; }
+      @media (max-width: 900px) {
+        .app-tabs__search { flex: 1 1 auto; min-width: 140px; }
+        .app-tabs__user-info { display: none; }
+        .app-tabs__user-chevron { display: none; }
+        .app-tabs__user-btn { padding: 0 4px 0 2px; height: 38px; }
+      }
 
-        .app-tabs { height: 34px; min-height: 34px; padding: 0 4px; }
-        .app-tab {
-          max-width: 140px;
-          font-size: 12px;
-          padding: 0 4px 0 8px;
+      @media (max-width: 720px) {
+        .app-tabs {
+          height: 52px;
+          min-height: 52px;
+          padding: 0 8px;
+          gap: 4px;
         }
+        .app-tabs__brand { display: none; }
+        .app-tab { max-width: 140px; font-size: 12px; height: 32px; }
         .app-tab__label { font-size: 11.5px; }
+        .app-tabs__search { flex: 0 0 130px; }
+        .app-tabs__new { width: 32px; height: 32px; margin: 0 2px; }
       }
     `;
 
@@ -1099,179 +1476,107 @@
   }
 
   /* =========================================================
-     Render do topnav + abas
+     Render da barra
      ========================================================= */
-  function renderTopnav() {
-    const caps = currentCapabilities();
-    const activeId = currentPageId();
-
+  function renderBar() {
     const appBody = document.querySelector('.app__body');
     if (!appBody) return;
 
     const topbar = appBody.querySelector('.topbar');
 
-    /* -------- topnav -------- */
-    let topnav = document.getElementById('app-topnav');
-    if (!topnav) {
-      topnav = document.createElement('nav');
-      topnav.id = 'app-topnav';
-      topnav.className = 'app-topnav';
-      topnav.setAttribute('aria-label', 'Módulos');
+    let bar = document.getElementById('app-tabs');
+    if (!bar) {
+      bar = document.createElement('div');
+      bar.id = 'app-tabs';
+      bar.className = 'app-tabs';
+      bar.setAttribute('role', 'tablist');
+      bar.setAttribute('aria-label', 'Abas abertas');
 
       if (topbar && topbar.nextSibling) {
-        appBody.insertBefore(topnav, topbar.nextSibling);
+        appBody.insertBefore(bar, topbar.nextSibling);
       } else if (topbar) {
-        appBody.appendChild(topnav);
+        appBody.appendChild(bar);
       } else {
-        appBody.insertBefore(topnav, appBody.firstChild);
+        appBody.insertBefore(bar, appBody.firstChild);
       }
     }
-    topnav.hidden = false;
 
-    /* -------- barra de abas (abaixo do topnav) -------- */
-    let tabsBar = document.getElementById('app-tabs');
-    if (!tabsBar) {
-      tabsBar = document.createElement('div');
-      tabsBar.id = 'app-tabs';
-      tabsBar.className = 'app-tabs';
-      tabsBar.setAttribute('role', 'tablist');
-      tabsBar.setAttribute('aria-label', 'Abas abertas');
-      topnav.parentNode.insertBefore(tabsBar, topnav.nextSibling);
-    }
-
-    /* ---------- barra de busca ---------- */
-    const searchHTML =
-      '<div class="tnav-search" id="tnav-search">' +
-        '<div class="tnav-search__control">' +
-          '<span class="tnav-search__icon">' + ICONS.search + '</span>' +
-          '<input type="search" class="tnav-search__input" id="tnav-search-input" ' +
-                 'placeholder="Buscar no menu… (Ctrl+K)" ' +
-                 'autocomplete="off" spellcheck="false" ' +
-                 'aria-label="Buscar opção do menu" ' +
-                 'aria-autocomplete="list" aria-controls="tnav-search-results" ' +
-                 'aria-expanded="false" />' +
-          '<button type="button" class="tnav-search__clear" id="tnav-search-clear" ' +
-                  'aria-label="Limpar busca">' + ICONS.close + '</button>' +
-        '</div>' +
-        '<div class="tnav-search__results" id="tnav-search-results" role="listbox" hidden></div>' +
-      '</div>';
-
-    /* ---------- itens do menu ---------- */
-    const itemsHTML = [];
-
-    TOPNAV.forEach(function (entry) {
-      if (entry.capability && caps.indexOf(entry.capability) === -1) {
-        if (!entry.items) return;
-        const visible = entry.items.some(function (it) {
-          return hasPermission(ITEM_PERM[it.id]);
-        });
-        if (!visible) return;
-      }
-
-      if (!entry.items) {
-        if (!hasPermission(ITEM_PERM[entry.id])) return;
-        const isActive = entry.id === activeId;
-        itemsHTML.push(
-          '<a class="tnav-item' + (isActive ? ' is-active' : '') +
-          '" href="' + entry.href + '"' +
-          ' data-entry-id="' + entry.id + '"' +
-          (isActive ? ' aria-current="page"' : '') + '>' +
-          ICONS[entry.icon] +
-          '<span class="tnav-label">' + entry.label + '</span>' +
-          '</a>'
-        );
-        return;
-      }
-
-      const visibleItems = entry.items.filter(function (it) {
-        return hasPermission(ITEM_PERM[it.id]);
-      });
-      if (visibleItems.length === 0) return;
-
-      const isGroupActive = visibleItems.some(function (it) { return it.id === activeId; });
-
-      const dropdownHTML = visibleItems.map(function (it) {
-        const isActive = it.id === activeId;
-        return (
-          '<a class="tnav-dropdown__item' + (isActive ? ' is-active' : '') +
-          '" href="' + it.href + '"' +
-          ' data-entry-id="' + it.id + '"' +
-          (isActive ? ' aria-current="page"' : '') + '>' +
-          ICONS[it.icon] +
-          '<span>' + it.label + '</span>' +
-          '</a>'
-        );
-      }).join('');
-
-      itemsHTML.push(
-        '<div class="tnav-group" data-group="' + entry.id + '">' +
-          '<button type="button" class="tnav-item' +
-            (isGroupActive ? ' is-active' : '') +
-            '" aria-haspopup="true" aria-expanded="false">' +
-            ICONS[entry.icon] +
-            '<span class="tnav-label">' + entry.label + '</span>' +
-            '<span class="tnav-chevron">' + ICONS.chevron + '</span>' +
-          '</button>' +
-          '<div class="tnav-dropdown" hidden>' + dropdownHTML + '</div>' +
-        '</div>'
-      );
-    });
-
-    const systemHTML =
-      '<a class="tnav-item tnav-item--ghost" href="configuracoes.html">' +
-        ICONS.configuracoes +
-        '<span class="tnav-label">Minha Conta</span>' +
+    bar.innerHTML =
+      '<a class="app-tabs__brand" href="' + HOME_URL + '" ' +
+         'aria-label="Ir para a página inicial" title="Página inicial">' +
+        '<span class="app-tabs__brand-mark" aria-hidden="true">' +
+          '<img src="' + BRAND_IMAGE + '" alt="" />' +
+        '</span>' +
+        '<span class="app-tabs__brand-text">DEV HUB</span>' +
       '</a>' +
-      '<button type="button" class="tnav-item tnav-item--ghost tnav-item--danger" data-action="logout">' +
-        ICONS.logout +
-        '<span class="tnav-label">Sair</span>' +
-      '</button>';
-
-    topnav.innerHTML =
-      '<div class="tnav-scroll">' + itemsHTML.join('') + '</div>' +
-      searchHTML +
-      systemHTML;
+      '<div class="app-tabs__scroll" id="app-tabs-scroll"></div>' +
+      '<button type="button" class="app-tabs__new" id="app-tabs-new" ' +
+              'aria-label="Abrir nova aba" aria-expanded="false" title="Abrir nova aba">' +
+        ICONS.plus +
+      '</button>' +
+      '<span class="app-tabs__spacer"></span>' +
+      '<div class="app-tabs__search" id="tnav-search">' +
+        '<span class="tnav-search__icon">' + ICONS.search + '</span>' +
+        '<input type="search" class="tnav-search__input" id="tnav-search-input" ' +
+               'placeholder="Buscar… (Ctrl+K)" ' +
+               'autocomplete="off" spellcheck="false" ' +
+               'aria-label="Buscar opção do menu" ' +
+               'aria-autocomplete="list" aria-controls="tnav-search-results" ' +
+               'aria-expanded="false" />' +
+        '<button type="button" class="tnav-search__clear" id="tnav-search-clear" ' +
+                'aria-label="Limpar busca">' + ICONS.close + '</button>' +
+        '<div class="tnav-search__results" id="tnav-search-results" role="listbox" hidden></div>' +
+      '</div>' +
+      '<div class="app-tabs__user" id="app-tabs-user">' +
+        '<button type="button" class="app-tabs__user-btn" id="app-tabs-user-btn" ' +
+                'aria-haspopup="menu" aria-expanded="false" ' +
+                'aria-label="Menu do usuário">' +
+          '<span class="app-tabs__user-avatar" id="user-avatar-bar" aria-hidden="true">–</span>' +
+          '<span class="app-tabs__user-info">' +
+            '<span class="app-tabs__user-name" id="user-name-bar">Carregando…</span>' +
+            '<span class="app-tabs__user-role" id="user-role-bar"></span>' +
+          '</span>' +
+          '<span class="app-tabs__user-chevron" aria-hidden="true">' + ICONS.chevron + '</span>' +
+        '</button>' +
+        '<div class="app-tabs__user-menu" id="app-tabs-user-menu" role="menu" hidden>' +
+          '<a class="app-tabs__user-item" role="menuitem" href="configuracoes.html">' +
+            ICONS.configuracoes +
+            '<span>Minha Conta</span>' +
+          '</a>' +
+          '<div class="app-tabs__user-sep" role="separator"></div>' +
+          '<button type="button" class="app-tabs__user-item app-tabs__user-item--danger" ' +
+                  'role="menuitem" data-action="logout">' +
+            ICONS.logout +
+            '<span>Sair</span>' +
+          '</button>' +
+        '</div>' +
+      '</div>';
 
     document.body.classList.add('layout-topnav');
 
-    /* -------- dropdowns -------- */
-    topnav.querySelectorAll('.tnav-group').forEach(function (group) {
-      const btn = group.querySelector('.tnav-item');
-      const dd = group.querySelector('.tnav-dropdown');
-      if (!btn || !dd) return;
+    (function relocateUserMenu() {
+      const menu = document.getElementById('app-tabs-user-menu');
+      if (menu && menu.parentNode !== document.body) {
+        document.body.appendChild(menu);
+      }
+    })();
 
-      btn.addEventListener('click', function (e) {
+    const plusBtn = document.getElementById('app-tabs-new');
+    if (plusBtn) {
+      plusBtn.addEventListener('click', function (e) {
         e.stopPropagation();
-        const willOpen = dd.hidden;
-        closeAllDropdowns();
-
-        if (willOpen) {
-          dd.hidden = false;
-          group.classList.add('is-open');
-          btn.setAttribute('aria-expanded', 'true');
-          positionDropdown(dd, btn);
-        }
+        const willOpen = !menuEl || menuEl.hidden;
+        plusBtn.setAttribute('aria-expanded', String(willOpen));
+        openModuleMenu();
       });
-    });
+    }
 
-    /* -------- intercepta cliques em itens para criar aba -------- */
-    topnav.addEventListener('click', function (e) {
-      const link = e.target.closest('a[data-entry-id]');
-      if (!link) return;
-
-      const entryId = link.getAttribute('data-entry-id');
-      const entry = findEntryById(entryId);
-      if (!entry) return;   /* deixa o browser navegar normalmente */
-
-      e.preventDefault();
-      openEntryAsTab(entry);
-    });
-
-    bindLogout(topnav);
-    setupSearch();
-
-    /* -------- render inicial das abas -------- */
     renderTabs();
+    setupSearch();
+    setupUserDropdown();
+    bindLogout(bar);
+    bindLogout(document.body);
+    syncBarUserInfo();
 
     const ctx = readContext();
     document.documentElement.setAttribute(
@@ -1301,9 +1606,14 @@
 
     if (!searchState.input || !searchState.results) return;
 
-    const full = buildSearchIndex();
-    searchState.index = full.filter(function (item) {
-      return hasPermission(ITEM_PERM[item.id]);
+    searchState.index = visibleItems().map(function (it) {
+      return {
+        id: it.id,
+        label: it.label,
+        href: it.href,
+        icon: it.icon,
+        module: it.group
+      };
     });
 
     searchState.input.addEventListener('input', onSearchInput);
@@ -1377,10 +1687,10 @@
       el.addEventListener('click', function (ev) {
         ev.preventDefault();
         const entryId = el.getAttribute('data-entry-id');
-        const entry = findEntryById(entryId);
-        if (!entry) return;
+        const item = findItemById(entryId);
+        if (!item) return;
         clearSearch();
-        openEntryAsTab(entry);
+        openItemAsTab(item);
       });
     });
   }
@@ -1425,10 +1735,10 @@
       e.preventDefault();
       const item = searchState.filtered[searchState.selectedIdx];
       if (item) {
-        const entry = findEntryById(item.id);
-        if (entry) {
+        const found = findItemById(item.id);
+        if (found) {
           clearSearch();
-          openEntryAsTab(entry);
+          openItemAsTab(found);
         }
       }
     }
@@ -1458,7 +1768,6 @@
         btn.disabled = true;
         btn.setAttribute('aria-busy', 'true');
 
-        /* Limpa as abas ao sair */
         try { sessionStorage.removeItem(TABS_KEY); } catch (e) { /* ignora */ }
 
         if (window.Auth && typeof window.Auth.signOut === 'function') {
@@ -1471,32 +1780,8 @@
   }
 
   /* =========================================================
-     Avatar
+     Avatar · helper compartilhado
      ========================================================= */
-  function renderTopbarAvatar(url) {
-    const el = document.getElementById('user-avatar');
-    if (!el) return;
-    if (el.dataset.avatarUrl === (url || '')) return;
-
-    el.innerHTML = '';
-    el.dataset.avatarUrl = url || '';
-
-    if (url) {
-      el.style.background = 'none';
-      const img = document.createElement('img');
-      img.src = url;
-      img.alt = '';
-      img.onerror = function () {
-        el.innerHTML = '';
-        el.style.background = '';
-        el.dataset.avatarUrl = '';
-      };
-      el.appendChild(img);
-    } else {
-      el.style.background = '';
-    }
-  }
-
   function readCachedAvatar() {
     try {
       const raw = sessionStorage.getItem('devhub_user');
@@ -1522,7 +1807,7 @@
 
   let avatarPromise = null;
 
-  function applyTopbarAvatar() {
+  async function applyTopbarAvatar() {
     if (avatarPromise) return avatarPromise;
 
     avatarPromise = (async function () {
@@ -1548,21 +1833,49 @@
     return avatarPromise;
   }
 
+  function renderTopbarAvatar(url) {
+    const el = document.getElementById('user-avatar');
+    if (!el) return;
+    if (el.dataset.avatarUrl === (url || '')) return;
+
+    el.innerHTML = '';
+    el.dataset.avatarUrl = url || '';
+
+    if (url) {
+      el.style.background = 'none';
+      const img = document.createElement('img');
+      img.src = url;
+      img.alt = '';
+      img.onerror = function () {
+        el.innerHTML = '';
+        el.style.background = '';
+        el.dataset.avatarUrl = '';
+      };
+      el.appendChild(img);
+    } else {
+      el.style.background = '';
+    }
+  }
+
   function scheduleAvatarRefresh() {
     [0, 100, 300, 800, 1500].forEach(function (ms) {
-      setTimeout(applyTopbarAvatar, ms);
+      setTimeout(function () {
+        applyTopbarAvatar();
+        applyBarAvatar();
+        syncBarUserInfo();
+      }, ms);
     });
   }
 
   /* =========================================================
      Bootstrap
      ========================================================= */
-  let navRendered = false;
+  let rendered = false;
 
-  function renderTopnavOnce(force) {
-    if (navRendered && !force) return;
-    navRendered = true;
-    renderTopnav();
+  function renderOnce(force) {
+    if (rendered && !force) return;
+    rendered = true;
+    renderBar();
   }
 
   function bootstrap() {
@@ -1571,17 +1884,13 @@
 
     injectStyles();
     injectPermissionModal();
-
-    /* Garante que a página atual tem aba registrada */
     syncCurrentTab();
 
     if (window.Perms && typeof window.Perms.load === 'function') {
-      window.Perms.load().catch(function () {
-        renderTopnavOnce();
-      });
-      setTimeout(function () { renderTopnavOnce(); }, 1500);
+      window.Perms.load().catch(function () { renderOnce(); });
+      setTimeout(function () { renderOnce(); }, 1500);
     } else {
-      renderTopnavOnce();
+      renderOnce();
     }
 
     scheduleAvatarRefresh();
@@ -1596,7 +1905,7 @@
   window.addEventListener('load', scheduleAvatarRefresh);
 
   document.addEventListener('perms:ready', function () {
-    renderTopnavOnce(true);
+    renderOnce(true);
   });
 
   if (window.db && window.db.auth && window.db.auth.onAuthStateChange) {
@@ -1608,10 +1917,17 @@
   }
 
   /* =========================================================
-     Listeners globais (registrados UMA vez)
+     Listeners globais
      ========================================================= */
   document.addEventListener('click', function (e) {
-    closeAllDropdowns();
+    if (menuEl && !menuEl.hidden) {
+      if (menuEl.contains(e.target)) return;
+      if (e.target.closest('#app-tabs-new')) return;
+
+      closeModuleMenu();
+      const plusBtn = document.getElementById('app-tabs-new');
+      if (plusBtn) plusBtn.setAttribute('aria-expanded', 'false');
+    }
 
     if (!searchState.wrap) return;
     if (searchState.wrap.contains(e.target)) return;
@@ -1620,7 +1936,7 @@
 
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape') return;
-    closeAllDropdowns();
+    closeModuleMenu();
     closeResults();
   });
 
@@ -1637,18 +1953,34 @@
     input.select();
   });
 
-  window.addEventListener('resize', closeAllDropdowns);
-  window.addEventListener('scroll', closeAllDropdowns, true);
+  window.addEventListener('scroll', function (e) {
+    if (!menuEl || menuEl.hidden) return;
+    if (e.target === menuEl || (e.target && menuEl.contains(e.target))) return;
+    if (menuHovered) return;
+
+    const plusBtn = document.getElementById('app-tabs-new');
+    if (plusBtn) positionMenu(menuEl, plusBtn);
+  }, true);
+
+  window.addEventListener('resize', function () {
+    if (!menuEl || menuEl.hidden) return;
+    const plusBtn = document.getElementById('app-tabs-new');
+    if (plusBtn) positionMenu(menuEl, plusBtn);
+  });
 
   /* =========================================================
-     API GLOBAL (debug + integração opcional)
+     API GLOBAL
      ========================================================= */
   window.DHTabs = {
-    open: openEntryAsTab,
+    open: openItemAsTab,
     close: closeTab,
     list: readTabs,
-    clear: function () { writeTabs([]); renderTabs(); },
+    clear: clearAllTabs,
     sync: syncCurrentTab
   };
+
+  window.DHModules = TOPNAV;
+  window.DHItemPerm = ITEM_PERM;
+  window.DHHomeUrl = HOME_URL;
 
 })();

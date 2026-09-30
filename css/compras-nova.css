@@ -1,0 +1,982 @@
+/* =========================================================
+   DEV HUB · Nova Compra · CSS dedicado (auto-contido)
+   ---------------------------------------------------------
+   - Força centralização com alta especificidade
+   - Corrige chevron dos selects
+   - Todos os estilos do formulário em um único arquivo
+   - NÃO depende de compras.css
+   ========================================================= */
+
+
+/* =========================================================
+   1) RESET E CONTAINER FORÇADO
+   ---------------------------------------------------------
+   Neutraliza o .content global e define nossa própria coluna.
+   ========================================================= */
+body[data-page="compras-nova"] .content,
+body[data-page="compras-nova"] main.content,
+body[data-page="compras-nova"] .app__body > .content,
+body[data-page="compras-nova"] .app__body > main {
+  width: 100% !important;
+  max-width: 1280px !important;
+  margin: 0 auto !important;
+  padding: 40px 48px 56px !important;
+  box-sizing: border-box !important;
+  background: transparent !important;
+}
+
+body[data-page="compras-nova"] .content > *,
+body[data-page="compras-nova"] main.content > * {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Responsivo */
+@media (max-width: 1200px) {
+  body[data-page="compras-nova"] .content {
+    padding: 32px 32px 48px !important;
+  }
+}
+@media (max-width: 768px) {
+  body[data-page="compras-nova"] .content {
+    padding: 24px 20px 40px !important;
+  }
+}
+@media (max-width: 480px) {
+  body[data-page="compras-nova"] .content {
+    padding: 20px 16px 32px !important;
+  }
+}
+
+/* Wrapper principal */
+body[data-page="compras-nova"] .cmp-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+  max-width: 100%;
+}
+
+
+/* =========================================================
+   2) FIX DO CHEVRON — selects com um único ícone à direita
+   ========================================================= */
+body[data-page="compras-nova"] select {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+
+  background-color: var(--surface) !important;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 14px center !important;
+  background-size: 16px 16px !important;
+  padding-right: 42px !important;
+}
+
+[data-theme="dark"] body[data-page="compras-nova"] select {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a8b0ba' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>") !important;
+}
+
+
+/* =========================================================
+   3) HEADER DA PÁGINA
+   ========================================================= */
+body[data-page="compras-nova"] .cmp-page-head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+body[data-page="compras-nova"] .cmp-page-head__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  text-decoration: none;
+  width: fit-content;
+  transition: color 160ms ease;
+}
+body[data-page="compras-nova"] .cmp-page-head__eyebrow:hover {
+  color: var(--text-soft);
+}
+body[data-page="compras-nova"] .cmp-page-head__eyebrow svg {
+  width: 14px;
+  height: 14px;
+}
+
+body[data-page="compras-nova"] .cmp-page-head__title {
+  margin: 0;
+  font-size: 32px;
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: var(--text);
+}
+
+body[data-page="compras-nova"] .cmp-page-head__sub {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--text-soft);
+}
+
+
+/* =========================================================
+   4) BOTÕES (usados no form)
+   ========================================================= */
+body[data-page="compras-nova"] .cmp-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 42px;
+  padding: 0 18px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 160ms ease, border-color 160ms ease,
+              color 160ms ease, box-shadow 160ms ease;
+}
+body[data-page="compras-nova"] .cmp-btn svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+body[data-page="compras-nova"] .cmp-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px var(--accent-ring);
+}
+
+body[data-page="compras-nova"] .cmp-btn--ghost {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text-soft);
+}
+body[data-page="compras-nova"] .cmp-btn--ghost:hover {
+  background: var(--surface-2);
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+
+body[data-page="compras-nova"] .cmp-btn--primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+}
+body[data-page="compras-nova"] .cmp-btn--primary:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+
+/* =========================================================
+   5) SEÇÕES (.cmp-section)
+   ========================================================= */
+body[data-page="compras-nova"] .cmp-section {
+  padding: 28px 30px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+  box-sizing: border-box;
+  width: 100%;
+}
+
+body[data-page="compras-nova"] .cmp-section__title {
+  margin: 0 0 24px;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  padding-left: 12px;
+  border-left: 3px solid var(--accent);
+  line-height: 1.3;
+}
+
+@media (max-width: 720px) {
+  body[data-page="compras-nova"] .cmp-section {
+    padding: 22px 18px;
+  }
+  body[data-page="compras-nova"] .cmp-section__title {
+    margin-bottom: 20px;
+  }
+}
+
+
+/* =========================================================
+   6) GRIDS
+   ========================================================= */
+body[data-page="compras-nova"] .cmp-grid {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  width: 100%;
+}
+body[data-page="compras-nova"] .cmp-grid--2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+body[data-page="compras-nova"] .cmp-grid--3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+body[data-page="compras-nova"] .cmp-grid--4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+body[data-page="compras-nova"] .cmp-grid .field {
+  margin: 0;
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  body[data-page="compras-nova"] .cmp-grid--3,
+  body[data-page="compras-nova"] .cmp-grid--4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 640px) {
+  body[data-page="compras-nova"] .cmp-grid--2,
+  body[data-page="compras-nova"] .cmp-grid--3,
+  body[data-page="compras-nova"] .cmp-grid--4 {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* =========================================================
+   7) CAMPOS
+   ========================================================= */
+body[data-page="compras-nova"] .field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+body[data-page="compras-nova"] .field > label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-soft);
+  line-height: 1.3;
+}
+
+body[data-page="compras-nova"] .field input,
+body[data-page="compras-nova"] .field select,
+body[data-page="compras-nova"] .field textarea {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background-color: var(--surface);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14.5px;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+body[data-page="compras-nova"] .field input::placeholder,
+body[data-page="compras-nova"] .field textarea::placeholder {
+  color: var(--text-muted);
+}
+
+body[data-page="compras-nova"] .field input:hover,
+body[data-page="compras-nova"] .field select:hover,
+body[data-page="compras-nova"] .field textarea:hover {
+  border-color: var(--border-strong);
+}
+
+body[data-page="compras-nova"] .field input:focus,
+body[data-page="compras-nova"] .field select:focus,
+body[data-page="compras-nova"] .field textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-ring);
+}
+
+body[data-page="compras-nova"] .field textarea {
+  padding: 12px 14px;
+  min-height: 100px;
+  resize: vertical;
+  line-height: 1.55;
+}
+
+/* input readonly (código) */
+body[data-page="compras-nova"] .field input[readonly] {
+  background-color: var(--surface-2);
+  color: var(--text-soft);
+  cursor: not-allowed;
+}
+
+
+/* =========================================================
+   8) ITENS DA COMPRA
+   ========================================================= */
+body[data-page="compras-nova"] .cmp-items {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--surface);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+body[data-page="compras-nova"] .cmp-items__head,
+body[data-page="compras-nova"] .cmp-items__row {
+  display: grid;
+  grid-template-columns:
+    minmax(200px, 2fr)
+    100px
+    80px
+    120px
+    110px
+    130px
+    48px;
+  gap: 10px;
+  align-items: center;
+  padding: 12px 18px;
+}
+
+body[data-page="compras-nova"] .cmp-items__head {
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+body[data-page="compras-nova"] .cmp-items__row {
+  border-bottom: 1px solid var(--border);
+}
+body[data-page="compras-nova"] .cmp-items__row:last-child {
+  border-bottom: 0;
+}
+
+body[data-page="compras-nova"] .cmp-items__row input,
+body[data-page="compras-nova"] .cmp-items__row select {
+  width: 100%;
+  height: 38px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background-color: var(--surface);
+  color: var(--text);
+  font-size: 13.5px;
+  font-family: inherit;
+  box-sizing: border-box;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+body[data-page="compras-nova"] .cmp-items__row select {
+  padding-right: 32px !important;
+  background-position: right 10px center !important;
+  background-size: 14px 14px !important;
+}
+
+body[data-page="compras-nova"] .cmp-items__row input:focus,
+body[data-page="compras-nova"] .cmp-items__row select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+
+body[data-page="compras-nova"] .cmp-items__row input[type="number"] {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+body[data-page="compras-nova"] .cmp-items__total {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--text);
+  font-size: 13.5px;
+  white-space: nowrap;
+}
+
+body[data-page="compras-nova"] .cmp-items__remove {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background-color 140ms ease, color 140ms ease;
+}
+body[data-page="compras-nova"] .cmp-items__remove:hover {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+body[data-page="compras-nova"] .cmp-items__remove svg {
+  width: 14px;
+  height: 14px;
+}
+
+body[data-page="compras-nova"] .cmp-items__add {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 14px;
+}
+
+/* Scroll horizontal em telas médias */
+@media (max-width: 1100px) {
+  body[data-page="compras-nova"] .cmp-items {
+    overflow-x: auto;
+  }
+  body[data-page="compras-nova"] .cmp-items__head,
+  body[data-page="compras-nova"] .cmp-items__row {
+    min-width: 800px;
+  }
+}
+
+/* Mobile: cards verticais */
+@media (max-width: 720px) {
+  body[data-page="compras-nova"] .cmp-items {
+    border: 0;
+    background: transparent;
+    overflow: visible;
+  }
+  body[data-page="compras-nova"] .cmp-items__head {
+    display: none;
+  }
+  body[data-page="compras-nova"] .cmp-items__row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    padding: 18px;
+    margin-bottom: 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+    min-width: 0 !important;
+  }
+  body[data-page="compras-nova"] .cmp-items__row:last-child {
+    margin-bottom: 0;
+  }
+  body[data-page="compras-nova"] .cmp-items__row > *:nth-child(1) {
+    grid-column: 1 / -1;
+  }
+  body[data-page="compras-nova"] .cmp-items__row > *:nth-child(6) {
+    grid-column: 1 / -1;
+    text-align: left;
+  }
+  body[data-page="compras-nova"] .cmp-items__row > *:nth-child(7) {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+  body[data-page="compras-nova"] .cmp-items__total {
+    text-align: left;
+    font-size: 14.5px;
+  }
+}
+
+
+/* =========================================================
+   9) TOTAIS
+   ========================================================= */
+body[data-page="compras-nova"] .cmp-totals {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px 24px;
+  max-width: 440px;
+  margin-left: auto;
+  margin-top: 20px;
+  font-size: 14.5px;
+  width: 100%;
+}
+
+body[data-page="compras-nova"] .cmp-totals dt {
+  color: var(--text-soft);
+  font-weight: 500;
+  padding: 3px 0;
+}
+body[data-page="compras-nova"] .cmp-totals dd {
+  margin: 0;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  font-weight: 500;
+  padding: 3px 0;
+}
+
+body[data-page="compras-nova"] .cmp-totals__grand {
+  grid-column: 1 / -1;
+  display: contents;
+}
+body[data-page="compras-nova"] .cmp-totals__grand dt {
+  margin-top: 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  font-weight: 700;
+  color: var(--text);
+  font-size: 15px;
+}
+body[data-page="compras-nova"] .cmp-totals__grand dd {
+  margin-top: 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  font-weight: 700;
+  color: var(--text);
+  font-size: 19px;
+  letter-spacing: -0.015em;
+}
+
+
+/* =========================================================
+   10) AÇÕES DO FORMULÁRIO
+   ========================================================= */
+body[data-page="compras-nova"] .cmp-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding-top: 8px;
+}
+
+body[data-page="compras-nova"] .cmp-form__actions .control-select {
+  height: 42px;
+  min-width: 260px;
+}
+
+@media (max-width: 640px) {
+  body[data-page="compras-nova"] .cmp-form__actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+  body[data-page="compras-nova"] .cmp-form__actions .cmp-btn,
+  body[data-page="compras-nova"] .cmp-form__actions .control-select {
+    width: 100%;
+  }
+}
+
+
+/* =========================================================
+   11) FEEDBACK / LOADING
+   ========================================================= */
+body[data-page="compras-nova"] .cmp-loading {
+  padding: 56px 24px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+body[data-page="compras-nova"] .cmp-error {
+  padding: 14px 18px;
+  border-radius: 10px;
+  background: var(--danger-soft);
+  border: 1px solid var(--danger-border);
+  color: var(--danger);
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+body[data-page="compras-nova"] .cmp-info {
+  padding: 14px 18px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-ring);
+  color: var(--accent-hover);
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+
+/* =========================================================
+   12) REDUCED MOTION
+   ========================================================= */
+@media (prefers-reduced-motion: reduce) {
+  body[data-page="compras-nova"] * {
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* =========================================================
+   13) FALLBACK · botões com .btn ou .btn--primary
+   ---------------------------------------------------------
+   Cobre o HTML legado que ainda usa classes do global.css.
+   Assim o botão "+ Adicionar item" ganha estilo correto.
+   ========================================================= */
+
+/* Botão base */
+body[data-page="compras-nova"] .btn,
+body[data-page="compras-nova"] .cmp-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 42px;
+  padding: 0 18px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+  transition: background-color 160ms ease, border-color 160ms ease,
+              color 160ms ease, box-shadow 160ms ease;
+}
+
+body[data-page="compras-nova"] .btn svg,
+body[data-page="compras-nova"] .cmp-btn svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+
+body[data-page="compras-nova"] .btn:hover,
+body[data-page="compras-nova"] .cmp-btn:hover {
+  background: var(--surface-2);
+  border-color: var(--border-strong);
+}
+
+body[data-page="compras-nova"] .btn:focus-visible,
+body[data-page="compras-nova"] .cmp-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px var(--accent-ring);
+}
+
+/* Botão primário (Salvar compra) */
+body[data-page="compras-nova"] .btn--primary,
+body[data-page="compras-nova"] .cmp-btn--primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+body[data-page="compras-nova"] .btn--primary:hover,
+body[data-page="compras-nova"] .cmp-btn--primary:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+/* Botão ghost */
+body[data-page="compras-nova"] .btn--ghost,
+body[data-page="compras-nova"] .cmp-btn--ghost {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text-soft);
+}
+
+body[data-page="compras-nova"] .btn--ghost:hover,
+body[data-page="compras-nova"] .cmp-btn--ghost:hover {
+  background: var(--surface-2);
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+
+/* Bloqueia width 100% para botões de formulário, exceto block */
+body[data-page="compras-nova"] .btn--block {
+  width: 100%;
+}
+/* =========================================================
+   13) FORNECEDOR · linha com select + botão Novo
+   ========================================================= */
+body[data-page="compras-nova"] .cmp-supplier-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  width: 100%;
+}
+
+body[data-page="compras-nova"] .cmp-supplier-row select {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Botão pequeno (ao lado do select) */
+body[data-page="compras-nova"] .cmp-btn--sm {
+  height: 44px;
+  padding: 0 14px;
+  font-size: 13.5px;
+  flex: none;
+  gap: 6px;
+}
+body[data-page="compras-nova"] .cmp-btn--sm svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* =========================================================
+   14) MODAL · linha de busca CNPJ
+   ========================================================= */
+body[data-page="compras-nova"] .cmp-cnpj {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  width: 100%;
+}
+body[data-page="compras-nova"] .cmp-cnpj__field {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+body[data-page="compras-nova"] .cmp-cnpj__btn {
+  flex: none;
+  height: 44px;
+  gap: 8px;
+}
+body[data-page="compras-nova"] .cmp-cnpj__hint {
+  margin: -6px 0 4px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+body[data-page="compras-nova"] .cmp-cnpj__hint strong {
+  color: var(--text-soft);
+}
+
+/* Spinner de loading do botão "Buscar dados" */
+body[data-page="compras-nova"] .cmp-cnpj__spinner {
+  display: none;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255,255,255,0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: cmp-spin 700ms linear infinite;
+}
+body[data-page="compras-nova"] .cmp-cnpj__btn.is-loading .cmp-cnpj__spinner,
+body[data-page="compras-nova"] #sup-save.is-loading .cmp-cnpj__spinner {
+  display: inline-block;
+}
+body[data-page="compras-nova"] .cmp-cnpj__btn.is-loading .cmp-cnpj__icon-search {
+  display: none;
+}
+body[data-page="compras-nova"] .cmp-cnpj__btn.is-loading,
+body[data-page="compras-nova"] #sup-save.is-loading {
+  cursor: progress;
+  opacity: 0.9;
+}
+
+/* Destaque pulsante quando dados são auto-preenchidos */
+@keyframes cmp-field-filled {
+  from { background-color: var(--accent-soft); }
+  to   { background-color: var(--surface); }
+}
+body[data-page="compras-nova"] input.is-autofilled {
+  animation: cmp-field-filled 1200ms ease-out;
+}
+
+/* Mobile: empilha botão embaixo da busca CNPJ */
+@media (max-width: 560px) {
+  body[data-page="compras-nova"] .cmp-cnpj {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  body[data-page="compras-nova"] .cmp-cnpj__btn {
+    width: 100%;
+    justify-content: center;
+  }
+  body[data-page="compras-nova"] .cmp-supplier-row {
+    flex-direction: column;
+  }
+  body[data-page="compras-nova"] .cmp-supplier-row .cmp-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+/* =========================================================
+   15) MODAL (usado pelo cadastro de fornecedor inline)
+   ========================================================= */
+body[data-page="compras-nova"] .cmp-modal[hidden] {
+  display: none !important;
+}
+
+body[data-page="compras-nova"] .cmp-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  animation: cmp-fade 200ms ease-out;
+}
+
+@keyframes cmp-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+body[data-page="compras-nova"] .cmp-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 11, 18, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+body[data-page="compras-nova"] .cmp-modal__dialog {
+  position: relative;
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  overflow: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow:
+    0 4px 12px -2px rgba(16, 24, 40, 0.08),
+    0 12px 28px -8px rgba(16, 24, 40, 0.10);
+  animation: cmp-pop 240ms cubic-bezier(.2,.9,.3,1);
+}
+
+body[data-page="compras-nova"] .cmp-modal__dialog--lg {
+  max-width: 720px;
+}
+
+@keyframes cmp-pop {
+  from { opacity: 0; transform: translateY(8px) scale(.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+body[data-page="compras-nova"] .cmp-modal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+body[data-page="compras-nova"] .cmp-modal__title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+body[data-page="compras-nova"] .cmp-modal__close {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background-color 140ms ease, color 140ms ease;
+}
+body[data-page="compras-nova"] .cmp-modal__close:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+body[data-page="compras-nova"] .cmp-modal__close svg {
+  width: 15px;
+  height: 15px;
+}
+
+body[data-page="compras-nova"] .cmp-modal__body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+body[data-page="compras-nova"] .cmp-modal__foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  background: var(--surface-2);
+}
+
+/* Row do CNPJ: input + botão lado a lado */
+body[data-page="compras-nova"] .cmp-cnpj {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  width: 100%;
+}
+body[data-page="compras-nova"] .cmp-cnpj__field {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+body[data-page="compras-nova"] .cmp-cnpj__btn {
+  flex: none;
+  height: 44px;
+  gap: 8px;
+}
+body[data-page="compras-nova"] .cmp-cnpj__hint {
+  margin: -8px 0 4px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+body[data-page="compras-nova"] .cmp-cnpj__hint strong {
+  color: var(--text-soft);
+}
+
+/* Spinner do botão Buscar dados */
+body[data-page="compras-nova"] .cmp-cnpj__spinner {
+  display: none;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255,255,255,0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: cmp-spin 700ms linear infinite;
+}
+body[data-page="compras-nova"] .cmp-cnpj__btn.is-loading .cmp-cnpj__spinner,
+body[data-page="compras-nova"] #sup-save.is-loading .cmp-cnpj__spinner {
+  display: inline-block;
+}
+body[data-page="compras-nova"] .cmp-cnpj__btn.is-loading .cmp-cnpj__icon-search {
+  display: none;
+}
+
+/* Destaque pulsante quando dado é auto-preenchido */
+@keyframes cmp-field-filled {
+  from { background-color: var(--accent-soft); }
+  to   { background-color: var(--surface); }
+}
+body[data-page="compras-nova"] input.is-autofilled {
+  animation: cmp-field-filled 1200ms ease-out;
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+  body[data-page="compras-nova"] .cmp-modal { padding: 16px; }
+  body[data-page="compras-nova"] .cmp-modal__head { padding: 18px 18px 14px; }
+  body[data-page="compras-nova"] .cmp-modal__body { padding: 18px; }
+  body[data-page="compras-nova"] .cmp-modal__foot {
+    padding: 14px 18px;
+    flex-direction: column-reverse;
+  }
+  body[data-page="compras-nova"] .cmp-modal__foot .cmp-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  body[data-page="compras-nova"] .cmp-cnpj {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  body[data-page="compras-nova"] .cmp-cnpj__btn {
+    width: 100%;
+    justify-content: center;
+  }
+}

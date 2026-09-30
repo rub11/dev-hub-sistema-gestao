@@ -13,7 +13,39 @@
    6. Switch track (produtos.css) — #d0d5dd ficava claro demais.
    7. Chevrons dos selects — stroke #667085 hardcoded, quase
       invisível sobre superfície escura.
+   8. ** NOVO ** Chevrons dos selects repetiam horizontalmente
+      porque `background-repeat` não estava declarado. Agora
+      a regra base fixa repeat/position/size.
+   9. ** NOVO ** Selects em dark mode ficavam com fundo BRANCO
+      (fundo nativo do Chrome) porque faltava `background-color`
+      e `color-scheme`. Agora ficam escuros e o dropdown nativo
+      também renderiza em dark.
    ========================================================= */
+
+/* =========================================================
+   Fundo global — aplica em todas as páginas
+   ---------------------------------------------------------
+   Gradiente radial da marca no topo + cor base escura.
+   `background-attachment: fixed` mantém o gradiente no
+   lugar mesmo ao rolar a página.
+   ========================================================= */
+body {
+  background:
+    radial-gradient(
+      ellipse 60% 100% at 50% 0%,
+      color-mix(in srgb, var(--accent) 14%, transparent) 0%,
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 40% 80% at 80% 0%,
+      color-mix(in srgb, #8b5cf6 10%, transparent) 0%,
+      transparent 60%
+    ),
+    var(--bg);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  background-size: 100% 400px, 100% 400px, auto;
+}
 
 [data-theme="dark"] {
   /* Superfícies */
@@ -79,9 +111,6 @@
 
 /* =========================================================
    CORREÇÃO #1 — Toasts (clientes.css)
-   ---------------------------------------------------------
-   `--border-color` do success/info era tom claro. Sobre o
-   fundo escuro translúcido, a borda some.
    ========================================================= */
 [data-theme="dark"] .toast--success {
   border-color: rgba(74, 222, 128, 0.32);
@@ -95,13 +124,8 @@
   color: var(--accent-hover);
 }
 
-/* (.toast--error já usa var(--danger-border), que é
-   redefinido para dark; nenhum override necessário.) */
-
 /* =========================================================
    CORREÇÃO #2 — Tags PF/PJ (clientes.css)
-   ---------------------------------------------------------
-   Usa pastéis azul/rosa fixos, próprios para fundo claro.
    ========================================================= */
 [data-theme="dark"] .tag-pf {
   background: rgba(59, 130, 246, 0.16);
@@ -117,10 +141,6 @@
 
 /* =========================================================
    CORREÇÃO #3 — Alert items (dashboard-pro.css)
-   ---------------------------------------------------------
-   Cada `kind` tinha um fundo `#fef...` claro para o ícone.
-   O `kpi__icon--*` já tem override próprio no dashboard-pro.css;
-   `.alert-item__icon` não tinha nenhum.
    ========================================================= */
 [data-theme="dark"] .alert-item {
   background: var(--surface-2);
@@ -144,9 +164,6 @@
 
 /* =========================================================
    CORREÇÃO #4 — Role tags (funcionarios.css / gestao.css)
-   ---------------------------------------------------------
-   `.role-tag--admin` tinha `border-color: #c7d2fe` hardcoded.
-   `.role-tag--leader` idem no gestao.css.
    ========================================================= */
 [data-theme="dark"] .role-tag {
   background: var(--surface-2);
@@ -168,10 +185,6 @@
 
 /* =========================================================
    CORREÇÃO #5 — Status badges (plataforma-usuarios.css)
-   ---------------------------------------------------------
-   `.status-badge--vacation` tinha fundo `#eff6ff` fixo.
-   Os outros usavam variáveis (--success-soft, etc), já OK;
-   mantidos aqui só para centralizar a intenção.
    ========================================================= */
 [data-theme="dark"] .status-badge--active {
   background: var(--success-soft);
@@ -200,9 +213,6 @@
 
 /* =========================================================
    CORREÇÃO #6 — Switch (produtos.css)
-   ---------------------------------------------------------
-   O track `#d0d5dd` (cinza claro) ficava muito destacado.
-   O thumb `#ffffff` também brilha demais no dark.
    ========================================================= */
 [data-theme="dark"] .switch__track {
   background: #2a323b;
@@ -213,12 +223,69 @@
 }
 
 /* =========================================================
-   CORREÇÃO #7 — Chevrons dos selects
+   CORREÇÃO #7, #8 e #9 — Selects
+
    ---------------------------------------------------------
-   5 arquivos definem `background-image` com `stroke='%23667085'`
-   (cinza médio). Sobre `--surface` escuro, o chevron tem baixo
-   contraste. Trocamos para `%23a8b0ba` (= --text-soft).
+   Histórico dos bugs:
+     • #7 — Chevron com stroke #667085 quase invisível em dark.
+     • #8 — Chevron repetia horizontalmente (faltava no-repeat).
+     • #9 — O <select> ficava BRANCO em dark mode (fundo nativo
+            do Chrome) porque faltava `background-color` e
+            `color-scheme`. Também deixava o chevron invisível
+            (cinza claro sobre branco) e o dropdown nativo sem
+            dark mode.
+
+   Solução:
+     • Bloco BASE (fora do dark) fixa:
+         - aparência (appearance: none)
+         - cor de fundo/texto via variáveis (--surface/--text)
+         - color-scheme para o popup nativo seguir o tema
+         - background-repeat/position/size do chevron
+     • Bloco DARK só troca a cor do chevron (stroke mais claro).
    ========================================================= */
+
+/* --- Base: aparência + chevron no-repeat + color-scheme --- */
+.control-select,
+.sale-form select,
+.repeatable-row select,
+#org-modal select,
+.org-manage__row select {
+  /* Remove o chevron nativo duplicado */
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  /* Fundo/texto coerentes com o tema atual */
+  background-color: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding-right: 40px;                 /* espaço pro chevron */
+
+  /* Faz o dropdown nativo respeitar o tema */
+  color-scheme: light dark;
+
+  /* Chevron único, alinhado à direita */
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px 16px;
+
+  /* Transição suave ao trocar tema/foco */
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+/* Foco elegante */
+.control-select:focus,
+.sale-form select:focus,
+.repeatable-row select:focus,
+#org-modal select:focus,
+.org-manage__row select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-ring);
+}
+
+/* --- Dark: apenas troca a cor do chevron (stroke claro) --- */
 [data-theme="dark"] .control-select,
 [data-theme="dark"] .sale-form select,
 [data-theme="dark"] .repeatable-row select,
@@ -227,6 +294,15 @@
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a8b0ba' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
 }
 
+/* --- Light: chevron em cinza neutro --- */
+.control-select,
+.sale-form select,
+.repeatable-row select,
+#org-modal select,
+.org-manage__row select {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+}
+
 /* =========================================================
    Sidebar permanece escura nos dois temas (não mexe).
-   ========================================================= */ 
+   ========================================================= */

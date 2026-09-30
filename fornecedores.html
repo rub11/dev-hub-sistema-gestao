@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fornecedores · DEV HUB</title>
+  <script src="js/theme.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/global.css" />
+  <link rel="stylesheet" href="css/theme.css" />
+  
+  <link rel="stylesheet" href="css/compras.css" />
+</head>
+<body data-page="fornecedores">
+  <div class="app__body">
+    <main class="content">
+      <header class="page-head">
+        <div class="page-head__eyebrow"><a href="compras.html" style="color:inherit">← Voltar para compras</a></div>
+        <h1 class="page-head__title">Fornecedores</h1>
+        <p class="page-head__sub">Cadastro de fornecedores usados nas compras.</p>
+      </header>
+
+      <div class="cmp-toolbar">
+        <div class="cmp-filters">
+          <input type="search" id="forn-search" placeholder="Buscar por nome ou CNPJ..." />
+        </div>
+        <button class="btn btn--primary" id="forn-new">+ Novo fornecedor</button>
+      </div>
+
+      <div class="panel">
+        <div class="table-wrap">
+          <table class="cmp-table" style="min-width:600px">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>CNPJ / CPF</th>
+                <th>Telefone</th>
+                <th>E-mail</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="forn-tbody">
+              <tr><td colspan="5" class="cmp-loading">Carregando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase.js"></script>
+  <script src="nav.js"></script>
+  <script src="js/compras.js"></script>
+</body>
+</html>

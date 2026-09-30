@@ -1,208 +1,825 @@
-/* =========================================================
-   DEV HUB · Tela de login
-   ---------------------------------------------------------
-   CORREÇÕES APLICADAS:
-   1. `100vh` → `100dvh` (dynamic viewport height). No iOS
-      Safari, `100vh` considera apenas o viewport *ideal*
-      (sem a barra de endereço), cortando o conteúdo de baixo.
-      `100dvh` acompanha a barra dinamicamente.
-   2. Autofill do Chrome: hack `-webkit-box-shadow inset` para
-      forçar o fundo correto e evitar o clássico "input amarelo"
-      que destrói o dark mode. Aplicado em todos os inputs do
-      formulário de login.
-   3. Adicionado `color-scheme` no painel do formulário —
-      controles nativos (scrollbar, selects futuros) respeitam
-      o tema automaticamente.
-   4. Removida a redundância `min-height: 100vh` do `.login`
-      (o `.login-page` já garante).
-   5. Comentários explicando que `.login__aside` é
-      intencionalmente escuro nos dois temas.
-   ========================================================= */
+/* =============================================================
+   DEV HUB · Tela de Login
+   -------------------------------------------------------------
+   - Layout split (institucional + formulário)
+   - Design premium, minimalista, SaaS
+   - Tema claro / escuro
+   - Responsivo com tratamento dedicado no mobile
+   - Respeita prefers-reduced-motion
+   ============================================================= */
 
+/* ---------------------------------------------------------
+   Tokens locais
+   --------------------------------------------------------- */
 .login-page {
+  --login-radius-sm: 8px;
+  --login-radius-md: 12px;
+  --login-radius-lg: 16px;
+  --login-radius-pill: 999px;
+
+  --login-accent: #4f46e5;
+  --login-accent-hover: #4338ca;
+  --login-accent-soft: rgba(79, 70, 229, 0.10);
+  --login-accent-ring: rgba(79, 70, 229, 0.20);
+
+  --login-aside-bg-1: #0b1220;
+  --login-aside-bg-2: #111a2e;
+  --login-aside-text: #e8ecf4;
+  --login-aside-muted: rgba(232, 236, 244, 0.62);
+  --login-aside-border: rgba(255, 255, 255, 0.08);
+
+  --login-surface: #ffffff;
+  --login-surface-2: #f7f8fb;
+  --login-border: #e5e7eb;
+  --login-border-hover: #d1d5db;
+  --login-text: #0f172a;
+  --login-text-soft: #475569;
+  --login-text-muted: #94a3b8;
+
+  --login-danger: #dc2626;
+  --login-danger-soft: rgba(220, 38, 38, 0.10);
+  --login-success: #059669;
+  --login-success-soft: rgba(5, 150, 105, 0.10);
+
+  --login-shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.05);
+  --login-shadow-md: 0 4px 12px rgba(16, 24, 40, 0.08);
+  --login-shadow-lg: 0 20px 40px -12px rgba(16, 24, 40, 0.18);
+
+  --login-transition: 180ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Tema escuro */
+[data-theme="dark"] .login-page,
+.login-page[data-theme="dark"] {
+  --login-surface: #0f172a;
+  --login-surface-2: #1e293b;
+  --login-border: #1f2937;
+  --login-border-hover: #334155;
+  --login-text: #f1f5f9;
+  --login-text-soft: #cbd5e1;
+  --login-text-muted: #64748b;
+
+  --login-aside-bg-1: #060c18;
+  --login-aside-bg-2: #0b1220;
+
+  --login-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --login-shadow-lg: 0 20px 40px -12px rgba(0, 0, 0, 0.6);
+}
+
+/* ---------------------------------------------------------
+   Base do body
+   --------------------------------------------------------- */
+body.login-page {
+  margin: 0;
   min-height: 100vh;
-  min-height: 100dvh;      /* CORREÇÃO #1 */
-  background: var(--bg);
-
-  /* CORREÇÃO #3: força correta do placeholder, autofill e
-     futuros controles nativos dentro da tela de login. */
-  color-scheme: light;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--login-text);
+  background: var(--login-surface);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-[data-theme="dark"] .login-page {
-  color-scheme: dark;
-}
-
+/* ---------------------------------------------------------
+   Layout principal
+   --------------------------------------------------------- */
 .login {
   display: grid;
-  grid-template-columns: 1.05fr 1fr;
-  /* min-height removido — o .login-page já garante 100dvh */
+  grid-template-columns: 1fr;
+  min-height: 100vh;
 }
 
-/* =========================================================
-   Painel esquerdo (institucional)
-   ---------------------------------------------------------
-   Por design, este painel é SEMPRE escuro, independente do
-   tema do usuário — funciona como "âncora visual" da marca.
-   As cores hardcoded aqui (e não `var(--sidebar-bg)`) são
-   intencionais para deixar essa regra explícita.
-   ========================================================= */
+@media (min-width: 1024px) {
+  .login {
+    grid-template-columns: 58fr 42fr;
+  }
+}
+
+/* ============================================================
+   PAINEL INSTITUCIONAL (esquerda)
+   ============================================================ */
 .login__aside {
   position: relative;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 48px;
-  background:
-    radial-gradient(900px 520px at 10% -10%, rgba(99, 102, 241, 0.22) 0%, transparent 62%),
-    radial-gradient(700px 500px at 110% 110%, rgba(16, 185, 129, 0.12) 0%, transparent 58%),
-    #0e1116;
-  color: #ffffff;
+  display: none;
   overflow: hidden;
+  color: var(--login-aside-text);
+  isolation: isolate;
 }
 
-.login__aside::after {
-  content: "";
+@media (min-width: 1024px) {
+  .login__aside { display: block; }
+}
+
+/* Fundo escuro */
+.login__aside-bg {
   position: absolute;
   inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(900px 500px at 15% 10%, rgba(79, 70, 229, 0.22), transparent 60%),
+    radial-gradient(700px 500px at 90% 90%, rgba(59, 130, 246, 0.14), transparent 60%),
+    linear-gradient(160deg, var(--login-aside-bg-1) 0%, var(--login-aside-bg-2) 100%);
+}
+
+/* Grid discreto */
+.login__aside-grid {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  opacity: 0.35;
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
   background-size: 56px 56px;
-  /* mask-image já tem prefix -webkit- — ✅ correto */
-  mask-image: radial-gradient(circle at 30% 20%, #000 0%, transparent 78%);
-  -webkit-mask-image: radial-gradient(circle at 30% 20%, #000 0%, transparent 78%);
-  pointer-events: none;
+  mask-image: radial-gradient(ellipse at 40% 40%, black 40%, transparent 78%);
+  -webkit-mask-image: radial-gradient(ellipse at 40% 40%, black 40%, transparent 78%);
+  animation: login-grid-drift 40s linear infinite;
+}
+
+@keyframes login-grid-drift {
+  from { background-position: 0 0, 0 0; }
+  to   { background-position: 56px 56px, 56px 56px; }
 }
 
 .login__aside-inner {
   position: relative;
-  z-index: 1;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  padding: 56px 64px;
+  height: 100%;
+  max-width: 720px;
 }
 
-.login__aside .brand__name { color: #ffffff; }
-
-.login__aside-text {
-  margin-top: 96px;
-  max-width: 380px;
+/* Marca */
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: inherit;
+  width: max-content;
+  transition: opacity var(--login-transition);
+  animation: login-fade-up 700ms ease both;
 }
+.brand:hover { opacity: 0.88; }
 
-.login__aside-text h2 {
-  font-size: 30px;
-  line-height: 1.24;
-  font-weight: 600;
-  letter-spacing: -0.02em;
+.brand__mark {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--login-aside-border);
+  overflow: hidden;
 }
-
-.login__aside-text p {
-  margin-top: 14px;
+.brand__mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.brand__name {
   font-size: 15px;
-  line-height: 1.6;
-  color: #98a2b3;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: #fff;
 }
 
+/* Texto */
+.login__aside-text {
+  margin-top: 24px;
+  max-width: 520px;
+  animation: login-fade-up 800ms 100ms ease both;
+}
+.login__aside-text h2 {
+  margin: 0 0 14px;
+  font-size: clamp(26px, 2.6vw, 38px);
+  line-height: 1.15;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #fff;
+}
+.login__aside-text p {
+  margin: 0;
+  font-size: 15.5px;
+  line-height: 1.55;
+  color: var(--login-aside-muted);
+  max-width: 460px;
+}
+
+/* Benefícios */
+.login__benefits {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 24px;
+  max-width: 520px;
+}
+.login__benefits li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--login-aside-text);
+  opacity: 0.92;
+  animation: login-fade-up 600ms ease both;
+}
+.login__benefits li:nth-child(1) { animation-delay: 220ms; }
+.login__benefits li:nth-child(2) { animation-delay: 280ms; }
+.login__benefits li:nth-child(3) { animation-delay: 340ms; }
+.login__benefits li:nth-child(4) { animation-delay: 400ms; }
+.login__benefits li:nth-child(5) { animation-delay: 460ms; }
+
+.login__benefits svg {
+  width: 16px;
+  height: 16px;
+  color: #34d399;
+  flex: none;
+}
+
+/* Rodapé do aside */
 .login__aside-foot {
-  position: relative;
-  z-index: 1;
+  position: absolute;
+  bottom: 20px;
+  left: 64px;
+  z-index: 2;
+  margin: 0;
   font-size: 12.5px;
-  letter-spacing: 0.04em;
-  color: #667085;
+  letter-spacing: 0.02em;
+  color: var(--login-aside-muted);
 }
 
-/* =========================================================
-   Painel do formulário
-   ========================================================= */
+/* ============================================================
+   VISUALIZAÇÃO ABSTRATA
+   ============================================================ */
+.viz {
+  position: relative;
+  flex: 1;
+  margin-top: 20px;
+  min-height: 220px;
+  animation: login-fade-in 1000ms 400ms ease both;
+}
+
+.viz__lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+}
+.viz__lines path {
+  fill: none;
+  stroke: rgba(129, 140, 248, 0.35);
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+  animation: login-dash 24s linear infinite;
+}
+@keyframes login-dash {
+  to { stroke-dashoffset: -200; }
+}
+
+.viz__card {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 168px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 12px 32px -12px rgba(0, 0, 0, 0.5);
+  will-change: transform;
+}
+
+.viz__card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.viz__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+}
+.viz__dot--green  { background: #34d399; box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.18); }
+.viz__dot--blue   { background: #60a5fa; box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.18); }
+.viz__dot--orange { background: #fb923c; box-shadow: 0 0 0 3px rgba(251, 146, 60, 0.18); }
+
+.viz__card-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(232, 236, 244, 0.65);
+}
+
+.viz__value {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #fff;
+}
+
+.viz__trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+.viz__trend svg { width: 12px; height: 12px; }
+.viz__trend--up { color: #34d399; }
+
+.viz__bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 26px;
+  margin-top: 2px;
+}
+.viz__bars span {
+  flex: 1;
+  height: var(--h, 40%);
+  border-radius: 3px;
+  background: linear-gradient(180deg, rgba(251, 146, 60, 0.9), rgba(251, 146, 60, 0.35));
+  animation: viz-bar 2.4s ease-in-out infinite alternate;
+}
+.viz__bars span:nth-child(2) { animation-delay: 0.2s; }
+.viz__bars span:nth-child(3) { animation-delay: 0.4s; }
+.viz__bars span:nth-child(4) { animation-delay: 0.6s; }
+.viz__bars span:nth-child(5) { animation-delay: 0.8s; }
+.viz__bars span:nth-child(6) { animation-delay: 1s; }
+@keyframes viz-bar {
+  from { transform: scaleY(0.7); }
+  to   { transform: scaleY(1); }
+}
+
+/* Posição + deriva de cada card */
+.viz__card--revenue {
+  top: 4%;
+  left: 4%;
+  animation: viz-drift-a 9s ease-in-out infinite;
+}
+.viz__card--clients {
+  bottom: 8%;
+  left: 12%;
+  animation: viz-drift-b 11s ease-in-out infinite;
+}
+.viz__card--sales {
+  bottom: 4%;
+  right: 4%;
+  animation: viz-drift-c 10s ease-in-out infinite;
+}
+
+@keyframes viz-drift-a {
+  0%, 100% { transform: translate(0, 0); }
+  50%      { transform: translate(4px, -6px); }
+}
+@keyframes viz-drift-b {
+  0%, 100% { transform: translate(0, 0); }
+  50%      { transform: translate(6px, -4px); }
+}
+@keyframes viz-drift-c {
+  0%, 100% { transform: translate(0, 0); }
+  50%      { transform: translate(-5px, -5px); }
+}
+
+/* ============================================================
+   PAINEL DE LOGIN (direita)
+   ============================================================ */
 .login__panel {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 48px 32px;
-  background: var(--surface);
+  padding: 32px 24px;
+  background: var(--login-surface);
+  position: relative;
+}
+
+@media (min-width: 1024px) {
+  .login__panel { padding: 48px 56px; }
 }
 
 .login__panel-inner {
   width: 100%;
-  max-width: 400px;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  animation: login-fade-up 700ms 150ms ease both;
 }
 
+/* Marca compacta mobile */
 .login__brand-mobile {
-  display: none;
+  display: inline-flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 32px;
+  margin-bottom: 4px;
+}
+.login__brand-mobile .brand__mark {
+  background: var(--login-accent-soft);
+  border-color: transparent;
+}
+.login__brand-mobile .brand__name {
+  color: var(--login-text);
 }
 
+@media (min-width: 1024px) {
+  .login__brand-mobile { display: none; }
+}
+
+/* Cabeçalho */
+.login__header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
 .login__title {
+  margin: 0;
   font-size: 26px;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: -0.02em;
-  color: var(--text);
+  color: var(--login-text);
+  line-height: 1.2;
 }
-
 .login__subtitle {
-  margin-top: 6px;
+  margin: 0;
   font-size: 14.5px;
-  color: var(--text-soft);
+  color: var(--login-text-soft);
+  line-height: 1.5;
 }
 
+/* Formulário */
 .login__form {
   display: flex;
   flex-direction: column;
   gap: 18px;
-  margin-top: 32px;
 }
 
-.login__form .btn { margin-top: 4px; }
-
-/* =========================================================
-   CORREÇÃO #2: Autofill do Chrome / Edge / Safari
-   ---------------------------------------------------------
-   Quando o navegador preenche automaticamente e-mail e senha,
-   ele força um `background-color` próprio (amarelo claro no
-   Chrome) que IGNORA o `background: var(--surface)`. Em dark
-   mode isso fica horrível e o texto pode virar ilegível.
-   O hack padrão usa `box-shadow inset` de 1000px para cobrir
-   esse fundo com a cor correta.
-   ========================================================= */
-.login__form input:-webkit-autofill,
-.login__form input:-webkit-autofill:hover,
-.login__form input:-webkit-autofill:focus,
-.login__form input:-webkit-autofill:active {
-  -webkit-text-fill-color: var(--text) !important;
-  -webkit-box-shadow: 0 0 0 1000px var(--surface) inset !important;
-  box-shadow: 0 0 0 1000px var(--surface) inset !important;
-  caret-color: var(--text);
-  /* Transição longuíssima evita o "flash" durante o preenchimento */
-  transition: background-color 5000s ease-in-out 0s;
+/* Field */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.field__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.field label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--login-text);
+  letter-spacing: 0.01em;
 }
 
-/* Firefox tem seletor próprio */
-.login__form input:autofill {
-  filter: none;
-}
-
-.login__foot {
-  margin-top: 28px;
+.field__link {
   font-size: 12.5px;
-  color: var(--text-muted);
+  font-weight: 500;
+  color: var(--login-accent);
+  text-decoration: none;
+  transition: color var(--login-transition);
+}
+.field__link:hover {
+  color: var(--login-accent-hover);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.field__control {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.field__icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  color: var(--login-text-muted);
+  pointer-events: none;
+  transition: color var(--login-transition);
+}
+.field__icon svg { width: 18px; height: 18px; }
+
+.field input {
+  width: 100%;
+  height: 46px;
+  padding: 0 14px 0 40px;
+  border: 1px solid var(--login-border);
+  border-radius: var(--login-radius-md);
+  background: var(--login-surface);
+  color: var(--login-text);
+  font-family: inherit;
+  font-size: 14.5px;
+  outline: none;
+  box-shadow: var(--login-shadow-sm);
+  transition:
+    border-color var(--login-transition),
+    box-shadow var(--login-transition),
+    background-color var(--login-transition);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.field input::placeholder {
+  color: var(--login-text-muted);
+}
+
+.field input:hover:not(:disabled) {
+  border-color: var(--login-border-hover);
+}
+
+.field input:focus {
+  border-color: var(--login-accent);
+  box-shadow: 0 0 0 4px var(--login-accent-ring);
+}
+.field:focus-within .field__icon {
+  color: var(--login-accent);
+}
+
+.field input:disabled {
+  background: var(--login-surface-2);
+  cursor: not-allowed;
+  opacity: 0.75;
+}
+
+/* Field com erro */
+.field.is-error input {
+  border-color: var(--login-danger);
+  box-shadow: 0 0 0 4px var(--login-danger-soft);
+}
+.field.is-error .field__icon { color: var(--login-danger); }
+
+/* Field com sucesso */
+.field.is-success input {
+  border-color: var(--login-success);
+}
+.field.is-success .field__icon { color: var(--login-success); }
+
+/* Input de senha: padding extra à direita p/ o toggle */
+.field input[type="password"],
+.field input#password {
+  padding-right: 44px;
+}
+
+/* Toggle de senha */
+.pw-toggle {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: var(--login-radius-sm);
+  background: transparent;
+  color: var(--login-text-muted);
+  cursor: pointer;
+  transition: background-color var(--login-transition), color var(--login-transition);
+}
+.pw-toggle:hover {
+  background: var(--login-surface-2);
+  color: var(--login-text);
+}
+.pw-toggle:focus-visible {
+  outline: 2px solid var(--login-accent);
+  outline-offset: 1px;
+}
+.pw-toggle__icon {
+  width: 18px;
+  height: 18px;
+  grid-area: 1 / 1;
+  transition: opacity var(--login-transition), transform var(--login-transition);
+}
+.pw-toggle__icon--hide { opacity: 0; transform: scale(0.9); }
+.pw-toggle[aria-pressed="true"] .pw-toggle__icon--show { opacity: 0; transform: scale(0.9); }
+.pw-toggle[aria-pressed="true"] .pw-toggle__icon--hide { opacity: 1; transform: scale(1); }
+
+/* Feedback */
+.feedback {
+  margin: 0;
+  padding: 11px 14px;
+  font-size: 13.5px;
+  line-height: 1.45;
+  border-radius: var(--login-radius-sm);
+  border: 1px solid transparent;
+  animation: login-fade-up 220ms ease both;
+}
+.feedback[hidden] { display: none; }
+
+.feedback--error {
+  color: var(--login-danger);
+  background: var(--login-danger-soft);
+  border-color: rgba(220, 38, 38, 0.2);
+}
+.feedback--success {
+  color: var(--login-success);
+  background: var(--login-success-soft);
+  border-color: rgba(5, 150, 105, 0.2);
+}
+.feedback--info {
+  color: var(--login-text-soft);
+  background: var(--login-surface-2);
+  border-color: var(--login-border);
+}
+
+/* Botão primário */
+.btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 48px;
+  padding: 0 20px;
+  border: 1px solid transparent;
+  border-radius: var(--login-radius-md);
+  font-family: inherit;
+  font-size: 14.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    background-color var(--login-transition),
+    border-color var(--login-transition),
+    box-shadow var(--login-transition),
+    transform var(--login-transition);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.btn--block { width: 100%; }
+
+.btn--primary {
+  color: #fff;
+  background: var(--login-accent);
+  box-shadow: 0 6px 16px -6px rgba(79, 70, 229, 0.5);
+}
+.btn--primary:hover:not(:disabled):not([aria-busy="true"]) {
+  background: var(--login-accent-hover);
+  box-shadow: 0 8px 20px -6px rgba(79, 70, 229, 0.6);
+  transform: translateY(-1px);
+}
+.btn--primary:active:not(:disabled):not([aria-busy="true"]) {
+  transform: translateY(0);
+  box-shadow: 0 4px 10px -4px rgba(79, 70, 229, 0.55);
+}
+.btn:focus-visible {
+  outline: 2px solid var(--login-accent);
+  outline-offset: 3px;
+}
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.75;
+}
+
+/* Seta do botão */
+.btn__arrow {
+  width: 16px;
+  height: 16px;
+  transition: transform var(--login-transition);
+}
+.btn:hover:not(:disabled) .btn__arrow {
+  transform: translateX(3px);
+}
+
+/* Estado de loading */
+.btn__spinner {
+  display: none;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: login-spin 700ms linear infinite;
+}
+@keyframes login-spin {
+  to { transform: rotate(360deg); }
+}
+
+.btn[aria-busy="true"] .btn__spinner,
+.btn.is-loading .btn__spinner {
+  display: inline-block;
+}
+.btn[aria-busy="true"] .btn__arrow,
+.btn.is-loading .btn__arrow {
+  display: none;
+}
+.btn[aria-busy="true"] .btn__label,
+.btn.is-loading .btn__label {
+  opacity: 0.9;
+}
+
+/* Bloco de segurança */
+.login__security {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  padding-top: 16px;
+  border-top: 1px solid var(--login-border);
+  font-size: 12.5px;
+  color: var(--login-text-muted);
+  line-height: 1.45;
+}
+.login__security svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  color: var(--login-text-muted);
+}
+
+/* Rodapé */
+.login__footer {
+  font-size: 12px;
+  color: var(--login-text-muted);
   text-align: center;
 }
 
-/* =========================================================
+/* ============================================================
+   Animações de entrada
+   ============================================================ */
+@keyframes login-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes login-fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================================
    Responsivo
-   ========================================================= */
-@media (max-width: 960px) {
-  .login { grid-template-columns: 1fr; }
-  .login__aside { display: none; }
-  .login__panel {
-    padding: 40px 24px;
-    min-height: 100vh;
-    min-height: 100dvh;    /* CORREÇÃO #1 */
+   ============================================================ */
+@media (max-width: 1023px) {
+  .login {
+    grid-template-columns: 1fr;
   }
-  .login__brand-mobile { display: flex; }
+  .login__panel {
+    min-height: 100vh;
+    align-items: flex-start;
+    padding: 40px 24px 32px;
+  }
+  .login__panel-inner {
+    max-width: 440px;
+    margin: 0 auto;
+    gap: 24px;
+  }
 }
 
 @media (max-width: 420px) {
-  .login__panel { padding: 32px 18px; }
+  .login__panel { padding: 28px 18px 24px; }
   .login__title { font-size: 23px; }
+  .login__subtitle { font-size: 14px; }
+  .field input { height: 44px; }
+  .btn { height: 46px; }
+}
+
+/* ============================================================
+   Acessibilidade · reduced motion
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  .login__aside-grid,
+  .viz__lines path,
+  .viz__bars span,
+  .viz__card--revenue,
+  .viz__card--clients,
+  .viz__card--sales,
+  .btn__spinner {
+    animation: none !important;
+  }
+  .brand,
+  .login__aside-text,
+  .login__benefits li,
+  .viz,
+  .login__panel-inner,
+  .feedback {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+  }
+  .btn:hover:not(:disabled) .btn__arrow { transform: none; }
+  .btn--primary:hover:not(:disabled):not([aria-busy="true"]) { transform: none; }
 }

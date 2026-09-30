@@ -1,0 +1,402 @@
+/* =========================================================
+   DEV HUB · Tela inicial (Launcher)
+   ---------------------------------------------------------
+   Estilo: Linear / Raycast / Arc
+   - Fundo com gradiente radial sutil no topo
+   - Cards compactos com hover elevado + glow
+   - Atalhos de teclado visíveis (1-9)
+   - Tipografia com hierarquia clara
+   ========================================================= */
+
+/* ---------- Container ---------- */
+.welcome {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 12px 0 80px;
+  position: relative;
+}
+
+
+/* ---------- Hero ---------- */
+.welcome__hero {
+  text-align: center;
+  margin-bottom: 32px;
+  padding-top: 24px;
+}
+
+.welcome__title {
+  margin: 0 0 10px;
+  font-size: 34px;
+  line-height: 1.15;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  color: var(--text);
+  background: linear-gradient(180deg,
+    var(--text) 0%,
+    color-mix(in srgb, var(--text) 65%, transparent) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.welcome__name {
+  color: var(--accent);
+  -webkit-text-fill-color: var(--accent);
+}
+
+.welcome__sub {
+  margin: 0 auto;
+  max-width: 460px;
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.55;
+  font-weight: 500;
+}
+
+/* ---------- Busca (compacta) ---------- */
+.welcome__search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  max-width: 560px;
+  margin: 0 auto 40px;
+  height: 52px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.04) inset,
+    0 1px 2px rgba(16, 24, 40, 0.04),
+    0 8px 24px -8px rgba(16, 24, 40, 0.12);
+  transition: border-color .15s, box-shadow .15s;
+}
+
+.welcome__search:focus-within {
+  border-color: var(--accent);
+  box-shadow:
+    0 0 0 4px var(--accent-ring),
+    0 1px 2px rgba(16, 24, 40, 0.04),
+    0 12px 32px -8px rgba(16, 24, 40, 0.15);
+}
+
+.welcome__search-icon {
+  position: absolute;
+  left: 18px;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+.welcome__search-icon svg { width: 18px; height: 18px; }
+
+.welcome__search-input {
+  flex: 1 1 auto;
+  height: 100%;
+  padding: 0 90px 0 50px;
+  border: 0;
+  background: transparent;
+  font-size: 14.5px;
+  font-weight: 500;
+  color: var(--text);
+  outline: none;
+  border-radius: 14px;
+}
+.welcome__search-input::placeholder {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.welcome__search-kbd {
+  position: absolute;
+  right: 14px;
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 7px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  pointer-events: none;
+}
+
+/* ---------- Grid ---------- */
+.welcome__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.welcome__group-title {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 32px 0 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.welcome__group-title::after {
+  content: "";
+  flex: 1 1 auto;
+  height: 1px;
+  background: linear-gradient(90deg,
+    var(--border) 0%,
+    transparent 100%);
+}
+.welcome__group-title:first-child { margin-top: 0; }
+
+/* ---------- Card ---------- */
+.welcome__card {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px 16px 16px 16px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  color: inherit;
+  overflow: hidden;
+  transition:
+    border-color .18s ease,
+    background-color .18s ease,
+    transform .18s cubic-bezier(.2,.8,.4,1),
+    box-shadow .18s ease;
+}
+
+/* Barra superior colorida que aparece no hover */
+.welcome__card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg,
+    var(--accent) 0%,
+    #8b5cf6 100%);
+  opacity: 0;
+  transition: opacity .18s ease;
+}
+
+.welcome__card:hover {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  background: color-mix(in srgb, var(--surface) 94%, var(--accent) 6%);
+  transform: translateY(-2px);
+  box-shadow:
+    0 4px 12px -2px rgba(16, 24, 40, 0.08),
+    0 12px 32px -8px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+.welcome__card:hover::before { opacity: 1; }
+
+.welcome__card:active {
+  transform: translateY(0);
+}
+
+.welcome__card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---------- Ícone ---------- */
+.welcome__card-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 11px;
+  background: var(--surface-2);
+  color: var(--text-soft);
+  transition: background-color .18s ease, color .18s ease;
+}
+.welcome__card-icon svg { width: 20px; height: 20px; }
+
+/* Cores por categoria */
+.welcome__card[data-group="Comercial"]     .welcome__card-icon { background: rgba(99, 102, 241, 0.12); color: #6366f1; }
+.welcome__card[data-group="Catálogo"]      .welcome__card-icon { background: rgba(59, 130, 246, 0.12); color: #3b82f6; }
+.welcome__card[data-group="Análise"]       .welcome__card-icon { background: rgba(245, 158, 11, 0.12); color: #d97706; }
+.welcome__card[data-group="Administração"] .welcome__card-icon { background: rgba(139, 92, 246, 0.12); color: #8b5cf6; }
+.welcome__card[data-group="Plataforma"]    .welcome__card-icon { background: rgba(236, 72, 153, 0.12); color: #ec4899; }
+.welcome__card[data-id="dashboard"]        .welcome__card-icon { background: var(--accent-soft); color: var(--accent); }
+
+/* ---------- Corpo do card ---------- */
+.welcome__card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1 1 auto;
+  padding-top: 2px;
+}
+
+.welcome__card-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.005em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.welcome__card-meta {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  font-weight: 500;
+}
+
+/* ---------- Atalho de teclado ---------- */
+.welcome__card-kbd {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 6px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 10.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  transition: opacity .18s ease, background-color .18s ease, color .18s ease;
+  opacity: 0.7;
+}
+
+.welcome__card:hover .welcome__card-kbd {
+  background: var(--surface);
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
+  color: var(--accent);
+  opacity: 1;
+}
+
+/* Destaque quando o termo é buscado */
+.welcome__card-title mark,
+.welcome__card-meta mark {
+  background: transparent;
+  color: var(--accent);
+  font-weight: 800;
+  padding: 0;
+}
+
+/* ---------- Empty state ---------- */
+.welcome__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 64px 20px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.welcome__empty-icon {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+.welcome__empty-icon svg { width: 24px; height: 24px; }
+
+.welcome__empty p {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+.welcome__empty small {
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+/* ---------- Animação de entrada ---------- */
+@keyframes welcome-card-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.welcome__card {
+  animation: welcome-card-in 280ms ease-out both;
+}
+.welcome__card:nth-child(1)  { animation-delay:  20ms; }
+.welcome__card:nth-child(2)  { animation-delay:  40ms; }
+.welcome__card:nth-child(3)  { animation-delay:  60ms; }
+.welcome__card:nth-child(4)  { animation-delay:  80ms; }
+.welcome__card:nth-child(5)  { animation-delay: 100ms; }
+.welcome__card:nth-child(6)  { animation-delay: 120ms; }
+.welcome__card:nth-child(7)  { animation-delay: 140ms; }
+.welcome__card:nth-child(8)  { animation-delay: 160ms; }
+.welcome__card:nth-child(9)  { animation-delay: 180ms; }
+.welcome__card:nth-child(10) { animation-delay: 200ms; }
+.welcome__card:nth-child(11) { animation-delay: 220ms; }
+.welcome__card:nth-child(12) { animation-delay: 240ms; }
+
+/* ---------- Dark mode ---------- */
+[data-theme="dark"] .welcome__card:hover {
+  background: color-mix(in srgb, var(--surface) 90%, var(--accent) 10%);
+  box-shadow:
+    0 4px 12px -2px rgba(0, 0, 0, 0.4),
+    0 12px 32px -8px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+[data-theme="dark"] .welcome__card[data-group="Comercial"]     .welcome__card-icon { background: rgba(129, 140, 248, 0.16); color: #a5b4fc; }
+[data-theme="dark"] .welcome__card[data-group="Catálogo"]      .welcome__card-icon { background: rgba(96, 165, 250, 0.16);  color: #93c5fd; }
+[data-theme="dark"] .welcome__card[data-group="Análise"]       .welcome__card-icon { background: rgba(251, 191, 36, 0.16);  color: #fcd34d; }
+[data-theme="dark"] .welcome__card[data-group="Administração"] .welcome__card-icon { background: rgba(167, 139, 250, 0.16); color: #c4b5fd; }
+[data-theme="dark"] .welcome__card[data-group="Plataforma"]    .welcome__card-icon { background: rgba(244, 114, 182, 0.16); color: #f9a8d4; }
+
+/* ---------- Responsivo ---------- */
+@media (max-width: 900px) {
+  .welcome { padding: 0 0 48px; }
+  .welcome__title { font-size: 28px; }
+  .welcome__hero { margin-bottom: 24px; padding-top: 8px; }
+  .welcome__search { margin-bottom: 28px; height: 48px; }
+  .welcome__search-input { padding: 0 60px 0 46px; font-size: 14px; }
+  .welcome__search-icon { left: 16px; }
+  .welcome__search-kbd { display: none; }
+
+  .welcome__grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+  }
+
+  .welcome__group-title { margin-top: 24px; }
+}
+
+@media (max-width: 600px) {
+  .welcome { padding: 0 0 32px; }
+  .welcome__title { font-size: 24px; letter-spacing: -0.03em; }
+  .welcome__sub { font-size: 13px; }
+
+  .welcome__grid { grid-template-columns: 1fr; }
+
+  .welcome__card {
+    padding: 14px;
+    gap: 12px;
+  }
+  .welcome__card-icon { width: 38px; height: 38px; border-radius: 10px; }
+  .welcome__card-icon svg { width: 18px; height: 18px; }
+  .welcome__card-kbd { display: none; }
+}

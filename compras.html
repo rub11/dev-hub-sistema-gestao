@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Compras · DEV HUB</title>
+
+  <script src="js/theme.js"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/global.css" />
+  <link rel="stylesheet" href="css/theme.css" />
+  <link rel="stylesheet" href="css/compras.css" />
+</head>
+
+<body data-page="compras">
+  <div class="app__body">
+
+    <main class="content cmp-content">
+
+      <!-- ====================== HEADER ====================== -->
+      <header class="cmp-page-head">
+        <div class="cmp-page-head__text">
+          <span class="cmp-page-head__eyebrow">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M3 3h2l2.4 12.4a2 2 0 0 0 2 1.6h9.2a2 2 0 0 0 2-1.6L22 7H6"/>
+              <circle cx="9" cy="20" r="1.4"/>
+              <circle cx="18" cy="20" r="1.4"/>
+            </svg>
+            Suprimentos
+          </span>
+          <h1 class="cmp-page-head__title">Compras</h1>
+          <p class="cmp-page-head__sub">Gerencie pedidos, fornecedores e recebimentos.</p>
+        </div>
+
+        <div class="cmp-page-head__actions">
+          <a href="fornecedores.html" class="cmp-btn cmp-btn--ghost">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M3 21h18"/><path d="M5 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16"/>
+              <path d="M15 21V9h4a2 2 0 0 1 2 2v10"/><path d="M9 7h2M9 11h2M9 15h2"/>
+            </svg>
+            <span>Fornecedores</span>
+          </a>
+          <a href="compras-nova.html" class="cmp-btn cmp-btn--primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+              <path d="M12 5v14M5 12h14"/>
+            </svg>
+            <span>Nova compra</span>
+          </a>
+        </div>
+      </header>
+
+      <!-- ====================== TOOLBAR ====================== -->
+      <section class="cmp-toolbar" aria-label="Filtros">
+        <label class="cmp-search" for="cmp-search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="7"/>
+            <path d="m20 20-3.5-3.5"/>
+          </svg>
+          <input type="search" id="cmp-search" placeholder="Buscar por código, fornecedor..." autocomplete="off" />
+        </label>
+
+        <select id="cmp-status-filter" class="control-select cmp-toolbar__select" aria-label="Filtrar por status">
+          <option value="">Todos os status</option>
+          <option value="rascunho">Rascunho</option>
+          <option value="aguardando_aprovacao">Aguardando aprovação</option>
+          <option value="pendente_recebimento">Pendente de recebimento</option>
+          <option value="recebida_parcial">Recebida parcial</option>
+          <option value="recebida">Recebida</option>
+          <option value="paga">Paga</option>
+          <option value="cancelada">Cancelada</option>
+        </select>
+      </section>
+
+      <!-- ====================== TABELA ====================== -->
+      <section class="cmp-panel" aria-label="Lista de compras">
+        <div class="cmp-panel__scroll">
+          <table class="cmp-table">
+            <thead>
+              <tr>
+                <th scope="col">Código</th>
+                <th scope="col">Fornecedor</th>
+                <th scope="col">Data</th>
+                <th scope="col" class="cell--num">Valor</th>
+                <th scope="col">Pagamento</th>
+                <th scope="col">Status</th>
+                <th scope="col" class="cell--right">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="cmp-tbody">
+              <!-- JS preenche -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/nav.js"></script>
+  <script src="js/compras.js"></script>
+</body>
+</html>

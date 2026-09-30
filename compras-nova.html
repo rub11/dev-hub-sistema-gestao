@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Nova compra · DEV HUB</title>
+  <script src="js/theme.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/global.css" />
+  <link rel="stylesheet" href="css/theme.css" />
+  
+  <link rel="stylesheet" href="css/compras-nova.css" />
+</head>
+<body data-page="compras-nova">
+  <div class="app__body">
+    <main class="content">
+      <header class="page-head">
+        <div class="page-head__eyebrow"><a href="compras.html" style="color:inherit">← Voltar para compras</a></div>
+        <h1 class="page-head__title">Nova compra</h1>
+        <p class="page-head__sub">Lançamento de pedido de compra.</p>
+      </header>
+
+      <form id="cmp-form" class="cmp-form" novalidate>
+
+       
+        
+        </section>
+
+     <!-- ============== FORNECEDOR ============== -->
+<section class="cmp-section">
+  <h2 class="cmp-section__title">Fornecedor</h2>
+
+  <div class="cmp-grid cmp-grid--2">
+    <div class="field">
+      <label for="cmp-supplier">Fornecedor cadastrado</label>
+      <div class="cmp-supplier-row">
+        <select id="cmp-supplier" class="control-select">
+          <option value="">— Selecione —</option>
+        </select>
+        <button type="button" class="cmp-btn cmp-btn--ghost cmp-btn--sm" id="cmp-new-supplier" title="Cadastrar novo fornecedor">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+            <path d="M12 5v14M5 12h14"/>
+          </svg>
+          <span>Novo</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="cmp-supplier-name-manual">Ou nome livre</label>
+      <input id="cmp-supplier-name-manual" type="text" placeholder="Se não cadastrado" />
+    </div>
+
+    <div class="field">
+      <label for="cmp-supplier-doc">CNPJ / CPF</label>
+      <input id="cmp-supplier-doc" type="text" inputmode="numeric" placeholder="00.000.000/0000-00" />
+    </div>
+
+    <div class="field">
+      <label for="cmp-supplier-contact">Contato</label>
+      <input id="cmp-supplier-contact" type="text" placeholder="Nome, telefone..." />
+    </div>
+  </div>
+</section>
+
+
+        <!-- Itens -->
+        <section class="cmp-section">
+          <h2 class="cmp-section__title">Itens</h2>
+          <div class="cmp-items">
+            <div class="cmp-items__head">
+              <span>Produto / Descrição</span>
+              <span>Qtd</span>
+              <span>Unid.</span>
+              <span>Valor unit.</span>
+              <span>Desconto</span>
+              <span style="text-align:right">Total</span>
+              <span></span>
+            </div>
+            <div id="cmp-items-body"></div>
+          </div>
+          <div class="cmp-items__add">
+            <button type="button" class="btn" id="cmp-add-item">+ Adicionar item</button>
+          </div>
+        </section>
+
+        <!-- Valores -->
+        <section class="cmp-section">
+          <h2 class="cmp-section__title">Valores</h2>
+          <div class="cmp-grid cmp-grid--3">
+            <div class="field">
+              <label for="cmp-discount">Desconto (R$)</label>
+              <input id="cmp-discount" type="text" placeholder="0,00" />
+            </div>
+            <div class="field">
+              <label for="cmp-shipping">Frete (R$)</label>
+              <input id="cmp-shipping" type="text" placeholder="0,00" />
+            </div>
+            <div class="field">
+              <label for="cmp-other">Outros (R$)</label>
+              <input id="cmp-other" type="text" placeholder="0,00" />
+            </div>
+          </div>
+          <dl class="cmp-totals">
+            <dt>Subtotal</dt><dd id="cmp-subtotal">R$ 0,00</dd>
+            <div class="cmp-totals__grand">
+              <dt>Total</dt><dd id="cmp-total">R$ 0,00</dd>
+            </div>
+          </dl>
+        </section>
+
+        <!-- Pagamento -->
+        <section class="cmp-section">
+          <h2 class="cmp-section__title">Pagamento</h2>
+          <div class="cmp-grid cmp-grid--4">
+            <div class="field">
+              <label for="cmp-payment-method">Forma</label>
+              <select id="cmp-payment-method" class="control-select">
+                <option value="">— Selecione —</option>
+                <option value="pix">PIX</option>
+                <option value="boleto">Boleto</option>
+                <option value="cartao_credito">Cartão de crédito</option>
+                <option value="cartao_debito">Cartão de débito</option>
+                <option value="transferencia">Transferência</option>
+                <option value="dinheiro">Dinheiro</option>
+                <option value="cheque">Cheque</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="cmp-payment-terms">Condição</label>
+              <select id="cmp-payment-terms" class="control-select">
+                <option value="">— Selecione —</option>
+                <option value="a_vista">À vista</option>
+                <option value="parcelado">Parcelado</option>
+                <option value="a_prazo">A prazo</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="cmp-installments">Parcelas</label>
+              <input id="cmp-installments" type="number" min="1" value="1" />
+            </div>
+            <div class="field">
+              <label for="cmp-first-due">1º vencimento</label>
+              <input id="cmp-first-due" type="date" />
+            </div>
+          </div>
+        </section>
+
+        <!-- Observações -->
+        <section class="cmp-section">
+          <h2 class="cmp-section__title">Observações</h2>
+          <div class="cmp-grid cmp-grid--2">
+            <div class="field">
+              <label for="cmp-invoice">Nº da nota fiscal (quando chegar)</label>
+              <input id="cmp-invoice" type="text" />
+            </div>
+            <div class="field">
+              <label for="cmp-notes">Observações</label>
+              <input id="cmp-notes" type="text" />
+            </div>
+          </div>
+        </section>
+
+        <!-- Ações -->
+        <div class="cmp-form__actions">
+          <select id="cmp-save-mode" class="control-select" style="min-width:220px;height:46px">
+            <option value="rascunho">Salvar como rascunho</option>
+            <option value="pendente_recebimento">Enviar como pendente de recebimento</option>
+          </select>
+          <button type="submit" class="btn btn--primary" id="cmp-submit">Salvar compra</button>
+        </div>
+
+      </form>
+      <!-- ============================================================
+     MODAL · Cadastrar fornecedor (inline)
+     ============================================================ -->
+<div class="cmp-modal" id="supplier-modal" hidden>
+  <div class="cmp-modal__backdrop" data-close></div>
+  <div class="cmp-modal__dialog cmp-modal__dialog--lg">
+    <header class="cmp-modal__head">
+      <h3 class="cmp-modal__title">Novo fornecedor</h3>
+      <button type="button" class="cmp-modal__close" aria-label="Fechar" data-close>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </header>
+
+    <div class="cmp-modal__body">
+
+      <!-- Busca por CNPJ -->
+      <div class="cmp-cnpj">
+        <div class="field cmp-cnpj__field">
+          <label for="sup-cnpj">CNPJ</label>
+          <input
+            id="sup-cnpj"
+            type="text"
+            inputmode="numeric"
+            placeholder="00.000.000/0000-00"
+            maxlength="18"
+            autocomplete="off"
+          />
+        </div>
+        <button
+          type="button"
+          class="cmp-btn cmp-btn--primary cmp-cnpj__btn"
+          id="sup-cnpj-search"
+          title="Buscar dados do CNPJ automaticamente"
+        >
+          <span class="cmp-cnpj__spinner" aria-hidden="true"></span>
+          <svg class="cmp-cnpj__icon-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="7"/>
+            <path d="m20 20-3.5-3.5"/>
+          </svg>
+          <span>Buscar dados</span>
+        </button>
+      </div>
+
+      <p class="cmp-cnpj__hint" id="sup-cnpj-hint">
+        Digite o CNPJ e clique em <strong>Buscar dados</strong> para preencher automaticamente.
+      </p>
+
+      <!-- Dados do fornecedor -->
+      <div class="cmp-grid cmp-grid--2">
+        <div class="field" style="grid-column: 1 / -1">
+          <label for="sup-name">Razão social / Nome *</label>
+          <input id="sup-name" type="text" />
+        </div>
+
+        <div class="field">
+          <label for="sup-fantasy">Nome fantasia</label>
+          <input id="sup-fantasy" type="text" />
+        </div>
+
+        <div class="field">
+          <label for="sup-email">E-mail</label>
+          <input id="sup-email" type="email" />
+        </div>
+
+        <div class="field">
+          <label for="sup-phone">Telefone</label>
+          <input id="sup-phone" type="text" />
+        </div>
+
+        <div class="field">
+          <label for="sup-contact">Contato responsável</label>
+          <input id="sup-contact" type="text" placeholder="Nome de quem atende" />
+        </div>
+
+        <div class="field" style="grid-column: 1 / -1">
+          <label for="sup-address">Endereço</label>
+          <input id="sup-address" type="text" placeholder="Rua, número, bairro, cidade/UF, CEP" />
+        </div>
+      </div>
+
+      <div class="cmp-error" id="sup-error" hidden></div>
+
+    </div>
+
+    <footer class="cmp-modal__foot">
+      <button type="button" class="cmp-btn cmp-btn--ghost" data-close>Cancelar</button>
+      <button type="button" class="cmp-btn cmp-btn--primary" id="sup-save">
+        <span class="cmp-cnpj__spinner" aria-hidden="true"></span>
+        <span>Salvar fornecedor</span>
+      </button>
+    </footer>
+  </div>
+</div>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/nav.js"></script>
+  <script src="js/compras.js"></script>
+</body>
+</html>

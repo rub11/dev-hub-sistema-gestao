@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Início · DEV HUB</title>
+
+  <script src="js/theme.js"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/global.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/clientes.css" />
+  <link rel="stylesheet" href="css/theme.css" />
+ 
+  <link rel="stylesheet" href="css/welcome.css" />
+
+  <script>
+    (function () {
+      try {
+        if (!/[?&]blocked=1/.test(location.search)) {
+          document.documentElement.classList.add('layout-topnav');
+        }
+      } catch (e) {}
+    })();
+  </script>
+</head>
+
+<body class="layout-topnav" data-page="welcome">
+
+  <a class="skip-link" href="#main">Pular para o conteúdo principal</a>
+
+  <aside class="sidebar" id="sidebar" aria-label="Menu principal"></aside>
+  <div class="sidebar-overlay" id="sidebar-overlay" hidden></div>
+
+  <div class="app__body">
+
+    <header class="topbar">
+      <button type="button" class="icon-btn menu-toggle" id="menu-toggle"
+              aria-label="Abrir menu" aria-expanded="false" aria-controls="sidebar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+             stroke-linecap="round" aria-hidden="true">
+          <path d="M3.5 6.5h17M3.5 12h17M3.5 17.5h17" />
+        </svg>
+      </button>
+
+      <span class="topbar__brand">DEV HUB</span>
+
+      <div class="topbar__actions">
+        <button type="button" class="icon-btn" id="notifications-btn"
+                aria-label="Notificações (em breve)" title="Em breve" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M18 8.5a6 6 0 1 0-12 0c0 6.5-2.5 8.5-2.5 8.5h17S18 15 18 8.5" />
+            <path d="M13.7 20.5a2 2 0 0 1-3.4 0" />
+          </svg>
+        </button>
+
+        <div class="user-menu">
+          <button type="button" class="user-menu__trigger" id="user-menu-trigger"
+                  aria-haspopup="true" aria-expanded="false" aria-controls="user-menu-panel">
+            <span class="avatar" id="user-avatar" aria-hidden="true">–</span>
+            <span class="user-menu__meta">
+              <span class="user-menu__name" id="user-name">Carregando…</span>
+              <span class="user-menu__role" id="user-role"></span>
+            </span>
+            <svg class="user-menu__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </button>
+
+          <div class="user-menu__panel" id="user-menu-panel" role="menu" hidden>
+            <a class="menu-item" role="menuitem" href="configuracoes.html">Configurações</a>
+            <div class="menu-item__sep" role="separator"></div>
+            <button type="button" class="menu-item menu-item--danger" role="menuitem" data-action="logout">
+              Sair
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="content" id="main">
+
+      <div id="global-alert" class="alert" role="alert" hidden></div>
+
+      <section class="welcome">
+
+        <div class="welcome__hero">
+          <span class="welcome__badge">Bem-vindo de volta</span>
+          <h1 class="welcome__title" id="welcome-title">
+            Olá<span class="welcome__name"></span>, o que vamos abrir?
+          </h1>
+          <p class="welcome__sub">
+            Escolha um módulo abaixo ou use a busca para encontrar rapidamente.
+          </p>
+        </div>
+
+        <div class="welcome__search">
+          <span class="welcome__search-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" />
+            </svg>
+          </span>
+          <input
+            type="search"
+            id="welcome-search"
+            class="welcome__search-input"
+            placeholder="Buscar módulo, tela ou ação…"
+            autocomplete="off"
+            spellcheck="false"
+            aria-label="Buscar módulo"
+            aria-controls="welcome-grid"
+          />
+          <span class="welcome__search-kbd">Ctrl K</span>
+        </div>
+
+        <div class="welcome__empty" id="welcome-no-results" hidden>
+          <div class="welcome__empty-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" />
+            </svg>
+          </div>
+          <p><strong>Nenhum módulo encontrado.</strong></p>
+          <small>Tente outro termo ou limpe a busca para ver tudo.</small>
+        </div>
+
+        <div class="welcome__grid" id="welcome-grid" aria-live="polite"></div>
+
+      </section>
+
+    </main>
+  </div>
+
+  <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="false"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/nav.js"></script>
+  <script src="js/permissions.js"></script>
+  <script src="js/welcome.js"></script>
+</body>
+</html>

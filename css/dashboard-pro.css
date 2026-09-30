@@ -1,32 +1,27 @@
 /* =========================================================
-   DEV HUB · Dashboard Pro (Fase 1)
+   DEV HUB · Dashboard Pro — REDESIGN
    ---------------------------------------------------------
-   CORREÇÕES APLICADAS:
-   1. `.control-select` ganhou definição base — antes, o
-      dashboard.html não carregava nenhum CSS que definisse
-      esse seletor, então o dropdown de período renderizava
-      como select nativo do browser.
-   2. `input[type="date"]` ganha `color-scheme` para o picker
-      nativo respeitar o tema. Em dark mode, o ícone do
-      calendário era invisível.
-   3. `.alert-item__icon` variants ganham override dark mode.
-   4. Removido `.dash-chart-wrap--doughnut` (idêntico ao base).
-   5. `.dash-chart-wrap` — removida duplicação height/min-height.
-   6. `.dash-header` ganha stack em mobile.
-   7. Notas sobre onde cada `--*` variável viria se migrar
-      cores hardcoded.
+   - KPIs em grid 3 colunas (não 6 espremidos numa linha)
+   - Cards com contraste real (fundo, borda, sombra)
+   - Header como "hero" com período à direita
+   - Gráficos com alturas responsivas
    ========================================================= */
 
 /* =========================================================
-   Header + período
+   Header hero
    ========================================================= */
 .dash-header {
   display: flex;
-  align-items: flex-end;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
+  gap: 24px;
   flex-wrap: wrap;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
+}
+
+.dash-header > div:first-child {
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
 .dash-period {
@@ -34,26 +29,39 @@
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
+  flex: 0 0 auto;
+  align-self: flex-start;
+  padding-top: 4px;
 }
 
-.dash-period .control-select { min-width: 170px; }
+.dash-period .control-select {
+  min-width: 190px;
+  height: 42px;
+}
 
 .dash-period__custom {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 4px 6px;
 }
 
-/* CORREÇÃO #2: input date com color-scheme */
 .dash-period__custom input[type="date"] {
-  height: 36px;
-  padding: 0 8px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface);
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
   color: var(--text);
   font-size: 13px;
   color-scheme: light;
+}
+
+.dash-period__custom input[type="date"]:hover {
+  background: var(--surface-2);
 }
 
 [data-theme="dark"] .dash-period__custom input[type="date"] {
@@ -65,133 +73,131 @@
   font-size: 13px;
 }
 
+/* Linha de período vira um "chip" */
 .dash-range {
-  margin: 0 0 18px;
-  font-size: 12.5px;
-  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 24px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-soft);
   letter-spacing: 0.01em;
 }
 
 /* =========================================================
-   CORREÇÃO #1: definição base do .control-select
-   ---------------------------------------------------------
-   O dashboard.html NÃO carrega estoque.css, notas.css,
-   relatorios.css nem plataforma.css — que são os arquivos
-   onde .control-select estava definido. Como resultado,
-   o <select id="dash-period" class="control-select">
-   renderizava como select NATIVO do browser.
-
-   Aqui definimos a versão canônica, idêntica à usada em
-   estoque.css / notas.css / relatorios.css. Se um dia
-   movermos para global.css, remova daqui.
-   ========================================================= */
-.control-select {
-  height: 40px;
-  min-width: 170px;
-  padding: 0 34px 0 12px;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius);
-  background: var(--surface);
-  font-size: 14px;
-  color: var(--text);
-  cursor: pointer;
-  transition: border-color var(--transition), box-shadow var(--transition);
-  -webkit-appearance: none;
-  appearance: none;
-  /* Chevron coberto por theme.css no dark */
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23667085' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
-  background-repeat: no-repeat;
-  background-position: right 10px center;
-  background-size: 15px;
-}
-
-.control-select:hover:not(:focus) {
-  border-color: color-mix(in srgb, var(--border-strong) 70%, var(--text) 30%);
-}
-
-.control-select:focus {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 4px var(--accent-ring);
-}
-
-/* =========================================================
-   KPIs
+   KPIs — grid 3 colunas
    ========================================================= */
 .dash-kpis {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 14px;
-  margin-bottom: 20px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+@media (max-width: 1024px) {
+  .dash-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 600px) {
+  .dash-kpis { grid-template-columns: 1fr; gap: 12px; }
 }
 
 .kpi {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px 20px 18px;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 16px 16px 14px;
-  position: relative;
-  overflow: hidden;
+  border-radius: 16px;
+  box-shadow:
+    0 1px 2px rgba(16, 24, 40, 0.04),
+    0 1px 3px rgba(16, 24, 40, 0.06);
   transition: border-color .15s, box-shadow .15s, transform .15s;
+  overflow: hidden;
 }
+
+.kpi::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: transparent;
+  transition: background-color .15s;
+}
+
 .kpi:hover {
   border-color: var(--border-strong);
-  box-shadow: 0 6px 20px -8px rgba(16, 24, 40, .10);
+  box-shadow:
+    0 4px 12px -2px rgba(16, 24, 40, 0.08),
+    0 2px 6px -2px rgba(16, 24, 40, 0.06);
   transform: translateY(-1px);
+}
+
+.kpi:hover::before {
+  background: var(--accent);
 }
 
 .kpi__head {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
+  gap: 12px;
+  margin: 0;
 }
 
 .kpi__icon {
   display: grid;
   place-items: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  flex: none;
   background: var(--surface-2);
   color: var(--text-muted);
-  flex: none;
 }
-.kpi__icon svg { width: 15px; height: 15px; }
+.kpi__icon svg { width: 18px; height: 18px; }
 
-/* Cada variante com light/dark explícito */
-.kpi__icon--customers { background: #ecfdf3; color: #067647; }
-.kpi__icon--sales     { background: #eef2ff; color: #4f46e5; }
-.kpi__icon--revenue   { background: #fff7ed; color: #b54708; }
-.kpi__icon--products  { background: #eef4ff; color: #3538cd; }
-.kpi__icon--users     { background: #f4f3ff; color: #6941c6; }
-.kpi__icon--orgs      { background: #fdf2fa; color: #c11574; }
+.kpi__icon--customers { background: rgba(6, 118, 71, 0.12); color: #067647; }
+.kpi__icon--sales     { background: rgba(79, 70, 229, 0.12); color: #4f46e5; }
+.kpi__icon--revenue   { background: rgba(181, 71, 8, 0.12);  color: #b54708; }
+.kpi__icon--products  { background: rgba(53, 56, 205, 0.12); color: #3538cd; }
+.kpi__icon--users     { background: rgba(105, 65, 198, 0.12); color: #6941c6; }
+.kpi__icon--orgs      { background: rgba(193, 21, 116, 0.12); color: #c11574; }
 
 .kpi__label {
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 600;
-  color: var(--text-muted);
-  letter-spacing: 0.01em;
+  color: var(--text-soft);
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 .kpi__value {
-  margin: 0 0 4px;
-  font-size: 26px;
+  margin: 0;
+  font-size: 32px;
   font-weight: 800;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
   color: var(--text);
-  line-height: 1.1;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
 }
 
 .kpi__hint {
   margin: 0;
-  font-size: 12px;
+  font-size: 12.5px;
   color: var(--text-muted);
+  line-height: 1.4;
 }
-.kpi__hint strong { color: var(--text); }
+.kpi__hint strong { color: var(--text); font-weight: 700; }
 
 /* =========================================================
-   Grid de cards
+   Grid de cards (charts + rankings)
    ========================================================= */
 .dash-grid {
   display: grid;
@@ -199,7 +205,7 @@
   gap: 16px;
   margin-bottom: 16px;
 }
-.dash-grid--charts { grid-template-columns: 2fr 1fr; }
+.dash-grid--charts { grid-template-columns: 1.6fr 1fr; }
 .dash-grid--single { grid-template-columns: 1fr; }
 
 @media (max-width: 980px) {
@@ -208,13 +214,16 @@
 }
 
 .dash-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 18px;
   display: flex;
   flex-direction: column;
   min-width: 0;
+  padding: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow:
+    0 1px 2px rgba(16, 24, 40, 0.04),
+    0 1px 3px rgba(16, 24, 40, 0.06);
 }
 
 .dash-card__head {
@@ -222,32 +231,32 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 14px;
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
 }
 
 .dash-card__title {
-  margin: 0 0 2px;
-  font-size: 14px;
+  margin: 0 0 3px;
+  font-size: 14.5px;
   font-weight: 700;
   color: var(--text);
-  letter-spacing: -0.005em;
+  letter-spacing: -0.01em;
 }
 
 .dash-card__sub {
   margin: 0;
-  font-size: 12px;
+  font-size: 12.5px;
   color: var(--text-muted);
 }
 
 /* =========================================================
    Charts
-   ---------------------------------------------------------
-   CORREÇÃO #4/#5: removido `.dash-chart-wrap--doughnut`
-   (idêntico ao base) e a duplicação height/min-height.
    ========================================================= */
 .dash-chart-wrap {
   position: relative;
-  height: 260px;
+  height: 280px;
+  min-height: 220px;
 }
 
 /* =========================================================
@@ -256,28 +265,33 @@
 .dash-rank {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   min-height: 100px;
 }
 
 .rank-item {
   display: grid;
-  grid-template-columns: 22px 1fr auto;
+  grid-template-columns: 24px 1fr auto;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .rank-item__pos {
-  width: 22px;
-  height: 22px;
-  border-radius: 6px;
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
   background: var(--surface-2);
   color: var(--text-muted);
   display: grid;
   place-items: center;
   font-size: 11px;
   font-weight: 700;
+  flex: none;
 }
+
+.rank-item:nth-child(1) .rank-item__pos { background: rgba(255, 180, 0, 0.16); color: #b54708; }
+.rank-item:nth-child(2) .rank-item__pos { background: rgba(148, 163, 184, 0.20); color: #475569; }
+.rank-item:nth-child(3) .rank-item__pos { background: rgba(180, 83, 9, 0.16); color: #92400e; }
 
 .rank-item__body { min-width: 0; }
 
@@ -289,15 +303,16 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-bottom: 5px;
+  margin-bottom: 6px;
 }
 
 .rank-item__bar {
-  height: 5px;
+  height: 6px;
   border-radius: 3px;
   background: var(--surface-2);
   overflow: hidden;
 }
+
 .rank-item__bar > span {
   display: block;
   height: 100%;
@@ -307,87 +322,84 @@
 }
 
 .rank-item__value {
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--text);
   white-space: nowrap;
   text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 .rank-item__value small {
   display: block;
   font-size: 11px;
   font-weight: 500;
   color: var(--text-muted);
-  margin-top: 1px;
+  margin-top: 2px;
 }
 
 /* =========================================================
    Alertas
-   ---------------------------------------------------------
-   CORREÇÃO #3: variants com dark mode explícito.
    ========================================================= */
 .dash-alerts {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .alert-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: 10px;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
   border: 1px solid var(--border);
   background: var(--surface-2);
-  font-size: 13px;
+  font-size: 13.5px;
   color: var(--text);
+  transition: background-color .15s;
+}
+
+.alert-item:hover {
+  background: var(--surface);
 }
 
 .alert-item__icon {
-  width: 26px;
-  height: 26px;
-  border-radius: 7px;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
   display: grid;
   place-items: center;
   flex: none;
 }
-.alert-item__icon svg { width: 14px; height: 14px; }
+.alert-item__icon svg { width: 16px; height: 16px; }
 
-.alert-item--danger .alert-item__icon { background: #fef3f2; color: #b42318; }
-.alert-item--warn   .alert-item__icon { background: #fef3e6; color: #b54708; }
-.alert-item--info   .alert-item__icon { background: #eff8ff; color: #175cd3; }
-
-[data-theme="dark"] .alert-item--danger .alert-item__icon {
-  background: rgba(249, 112, 102, 0.16);
-  color: #f97066;
-}
-[data-theme="dark"] .alert-item--warn .alert-item__icon {
-  background: rgba(253, 176, 34, 0.16);
-  color: #fdb022;
-}
-[data-theme="dark"] .alert-item--info .alert-item__icon {
-  background: rgba(99, 102, 241, 0.18);
-  color: #a5b4fc;
-}
+.alert-item--danger .alert-item__icon { background: rgba(180, 35, 24, 0.12); color: #b42318; }
+.alert-item--warn   .alert-item__icon { background: rgba(181, 71, 8, 0.12);  color: #b54708; }
+.alert-item--info   .alert-item__icon { background: rgba(23, 92, 211, 0.12); color: #175cd3; }
 
 .alert-item__text { flex: 1 1 auto; }
 .alert-item__text strong { font-weight: 700; }
 
 .alert-item__link {
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 600;
   color: var(--accent);
   text-decoration: none;
+  padding: 4px 10px;
+  border-radius: 6px;
+  transition: background-color .15s;
 }
-.alert-item__link:hover { text-decoration: underline; }
+.alert-item__link:hover {
+  background: var(--accent-soft);
+  text-decoration: none;
+}
 
 /* =========================================================
-   Lista de estoque baixo
+   Estoque crítico (pills)
    ========================================================= */
 .dash-stock {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 10px;
 }
 
@@ -395,17 +407,18 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 12px;
+  padding: 12px 14px;
   border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--surface);
+  border-radius: 12px;
+  background: var(--surface-2);
   text-decoration: none;
   color: var(--text);
+  font-size: 13px;
   transition: border-color .15s, background-color .15s;
 }
 .stock-pill:hover {
   border-color: var(--border-strong);
-  background: var(--surface-2);
+  background: var(--surface);
 }
 
 .stock-pill__dot {
@@ -414,13 +427,11 @@
   border-radius: 50%;
   flex: none;
 }
-/* Cores saturadas de dot pequeno — funcionam nos dois temas */
-.stock-pill--out .stock-pill__dot { background: #f04438; }
-.stock-pill--low .stock-pill__dot { background: #f79009; }
+.stock-pill--out .stock-pill__dot { background: #f04438; box-shadow: 0 0 0 3px rgba(240, 68, 56, 0.15); }
+.stock-pill--low .stock-pill__dot { background: #f79009; box-shadow: 0 0 0 3px rgba(247, 144, 9, 0.15); }
 
 .stock-pill__name {
   flex: 1 1 auto;
-  font-size: 13px;
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
@@ -431,6 +442,7 @@
   font-weight: 700;
   color: var(--text-muted);
   flex: none;
+  font-variant-numeric: tabular-nums;
 }
 
 /* =========================================================
@@ -444,29 +456,35 @@
   align-items: center;
   justify-content: center;
   text-align: center;
-  gap: 6px;
-  padding: 20px;
+  gap: 8px;
+  padding: 24px;
   color: var(--text-muted);
 }
 .dash-empty svg {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   color: var(--border-strong);
   margin-bottom: 4px;
 }
 .dash-empty p {
   margin: 0;
-  font-size: 13.5px;
+  font-size: 14px;
   color: var(--text);
+  font-weight: 600;
 }
-.dash-empty small { font-size: 12px; }
+.dash-empty small { font-size: 12.5px; }
 
 .dash-empty--inline {
   position: static;
   inset: auto;
-  padding: 22px 12px;
-  min-height: 80px;
+  padding: 28px 12px;
+  min-height: 100px;
+  background: var(--surface-2);
+  border-radius: 10px;
+  border: 1px dashed var(--border);
 }
+.dash-empty--inline p { font-size: 13.5px; font-weight: 500; color: var(--text-soft); }
+.dash-empty--inline small { display: block; margin-top: 4px; }
 
 /* =========================================================
    Skeleton
@@ -491,67 +509,51 @@
 }
 
 /* =========================================================
-   Dark mode
-   ========================================================= */
-:root[data-theme="dark"] .rank-item__bar > span {
-  background: linear-gradient(90deg, #818cf8, #a78bfa);
-}
-:root[data-theme="dark"] .kpi__icon--customers { background: #052e16; color: #6ee7b7; }
-:root[data-theme="dark"] .kpi__icon--sales     { background: #1e1b4b; color: #a5b4fc; }
-:root[data-theme="dark"] .kpi__icon--revenue   { background: #431407; color: #fdba74; }
-:root[data-theme="dark"] .kpi__icon--products  { background: #1e1b4b; color: #c7d2fe; }
-:root[data-theme="dark"] .kpi__icon--users     { background: #2e1065; color: #c4b5fd; }
-:root[data-theme="dark"] .kpi__icon--orgs      { background: #500724; color: #f9a8d4; }
-
-/* =========================================================
-   Activity feed (timeline)
+   Activity feed
    ========================================================= */
 .dash-feed {
   display: flex;
   flex-direction: column;
   position: relative;
+  gap: 0;
 }
 
 .feed-item {
   display: grid;
-  grid-template-columns: 32px 1fr auto;
-  gap: 12px;
+  grid-template-columns: 36px 1fr auto;
+  gap: 14px;
   align-items: flex-start;
-  padding: 12px 4px;
+  padding: 14px 4px;
   border-bottom: 1px dashed var(--border);
   min-width: 0;
 }
 .feed-item:last-child { border-bottom: 0; }
 
 .feed-item__icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 9px;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
   display: grid;
   place-items: center;
   flex: none;
   background: var(--surface-2);
   color: var(--text-muted);
 }
-.feed-item__icon svg { width: 15px; height: 15px; }
+.feed-item__icon svg { width: 16px; height: 16px; }
 
-.feed-item__icon--sale      { background: #eef2ff; color: #4f46e5; }
-.feed-item__icon--customer  { background: #ecfdf3; color: #067647; }
-.feed-item__icon--product   { background: #eef4ff; color: #3538cd; }
-.feed-item__icon--user      { background: #f4f3ff; color: #6941c6; }
-.feed-item__icon--org       { background: #fdf2fa; color: #c11574; }
-.feed-item__icon--movement  { background: #fff7ed; color: #b54708; }
+.feed-item__icon--sale     { background: rgba(79, 70, 229, 0.12); color: #4f46e5; }
+.feed-item__icon--customer { background: rgba(6, 118, 71, 0.12);  color: #067647; }
+.feed-item__icon--product  { background: rgba(53, 56, 205, 0.12); color: #3538cd; }
+.feed-item__icon--user     { background: rgba(105, 65, 198, 0.12); color: #6941c6; }
+.feed-item__icon--org      { background: rgba(193, 21, 116, 0.12); color: #c11574; }
+.feed-item__icon--movement { background: rgba(181, 71, 8, 0.12);  color: #b54708; }
 
-.feed-item__body {
-  min-width: 0;
-  padding-top: 2px;
-}
-
+.feed-item__body { min-width: 0; padding-top: 2px; }
 .feed-item__text {
-  margin: 0 0 2px;
-  font-size: 13px;
+  margin: 0 0 3px;
+  font-size: 13.5px;
   color: var(--text);
-  line-height: 1.4;
+  line-height: 1.45;
 }
 .feed-item__text strong { font-weight: 700; }
 .feed-item__text em {
@@ -559,57 +561,232 @@
   font-weight: 600;
   color: var(--accent);
 }
-
 .feed-item__meta {
   margin: 0;
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--text-muted);
 }
 
 .feed-item__time {
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--text-muted);
   white-space: nowrap;
   padding-top: 3px;
   flex: none;
 }
 
-/* Dark mode */
-:root[data-theme="dark"] .feed-item__icon--sale     { background: #1e1b4b; color: #a5b4fc; }
-:root[data-theme="dark"] .feed-item__icon--customer { background: #052e16; color: #6ee7b7; }
-:root[data-theme="dark"] .feed-item__icon--product  { background: #1e1b4b; color: #c7d2fe; }
-:root[data-theme="dark"] .feed-item__icon--user     { background: #2e1065; color: #c4b5fd; }
-:root[data-theme="dark"] .feed-item__icon--org      { background: #500724; color: #f9a8d4; }
-:root[data-theme="dark"] .feed-item__icon--movement { background: #431407; color: #fdba74; }
+/* =========================================================
+   Dark mode overrides
+   ========================================================= */
+:root[data-theme="dark"] .kpi__icon--customers { background: rgba(74, 222, 128, 0.16); color: #6ee7b7; }
+:root[data-theme="dark"] .kpi__icon--sales     { background: rgba(129, 140, 248, 0.16); color: #a5b4fc; }
+:root[data-theme="dark"] .kpi__icon--revenue   { background: rgba(253, 186, 116, 0.16); color: #fdba74; }
+:root[data-theme="dark"] .kpi__icon--products  { background: rgba(165, 180, 252, 0.16); color: #c7d2fe; }
+:root[data-theme="dark"] .kpi__icon--users     { background: rgba(196, 181, 253, 0.16); color: #c4b5fd; }
+:root[data-theme="dark"] .kpi__icon--orgs      { background: rgba(249, 168, 212, 0.16); color: #f9a8d4; }
+
+:root[data-theme="dark"] .rank-item__bar > span {
+  background: linear-gradient(90deg, #818cf8, #a78bfa);
+}
+
+:root[data-theme="dark"] .alert-item--danger .alert-item__icon { background: rgba(249, 112, 102, 0.16); color: #f97066; }
+:root[data-theme="dark"] .alert-item--warn   .alert-item__icon { background: rgba(253, 176, 34, 0.16);  color: #fdb022; }
+:root[data-theme="dark"] .alert-item--info   .alert-item__icon { background: rgba(99, 102, 241, 0.18);  color: #a5b4fc; }
+
+:root[data-theme="dark"] .feed-item__icon--sale     { background: rgba(129, 140, 248, 0.16); color: #a5b4fc; }
+:root[data-theme="dark"] .feed-item__icon--customer { background: rgba(74, 222, 128, 0.16);  color: #6ee7b7; }
+:root[data-theme="dark"] .feed-item__icon--product  { background: rgba(165, 180, 252, 0.16); color: #c7d2fe; }
+:root[data-theme="dark"] .feed-item__icon--user     { background: rgba(196, 181, 253, 0.16); color: #c4b5fd; }
+:root[data-theme="dark"] .feed-item__icon--org      { background: rgba(249, 168, 212, 0.16); color: #f9a8d4; }
+:root[data-theme="dark"] .feed-item__icon--movement { background: rgba(253, 186, 116, 0.16); color: #fdba74; }
 
 /* =========================================================
    Responsivo
-   ---------------------------------------------------------
-   CORREÇÃO #6: header com período em stack no mobile.
    ========================================================= */
 @media (max-width: 720px) {
-  .dash-header {
-    flex-direction: column;
-    align-items: stretch;
+  .dash-header { flex-direction: column; align-items: stretch; }
+  .dash-period { width: 100%; }
+  .dash-period .control-select { width: 100%; min-width: 0; }
+  .dash-period__custom { width: 100%; flex-wrap: wrap; }
+  .dash-period__custom input[type="date"] { flex: 1 1 auto; min-width: 0; }
+
+  .kpi { padding: 16px; }
+  .kpi__value { font-size: 26px; }
+
+  .dash-card { padding: 16px; }
+  .dash-chart-wrap { height: 220px; }
+
+  .feed-item {
+    grid-template-columns: 32px 1fr;
+    grid-template-areas:
+      "icon body"
+      "time time";
+    gap: 8px 12px;
+  }
+  .feed-item__icon { grid-area: icon; width: 32px; height: 32px; }
+  .feed-item__body { grid-area: body; }
+  .feed-item__time { grid-area: time; padding: 0; }
+}
+/* =========================================================
+   DASHBOARD · Fundo em camadas + hierarquia visual
+   ========================================================= */
+
+/* ---- 1. Fundo com gradiente no topo ---- */
+body[data-page="dashboard"] .content {
+  background:
+    /* Gradiente da marca (topo) — some suavemente */
+    radial-gradient(
+      1200px 400px at 20% -10%,
+      color-mix(in srgb, var(--accent) 10%, transparent) 0%,
+      transparent 70%
+    ),
+    /* Gradiente secundário (canto oposto) */
+    radial-gradient(
+      800px 300px at 90% 0%,
+      color-mix(in srgb, #8b5cf6 6%, transparent) 0%,
+      transparent 60%
+    ),
+    /* Fundo base — levemente diferente do --bg */
+    var(--bg);
+  min-height: 100vh;
+  position: relative;
+}
+
+/* Dark mode: gradiente mais visível */
+[data-theme="dark"] body[data-page="dashboard"] .content {
+  background:
+    radial-gradient(
+      1200px 400px at 20% -10%,
+      color-mix(in srgb, var(--accent) 18%, transparent) 0%,
+      transparent 70%
+    ),
+    radial-gradient(
+      800px 300px at 90% 0%,
+      color-mix(in srgb, #8b5cf6 12%, transparent) 0%,
+      transparent 60%
+    ),
+    #0a0c10;
+}
+
+/* ---- 2. Cards com sombra visível e fundo puro ---- */
+.kpi {
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  box-shadow:
+    0 1px 2px rgba(16, 24, 40, 0.04),
+    0 4px 12px -2px rgba(16, 24, 40, 0.06),
+    0 12px 28px -8px rgba(16, 24, 40, 0.08);
+}
+
+.kpi:hover {
+  box-shadow:
+    0 2px 4px rgba(16, 24, 40, 0.06),
+    0 8px 20px -4px rgba(16, 24, 40, 0.10),
+    0 20px 40px -12px rgba(16, 24, 40, 0.12);
+}
+
+.dash-card {
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  box-shadow:
+    0 1px 2px rgba(16, 24, 40, 0.04),
+    0 4px 12px -2px rgba(16, 24, 40, 0.06),
+    0 12px 28px -8px rgba(16, 24, 40, 0.08);
+}
+
+/* Dark mode: sombras mais profundas */
+[data-theme="dark"] .kpi,
+[data-theme="dark"] .dash-card {
+  background: #14171b;
+  border-color: rgba(255, 255, 255, 0.06);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    0 4px 12px -2px rgba(0, 0, 0, 0.25),
+    0 12px 28px -8px rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="dark"] .kpi:hover {
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.4),
+    0 8px 20px -4px rgba(0, 0, 0, 0.35),
+    0 20px 40px -12px rgba(0, 0, 0, 0.45);
+}
+
+/* ---- 3. Header mais compacto ---- */
+body[data-page="dashboard"] .page-head,
+body[data-page="dashboard"] .dash-header {
+  padding: 8px 0 4px;
+}
+
+body[data-page="dashboard"] .page-head__title,
+body[data-page="dashboard"] .dash-header h1 {
+  font-size: 24px;
+  letter-spacing: -0.025em;
+}
+
+/* ---- 4. Reduzir "margem morta" no topo ---- */
+body[data-page="dashboard"] .content {
+  padding-top: 20px;
+}
+
+/* ---- 5. Chip de período com fundo translúcido (fica visível sobre gradiente) ---- */
+.dash-range {
+  background: color-mix(in srgb, var(--surface) 60%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-color: color-mix(in srgb, var(--border) 60%, transparent);
+}
+
+/* ---- 6. Headers de cards com "fita" de accent ---- */
+.dash-card__head {
+  position: relative;
+  padding-left: 12px;
+}
+
+.dash-card__head::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 4px;
+  bottom: 4px;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--accent);
+  opacity: 0.6;
+}
+
+/* ---- 7. Fundo suave no "chão" do grid (dá contorno aos cards) ---- */
+.dash-grid {
+  padding: 4px;
+  margin-left: -4px;
+  margin-right: -4px;
+}
+
+/* =========================================================
+   Ajuste do topo do <main> (o content já tem padding)
+   ========================================================= */
+body[data-page="dashboard"] .app__body {
+  background: var(--bg);
+}
+
+/* =========================================================
+   RESPONSIVO — reduzir efeitos no mobile
+   ========================================================= */
+@media (max-width: 720px) {
+  body[data-page="dashboard"] .content {
+    background:
+      radial-gradient(
+        600px 200px at 50% -5%,
+        color-mix(in srgb, var(--accent) 8%, transparent) 0%,
+        transparent 70%
+      ),
+      var(--bg);
   }
 
-  .dash-period {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .dash-period .control-select {
-    min-width: 0;
-    width: 100%;
-  }
-
-  .dash-period__custom {
-    width: 100%;
-    flex-wrap: wrap;
-  }
-
-  .dash-period__custom input[type="date"] {
-    flex: 1 1 auto;
-    min-width: 0;
+  .kpi,
+  .dash-card {
+    box-shadow:
+      0 1px 2px rgba(16, 24, 40, 0.04),
+      0 2px 6px -1px rgba(16, 24, 40, 0.06);
   }
 }

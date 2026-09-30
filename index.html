@@ -12,10 +12,11 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 
   <link rel="stylesheet" href="css/global.css" />
   <link rel="stylesheet" href="css/theme.css" />
+ 
   <link rel="stylesheet" href="css/login.css" />
 </head>
 
@@ -23,70 +24,189 @@
 
   <main class="login">
 
-    <!-- Painel institucional (oculto no mobile) -->
-    <section class="login__aside">
+    <!-- ============================================================
+         PAINEL INSTITUCIONAL (esquerda · oculto no mobile)
+         ============================================================ -->
+    <section class="login__aside" aria-hidden="true">
+
+      <div class="login__aside-bg"></div>
+      <div class="login__aside-grid"></div>
+
       <div class="login__aside-inner">
-        <div class="brand">
-          <span class="brand__mark" aria-hidden="true">DH</span>
+
+        <!-- Marca -->
+        <a class="brand" href="welcome.html" aria-label="DEV HUB — página inicial">
+          <span class="brand__mark">
+            <img src="img/logo.png" alt="" />
+          </span>
           <span class="brand__name">DEV HUB</span>
+        </a>
+
+        <!-- Pitch -->
+        <div class="login__aside-text">
+          <h2>Gestão inteligente para empresas que querem evoluir.</h2>
+          <p>Tudo o que sua operação precisa em um só lugar — simples, rápido e confiável.</p>
         </div>
 
-        <div class="login__aside-text">
-          <h2>Gestão de vendas com clareza.</h2>
-          <p>Acesse o painel para acompanhar sua operação em tempo real.</p>
+        <!-- Benefícios -->
+        <ul class="login__benefits">
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg>
+            Gestão de clientes
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg>
+            Controle de vendas
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg>
+            Estoque e catálogo
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg>
+            Relatórios e indicadores
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg>
+            Usuários e permissões
+          </li>
+        </ul>
+
+        <!-- Visualização abstrata -->
+        <div class="viz">
+          <div class="viz__card viz__card--revenue">
+            <header class="viz__card-head">
+              <span class="viz__dot viz__dot--green"></span>
+              <span class="viz__card-title">Receita mensal</span>
+            </header>
+            <strong class="viz__value">R$ 42.8K</strong>
+            <span class="viz__trend viz__trend--up">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 15 5-5 4 4 7-7"/></svg>
+              +12,4%
+            </span>
+          </div>
+
+          <div class="viz__card viz__card--clients">
+            <header class="viz__card-head">
+              <span class="viz__dot viz__dot--blue"></span>
+              <span class="viz__card-title">Clientes ativos</span>
+            </header>
+            <strong class="viz__value">1.284</strong>
+            <span class="viz__trend viz__trend--up">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 15 5-5 4 4 7-7"/></svg>
+              +38
+            </span>
+          </div>
+
+          <div class="viz__card viz__card--sales">
+            <header class="viz__card-head">
+              <span class="viz__dot viz__dot--orange"></span>
+              <span class="viz__card-title">Vendas hoje</span>
+            </header>
+            <strong class="viz__value">87</strong>
+            <div class="viz__bars" aria-hidden="true">
+              <span style="--h: 42%"></span>
+              <span style="--h: 68%"></span>
+              <span style="--h: 54%"></span>
+              <span style="--h: 88%"></span>
+              <span style="--h: 72%"></span>
+              <span style="--h: 96%"></span>
+            </div>
+          </div>
+
+          <svg class="viz__lines" viewBox="0 0 400 400" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M80 110 Q 180 90 200 200" />
+            <path d="M80 110 Q 40 200 90 280" />
+            <path d="M90 280 Q 200 320 320 260" />
+            <path d="M200 200 Q 260 200 320 260" />
+          </svg>
         </div>
+
       </div>
 
-      <p class="login__aside-foot">DEV HUB · Sistema de gestão</p>
+      <p class="login__aside-foot">© 2026 Dev Hub</p>
     </section>
 
-    <!-- Formulário -->
+    <!-- ============================================================
+         PAINEL DE LOGIN (direita)
+         ============================================================ -->
     <section class="login__panel">
+
       <div class="login__panel-inner">
 
+        <!-- Marca compacta (só mobile) -->
         <div class="login__brand-mobile">
-          <span class="brand__mark" aria-hidden="true">DH</span>
+          <span class="brand__mark">
+            <img src="img/logo.png" alt="" />
+          </span>
           <span class="brand__name">DEV HUB</span>
         </div>
 
-        <h1 class="login__title">Acesse sua conta</h1>
-        <p class="login__subtitle">Entre com suas credenciais para continuar.</p>
+        <header class="login__header">
+          <h1 class="login__title">Bem-vindo de volta</h1>
+          <p class="login__subtitle">Acesse sua conta para continuar.</p>
+        </header>
 
         <form id="login-form" class="login__form" novalidate>
 
           <!-- Código da empresa -->
           <div class="field">
             <label for="company-code">Código da empresa</label>
-            <input
-              type="text"
-              id="company-code"
-              name="company_code"
-              autocomplete="organization"
-              placeholder="Ex.: EMP-0001"
-              spellcheck="false"
-              maxlength="50"
-              required
-            />
+            <div class="field__control">
+              <span class="field__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 21h18" /><path d="M5 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16" />
+                  <path d="M15 21V9h4a2 2 0 0 1 2 2v10" /><path d="M9 7h2M9 11h2M9 15h2" />
+                </svg>
+              </span>
+              <input
+                type="text"
+                id="company-code"
+                name="company_code"
+                autocomplete="organization"
+                placeholder="Ex.: EMP-0001"
+                spellcheck="false"
+                maxlength="50"
+                required
+              />
+            </div>
           </div>
 
           <!-- E-mail -->
           <div class="field">
             <label for="email">E-mail</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              autocomplete="username"
-              placeholder="voce@empresa.com"
-              spellcheck="false"
-              required
-            />
+            <div class="field__control">
+              <span class="field__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="2.5" y="5" width="19" height="14" rx="2.5" />
+                  <path d="m3 7 8.2 6.2a1.5 1.5 0 0 0 1.6 0L21 7" />
+                </svg>
+              </span>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                autocomplete="username"
+                placeholder="voce@empresa.com"
+                spellcheck="false"
+                required
+              />
+            </div>
           </div>
 
           <!-- Senha -->
           <div class="field">
-            <label for="password">Senha</label>
+            <div class="field__row">
+              <label for="password">Senha</label>
+              <a href="#" class="field__link" id="forgot-password" hidden>Esqueci minha senha</a>
+            </div>
             <div class="field__control">
+              <span class="field__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="4.5" y="10.5" width="15" height="10" rx="2" />
+                  <path d="M8 10.5V7a4 4 0 0 1 8 0v3.5" />
+                </svg>
+              </span>
               <input
                 type="password"
                 id="password"
@@ -124,13 +244,30 @@
 
           <!-- Botão -->
           <button type="submit" class="btn btn--primary btn--block" id="login-submit">
-            <span class="btn__label">ENTRAR</span>
+            <span class="btn__label">Entrar</span>
             <span class="btn__spinner" aria-hidden="true"></span>
+            <svg class="btn__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M5 12h14" /><path d="m13 6 6 6-6 6" />
+            </svg>
           </button>
 
         </form>
 
-        <p class="login__foot">Acesso restrito a usuários autorizados.</p>
+        <!-- Segurança -->
+        <div class="login__security">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="4.5" y="10.5" width="15" height="10" rx="2" />
+            <path d="M8 10.5V7a4 4 0 0 1 8 0v3.5" />
+          </svg>
+          <span>Conexão segura. Seus dados são tratados com segurança.</span>
+        </div>
+
+        <footer class="login__footer">
+          <span>© 2026 Dev Hub</span>
+        </footer>
+
       </div>
     </section>
 

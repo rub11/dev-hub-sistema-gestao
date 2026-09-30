@@ -1,83 +1,41 @@
 /* =========================================================
-   DEV HUB · Tema (claro / escuro / sistema)
+   DEV HUB · Tema (FORÇADO PARA DARK)
    ---------------------------------------------------------
-   Aplica data-theme no <html> antes da CSS carregar, evitando
-   flash de tema. Deve ser incluído no <head> de TODA página.
+   ⚠️ Este projeto agora usa EXCLUSIVAMENTE o tema escuro.
+   A opção de alternar claro/escuro foi removida.
+   ---------------------------------------------------------
+   - Aplica data-theme="dark" no <html> antes da CSS carregar
+   - Dispara `theme:changed` (compatível com charts e listeners)
+   - Mantém window.Theme para compatibilidade (get/set viram no-op)
    ========================================================= */
 
 (function () {
   'use strict';
 
+  const THEME = 'dark';
   const STORAGE_KEY = 'dev-hub-theme';
-  const VALID = ['system', 'light', 'dark'];
-  const mql = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
 
-  function readPreference() {
-    try {
-      const value = localStorage.getItem(STORAGE_KEY);
-      return VALID.indexOf(value) !== -1 ? value : 'system';
-    } catch (e) {
-      return 'system';
-    }
-  }
+  /* Aplica imediatamente — evita flash de tema claro */
+  applyTheme();
 
-  function resolveTheme(preference) {
-    if (preference === 'light' || preference === 'dark') return preference;
-    return mql && mql.matches ? 'dark' : 'light';
-  }
+  /* Limpa qualquer preferência antiga gravada por versões anteriores */
+  try { localStorage.removeItem(STORAGE_KEY); } catch (e) { /* ignora */ }
 
-  /* Notifica o resto da aplicação que o tema mudou.
-     Charts, ícones, cores dinâmicas — tudo que precisa
-     se redesenhar escuta este evento. */
-  function dispatchThemeChanged(preference, resolved) {
+  function applyTheme() {
+    document.documentElement.setAttribute('data-theme', THEME);
+    document.documentElement.setAttribute('data-theme-pref', THEME);
+
     try {
       document.dispatchEvent(new CustomEvent('theme:changed', {
-        detail: { preference: preference, resolved: resolved }
+        detail: { preference: THEME, resolved: THEME }
       }));
     } catch (e) { /* CustomEvent indisponível — ignora */ }
   }
 
-  function applyTheme(preference) {
-    const resolved = resolveTheme(preference);
-    document.documentElement.setAttribute('data-theme', resolved);
-    document.documentElement.setAttribute('data-theme-pref', preference);
-    dispatchThemeChanged(preference, resolved);
-  }
-
-  function setPreference(preference) {
-    if (VALID.indexOf(preference) === -1) preference = 'system';
-    try {
-      if (preference === 'system') localStorage.removeItem(STORAGE_KEY);
-      else localStorage.setItem(STORAGE_KEY, preference);
-    } catch (e) { /* storage indisponível — ignora */ }
-    applyTheme(preference);
-  }
-
-  // Aplica imediatamente (evita flash).
-  // Obs.: quem escuta 'theme:changed' já registra o listener
-  // no DOMContentLoaded e recebe o estado atual por lá.
-  applyTheme(readPreference());
-
-  // Reage a mudanças do sistema quando a preferência é "system"
-  if (mql) {
-    const onChange = function () {
-      if (readPreference() === 'system') applyTheme('system');
-    };
-    if (typeof mql.addEventListener === 'function') mql.addEventListener('change', onChange);
-    else if (typeof mql.addListener === 'function') mql.addListener(onChange);
-  }
-
-  // Sincroniza entre abas: se o usuário trocar o tema numa aba,
-  // as outras acompanham.
-  window.addEventListener('storage', function (e) {
-    if (e.key !== STORAGE_KEY && e.key !== null) return;
-    applyTheme(readPreference());
-  });
-
-  // API pública
+  /* API mantida para compatibilidade (não faz nada de novo) */
   window.Theme = {
-    get: readPreference,
-    set: setPreference,
-    resolved: function () { return resolveTheme(readPreference()); }
+    get: function () { return THEME; },
+    set: function () { applyTheme(); },
+    resolved: function () { return THEME; }
   };
 })();

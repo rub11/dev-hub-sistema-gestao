@@ -1,0 +1,1095 @@
+/* =========================================================
+   DEV HUB · Módulo Compras · v6 (arquivo único)
+   ---------------------------------------------------------
+   ÍNDICE:
+     0) Fix global de selects (chevron)
+     1) Container centralizado (.cmp-content)
+     2) Tokens locais
+     3) Page header
+     4) Botões (.cmp-btn)
+     5) Toolbar + busca
+     6) Painel + tabela
+     7) Células
+     8) Status badges
+     9) Ações da linha
+    10) Empty state
+    11) Loading / feedback
+    12) Formulário (.cmp-form)
+    13) Seções (.cmp-section)
+    14) Grids (.cmp-grid)
+    15) Campos (.field)
+    16) Itens da compra
+    17) Totais
+    18) Ações do formulário
+    19) Modal
+    20) Receber item
+    21) Reduced motion
+   ========================================================= */
+
+
+/* =========================================================
+   0) FIX GLOBAL · CHEVRON DOS SELECTS
+   ---------------------------------------------------------
+   Garante 1 único chevron alinhado à direita, sobrepondo
+   qualquer regra conflitante do theme.css / global.css.
+   ========================================================= */
+body[data-page="compras"] select,
+body[data-page="compras-nova"] select,
+body[data-page="compras-receber"] select,
+body[data-page="fornecedores"] select,
+.cmp-content select,
+.cmp-form select,
+.field select,
+.cmp-items__row select,
+.control-select {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 14px center !important;
+  background-size: 16px 16px !important;
+  padding-right: 42px !important;
+}
+
+[data-theme="dark"] body[data-page="compras"] select,
+[data-theme="dark"] body[data-page="compras-nova"] select,
+[data-theme="dark"] body[data-page="compras-receber"] select,
+[data-theme="dark"] body[data-page="fornecedores"] select,
+[data-theme="dark"] .cmp-content select,
+[data-theme="dark"] .cmp-form select,
+[data-theme="dark"] .field select,
+[data-theme="dark"] .cmp-items__row select,
+[data-theme="dark"] .control-select {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a8b0ba' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>") !important;
+}
+
+
+/* =========================================================
+   1) CONTAINER CENTRALIZADO
+   ---------------------------------------------------------
+   Força o conteúdo das páginas do módulo numa coluna de
+   até 1280px, com padding lateral real.
+   ========================================================= */
+body[data-page="compras"] .cmp-content,
+body[data-page="compras-nova"] .cmp-content,
+body[data-page="compras-receber"] .cmp-content,
+body[data-page="fornecedores"] .cmp-content {
+  width: 100% !important;
+  max-width: 1280px !important;
+  margin: 0 auto !important;
+  padding: 40px 48px 56px !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 28px !important;
+}
+
+@media (max-width: 1200px) {
+  body[data-page="compras"] .cmp-content,
+  body[data-page="compras-nova"] .cmp-content,
+  body[data-page="compras-receber"] .cmp-content,
+  body[data-page="fornecedores"] .cmp-content {
+    padding: 32px 32px 48px !important;
+    gap: 24px !important;
+  }
+}
+@media (max-width: 768px) {
+  body[data-page="compras"] .cmp-content,
+  body[data-page="compras-nova"] .cmp-content,
+  body[data-page="compras-receber"] .cmp-content,
+  body[data-page="fornecedores"] .cmp-content {
+    padding: 24px 20px 40px !important;
+    gap: 20px !important;
+  }
+}
+@media (max-width: 480px) {
+  body[data-page="compras"] .cmp-content,
+  body[data-page="compras-nova"] .cmp-content,
+  body[data-page="compras-receber"] .cmp-content,
+  body[data-page="fornecedores"] .cmp-content {
+    padding: 20px 16px 32px !important;
+  }
+}
+
+
+/* =========================================================
+   2) TOKENS LOCAIS
+   ========================================================= */
+:root {
+  --cmp-radius-sm: 8px;
+  --cmp-radius:    10px;
+  --cmp-radius-lg: 14px;
+
+  --cmp-shadow-xs: 0 1px 2px rgba(16, 24, 40, 0.04);
+  --cmp-shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.04),
+                   0 4px 12px -4px rgba(16, 24, 40, 0.06);
+  --cmp-shadow-md: 0 4px 12px -2px rgba(16, 24, 40, 0.08),
+                   0 12px 28px -8px rgba(16, 24, 40, 0.10);
+
+  --cmp-border-soft: color-mix(in srgb, var(--border) 70%, transparent);
+  --cmp-hairline:    color-mix(in srgb, var(--border) 55%, transparent);
+}
+
+[data-theme="dark"] {
+  --cmp-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.30);
+  --cmp-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.30),
+                   0 4px 12px -4px rgba(0, 0, 0, 0.35);
+  --cmp-shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.40),
+                   0 12px 28px -8px rgba(0, 0, 0, 0.45);
+}
+
+
+/* =========================================================
+   3) PAGE HEADER
+   ========================================================= */
+.cmp-page-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+
+.cmp-page-head__text {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  max-width: 720px;
+}
+
+.cmp-page-head__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  text-decoration: none;
+}
+.cmp-page-head__eyebrow svg { width: 14px; height: 14px; }
+.cmp-page-head__eyebrow:hover { color: var(--text-soft); }
+
+.cmp-page-head__title {
+  margin: 0;
+  font-size: 32px;
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: var(--text);
+}
+
+.cmp-page-head__sub {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--text-soft);
+}
+
+.cmp-page-head__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .cmp-page-head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 20px;
+  }
+  .cmp-page-head__title { font-size: 26px; }
+  .cmp-page-head__actions { width: 100%; }
+  .cmp-page-head__actions .cmp-btn { flex: 1; justify-content: center; }
+}
+
+
+/* =========================================================
+   4) BOTÕES
+   ========================================================= */
+.cmp-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 42px;
+  padding: 0 18px;
+  border: 1px solid transparent;
+  border-radius: var(--cmp-radius);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease;
+}
+.cmp-btn svg { width: 16px; height: 16px; flex: none; }
+.cmp-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px var(--accent-ring);
+}
+
+.cmp-btn--ghost {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text-soft);
+}
+.cmp-btn--ghost:hover {
+  background: var(--surface-2);
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+
+.cmp-btn--primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  box-shadow: var(--cmp-shadow-xs);
+}
+.cmp-btn--primary:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+
+/* =========================================================
+   5) TOOLBAR + BUSCA
+   ========================================================= */
+.cmp-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--cmp-border-soft);
+  border-radius: var(--cmp-radius-lg);
+  box-shadow: var(--cmp-shadow-xs);
+}
+
+.cmp-search {
+  position: relative;
+  flex: 1 1 320px;
+  min-width: 220px;
+  max-width: 440px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  background: var(--surface-2);
+  border: 1px solid transparent;
+  border-radius: var(--cmp-radius);
+  transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+}
+.cmp-search:focus-within {
+  background: var(--surface);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-ring);
+}
+.cmp-search svg {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: var(--text-muted);
+  pointer-events: none;
+  transition: color 160ms ease;
+}
+.cmp-search:focus-within svg { color: var(--accent); }
+
+.cmp-search input {
+  width: 100%;
+  height: 100%;
+  padding: 0 14px 0 42px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14.5px;
+  outline: none;
+  border-radius: var(--cmp-radius);
+}
+.cmp-search input::placeholder { color: var(--text-muted); }
+
+.cmp-toolbar__select {
+  flex: 0 0 200px;
+  max-width: 200px;
+  height: 44px;
+}
+
+@media (max-width: 640px) {
+  .cmp-toolbar { padding: 12px; gap: 10px; }
+  .cmp-search { flex: 1 1 100%; max-width: 100%; }
+  .cmp-toolbar__select { flex: 1 1 100%; max-width: 100%; }
+}
+
+
+/* =========================================================
+   6) PAINEL + TABELA
+   ========================================================= */
+.cmp-panel {
+  background: var(--surface);
+  border: 1px solid var(--cmp-border-soft);
+  border-radius: var(--cmp-radius-lg);
+  box-shadow: var(--cmp-shadow-xs);
+  overflow: hidden;
+}
+
+.cmp-panel__scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.cmp-table {
+  width: 100%;
+  min-width: 860px;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.cmp-table thead th {
+  padding: 14px 24px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  text-align: left;
+  white-space: nowrap;
+}
+.cmp-table thead th.cell--num,
+.cmp-table thead th.cell--right { text-align: right; }
+
+.cmp-table tbody td {
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--cmp-hairline);
+  font-size: 14px;
+  color: var(--text);
+  vertical-align: middle;
+  transition: background-color 140ms ease;
+}
+.cmp-table tbody tr:last-child td { border-bottom: 0; }
+.cmp-table tbody tr:hover td { background: var(--surface-2); }
+
+.cmp-table .cell--num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.cmp-table .cell--right { text-align: right; }
+
+
+/* =========================================================
+   7) CÉLULAS
+   ========================================================= */
+.cmp-code {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--text);
+  font-size: 13.5px;
+}
+
+.cmp-supplier {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.cmp-supplier__name {
+  font-weight: 500;
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.4;
+}
+.cmp-supplier__meta {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.cmp-money {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--text);
+}
+
+
+/* =========================================================
+   8) STATUS BADGES
+   ========================================================= */
+.cmp-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+.cmp-status::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+
+.cmp-status--rascunho              { background: var(--surface-2); color: var(--text-soft); }
+.cmp-status--aguardando_aprovacao  { background: rgba(181,71,8,.12); color: #b54708; }
+.cmp-status--pendente_recebimento  { background: rgba(23,92,211,.12); color: #175cd3; }
+.cmp-status--recebida_parcial      { background: rgba(247,144,9,.15); color: #b54708; }
+.cmp-status--recebida              { background: rgba(6,118,71,.12); color: #067647; }
+.cmp-status--paga                  { background: rgba(79,70,229,.12); color: #4f46e5; }
+.cmp-status--cancelada             { background: var(--surface-2); color: var(--text-muted); text-decoration: line-through; }
+
+[data-theme="dark"] .cmp-status--aguardando_aprovacao { background: rgba(253,176,34,.16); color: #fdb022; }
+[data-theme="dark"] .cmp-status--pendente_recebimento { background: rgba(99,102,241,.18);  color: #a5b4fc; }
+[data-theme="dark"] .cmp-status--recebida_parcial     { background: rgba(247,144,9,.18);   color: #fdb022; }
+[data-theme="dark"] .cmp-status--recebida             { background: rgba(74,222,128,.14);  color: #4ade80; }
+[data-theme="dark"] .cmp-status--paga                 { background: rgba(129,140,248,.16); color: #a5b4fc; }
+
+
+/* =========================================================
+   9) AÇÕES DA LINHA
+   ========================================================= */
+.cmp-row-actions {
+  display: inline-flex;
+  gap: 4px;
+  justify-content: flex-end;
+}
+.cmp-action {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid transparent;
+  border-radius: var(--cmp-radius-sm);
+  background: transparent;
+  color: var(--text-soft);
+  cursor: pointer;
+  transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+.cmp-action:hover {
+  background: var(--surface-2);
+  color: var(--text);
+  border-color: var(--border);
+}
+.cmp-action svg { width: 15px; height: 15px; }
+.cmp-action--danger:hover {
+  color: var(--danger);
+  background: var(--danger-soft);
+  border-color: transparent;
+}
+
+
+/* =========================================================
+   10) EMPTY STATE
+   ========================================================= */
+.cmp-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 72px 24px;
+  text-align: center;
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+.cmp-empty__icon {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+.cmp-empty__icon svg { width: 28px; height: 28px; }
+
+.cmp-empty__title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+.cmp-empty__text {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-soft);
+  line-height: 1.55;
+}
+
+.cmp-empty__actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.cmp-empty__actions .cmp-btn { height: 40px; padding: 0 16px; font-size: 13.5px; }
+
+@media (max-width: 640px) {
+  .cmp-empty { padding: 48px 16px; }
+}
+
+
+/* =========================================================
+   11) LOADING / FEEDBACK
+   ========================================================= */
+.cmp-loading {
+  padding: 56px 24px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.cmp-loading::after {
+  content: '';
+  display: block;
+  width: 24px;
+  height: 24px;
+  margin: 16px auto 0;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: cmp-spin 700ms linear infinite;
+}
+@keyframes cmp-spin { to { transform: rotate(360deg); } }
+
+.cmp-error {
+  padding: 14px 18px;
+  border-radius: var(--cmp-radius);
+  background: var(--danger-soft);
+  border: 1px solid var(--danger-border);
+  color: var(--danger);
+  font-size: 13.5px;
+  line-height: 1.5;
+  margin: 24px;
+}
+
+.cmp-info {
+  padding: 14px 18px;
+  border-radius: var(--cmp-radius);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-ring);
+  color: var(--accent-hover);
+  font-size: 13.5px;
+  line-height: 1.5;
+  margin: 24px;
+}
+
+
+/* =========================================================
+   12) FORMULÁRIO (.cmp-form)
+   ========================================================= */
+.cmp-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+
+/* =========================================================
+   13) SEÇÕES
+   ========================================================= */
+.cmp-section {
+  padding: 28px 30px;
+  background: var(--surface);
+  border: 1px solid var(--cmp-border-soft);
+  border-radius: var(--cmp-radius-lg);
+  box-shadow: var(--cmp-shadow-xs);
+}
+
+.cmp-section__title {
+  margin: 0 0 24px;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  padding-left: 12px;
+  border-left: 3px solid var(--accent);
+  line-height: 1.3;
+}
+
+@media (max-width: 720px) {
+  .cmp-section { padding: 22px 18px; }
+  .cmp-section__title { margin-bottom: 20px; }
+}
+
+
+/* =========================================================
+   14) GRIDS
+   ========================================================= */
+.cmp-grid {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+.cmp-grid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.cmp-grid--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.cmp-grid--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+.cmp-grid .field { margin: 0; }
+
+@media (max-width: 900px) {
+  .cmp-grid--3,
+  .cmp-grid--4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  .cmp-grid--2,
+  .cmp-grid--3,
+  .cmp-grid--4 { grid-template-columns: 1fr; }
+}
+
+
+/* =========================================================
+   15) CAMPOS
+   ========================================================= */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.field > label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-soft);
+}
+
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--cmp-radius);
+  background-color: var(--surface);   /* ← background-color, não background */
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14.5px;
+  outline: none;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+.field input::placeholder,
+.field textarea::placeholder { color: var(--text-muted); }
+
+.field input:hover,
+.field select:hover,
+.field textarea:hover { border-color: var(--border-strong); }
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-ring);
+}
+
+.field textarea {
+  padding: 12px 14px;
+  min-height: 100px;
+  resize: vertical;
+  line-height: 1.55;
+}
+
+/* Select dentro de .field — padding pra não colidir com o chevron */
+.field select {
+  padding-right: 42px;
+}
+
+
+/* =========================================================
+   16) ITENS DA COMPRA
+   ========================================================= */
+.cmp-items {
+  border: 1px solid var(--border);
+  border-radius: var(--cmp-radius);
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.cmp-items__head,
+.cmp-items__row {
+  display: grid;
+  grid-template-columns:
+    minmax(220px, 2fr)
+    110px
+    80px
+    130px
+    120px
+    130px
+    52px;
+  gap: 10px;
+  align-items: center;
+  padding: 12px 18px;
+}
+
+.cmp-items__head {
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.cmp-items__row { border-bottom: 1px solid var(--cmp-hairline); }
+.cmp-items__row:last-child { border-bottom: 0; }
+
+.cmp-items__row input,
+.cmp-items__row select {
+  width: 100%;
+  height: 38px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--cmp-radius-sm);
+  background-color: var(--surface);
+  color: var(--text);
+  font-size: 13.5px;
+  font-family: inherit;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+.cmp-items__row select { padding-right: 34px; background-size: 14px 14px; }
+
+.cmp-items__row input:focus,
+.cmp-items__row select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+.cmp-items__row input[type="number"] {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.cmp-items__total {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--text);
+  font-size: 13.5px;
+}
+
+.cmp-items__remove {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid transparent;
+  border-radius: var(--cmp-radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background-color 140ms ease, color 140ms ease;
+}
+.cmp-items__remove:hover { background: var(--danger-soft); color: var(--danger); }
+.cmp-items__remove svg { width: 14px; height: 14px; }
+
+.cmp-items__add {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 14px;
+}
+
+/* Scroll horizontal antes de quebrar em tablet */
+@media (max-width: 1100px) {
+  .cmp-items { overflow-x: auto; }
+  .cmp-items__head,
+  .cmp-items__row { min-width: 860px; }
+}
+
+/* Mobile: card vertical */
+@media (max-width: 720px) {
+  .cmp-items {
+    border: 0;
+    background: transparent;
+    overflow: visible;
+  }
+  .cmp-items__head { display: none; }
+
+  .cmp-items__row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    padding: 18px;
+    margin-bottom: 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--cmp-radius);
+    background: var(--surface);
+    min-width: 0 !important;
+  }
+  .cmp-items__row:last-child { margin-bottom: 0; }
+  .cmp-items__row > *:nth-child(1) { grid-column: 1 / -1; }
+  .cmp-items__row > *:nth-child(6) { grid-column: 1 / -1; text-align: left; }
+  .cmp-items__row > *:nth-child(7) { grid-column: 1 / -1; justify-self: start; }
+
+  .cmp-items__total { text-align: left; font-size: 14.5px; }
+}
+
+
+/* =========================================================
+   17) TOTAIS
+   ========================================================= */
+.cmp-totals {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px 24px;
+  max-width: 440px;
+  margin-left: auto;
+  margin-top: 20px;
+  font-size: 14.5px;
+}
+
+.cmp-totals dt {
+  color: var(--text-soft);
+  font-weight: 500;
+  padding: 3px 0;
+}
+.cmp-totals dd {
+  margin: 0;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  font-weight: 500;
+  padding: 3px 0;
+}
+
+.cmp-totals__grand { grid-column: 1 / -1; display: contents; }
+
+.cmp-totals__grand dt {
+  margin-top: 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  font-weight: 700;
+  color: var(--text);
+  font-size: 15px;
+}
+.cmp-totals__grand dd {
+  margin-top: 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  font-weight: 700;
+  color: var(--text);
+  font-size: 19px;
+  letter-spacing: -0.015em;
+}
+
+
+/* =========================================================
+   18) AÇÕES DO FORMULÁRIO
+   ========================================================= */
+.cmp-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding-top: 8px;
+}
+
+@media (max-width: 640px) {
+  .cmp-form__actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+  .cmp-form__actions .cmp-btn,
+  .cmp-form__actions .control-select { width: 100%; }
+}
+
+
+/* =========================================================
+   19) MODAL
+   ========================================================= */
+.cmp-modal[hidden] { display: none !important; }
+.cmp-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  animation: cmp-fade 200ms ease-out;
+}
+@keyframes cmp-fade { from { opacity: 0; } to { opacity: 1; } }
+
+.cmp-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 11, 18, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.cmp-modal__dialog {
+  position: relative;
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--cmp-radius-lg);
+  box-shadow: var(--cmp-shadow-md);
+  animation: cmp-pop 240ms cubic-bezier(.2,.9,.3,1);
+}
+.cmp-modal__dialog--lg { max-width: 720px; }
+
+@keyframes cmp-pop {
+  from { opacity: 0; transform: translateY(8px) scale(.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.cmp-modal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.cmp-modal__title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+.cmp-modal__close {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid transparent;
+  border-radius: var(--cmp-radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background-color 140ms ease, color 140ms ease;
+}
+.cmp-modal__close:hover { background: var(--surface-2); color: var(--text); }
+.cmp-modal__close svg { width: 15px; height: 15px; }
+
+.cmp-modal__body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.cmp-modal__foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  background: var(--surface-2);
+}
+
+@media (max-width: 640px) {
+  .cmp-modal { padding: 16px; }
+  .cmp-modal__head { padding: 18px 18px 14px; }
+  .cmp-modal__body { padding: 18px; }
+  .cmp-modal__foot { padding: 14px 18px; flex-direction: column-reverse; }
+  .cmp-modal__foot .cmp-btn { width: 100%; justify-content: center; }
+}
+
+
+/* =========================================================
+   20) RECEBER ITEM (dentro do modal)
+   ========================================================= */
+.cmp-receive-item {
+  display: grid;
+  grid-template-columns: 1fr 130px;
+  gap: 18px;
+  align-items: center;
+  padding: 16px 0;
+  border-bottom: 1px dashed var(--border);
+}
+.cmp-receive-item:last-child { border-bottom: 0; padding-bottom: 0; }
+.cmp-receive-item:first-child { padding-top: 4px; }
+
+.cmp-receive-item__info { min-width: 0; }
+
+.cmp-receive-item__name {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 3px;
+}
+.cmp-receive-item__meta {
+  display: block;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.cmp-receive-item__qty input {
+  width: 100%;
+  height: 42px;
+  text-align: right;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--cmp-radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14.5px;
+  font-variant-numeric: tabular-nums;
+}
+.cmp-receive-item__qty input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-ring);
+}
+
+.cmp-receive-item__label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: right;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .cmp-receive-item {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .cmp-receive-item__qty input { text-align: left; }
+  .cmp-receive-item__label { text-align: left; }
+}
+
+
+/* =========================================================
+   21) REDUCED MOTION
+   ========================================================= */
+@media (prefers-reduced-motion: reduce) {
+  .cmp-modal,
+  .cmp-modal__dialog,
+  .cmp-loading::after { animation: none !important; }
+}

@@ -51,7 +51,6 @@
     setupPlatformForm();
     setupProfileForm();
     setupPasswordModal();
-    setupThemeControls();
     setupSignOut();
 
     // Guard: só platform_admin
@@ -583,20 +582,7 @@
   /* =========================================================
      Preferências / tema
      ========================================================= */
-  function setupThemeControls() {
-    const inputs = document.querySelectorAll('input[name="theme"]');
-    if (!inputs.length || !window.Theme) return;
-
-    const current = window.Theme.get();
-    inputs.forEach(function (input) {
-      input.checked = input.value === current;
-      input.addEventListener('change', function () {
-        if (!input.checked) return;
-        window.Theme.set(input.value);
-        showToast('Preferência de tema atualizada.', 'success');
-      });
-    });
-  }
+  
 
   /* =========================================================
      Sair
