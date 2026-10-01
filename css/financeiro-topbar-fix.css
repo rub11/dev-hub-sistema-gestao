@@ -1,0 +1,47 @@
+/* =========================================================
+   DEV HUB · Financeiro · FIX topbar
+   ---------------------------------------------------------
+   Objetivo: manter a topbar do app (logo, busca, perfil)
+   SEMPRE visível acima do conteúdo do financeiro.
+
+   Causa: .fin-content usa position:fixed; inset:0 — cobre
+   a tela toda, inclusive a topbar.
+
+   Carregar DEPOIS de financeiro.css.
+   ========================================================= */
+
+/* Altura da topbar — se ficar desalinhado, ajuste esse valor */
+body[data-page="financeiro"] {
+  --fin-topbar-h: 60px;
+}
+
+/* 1) Topbar acima de tudo */
+body[data-page="financeiro"] .app__topbar,
+body[data-page="financeiro"] .topbar,
+body[data-page="financeiro"] .app-header {
+  position: relative;
+  z-index: 200;
+}
+
+/* 2) Conteúdo do financeiro começa ABAIXO da topbar */
+body[data-page="financeiro"] .fin-content {
+  position: fixed;
+  top: var(--fin-topbar-h);
+  left: 0;
+  right: 0;
+  bottom: 0;
+  /* inset:0 era o culpado — substituímos por offsets explícitos */
+  inset: auto;
+  top: var(--fin-topbar-h);
+}
+
+/* 3) Mobile: volta pro fluxo normal (sem fixed) */
+@media (max-width: 900px) {
+  body[data-page="financeiro"] .fin-content {
+    position: static;
+    top: auto;
+    bottom: auto;
+    height: auto;
+    overflow: visible;
+  }
+}
