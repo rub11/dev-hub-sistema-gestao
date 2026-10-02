@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DRE · DEV HUB</title>
+
+  <script src="js/theme.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/global.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/clientes.css" />
+  <link rel="stylesheet" href="css/theme.css" />
+  <link rel="stylesheet" href="css/relatorios.css" />
+  <link rel="stylesheet" href="css/dre.css" />
+
+  <script>
+    (function () {
+      try {
+        if (!/[?&]blocked=1/.test(location.search)) {
+          document.documentElement.classList.add('layout-topnav');
+        }
+      } catch (e) {}
+    })();
+  </script>
+</head>
+
+<body class="layout-topnav" data-page="dre">
+
+  <a class="skip-link" href="#main">Pular para o conteúdo principal</a>
+
+  <aside class="sidebar" id="sidebar" aria-label="Menu principal"></aside>
+  <div class="sidebar-overlay" id="sidebar-overlay" hidden></div>
+
+  <div class="app__body">
+    <header class="topbar">
+      <button type="button" class="icon-btn menu-toggle" id="menu-toggle"
+              aria-label="Abrir menu" aria-expanded="false" aria-controls="sidebar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+             stroke-linecap="round" aria-hidden="true"><path d="M3.5 6.5h17M3.5 12h17M3.5 17.5h17" /></svg>
+      </button>
+
+      <span class="topbar__brand">DEV HUB</span>
+
+      <div class="topbar__actions">
+        <div class="user-menu">
+          <button type="button" class="user-menu__trigger" id="user-menu-trigger"
+                  aria-haspopup="true" aria-expanded="false" aria-controls="user-menu-panel">
+            <span class="avatar" id="user-avatar" aria-hidden="true">–</span>
+            <span class="user-menu__meta">
+              <span class="user-menu__name" id="user-name">Carregando…</span>
+              <span class="user-menu__role" id="user-role"></span>
+            </span>
+            <svg class="user-menu__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </button>
+          <div class="user-menu__panel" id="user-menu-panel" role="menu" hidden>
+            <a class="menu-item" role="menuitem" href="configuracoes.html">Configurações</a>
+            <div class="menu-item__sep" role="separator"></div>
+            <button type="button" class="menu-item menu-item--danger" role="menuitem" data-action="logout">Sair</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="content" id="main">
+      <div id="global-alert" class="alert" role="alert" hidden></div>
+
+      <div class="page-head page-head--split">
+        <div class="page-head__main">
+          <p class="page-head__eyebrow">
+            <span id="greeting-name">Olá</span>
+            <span class="role-badge" id="greeting-role" hidden></span>
+          </p>
+          <h1 class="page-head__title">DRE Gerencial</h1>
+          <p class="page-head__sub">Demonstrativo do Resultado do Exercício por competência mensal.</p>
+        </div>
+
+        <div class="page-head__actions">
+          <button type="button" class="btn btn--ghost" id="dre-export-csv">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:16px;height:16px">
+              <path d="M12 3v12" /><path d="m7 10 5 5 5-5" /><path d="M5 21h14" />
+            </svg>
+            <span>Exportar CSV</span>
+          </button>
+          <button type="button" class="btn btn--ghost" id="dre-export-pdf">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:16px;height:16px">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <path d="M14 2v6h6" />
+            </svg>
+            <span>Imprimir / PDF</span>
+          </button>
+        </div>
+      </div>
+
+      <section class="dre-period" aria-label="Navegação de período">
+        <button type="button" class="dre-period__nav" id="dre-prev" aria-label="Mês anterior">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
+               style="width:16px;height:16px"><path d="m15 18-6-6 6-6" /></svg>
+        </button>
+
+        <div class="dre-period__label">
+          <span class="dre-period__month" id="dre-month-label">—</span>
+          <span class="dre-period__hint" id="dre-compare-label">vs mês anterior</span>
+        </div>
+
+        <button type="button" class="dre-period__nav" id="dre-next" aria-label="Próximo mês">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
+               style="width:16px;height:16px"><path d="m9 18 6-6-6-6" /></svg>
+        </button>
+
+        <div class="dre-period__filters">
+          <label for="dre-cost-center" class="sr-only">Filtrar por centro de custo</label>
+          <select id="dre-cost-center" class="control-select dre-cost-center">
+            <option value="">Todos os centros de custo</option>
+          </select>
+        </div>
+
+        <button type="button" class="btn btn--ghost btn--sm" id="dre-today">Mês atual</button>
+      </section>
+
+      <div id="report-loading" class="state-block">
+        <span class="spinner" aria-hidden="true"></span>
+        <p>Carregando DRE...</p>
+      </div>
+
+      <div id="report-content" hidden>
+        <section class="panel dre-panel" aria-labelledby="dre-title">
+          <div class="panel__head">
+            <div>
+              <h2 class="panel__title" id="dre-title">Demonstrativo do Resultado</h2>
+              <p class="panel__sub" id="dre-period-sub">—</p>
+            </div>
+          </div>
+
+          <div class="table-wrap dre-table-wrap">
+            <table class="dre-table">
+              <caption class="sr-only">DRE gerencial por competência</caption>
+              <thead>
+                <tr>
+                  <th scope="col" class="dre-col-desc">Descrição</th>
+                  <th scope="col" class="dre-col-val" id="dre-col-current">Atual</th>
+                  <th scope="col" class="dre-col-val" id="dre-col-previous">Anterior</th>
+                  <th scope="col" class="dre-col-val dre-col-ytd">YTD</th>
+                  <th scope="col" class="dre-col-delta">Δ%</th>
+                </tr>
+              </thead>
+              <tbody id="dre-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel dre-chart-panel" aria-labelledby="dre-chart-title">
+          <div class="panel__head">
+            <div>
+              <h2 class="panel__title" id="dre-chart-title">Evolução dos últimos 12 meses</h2>
+              <p class="panel__sub">Receita bruta, lucro bruto e lucro líquido.</p>
+            </div>
+          </div>
+
+          <div class="chart-wrap dre-chart-wrap">
+            <canvas id="dre-chart" aria-label="Gráfico de evolução da DRE" role="img"></canvas>
+            <div id="dre-chart-empty" class="state-block" hidden>
+              <p>Sem dados suficientes para o gráfico.</p>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="false"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="js/supabase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/permissions.js"></script>
+
+<script src="js/nav/config.js"></script>
+<script src="js/nav/state.js"></script>
+<script src="js/nav/roles.js"></script>
+<script src="js/nav/styles.js"></script>
+<script src="js/nav/permission-modal.js"></script>
+<script src="js/nav/tabs.js"></script>
+<script src="js/nav/module-menu.js"></script>
+<script src="js/nav/notifications.js"></script>
+<script src="js/nav/user-menu.js"></script>
+<script src="js/nav/search.js"></script>
+<script src="js/nav/bar.js"></script>
+<script src="js/nav/main.js"></script>
+
+<script src="js/dre/config.js"></script>
+<script src="js/dre/state.js"></script>
+<script src="js/dre/ui.js"></script>
+<script src="js/dre/period.js"></script>
+<script src="js/dre/filters.js"></script>
+<script src="js/dre/data.js"></script>
+<script src="js/dre/render.js"></script>
+<script src="js/dre/export.js"></script>
+<script src="js/dre/main.js"></script>
+</body>
+</html>

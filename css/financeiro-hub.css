@@ -757,3 +757,11 @@ body[data-page="financeiro"] .fin-content.fin-hub {
 [data-theme="dark"] .fin-period__nav-btn:hover {
   background: #1a1e23;
 }
+
+.fin-shortcut__icon--config { background: rgba(99,102,241,0.14); color: #6366f1; }
+.fin-shortcut__icon--fluxo  { background: rgba(20,184,166,0.14); color: #14b8a6; }
+.fin-shortcut__icon--inad   { background: rgba(239,68,68,0.14);  color: #ef4444; }
+
+[data-theme="dark"] .fin-shortcut__icon--config { background: rgba(99,102,241,0.20); color: #818cf8; }
+[data-theme="dark"] .fin-shortcut__icon--fluxo  { background: rgba(20,184,166,0.20); color: #2dd4bf; }
+[data-theme="dark"] .fin-shortcut__icon--inad   { background: rgba(239,68,68,0.20);  color: #f87171; }

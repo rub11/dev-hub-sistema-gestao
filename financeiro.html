@@ -95,6 +95,7 @@
       <section class="fin-shortcuts" aria-label="Atalhos financeiros">
         <h2 class="fin-shortcuts__title">Acessos rápidos</h2>
 
+
         <div class="fin-shortcuts__grid">
           <a class="fin-shortcut" href="financeiro-titulos.html?tab=pagar">
             <span class="fin-shortcut__icon fin-shortcut__icon--pagar" aria-hidden="true">
@@ -159,6 +160,39 @@
             <span class="fin-shortcut__label">Contas Bancárias</span>
           </a>
 
+          <a class="fin-shortcut" href="cadastros.html">
+            <span class="fin-shortcut__icon fin-shortcut__icon--config" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+              </svg>
+            </span>
+            <span class="fin-shortcut__label">Cadastros Financeiros</span>
+          </a>
+
+          <a class="fin-shortcut fin-shortcut--soon" href="#" aria-disabled="true" tabindex="-1">
+            <span class="fin-shortcut__badge">Em breve</span>
+            <span class="fin-shortcut__icon fin-shortcut__icon--fluxo" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 3v18h18"/>
+                <path d="m7 15 3-4 3 2 5-7"/>
+              </svg>
+            </span>
+            <span class="fin-shortcut__label">Fluxo de Caixa</span>
+          </a>
+
+          <a class="fin-shortcut fin-shortcut--soon" href="#" aria-disabled="true" tabindex="-1">
+            <span class="fin-shortcut__badge">Em breve</span>
+            <span class="fin-shortcut__icon fin-shortcut__icon--inad" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="9"/>
+                <path d="M12 8v4"/>
+                <path d="M12 16h.01"/>
+              </svg>
+            </span>
+            <span class="fin-shortcut__label">Inadimplência</span>
+          </a>
+
           <a class="fin-shortcut fin-shortcut--soon" href="#" aria-disabled="true" tabindex="-1">
             <span class="fin-shortcut__badge">Em breve</span>
             <span class="fin-shortcut__icon fin-shortcut__icon--conc" aria-hidden="true">
@@ -171,6 +205,8 @@
             <span class="fin-shortcut__label">Conciliação Bancária</span>
           </a>
         </div>
+
+
       </section>
 
     </main>
@@ -179,7 +215,18 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase.js"></script>
   <script src="js/auth.js"></script>
-  <script src="js/nav.js"></script>
+  <script src="js/nav/config.js"></script>
+<script src="js/nav/state.js"></script>
+<script src="js/nav/roles.js"></script>
+<script src="js/nav/styles.js"></script>
+<script src="js/nav/permission-modal.js"></script>
+<script src="js/nav/tabs.js"></script>
+<script src="js/nav/module-menu.js"></script>
+<script src="js/nav/notifications.js"></script>
+<script src="js/nav/user-menu.js"></script>
+<script src="js/nav/search.js"></script>
+<script src="js/nav/bar.js"></script>
+<script src="js/nav/main.js"></script>
   <script src="js/permissions.js"></script>
 
   <script src="js/financeiro/state.js"></script>

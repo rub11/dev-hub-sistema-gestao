@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cadastros · DEV HUB</title>
+
+  <script src="js/theme.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/global.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/clientes.css" />
+  <link rel="stylesheet" href="css/theme.css" />
+  <link rel="stylesheet" href="css/relatorios.css" />
+  <link rel="stylesheet" href="css/cadastros.css" />
+
+  <script>
+    (function () {
+      try {
+        if (!/[?&]blocked=1/.test(location.search)) {
+          document.documentElement.classList.add('layout-topnav');
+        }
+      } catch (e) {}
+    })();
+  </script>
+</head>
+
+<body class="layout-topnav" data-page="cadastros">
+
+  <a class="skip-link" href="#main">Pular para o conteúdo principal</a>
+
+  <aside class="sidebar" id="sidebar" aria-label="Menu principal"></aside>
+  <div class="sidebar-overlay" id="sidebar-overlay" hidden></div>
+
+  <div class="app__body">
+    <header class="topbar">
+      <button type="button" class="icon-btn menu-toggle" id="menu-toggle"
+              aria-label="Abrir menu" aria-expanded="false" aria-controls="sidebar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+             stroke-linecap="round" aria-hidden="true"><path d="M3.5 6.5h17M3.5 12h17M3.5 17.5h17" /></svg>
+      </button>
+      <span class="topbar__brand">DEV HUB</span>
+      <div class="topbar__actions"></div>
+    </header>
+
+    <main class="content" id="main">
+      <div id="global-alert" class="alert" role="alert" hidden></div>
+
+      <div class="page-head">
+        <div class="page-head__main">
+          <p class="page-head__eyebrow">
+            <span id="greeting-name">Olá</span>
+            <span class="role-badge" id="greeting-role" hidden></span>
+          </p>
+          <h1 class="page-head__title">Cadastros Financeiros</h1>
+          <p class="page-head__sub">Naturezas de lançamento e centros de custo.</p>
+        </div>
+      </div>
+
+      <!-- Abas -->
+         <nav class="cad-tabs" role="tablist" aria-label="Categorias de cadastro">
+        <button type="button" class="cad-tab is-active" data-tab="natures" role="tab" aria-selected="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 6h16M4 12h10M4 18h13"/>
+          </svg>
+          <span>Naturezas</span>
+          <span class="cad-tab__count" id="tab-count-natures">—</span>
+        </button>
+        <button type="button" class="cad-tab" data-tab="cost-centers" role="tab" aria-selected="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 21h18M5 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16M15 21V9h4a2 2 0 0 1 2 2v10"/>
+          </svg>
+          <span>Centros de Custo</span>
+          <span class="cad-tab__count" id="tab-count-cc">—</span>
+        </button>
+        <button type="button" class="cad-tab" data-tab="chart-of-accounts" role="tab" aria-selected="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 3h16v18H4z"/><path d="M8 7h8M8 12h8M8 17h5"/>
+          </svg>
+          <span>Plano de Contas</span>
+          <span class="cad-tab__count" id="tab-count-coa">—</span>
+        </button>
+        <button type="button" class="cad-tab" data-tab="financial-categories" role="tab" aria-selected="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="3"/><path d="M3 12h3M18 12h3M12 3v3M12 18v3"/>
+            <path d="M5.6 5.6 7.8 7.8M16.2 16.2l2.2 2.2M5.6 18.4l2.2-2.2M16.2 7.8l2.2-2.2"/>
+          </svg>
+          <span>Categorias</span>
+          <span class="cad-tab__count" id="tab-count-fincat">—</span>
+        </button>
+        <button type="button" class="cad-tab" data-tab="fiscal-periods" role="tab" aria-selected="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/>
+          </svg>
+          <span>Períodos Fiscais</span>
+          <span class="cad-tab__count" id="tab-count-fp">—</span>
+        </button>
+      </nav>
+
+      <!-- Painel: Naturezas -->
+      <section class="cad-panel" id="panel-natures" role="tabpanel">
+        <div class="panel">
+          <div class="panel__head toolbar">
+            <div class="toolbar__info">
+              <h2 class="panel__title">Naturezas de lançamento</h2>
+              <p class="panel__sub" id="natures-count">Carregando…</p>
+            </div>
+            <div class="toolbar__actions">
+              <div class="search">
+                <span class="search__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" />
+                  </svg>
+                </span>
+                <input type="search" id="natures-search" class="search__input" placeholder="Buscar por nome ou código…" autocomplete="off" />
+              </div>
+              <select id="natures-kind" class="control-select" aria-label="Filtrar por tipo">
+                <option value="">Todos os tipos</option>
+                <option value="receita">Receita</option>
+                <option value="despesa">Despesa</option>
+                <option value="custo">Custo</option>
+                <option value="imposto">Imposto</option>
+                <option value="financeiro">Financeiro</option>
+              </select>
+              <select id="natures-status" class="control-select" aria-label="Filtrar por status">
+                <option value="">Todos</option>
+                <option value="active">Só ativos</option>
+                <option value="inactive">Só inativos</option>
+              </select>
+              <button type="button" class="btn btn--primary" id="natures-new">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:16px;height:16px"><path d="M12 5v14M5 12h14"/></svg>
+                <span>Nova natureza</span>
+              </button>
+            </div>
+          </div>
+
+          <div id="natures-loading" class="state-block">
+            <span class="spinner" aria-hidden="true"></span>
+            <p>Carregando naturezas...</p>
+          </div>
+
+          <div id="natures-empty" class="state-block" hidden>
+            <p id="natures-empty-text">Nenhuma natureza cadastrada.</p>
+          </div>
+
+          <div class="table-wrap" id="natures-wrap" hidden>
+            <table>
+              <caption class="sr-only">Lista de naturezas</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Código</th>
+                  <th scope="col">Nome</th>
+                  <th scope="col">Tipo</th>
+                  <th scope="col">Grupo DRE</th>
+                  <th scope="col">Status</th>
+                  <th scope="col" class="cell--num">Ações</th>
+                </tr>
+              </thead>
+              <tbody id="natures-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Painel: Centros de Custo -->
+      <section class="cad-panel" id="panel-cost-centers" role="tabpanel" hidden>
+        <div class="panel">
+          <div class="panel__head toolbar">
+            <div class="toolbar__info">
+              <h2 class="panel__title">Centros de custo</h2>
+              <p class="panel__sub" id="cc-count">Carregando…</p>
+            </div>
+            <div class="toolbar__actions">
+              <div class="search">
+                <span class="search__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" />
+                  </svg>
+                </span>
+                <input type="search" id="cc-search" class="search__input" placeholder="Buscar por nome ou código…" autocomplete="off" />
+              </div>
+              <select id="cc-status" class="control-select" aria-label="Filtrar por status">
+                <option value="">Todos</option>
+                <option value="active">Só ativos</option>
+                <option value="inactive">Só inativos</option>
+              </select>
+              <button type="button" class="btn btn--primary" id="cc-new">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:16px;height:16px"><path d="M12 5v14M5 12h14"/></svg>
+                <span>Novo centro</span>
+              </button>
+            </div>
+          </div>
+
+          <div id="cc-loading" class="state-block">
+            <span class="spinner" aria-hidden="true"></span>
+            <p>Carregando centros de custo...</p>
+          </div>
+
+          <div id="cc-empty" class="state-block" hidden>
+            <p id="cc-empty-text">Nenhum centro de custo cadastrado.</p>
+          </div>
+
+          <div class="table-wrap" id="cc-wrap" hidden>
+            <table>
+              <caption class="sr-only">Lista de centros de custo</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Código</th>
+                  <th scope="col">Nome</th>
+                  <th scope="col">Pai</th>
+                  <th scope="col">Status</th>
+                  <th scope="col" class="cell--num">Ações</th>
+                </tr>
+              </thead>
+              <tbody id="cc-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Painel: Plano de Contas -->
+      <section class="cad-panel" id="panel-chart-of-accounts" role="tabpanel" hidden>
+        <div class="panel">
+          <div class="panel__head toolbar">
+            <div class="toolbar__info">
+              <h2 class="panel__title">Plano de contas</h2>
+              <p class="panel__sub" id="coa-count">Carregando…</p>
+            </div>
+            <div class="toolbar__actions">
+              <div class="search">
+                <span class="search__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" />
+                  </svg>
+                </span>
+                <input type="search" id="coa-search" class="search__input" placeholder="Buscar por nome ou código…" autocomplete="off" />
+              </div>
+              <select id="coa-type" class="control-select" aria-label="Filtrar por tipo">
+                <option value="">Todos os tipos</option>
+                <option value="ativo">Ativo</option>
+                <option value="passivo">Passivo</option>
+                <option value="patrimonio">Patrimônio Líquido</option>
+                <option value="receita">Receita</option>
+                <option value="despesa">Despesa</option>
+                <option value="custo">Custo</option>
+              </select>
+              <select id="coa-status" class="control-select" aria-label="Filtrar por status">
+                <option value="">Todos</option>
+                <option value="active">Só ativas</option>
+                <option value="inactive">Só inativas</option>
+              </select>
+              <button type="button" class="btn btn--primary" id="coa-new">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:16px;height:16px"><path d="M12 5v14M5 12h14"/></svg>
+                <span>Nova conta</span>
+              </button>
+            </div>
+          </div>
+
+          <div id="coa-loading" class="state-block">
+            <span class="spinner" aria-hidden="true"></span>
+            <p>Carregando plano de contas...</p>
+          </div>
+
+          <div id="coa-empty" class="state-block" hidden>
+            <p id="coa-empty-text">Nenhuma conta cadastrada.</p>
+          </div>
+
+          <div class="table-wrap" id="coa-wrap" hidden>
+            <table>
+              <caption class="sr-only">Lista de contas contábeis</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Código</th>
+                  <th scope="col">Nome</th>
+                  <th scope="col">Tipo</th>
+                  <th scope="col">Linha DRE</th>
+                  <th scope="col">Status</th>
+                  <th scope="col" class="cell--num">Ações</th>
+                </tr>
+              </thead>
+              <tbody id="coa-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Painel: Categorias Financeiras -->
+      <section class="cad-panel" id="panel-financial-categories" role="tabpanel" hidden>
+        <div class="panel">
+          <div class="panel__head toolbar">
+            <div class="toolbar__info">
+              <h2 class="panel__title">Categorias financeiras</h2>
+              <p class="panel__sub" id="fincat-count">Carregando…</p>
+            </div>
+            <div class="toolbar__actions">
+              <div class="search">
+                <span class="search__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" />
+                  </svg>
+                </span>
+                <input type="search" id="fincat-search" class="search__input" placeholder="Buscar por nome…" autocomplete="off" />
+              </div>
+              <select id="fincat-kind" class="control-select" aria-label="Filtrar por tipo">
+                <option value="">Todos os tipos</option>
+                <option value="receita">Receita</option>
+                <option value="despesa">Despesa</option>
+                <option value="custo">Custo</option>
+                <option value="imposto">Imposto</option>
+                <option value="financeiro">Financeiro</option>
+              </select>
+              <select id="fincat-status" class="control-select" aria-label="Filtrar por status">
+                <option value="">Todas</option>
+                <option value="active">Só ativas</option>
+                <option value="inactive">Só inativas</option>
+              </select>
+              <button type="button" class="btn btn--primary" id="fincat-new">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:16px;height:16px"><path d="M12 5v14M5 12h14"/></svg>
+                <span>Nova categoria</span>
+              </button>
+            </div>
+          </div>
+
+          <div id="fincat-loading" class="state-block">
+            <span class="spinner" aria-hidden="true"></span>
+            <p>Carregando categorias...</p>
+          </div>
+
+          <div id="fincat-empty" class="state-block" hidden>
+            <p id="fincat-empty-text">Nenhuma categoria cadastrada.</p>
+          </div>
+
+          <div class="table-wrap" id="fincat-wrap" hidden>
+            <table>
+              <caption class="sr-only">Lista de categorias financeiras</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Nome</th>
+                  <th scope="col">Tipo</th>
+                  <th scope="col">Categoria pai</th>
+                  <th scope="col">Status</th>
+                  <th scope="col" class="cell--num">Ações</th>
+                </tr>
+              </thead>
+              <tbody id="fincat-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Painel: Períodos Fiscais -->
+      <section class="cad-panel" id="panel-fiscal-periods" role="tabpanel" hidden>
+        <div class="panel">
+          <div class="panel__head toolbar">
+            <div class="toolbar__info">
+              <h2 class="panel__title">Períodos fiscais</h2>
+              <p class="panel__sub" id="fp-count">Carregando…</p>
+            </div>
+            <div class="toolbar__actions">
+              <select id="fp-year" class="control-select" aria-label="Filtrar por ano">
+                <option value="">Todos os anos</option>
+              </select>
+              <select id="fp-status" class="control-select" aria-label="Filtrar por status">
+                <option value="">Todos</option>
+                <option value="aberto">Abertos</option>
+                <option value="fechado">Fechados</option>
+              </select>
+              <button type="button" class="btn btn--primary" id="fp-new">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:16px;height:16px"><path d="M12 5v14M5 12h14"/></svg>
+                <span>Novo período</span>
+              </button>
+            </div>
+          </div>
+
+          <div id="fp-loading" class="state-block">
+            <span class="spinner" aria-hidden="true"></span>
+            <p>Carregando períodos...</p>
+          </div>
+
+          <div id="fp-empty" class="state-block" hidden>
+            <p id="fp-empty-text">Nenhum período cadastrado.</p>
+          </div>
+
+          <div class="table-wrap" id="fp-wrap" hidden>
+            <table>
+              <caption class="sr-only">Lista de períodos fiscais</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Ano</th>
+                  <th scope="col">Mês</th>
+                  <th scope="col">Status</th>
+                  <th scope="col">Fechado em</th>
+                  <th scope="col">Fechado por</th>
+                  <th scope="col" class="cell--num">Ações</th>
+                </tr>
+              </thead>
+              <tbody id="fp-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+
+    </main>
+  </div>
+
+  <!-- Modal: form de cadastro (genérico) -->
+  <div class="modal" id="cad-modal" hidden>
+    <div class="modal__backdrop" data-close-modal></div>
+    <div class="modal__dialog modal__dialog--md" role="dialog" aria-modal="true" aria-labelledby="cad-modal-title">
+      <header class="modal__head">
+        <h2 class="modal__title" id="cad-modal-title">Novo registro</h2>
+        <button type="button" class="icon-btn modal__close" aria-label="Fechar" data-close-modal>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </header>
+
+      <form id="cad-form" class="modal__body" novalidate>
+        <div id="cad-form-fields"></div>
+        <p id="cad-form-feedback" class="feedback feedback--error" role="alert" aria-live="polite" hidden></p>
+      </form>
+
+      <footer class="modal__foot">
+        <button type="button" class="btn btn--ghost" data-close-modal>Cancelar</button>
+        <button type="submit" form="cad-form" class="btn btn--primary" id="cad-form-submit">
+          <span class="btn__label">Salvar</span>
+          <span class="btn__spinner" aria-hidden="true"></span>
+        </button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Modal: confirmar exclusão -->
+  <div class="modal" id="confirm-modal" hidden>
+    <div class="modal__backdrop" data-close-confirm></div>
+    <div class="modal__dialog modal__dialog--sm" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title">
+      <header class="modal__head">
+        <h2 class="modal__title" id="confirm-title">Confirmar</h2>
+        <button type="button" class="icon-btn modal__close" aria-label="Fechar" data-close-confirm>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </header>
+      <div class="modal__body">
+        <p class="confirm-text" id="confirm-text">Tem certeza?</p>
+      </div>
+      <footer class="modal__foot">
+        <button type="button" class="btn btn--ghost" data-close-confirm>Cancelar</button>
+        <button type="button" class="btn btn--danger" id="confirm-ok">Excluir</button>
+      </footer>
+    </div>
+  </div>
+
+  <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="false"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/nav/config.js"></script>
+<script src="js/nav/state.js"></script>
+<script src="js/nav/roles.js"></script>
+<script src="js/nav/styles.js"></script>
+<script src="js/nav/permission-modal.js"></script>
+<script src="js/nav/tabs.js"></script>
+<script src="js/nav/module-menu.js"></script>
+<script src="js/nav/notifications.js"></script>
+<script src="js/nav/user-menu.js"></script>
+<script src="js/nav/search.js"></script>
+<script src="js/nav/bar.js"></script>
+<script src="js/nav/main.js"></script>
+  <script src="js/permissions.js"></script>
+
+  <script src="js/cadastros/config.js"></script>
+  <script src="js/cadastros/state.js"></script>
+  <script src="js/cadastros/ui.js"></script>
+  <script src="js/cadastros/modal.js"></script>
+  <script src="js/cadastros/natures.js"></script>
+  <script src="js/cadastros/cost-centers.js"></script>
+    <script src="js/cadastros/config.js"></script>
+  <script src="js/cadastros/state.js"></script>
+  <script src="js/cadastros/ui.js"></script>
+  <script src="js/cadastros/modal.js"></script>
+  <script src="js/cadastros/natures.js"></script>
+  <script src="js/cadastros/cost-centers.js"></script>
+  <script src="js/cadastros/chart-of-accounts.js"></script>
+  <script src="js/cadastros/financial-categories.js"></script>
+  <script src="js/cadastros/fiscal-periods.js"></script>
+  <script src="js/cadastros/main.js"></script>
+  <script src="js/cadastros/main.js"></script>
+</body>
+</html>

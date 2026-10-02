@@ -1,0 +1,288 @@
+/* =========================================================
+   DEV HUB · Cadastros Financeiros
+   ========================================================= */
+
+/* ---------- Abas ---------- */
+.cad-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.cad-tabs::-webkit-scrollbar { display: none; }
+
+.cad-tab {
+  flex: 1 1 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 42px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-soft);
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color var(--transition), color var(--transition);
+}
+.cad-tab:hover { background: var(--surface-2); color: var(--text); }
+.cad-tab.is-active {
+  background: var(--surface-2);
+  color: var(--text);
+  box-shadow: 0 0 0 1px var(--accent) inset;
+}
+.cad-tab svg { width: 16px; height: 16px; flex: none; }
+.cad-tab.is-active svg { color: var(--accent); }
+
+.cad-tab__count {
+  margin-left: 4px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--surface-3, var(--surface-2));
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.cad-tab.is-active .cad-tab__count {
+  background: var(--accent);
+  color: #fff;
+}
+
+.cad-panel[hidden] { display: none; }
+
+/* ---------- Badges ---------- */
+.badge--receita   { background: var(--success-soft); color: var(--success); }
+.badge--despesa   { background: var(--danger-soft);  color: var(--danger); }
+.badge--custo     { background: rgba(245, 158, 11, 0.14); color: #b45309; }
+.badge--imposto   { background: rgba(139, 92, 246, 0.14); color: #6d28d9; }
+.badge--financeiro { background: rgba(14, 165, 233, 0.14); color: #0369a1; }
+.badge--neutral   { background: var(--surface-2); color: var(--text-soft); }
+
+[data-theme="dark"] .badge--custo     { background: rgba(245, 158, 11, 0.18); color: #fbbf24; }
+[data-theme="dark"] .badge--imposto   { background: rgba(139, 92, 246, 0.20); color: #a78bfa; }
+[data-theme="dark"] .badge--financeiro { background: rgba(14, 165, 233, 0.18); color: #38bdf8; }
+
+/* ---------- Código mono ---------- */
+.cell-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12.5px;
+  color: var(--text-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Hierarquia ---------- */
+.cell-hierarchy { display: inline-flex; align-items: center; gap: 6px; }
+.cell-hierarchy__indent {
+  display: inline-block; width: 14px; height: 14px;
+  color: var(--text-muted); opacity: 0.6;
+}
+.cell-hierarchy__indent svg { width: 14px; height: 14px; display: block; }
+
+/* ---------- Row muted ---------- */
+.row--inactive .cell-name,
+.row--inactive .cell-code { opacity: 0.55; }
+.row--inactive .cell-name { font-style: italic; }
+
+/* ---------- Modal ---------- */
+.modal__dialog--md { max-width: 560px; width: calc(100% - 32px); }
+
+.cad-form__group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.cad-form__field--full { grid-column: 1 / -1; }
+
+/* =========================================================
+   RESET NUCLEAR — "all: unset" zera tudo que o global.css
+   ou theme.css aplicam, e depois reconstruímos do zero
+   ========================================================= */
+
+.cad-form__field input:not([type="checkbox"]),
+.cad-form__field select,
+.cad-form__field textarea {
+  all: unset !important;
+  box-sizing: border-box !important;
+  display: block !important;
+  width: 100% !important;
+  min-height: 40px !important;
+  padding: 9px 12px !important;
+  border: 1px solid var(--border-strong) !important;
+  border-radius: var(--radius) !important;
+  background-color: var(--surface-2) !important;
+  color: var(--text) !important;
+  font-family: inherit !important;
+  font-size: 13.5px !important;
+  font-weight: 400 !important;
+  line-height: 1.4 !important;
+  outline: none !important;
+  transition: border-color .15s, box-shadow .15s, background-color .15s !important;
+}
+
+.cad-form__field textarea {
+  min-height: 92px !important;
+  padding: 10px 12px !important;
+  resize: vertical !important;
+  white-space: pre-wrap !important;
+}
+
+.cad-form__field input:not([type="checkbox"]):focus,
+.cad-form__field select:focus,
+.cad-form__field textarea:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px var(--accent-ring) !important;
+  background-color: var(--surface) !important;
+}
+
+/* ---------- SELECT: sem seta nativa, UMA seta custom ---------- */
+.cad-form__field select {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  padding-right: 38px !important;
+  cursor: pointer !important;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23667085' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 12px center !important;
+  background-size: 14px 14px !important;
+}
+
+[data-theme="dark"] .cad-form__field select {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>") !important;
+}
+
+.cad-form__field select option {
+  background-color: var(--surface) !important;
+  color: var(--text) !important;
+}
+
+/* ---------- CHECKBOX: quadrado customizado (ignora tema) ---------- */
+.cad-form__field input[type="checkbox"] {
+  all: unset !important;
+  box-sizing: border-box !important;
+  display: inline-block !important;
+  width: 18px !important;
+  height: 18px !important;
+  flex: none !important;
+  border: 1.5px solid var(--border-strong) !important;
+  border-radius: 4px !important;
+  background-color: var(--surface) !important;
+  cursor: pointer !important;
+  position: relative !important;
+  vertical-align: middle !important;
+  transition: background-color .15s, border-color .15s !important;
+}
+
+.cad-form__field input[type="checkbox"]:hover {
+  border-color: var(--accent) !important;
+}
+
+.cad-form__field input[type="checkbox"]:focus-visible {
+  box-shadow: 0 0 0 3px var(--accent-ring) !important;
+}
+
+.cad-form__field input[type="checkbox"]:checked {
+  background-color: var(--accent) !important;
+  border-color: var(--accent) !important;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'><path d='M20 6 9 17l-5-5'/></svg>") !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+  background-size: 12px 12px !important;
+}
+
+/* ---------- Checkbox wrapper ---------- */
+.cad-form__checkbox {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 10px 12px !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius) !important;
+  background-color: var(--surface-2) !important;
+  cursor: pointer !important;
+  user-select: none !important;
+  transition: border-color .15s !important;
+}
+.cad-form__checkbox:hover { border-color: var(--border-strong) !important; }
+.cad-form__checkbox span {
+  font-size: 13.5px !important;
+  color: var(--text) !important;
+  font-weight: 500 !important;
+  line-height: 1 !important;
+}
+
+/* ---------- Labels ---------- */
+.cad-form__field > label {
+  display: block !important;
+  margin-bottom: 6px !important;
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  color: var(--text-soft) !important;
+  letter-spacing: 0.01em !important;
+}
+
+.cad-form__hint {
+  grid-column: 1 / -1;
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.cad-form__section-title {
+  grid-column: 1 / -1;
+  margin: 6px 0 -4px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* ---------- Empty state ---------- */
+.state-block--compact { padding: 48px 20px; }
+
+/* ---------- Responsivo ---------- */
+@media (max-width: 720px) {
+  .cad-tabs { padding: 2px; }
+  .cad-tab { padding: 0 12px; font-size: 12.5px; height: 38px; }
+  .cad-tab__count { display: none; }
+
+  .cad-form__group { grid-template-columns: 1fr; }
+
+  .toolbar { flex-direction: column; align-items: stretch; }
+  .toolbar__actions { flex-wrap: wrap; }
+  .toolbar__actions .search { flex: 1 1 100%; }
+  .toolbar__actions .control-select { flex: 1 1 calc(50% - 4px); min-width: 0; }
+  .toolbar__actions .btn { flex: 1 1 100%; }
+}
+
+/* ---------- Abas com 5 itens (scroll horizontal no mobile) ---------- */
+@media (max-width: 900px) {
+  .cad-tabs { overflow-x: auto; flex-wrap: nowrap; }
+  .cad-tab { flex: 0 0 auto; min-width: 160px; }
+}
+
+/* ---------- Responsivo da coluna Ano ---------- */
+.cell-year {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12.5px;
+  color: var(--text-soft);
+  font-variant-numeric: tabular-nums;
+}
+.cad-tab {
+  /* ...mantém o resto... */
+  padding: 0 18px 0 18px;
+  overflow: visible;   /* ← adicionar */
+}
