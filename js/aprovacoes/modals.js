@@ -1,272 +1,26 @@
 /* =========================================================
-   DEV HUB · Tela de Aprovações
+   DEV HUB · Aprovacoes · modals
+   ---------------------------------------------------------
+   Modais de ver detalhes, aprovar e rejeitar.
+   ---------------------------------------------------------
+   Depende de: state.js, api.js
+   Publica em: window.Appr
    ========================================================= */
 
 (function () {
   'use strict';
 
-  const $  = (sel, root = document) => root.querySelector(sel);
-  const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
-
-  const escapeHTML = (s) =>
-    String(s || '').replace(/[&<>"']/g, (ch) => ({
-      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-    }[ch]));
-
-  const fmtBRL = (cents) =>
-    ((Number(cents) || 0) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-
-  const fmtDate = (iso) => {
-    if (!iso) return '—';
-    const d = new Date(iso);
-    return isNaN(d) ? '—' : d.toLocaleDateString('pt-BR');
-  };
-
-  const fmtDateTime = (iso) => {
-    if (!iso) return '—';
-    const d = new Date(iso);
-    return isNaN(d) ? '—' : d.toLocaleString('pt-BR');
-  };
-
-  const timeAgo = (iso) => {
-    if (!iso) return '';
-    const diff = (Date.now() - new Date(iso).getTime()) / 1000;
-    if (diff < 60)    return 'agora';
-    if (diff < 3600)  return Math.floor(diff / 60) + ' min';
-    if (diff < 86400) return Math.floor(diff / 3600) + ' h';
-    return Math.floor(diff / 86400) + ' d';
-  };
-
-  const db = () => {
-    if (window.db && window.db.from) return window.db;
-    if (window.supabaseClient && window.supabaseClient.from) return window.supabaseClient;
-    throw new Error('Supabase client não encontrado.');
-  };
-
-  const toast = (msg, kind) => {
-    if (window.Toast && typeof window.Toast.show === 'function') {
-      return window.Toast.show(msg, kind);
-    }
-    const el = document.createElement('div');
-    el.className = kind === 'error' ? 'appr-err' : '';
-    el.style.cssText =
-      'position:fixed;top:80px;right:20px;z-index:200;max-width:360px;' +
-      'padding:12px 16px;border-radius:10px;background:' +
-      (kind === 'error' ? 'var(--danger-soft)' : 'var(--accent-soft)') +
-      ';color:' + (kind === 'error' ? 'var(--danger)' : 'var(--accent-hover)') +
-      ';box-shadow:0 12px 32px -8px rgba(16,24,40,.24);font-size:13.5px';
-    el.textContent = msg;
-    document.body.appendChild(el);
-    setTimeout(() => el.remove(), 4000);
-  };
-
-  /* =========================================================
-     ESTADO
-     ========================================================= */
-  const state = {
-    all: [],
-    currentUser: null
-  };
-
-  /* =========================================================
-     CARREGAMENTO
-     ========================================================= */
-  async function loadCurrentUser() {
-    try {
-      const { data: u } = await db().auth.getUser();
-      if (u && u.user) {
-        const { data: prof } = await db().from('profiles')
-          .select('id, name, email')
-          .eq('id', u.user.id)
-          .maybeSingle();
-        state.currentUser = prof || { id: u.user.id, name: u.user.email };
-      }
-    } catch (e) {
-      console.warn(e);
-    }
-  }
-
-  async function loadPending() {
-    const tbody = $('#appr-tbody');
-    if (!tbody) return;
-
-    tbody.innerHTML = `<tr><td colspan="7"><div class="appr-loading">Carregando...</div></td></tr>`;
-
-    try {
-      const { data, error } = await db().from('purchases')
-        .select(`
-          id, code, status, supplier_name, supplier_id, total_cents,
-          purchase_date, expected_date, created_at, created_by_name,
-          payment_method, invoice_number, notes
-        `)
-        .eq('status', 'aguardando_aprovacao')
-        .order('created_at', { ascending: true })
-        .limit(300);
-
-      if (error) throw error;
-
-      state.all = data || [];
-      renderKpis();
-      renderTable();
-    } catch (e) {
-      console.error(e);
-      tbody.innerHTML = `
-        <tr><td colspan="7" style="padding:0;border:0">
-          <div class="appr-empty">
-            <div class="appr-empty__icon" style="background:var(--danger-soft);color:var(--danger)">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="9"/>
-                <path d="M12 8v4M12 16h.01"/>
-              </svg>
-            </div>
-            <h3 class="appr-empty__title">Erro ao carregar</h3>
-            <p class="appr-empty__text">${escapeHTML(e.message)}</p>
-          </div>
-        </td></tr>`;
-    }
-  }
-
-  /* =========================================================
-     KPIs
-     ========================================================= */
-  function renderKpis() {
-    const wrap = $('#appr-kpis');
-    if (!wrap) return;
-
-    const hoje = new Date().toISOString().slice(0, 10);
-
-    const totalCents = state.all.reduce((s, r) => s + (Number(r.total_cents) || 0), 0);
-
-    const maisAntigo = state.all[0];
-    const diasAntigo = maisAntigo
-      ? Math.floor((Date.now() - new Date(maisAntigo.created_at).getTime()) / 86400000)
-      : 0;
-
-    const cards = [
-      {
-        cls: 'pendente',
-        label: 'Aguardando',
-        value: String(state.all.length),
-        hint: state.all.length === 0 ? 'Tudo em dia 🎉' : `${state.all.length} compra${state.all.length > 1 ? 's' : ''} para revisar`
-      },
-      {
-        cls: 'valor',
-        label: 'Valor total',
-        value: fmtBRL(totalCents),
-        hint: 'Somatório das compras pendentes'
-      },
-      {
-        cls: 'antigo',
-        label: 'Mais antiga',
-        value: maisAntigo ? timeAgo(maisAntigo.created_at) : '—',
-        hint: maisAntigo ? `Há ${diasAntigo} dia${diasAntigo !== 1 ? 's' : ''}` : 'Nada pendente'
-      },
-      {
-        cls: 'hoje',
-        label: 'Enviadas hoje',
-        value: String(state.all.filter((r) => r.created_at && r.created_at.slice(0, 10) === hoje).length),
-        hint: 'Novas solicitações'
-      }
-    ];
-
-    wrap.innerHTML = cards.map((c) => `
-      <div class="appr-kpi appr-kpi--${c.cls}">
-        <span class="appr-kpi__label">${escapeHTML(c.label)}</span>
-        <span class="appr-kpi__value">${escapeHTML(c.value)}</span>
-        <span class="appr-kpi__hint">${escapeHTML(c.hint)}</span>
-      </div>
-    `).join('');
-  }
-
-  /* =========================================================
-     TABELA
-     ========================================================= */
-  function renderTable() {
-    const tbody = $('#appr-tbody');
-    if (!tbody) return;
-
-    const rows = state.all;
-
-    if (!rows.length) {
-      tbody.innerHTML = `
-        <tr><td colspan="7" style="padding:0;border:0">
-          <div class="appr-empty">
-            <div class="appr-empty__icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M20 6 9 17l-5-5"/>
-              </svg>
-            </div>
-            <h3 class="appr-empty__title">Nada para aprovar</h3>
-            <p class="appr-empty__text">Todas as compras foram revisadas. Bom trabalho! 🎉</p>
-          </div>
-        </td></tr>`;
-      return;
-    }
-
-    tbody.innerHTML = rows.map((r) => `
-      <tr data-id="${r.id}">
-        <td><span class="appr-code">${escapeHTML(r.code || '—')}</span></td>
-        <td>
-          <div class="appr-supplier">
-            <span class="appr-supplier__name">${escapeHTML(r.created_by_name || '—')}</span>
-            <span class="appr-supplier__meta">${timeAgo(r.created_at)}</span>
-          </div>
-        </td>
-        <td>
-          <div class="appr-supplier">
-            <span class="appr-supplier__name">${escapeHTML(r.supplier_name || 'Sem fornecedor')}</span>
-            ${r.invoice_number ? `<span class="appr-supplier__meta">NF-e ${escapeHTML(r.invoice_number)}</span>` : ''}
-          </div>
-        </td>
-        <td>${fmtDate(r.created_at)}</td>
-        <td class="cell--num"><span class="appr-money">${fmtBRL(r.total_cents)}</span></td>
-        <td><span class="appr-chip">Ver itens</span></td>
-        <td class="cell--right">
-          <div class="appr-actions">
-            <button class="appr-action" data-action="view" data-id="${r.id}" title="Ver detalhes">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/>
-                <circle cx="12" cy="12" r="3"/>
-              </svg>
-            </button>
-            <button class="appr-action appr-action--approve" data-action="approve" data-id="${r.id}">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M20 6 9 17l-5-5"/>
-              </svg>
-              Aprovar
-            </button>
-            <button class="appr-action appr-action--reject" data-action="reject" data-id="${r.id}">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M18 6 6 18M6 6l12 12"/>
-              </svg>
-              Rejeitar
-            </button>
-          </div>
-        </td>
-      </tr>
-    `).join('');
-
-    tbody.querySelectorAll('[data-action]').forEach((btn) => {
-      const id = btn.dataset.id;
-      const row = state.all.find((x) => x.id === id);
-      if (!row) return;
-      if (btn.dataset.action === 'view')    btn.addEventListener('click', () => openViewModal(row));
-      if (btn.dataset.action === 'approve') btn.addEventListener('click', () => openApproveModal(row));
-      if (btn.dataset.action === 'reject')  btn.addEventListener('click', () => openRejectModal(row));
-    });
-  }
+  const {
+    $, escapeHTML, fmtBRL, fmtDateTime,
+    toast
+  } = window.Appr;
 
   /* =========================================================
      MODAL · VER DETALHES
      ========================================================= */
   async function openViewModal(row) {
     try {
-      const { data: items, error } = await db()
-        .from('purchase_items')
-        .select('*')
-        .eq('purchase_id', row.id)
-        .order('created_at');
-      if (error) throw error;
+      const items = await window.Appr.fetchItems(row.id);
 
       const modal = document.createElement('div');
       modal.className = 'appr-modal';
@@ -362,7 +116,7 @@
         openRejectModal(row);
       });
     } catch (e) {
-      console.error(e);
+      console.error('[aprovacoes] openViewModal:', e);
       toast('Não foi possível abrir os detalhes.', 'error');
     }
   }
@@ -411,13 +165,12 @@
       const btn = modal.querySelector('#ap-confirm');
       btn.disabled = true;
       try {
-        const { error } = await db().rpc('approve_purchase', { p_purchase_id: row.id });
-        if (error) throw error;
+        await window.Appr.approvePurchase(row.id);
         close();
         toast('Compra aprovada! Enviada para recebimento.');
-        await loadPending();
+        await window.Appr.reload();
       } catch (e) {
-        console.error(e);
+        console.error('[aprovacoes] approve:', e);
         const err = modal.querySelector('#ap-error');
         err.textContent = e.message;
         err.hidden = false;
@@ -484,16 +237,12 @@
       const btn = modal.querySelector('#rj-confirm');
       btn.disabled = true;
       try {
-        const { error } = await db().rpc('reject_purchase', {
-          p_purchase_id: row.id,
-          p_reason:      reason
-        });
-        if (error) throw error;
+        await window.Appr.rejectPurchase(row.id, reason);
         close();
         toast('Compra rejeitada. Solicitante notificado.');
-        await loadPending();
+        await window.Appr.reload();
       } catch (e) {
-        console.error(e);
+        console.error('[aprovacoes] reject:', e);
         err.textContent = e.message;
         err.hidden = false;
         btn.disabled = false;
@@ -502,18 +251,12 @@
   }
 
   /* =========================================================
-     BOOTSTRAP
+     PUBLICA
      ========================================================= */
-  document.addEventListener('DOMContentLoaded', async () => {
-    if (document.body.dataset.page !== 'aprovacoes') return;
-
-    const refresh = $('#appr-refresh');
-    if (refresh) refresh.addEventListener('click', loadPending);
-
-    await loadCurrentUser();
-    await loadPending();
+  Object.assign(window.Appr, {
+    openViewModal,
+    openApproveModal,
+    openRejectModal
   });
-
-  window.Approvals = { reload: loadPending, state };
 
 })();

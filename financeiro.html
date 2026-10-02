@@ -11,666 +11,180 @@
   <link rel="stylesheet" href="css/global.css" />
   <link rel="stylesheet" href="css/theme.css" />
   <link rel="stylesheet" href="css/financeiro.css" />
+  <link rel="stylesheet" href="css/financeiro-hub.css" />
 </head>
 <body data-page="financeiro">
   <div class="app__body">
-    <main class="fin-content">
+    <main class="fin-content fin-hub">
 
-      <!-- =============== HEADER =============== -->
-      <header class="fin-head">
-        <div>
-          <span class="fin-head__eyebrow">
-            <span class="fin-head__eyebrow-icon" id="finHeadIcon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 5v14M19 12l-7 7-7-7"/>
-              </svg>
-            </span>
-            Financeiro
-          </span>
-          <h1 class="fin-head__title" id="finHeadTitle">Contas a pagar</h1>
-          <p class="fin-head__sub" id="finHeadSub">Gerencie seus compromissos financeiros, vencimentos e baixas.</p>
-        </div>
-        <div class="fin-head__actions">
-          <button type="button" class="fin-btn fin-btn--ghost" id="fin-open-filters" aria-label="Abrir filtros" aria-expanded="false" aria-controls="fin-filters-drawer">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
-            </svg>
-            Filtro
-            <span class="fin-filter-pill" id="fin-filter-pill" data-empty="true">0</span>
-          </button>
-          <button type="button" class="fin-btn fin-btn--ghost" id="fin-refresh">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/>
-            </svg>
-            Atualizar
-          </button>
-          <button type="button" class="fin-btn fin-btn--ghost" id="fin-transfer">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M7 10 2 5l5-5"/><path d="M2 5h13a5 5 0 0 1 0 10h-3"/>
-              <path d="M17 14l5 5-5 5"/><path d="M22 19H9a5 5 0 0 1 0-10h3"/>
-            </svg>
-            Transferir
-          </button>
-          <button type="button" class="fin-btn fin-btn--primary" id="fin-new">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
-              <path d="M12 5v14M5 12h14"/>
-            </svg>
-            <span class="fin-btn__label" id="fin-new-label">Novo lançamento</span>
-          </button>
-        </div>
+      <header class="fin-hub__head">
+        <span class="fin-hub__eyebrow">Financeiro</span>
+        <h1 class="fin-hub__title">Movimentação financeira</h1>
+        <p class="fin-hub__sub">Visão geral dos seus compromissos, recebimentos e movimentações.</p>
       </header>
 
-      <!-- =============== CONTEÚDO =============== -->
-      <section class="fin-main">
+      <div class="fin-hub__toolbar">
+        <button type="button" class="fin-hub__refresh" id="fin-refresh">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/>
+          </svg>
+          <span>Atualizar</span>
+        </button>
 
-        <nav class="fin-tabs fin-tabs--main" role="tablist" aria-label="Seções financeiras">
-          <span class="fin-tabs__indicator" aria-hidden="true"></span>
+      <div class="fin-period" id="fin-period">
+  <button type="button"
+          class="fin-period__trigger"
+          id="fin-period-trigger"
+          aria-haspopup="dialog"
+          aria-expanded="false"
+          aria-controls="fin-period-panel">
+    <svg class="fin-period__trigger-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <rect x="3" y="4.5" width="18" height="16" rx="2"/>
+      <path d="M3 9h18M8 2.5V6M16 2.5V6"/>
+    </svg>
+    <span class="fin-period__trigger-label" id="fin-period-label">—</span>
+    <svg class="fin-period__trigger-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="m6 9 6 6 6-6"/>
+    </svg>
+  </button>
 
-          <button type="button" class="fin-tab is-active" data-main-tab="pagar"
-                  role="tab" aria-selected="true" tabindex="0"
-                  id="tab-pagar" aria-controls="pane-pagar">
-            <span class="fin-tab__label">A Pagar</span>
-            <span class="fin-tab__count" id="count-pagar">0</span>
-          </button>
+  <div class="fin-period__panel" id="fin-period-panel" role="dialog" aria-labelledby="fin-period-label" hidden>
+    <!-- Atalhos -->
+    <div class="fin-period__shortcuts">
+      <button type="button" class="fin-period__shortcut" data-shortcut="current">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        Este mês
+      </button>
+      <button type="button" class="fin-period__shortcut" data-shortcut="last">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        Mês passado
+      </button>
+      <button type="button" class="fin-period__shortcut" data-shortcut="last2">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m11 17-5-5 5-5M18 17l-5-5 5-5"/></svg>
+        Mês retrasado
+      </button>
+      <button type="button" class="fin-period__shortcut" data-shortcut="next">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        Mês que vem
+      </button>
+    </div>
 
-          <button type="button" class="fin-tab" data-main-tab="receber"
-                  role="tab" aria-selected="false" tabindex="-1"
-                  id="tab-receber" aria-controls="pane-receber">
-            <span class="fin-tab__label">A Receber</span>
-            <span class="fin-tab__count" id="count-receber">0</span>
-          </button>
+    <!-- Navegação de ano -->
+    <div class="fin-period__nav">
+      <button type="button" class="fin-period__nav-btn" data-nav="prev" aria-label="Ano anterior">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
+      <span class="fin-period__nav-year" id="fin-period-year">2026</span>
+      <button type="button" class="fin-period__nav-btn" data-nav="next" aria-label="Próximo ano">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
+    </div>
 
-          <button type="button" class="fin-tab" data-main-tab="todos"
-                  role="tab" aria-selected="false" tabindex="-1"
-                  id="tab-todos" aria-controls="pane-todos">
-            <span class="fin-tab__label">Todos os Títulos</span>
-            <span class="fin-tab__count" id="count-todos">0</span>
-          </button>
+    <!-- Grid 3×4 de meses -->
+    <div class="fin-period__grid" id="fin-period-grid"></div>
+  </div>
+</div>
 
-          <button type="button" class="fin-tab" data-main-tab="movimentos"
-                  role="tab" aria-selected="false" tabindex="-1"
-                  id="tab-movimentos" aria-controls="pane-movimentos">
-            <span class="fin-tab__label">Movimentações</span>
-            <span class="fin-tab__count" id="count-movimentos">0</span>
-          </button>
 
-          <button type="button" class="fin-tab" data-main-tab="transferencias"
-                  role="tab" aria-selected="false" tabindex="-1"
-                  id="tab-transferencias" aria-controls="pane-transferencias">
-            <span class="fin-tab__label">Transferências</span>
-            <span class="fin-tab__count" id="count-transferencias">0</span>
-          </button>
-        </nav>
+      </div>
 
-        <!-- PANE · A PAGAR -->
-        <div class="fin-tabpane is-active" data-main-pane="pagar"
-             id="pane-pagar" role="tabpanel" aria-labelledby="tab-pagar">
-          <div class="fin-actions">
-            <button type="button" class="fin-btn fin-btn--action" data-action="settle" disabled>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-              Baixar
-            </button>
-            <button type="button" class="fin-btn fin-btn--action" data-action="reverse" disabled>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></svg>
-              Estornar
-            </button>
-            <button type="button" class="fin-btn fin-btn--action" data-action="edit" disabled>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-              Editar
-            </button>
-            <button type="button" class="fin-btn fin-btn--action fin-btn--danger" data-action="delete" disabled>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M6 6l1 14a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-14"/></svg>
-              Excluir
-            </button>
+      <section class="fin-overview" id="fin-overview" aria-label="Resumo financeiro">
+        <div class="fin-overview__loading">Carregando resumo…</div>
+      </section>
 
-            <div class="fin-view-toggle" role="group" aria-label="Modo de visualização">
-              <button type="button" class="fin-view-btn is-active" data-view="table" aria-label="Modo tabela" aria-pressed="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="3" y="4" width="18" height="16" rx="2"/>
-                  <path d="M3 10h18M3 15h18M9 4v16"/>
-                </svg>
-              </button>
-              <button type="button" class="fin-view-btn" data-view="grid" aria-label="Modo grade" aria-pressed="false">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/>
-                  <rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/>
-                  <rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/>
-                  <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/>
-                </svg>
-              </button>
-            </div>
-          </div>
+      <section class="fin-shortcuts" aria-label="Atalhos financeiros">
+        <h2 class="fin-shortcuts__title">Acessos rápidos</h2>
 
-          <div class="fin-view-host" data-view-host>
-            <div class="fin-panel" data-view="table">
-              <div class="fin-panel__scroll">
-                <table class="fin-table">
-                  <thead>
-                    <tr>
-                      <th style="width:36px"><input type="checkbox" id="fin-check-all" /></th>
-                      <th>Título</th>
-                      <th>Status</th>
-                      <th>Vencimento</th>
-                      <th>Fornecedor</th>
-                      <th>Documento</th>
-                      <th>Parcela</th>
-                      <th class="cell--num">Valor</th>
-                      <th class="cell--num">Saldo</th>
-                      <th class="cell--right">Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody id="fin-tbody-pagar">
-                    <tr><td colspan="10" style="padding:0;border:0">
-                      <div class="fin-skel-table">
-                        <div class="fin-skel-row"><span></span><span></span><span></span><span></span><span></span></div>
-                        <div class="fin-skel-row"><span></span><span></span><span></span><span></span><span></span></div>
-                        <div class="fin-skel-row"><span></span><span></span><span></span><span></span><span></span></div>
-                        <div class="fin-skel-row"><span></span><span></span><span></span><span></span><span></span></div>
-                        <div class="fin-skel-row"><span></span><span></span><span></span><span></span><span></span></div>
-                      </div>
-                    </td></tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            <div class="fin-cards" data-view="grid" id="fin-cards-pagar" hidden></div>
-          </div>
-
-          <footer class="fin-totals" id="fin-totals-pagar"></footer>
-        </div>
-
-        <!-- PANE · A RECEBER -->
-        <div class="fin-tabpane" data-main-pane="receber"
-             id="pane-receber" role="tabpanel" aria-labelledby="tab-receber" hidden>
-          <div class="fin-actions">
-            <button type="button" class="fin-btn fin-btn--action" data-action="settle" disabled>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-              Receber
-            </button>
-            <button type="button" class="fin-btn fin-btn--action" data-action="reverse" disabled>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></svg>
-              Estornar
-            </button>
-            <button type="button" class="fin-btn fin-btn--action" data-action="edit" disabled>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-              Editar
-            </button>
-            <button type="button" class="fin-btn fin-btn--action fin-btn--danger" data-action="delete" disabled>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M6 6l1 14a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-14"/></svg>
-              Excluir
-            </button>
-
-            <div class="fin-view-toggle" role="group" aria-label="Modo de visualização">
-              <button type="button" class="fin-view-btn is-active" data-view="table" aria-label="Modo tabela" aria-pressed="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="3" y="4" width="18" height="16" rx="2"/>
-                  <path d="M3 10h18M3 15h18M9 4v16"/>
-                </svg>
-              </button>
-              <button type="button" class="fin-view-btn" data-view="grid" aria-label="Modo grade" aria-pressed="false">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/>
-                  <rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/>
-                  <rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/>
-                  <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/>
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          <div class="fin-view-host" data-view-host>
-            <div class="fin-panel" data-view="table">
-              <div class="fin-panel__scroll">
-                <table class="fin-table">
-                  <thead>
-                    <tr>
-                      <th style="width:36px"><input type="checkbox" id="fin-check-all-receber" /></th>
-                      <th>Título</th>
-                      <th>Status</th>
-                      <th>Vencimento</th>
-                      <th>Cliente</th>
-                      <th>Documento</th>
-                      <th>Parcela</th>
-                      <th class="cell--num">Valor</th>
-                      <th class="cell--num">Saldo</th>
-                      <th class="cell--right">Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody id="fin-tbody-receber">
-                    <tr><td colspan="10" style="padding:0;border:0">
-                      <div class="fin-skel-table">
-                        <div class="fin-skel-row"><span></span><span></span><span></span><span></span><span></span></div>
-                        <div class="fin-skel-row"><span></span><span></span><span></span><span></span><span></span></div>
-                        <div class="fin-skel-row"><span></span><span></span><span></span><span></span><span></span></div>
-                        <div class="fin-skel-row"><span></span><span></span><span></span><span></span><span></span></div>
-                        <div class="fin-skel-row"><span></span><span></span><span></span><span></span><span></span></div>
-                      </div>
-                    </td></tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            <div class="fin-cards" data-view="grid" id="fin-cards-receber" hidden></div>
-          </div>
-
-          <footer class="fin-totals" id="fin-totals-receber"></footer>
-        </div>
-
-        <!-- PANE · TODOS -->
-        <div class="fin-tabpane" data-main-pane="todos"
-             id="pane-todos" role="tabpanel" aria-labelledby="tab-todos" hidden>
-          <div class="fin-actions">
-            <span class="fin-actions__hint">
-              Visão unificada de títulos a pagar e a receber — clique em um card ou linha para abrir e editar.
-            </span>
-
-            <div class="fin-view-toggle" role="group" aria-label="Modo de visualização">
-              <button type="button" class="fin-view-btn is-active" data-view="table" aria-label="Modo tabela" aria-pressed="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="3" y="4" width="18" height="16" rx="2"/>
-                  <path d="M3 10h18M3 15h18M9 4v16"/>
-                </svg>
-              </button>
-              <button type="button" class="fin-view-btn" data-view="grid" aria-label="Modo grade" aria-pressed="false">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/>
-                  <rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/>
-                  <rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/>
-                  <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/>
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          <div class="fin-view-host" data-view-host>
-            <div class="fin-panel" data-view="table">
-              <div class="fin-panel__scroll">
-                <table class="fin-table">
-                  <thead>
-                    <tr>
-                      <th>Tipo</th>
-                      <th>Título</th>
-                      <th>Status</th>
-                      <th>Vencimento</th>
-                      <th>Parceiro</th>
-                      <th>Documento</th>
-                      <th class="cell--num">Valor</th>
-                      <th class="cell--num">Saldo</th>
-                      <th class="cell--right">Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody id="fin-tbody-todos">
-                    <tr><td colspan="9" style="padding:0;border:0">
-                      <div class="fin-skel-table">
-                        <div class="fin-skel-row"><span></span><span></span><span></span><span></span><span></span></div>
-                        <div class="fin-skel-row"><span></span><span></span><span></span><span></span><span></span></div>
-                        <div class="fin-skel-row"><span></span><span></span><span></span><span></span><span></span></div>
-                        <div class="fin-skel-row"><span></span><span></span><span></span><span></span><span></span></div>
-                        <div class="fin-skel-row"><span></span><span></span><span></span><span></span><span></span></div>
-                      </div>
-                    </td></tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            <div class="fin-cards" data-view="grid" id="fin-cards-todos" hidden></div>
-          </div>
-
-          <footer class="fin-totals" id="fin-totals-todos"></footer>
-        </div>
-
-        <!-- PANE · MOVIMENTAÇÕES -->
-        <div class="fin-tabpane" data-main-pane="movimentos"
-             id="pane-movimentos" role="tabpanel" aria-labelledby="tab-movimentos" hidden>
-
-          <!-- ✅ BARRA DE AÇÕES (mantém coerência visual entre as abas) -->
-          <div class="fin-actions">
-            <span class="fin-actions__hint">
-              Extrato de entradas e saídas das contas. Movimentações são geradas automaticamente pelas baixas.
-            </span>
-
-            <div class="fin-view-toggle" role="group" aria-label="Modo de visualização">
-              <button type="button" class="fin-view-btn is-active" data-view="table" aria-label="Modo tabela" aria-pressed="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="3" y="4" width="18" height="16" rx="2"/>
-                  <path d="M3 10h18M3 15h18M9 4v16"/>
-                </svg>
-              </button>
-              <button type="button" class="fin-view-btn" data-view="grid" aria-label="Modo grade" aria-pressed="false">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/>
-                  <rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/>
-                  <rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/>
-                  <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/>
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          <div class="fin-panel">
-            <div class="fin-panel__scroll">
-              <table class="fin-table">
-                <thead>
-                  <tr>
-                    <th>Data</th>
-                    <th>Conta</th>
-                    <th>Tipo</th>
-                    <th>Descrição</th>
-                    <th>Origem</th>
-                    <th class="cell--num">Valor</th>
-                    <th class="cell--num">Saldo após</th>
-                    <th>Conciliado</th>
-                  </tr>
-                </thead>
-                <tbody id="fin-tbody-movimentos">
-                  <tr><td colspan="8" style="padding:0;border:0">
-                    <div class="fin-skel-table">
-                      <div class="fin-skel-row"><span></span><span></span><span></span><span></span><span></span></div>
-                      <div class="fin-skel-row"><span></span><span></span><span></span><span></span><span></span></div>
-                      <div class="fin-skel-row"><span></span><span></span><span></span><span></span><span></span></div>
-                      <div class="fin-skel-row"><span></span><span></span><span></span><span></span><span></span></div>
-                      <div class="fin-skel-row"><span></span><span></span><span></span><span></span><span></span></div>
-                    </div>
-                  </td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <!-- PANE · TRANSFERÊNCIAS -->
-        <div class="fin-tabpane" data-main-pane="transferencias"
-             id="pane-transferencias" role="tabpanel" aria-labelledby="tab-transferencias" hidden>
-          <div class="fin-actions">
-            <button type="button" class="fin-btn fin-btn--primary" id="fin-transfer-2">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
-                <path d="M12 5v14M5 12h14"/>
+        <div class="fin-shortcuts__grid">
+          <a class="fin-shortcut" href="financeiro-titulos.html?tab=pagar">
+            <span class="fin-shortcut__icon fin-shortcut__icon--pagar" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2.5H7A2 2 0 0 0 5 4.5v15a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7.5z"/>
+                <path d="M14 2.5v5h5"/>
+                <path d="M12 11v6M9 14l3 3 3-3"/>
               </svg>
-              Nova transferência
-            </button>
-          </div>
+            </span>
+            <span class="fin-shortcut__label">Contas a Pagar</span>
+          </a>
 
-          <div class="fin-panel">
-            <div class="fin-panel__scroll">
-              <table class="fin-table">
-                <thead>
-                  <tr>
-                    <th>Data</th>
-                    <th>De</th>
-                    <th>Para</th>
-                    <th>Descrição</th>
-                    <th class="cell--num">Valor</th>
-                    <th>Responsável</th>
-                  </tr>
-                </thead>
-                <tbody id="fin-tbody-transferencias">
-                  <tr><td colspan="6" style="padding:0;border:0">
-                    <div class="fin-skel-table">
-                      <div class="fin-skel-row"><span></span><span></span><span></span><span></span><span></span></div>
-                      <div class="fin-skel-row"><span></span><span></span><span></span><span></span><span></span></div>
-                      <div class="fin-skel-row"><span></span><span></span><span></span><span></span><span></span></div>
-                      <div class="fin-skel-row"><span></span><span></span><span></span><span></span><span></span></div>
-                      <div class="fin-skel-row"><span></span><span></span><span></span><span></span><span></span></div>
-                    </div>
-                  </td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <a class="fin-shortcut" href="financeiro-titulos.html?tab=receber">
+            <span class="fin-shortcut__icon fin-shortcut__icon--receber" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="7" width="18" height="13" rx="2"/>
+                <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                <path d="M12 11v6M9 14l3-3 3 3"/>
+              </svg>
+            </span>
+            <span class="fin-shortcut__label">Contas a Receber</span>
+          </a>
+
+          <a class="fin-shortcut" href="financeiro-titulos.html?tab=todos">
+            <span class="fin-shortcut__icon fin-shortcut__icon--todos" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21.21 15.89A10 10 0 1 1 8 2.83"/>
+                <path d="M22 12A10 10 0 0 0 12 2v10z"/>
+              </svg>
+            </span>
+            <span class="fin-shortcut__label">Todos os Títulos</span>
+          </a>
+
+          <a class="fin-shortcut" href="financeiro-titulos.html?tab=movimentos">
+            <span class="fin-shortcut__icon fin-shortcut__icon--mov" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 12h4l3-9 4 18 3-9h4"/>
+              </svg>
+            </span>
+            <span class="fin-shortcut__label">Movimentações</span>
+          </a>
+
+          <a class="fin-shortcut" href="financeiro-titulos.html?tab=transferencias">
+            <span class="fin-shortcut__icon fin-shortcut__icon--transf" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="9"/>
+                <path d="M15 9.5a3.5 3.5 0 1 0 0 5"/>
+                <path d="M18 9v6"/>
+              </svg>
+            </span>
+            <span class="fin-shortcut__label">Transferências</span>
+          </a>
+
+          <a class="fin-shortcut" href="contas-bancarias.html">
+            <span class="fin-shortcut__icon fin-shortcut__icon--contas" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2.5" y="6" width="19" height="12" rx="2"/>
+                <path d="M2.5 10h19"/>
+                <path d="M17 14.5h.01"/>
+              </svg>
+            </span>
+            <span class="fin-shortcut__label">Contas Bancárias</span>
+          </a>
+
+          <a class="fin-shortcut fin-shortcut--soon" href="#" aria-disabled="true" tabindex="-1">
+            <span class="fin-shortcut__badge">Em breve</span>
+            <span class="fin-shortcut__icon fin-shortcut__icon--conc" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="4" y="10" width="16" height="11" rx="2"/>
+                <path d="M8 10V7a4 4 0 0 1 8 0v3"/>
+                <path d="M12 15v2"/>
+              </svg>
+            </span>
+            <span class="fin-shortcut__label">Conciliação Bancária</span>
+          </a>
         </div>
-
       </section>
 
     </main>
   </div>
 
-  <!-- ============= DRAWER DE FILTROS ============= -->
-  <div class="fin-drawer" id="fin-filters-drawer" aria-hidden="true">
-    <div class="fin-drawer__backdrop" data-drawer-close></div>
-
-    <aside class="fin-drawer__panel" role="dialog" aria-modal="true" aria-labelledby="fin-drawer-title" id="fin-side">
-
-      <header class="fin-drawer__head">
-        <h3 class="fin-drawer__title" id="fin-drawer-title">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
-          </svg>
-          Filtros
-        </h3>
-        <button type="button" class="fin-drawer__close" data-drawer-close aria-label="Fechar filtros">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-            <path d="M6 6l12 12M18 6L6 18"/>
-          </svg>
-        </button>
-      </header>
-
-      <div class="fin-drawer__body">
-
-        <!-- ===== FILTRO PERSONALIZADO (lista + editor) ===== -->
-        <section class="fin-custom" id="fin-custom">
-          <header class="fin-custom__head">
-            <label class="fin-side__switch">
-              <input type="checkbox" id="fin-custom-filter" />
-              <span class="fin-side__switch-track"></span>
-              <span class="fin-side__switch-label">Filtro personalizado</span>
-              <span class="fin-side__badge" id="fin-filter-count">0</span>
-            </label>
-          </header>
-
-          <div class="fin-custom__body" id="fin-custom-body">
-
-            <!-- VISTA 1 — LISTA -->
-            <div class="fin-custom__list-view" id="fin-custom-list-view">
-              <div class="fin-custom__filters" id="fin-custom-filters"></div>
-
-              <div class="fin-custom__empty" id="fin-custom-empty">
-                Nenhum filtro salvo. Crie o primeiro filtro personalizado.
-              </div>
-
-              <button type="button" class="fin-custom__add" id="fin-custom-new">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
-                  <path d="M12 5v14M5 12h14"/>
-                </svg>
-                Novo filtro
-              </button>
-            </div>
-
-            <!-- VISTA 2 — EDITOR -->
-            <div class="fin-custom__editor" id="fin-custom-editor" hidden>
-              <div class="fin-custom__name-row">
-                <input type="text" id="fin-custom-name" class="fin-custom__name"
-                       placeholder="Nome do filtro (ex: Boletos atrasados)" autocomplete="off" />
-              </div>
-
-              <div class="fin-custom__list" id="fin-custom-list">
-                <div class="fin-custom__empty" id="fin-custom-empty-cond">
-                  Nenhuma condição. Clique em <strong>+ Condição</strong> para começar.
-                </div>
-              </div>
-
-              <button type="button" class="fin-custom__add" id="fin-custom-add">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
-                  <path d="M12 5v14M5 12h14"/>
-                </svg>
-                Condição
-              </button>
-
-              <div class="fin-custom__editor-actions">
-                <button type="button" class="fin-custom__btn fin-custom__btn--ghost" id="fin-custom-cancel">
-                  Cancelar
-                </button>
-                <button type="button" class="fin-custom__btn fin-custom__btn--primary" id="fin-custom-save">
-                  Salvar filtro
-                </button>
-              </div>
-            </div>
-
-          </div>
-        </section>
-
-        <!-- Área avançada -->
-        <div class="fin-side__advanced" id="fin-side-advanced">
-
-          <!-- Filtros rápidos -->
-          <div class="fin-side__section">
-            <header class="fin-side__section-head">
-              <span>Filtros Rápidos</span>
-              <button type="button" class="fin-side__link" id="fin-clear-filters">Limpar</button>
-            </header>
-            <div class="fin-side__grid">
-              <label class="fin-side__switch fin-side__switch--sm">
-                <input type="checkbox" data-quick="receitas" />
-                <span class="fin-side__switch-track"></span>
-                <span class="fin-side__switch-label">Receitas</span>
-              </label>
-              <label class="fin-side__switch fin-side__switch--sm">
-                <input type="checkbox" data-quick="real" />
-                <span class="fin-side__switch-track"></span>
-                <span class="fin-side__switch-label">Real</span>
-              </label>
-              <label class="fin-side__switch fin-side__switch--sm">
-                <input type="checkbox" data-quick="pendentes" />
-                <span class="fin-side__switch-track"></span>
-                <span class="fin-side__switch-label">Pendentes</span>
-              </label>
-              <label class="fin-side__switch fin-side__switch--sm">
-                <input type="checkbox" data-quick="despesas" />
-                <span class="fin-side__switch-track"></span>
-                <span class="fin-side__switch-label">Despesas</span>
-              </label>
-              <label class="fin-side__switch fin-side__switch--sm">
-                <input type="checkbox" data-quick="provisao" />
-                <span class="fin-side__switch-track"></span>
-                <span class="fin-side__switch-label">Provisão</span>
-              </label>
-              <label class="fin-side__switch fin-side__switch--sm">
-                <input type="checkbox" data-quick="baixados" />
-                <span class="fin-side__switch-track"></span>
-                <span class="fin-side__switch-label">Baixados</span>
-              </label>
-            </div>
-          </div>
-
-          <!-- Datas -->
-          <div class="fin-side__section">
-            <div class="fin-side__dates">
-              <label class="fin-side__date-label">Data do Vencimento</label>
-              <div class="fin-side__date-row">
-                <input type="date" id="f-due-from" />
-                <input type="date" id="f-due-to" />
-                <button type="button" class="fin-side__date-icon" aria-label="Calendário">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="4.5" width="18" height="16" rx="2"/>
-                    <path d="M3 9h18M8 2.5V6M16 2.5V6"/>
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            <div class="fin-side__dates">
-              <label class="fin-side__date-label">Data da Negociação</label>
-              <div class="fin-side__date-row">
-                <input type="date" id="f-issue-from" />
-                <input type="date" id="f-issue-to" />
-                <button type="button" class="fin-side__date-icon" aria-label="Calendário">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="4.5" width="18" height="16" rx="2"/>
-                    <path d="M3 9h18M8 2.5V6M16 2.5V6"/>
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            <div class="fin-side__dates">
-              <label class="fin-side__date-label">Data da Baixa</label>
-              <div class="fin-side__date-row">
-                <input type="date" id="f-settle-from" />
-                <input type="date" id="f-settle-to" />
-                <button type="button" class="fin-side__date-icon" aria-label="Calendário">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="4.5" width="18" height="16" rx="2"/>
-                    <path d="M3 9h18M8 2.5V6M16 2.5V6"/>
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Listas multi-select -->
-          <div class="fin-side__section fin-side__section--list">
-
-            <button type="button" class="fin-side__acc" data-target="empresas" aria-expanded="false">
-              <span>Empresas</span>
-              <span class="fin-side__acc-count" data-acc-count="empresas">0</span>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>
-            </button>
-            <div class="fin-side__acc-body" id="acc-empresas" hidden>
-              <input type="search" class="fin-side__acc-search" data-acc-search="empresas" placeholder="Buscar empresa..." />
-              <div class="fin-side__acc-list" data-acc-list="empresas">
-                <div class="fin-side__acc-empty">Carregando...</div>
-              </div>
-            </div>
-
-            <button type="button" class="fin-side__acc" data-target="naturezas" aria-expanded="false">
-              <span>Naturezas</span>
-              <span class="fin-side__acc-count" data-acc-count="naturezas">0</span>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>
-            </button>
-            <div class="fin-side__acc-body" id="acc-naturezas" hidden>
-              <input type="search" class="fin-side__acc-search" data-acc-search="naturezas" placeholder="Buscar natureza..." />
-              <div class="fin-side__acc-list" data-acc-list="naturezas">
-                <div class="fin-side__acc-empty">Carregando...</div>
-              </div>
-            </div>
-
-            <button type="button" class="fin-side__acc" data-target="contas" aria-expanded="false">
-              <span>Contas Bancárias</span>
-              <span class="fin-side__acc-count" data-acc-count="contas">0</span>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>
-            </button>
-            <div class="fin-side__acc-body" id="acc-contas" hidden>
-              <input type="search" class="fin-side__acc-search" data-acc-search="contas" placeholder="Buscar conta..." />
-              <div class="fin-side__acc-list" data-acc-list="contas">
-                <div class="fin-side__acc-empty">Carregando...</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Selects escondidos -->
-        <select id="f-kind" hidden>
-          <option value="">Todos</option>
-          <option value="receita">Receita</option>
-          <option value="despesa">Despesa</option>
-        </select>
-        <select id="f-status" hidden>
-          <option value="">Todos</option>
-          <option value="pendente">Pendente</option>
-          <option value="baixado">Baixado</option>
-          <option value="provisao">Provisão</option>
-        </select>
-        <input type="hidden" id="f-doc" />
-        <input type="hidden" id="f-partner" />
-        <input type="hidden" id="f-min" />
-        <input type="hidden" id="f-max" />
-        <input type="hidden" id="f-notes" />
-      </div>
-
-      <footer class="fin-drawer__foot">
-        <button type="button" class="fin-btn fin-btn--ghost" data-drawer-close>Cancelar</button>
-        <button type="button" class="fin-btn fin-btn--primary" id="fin-apply">Aplicar filtros</button>
-      </footer>
-    </aside>
-  </div>
-
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/nav.js"></script>
+  <script src="js/permissions.js"></script>
 
-  <!-- financeiro — a ordem importa! -->
   <script src="js/financeiro/state.js"></script>
   <script src="js/financeiro/api.js"></script>
-  <script src="js/financeiro/tabs.js"></script>
-  <script src="js/financeiro.js"></script>
-  <link rel="stylesheet" href="css/financeiro-topbar-fix.css" />
+  <script src="js/financeiro/overview.js"></script>
+  <script src="js/financeiro/init.js"></script>
 </body>
 </html>

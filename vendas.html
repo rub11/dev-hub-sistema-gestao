@@ -288,11 +288,20 @@
                     </div>
 
                     <div class="product-pick__actions">
-                      <div class="field">
-                        <label for="product-pick-qty">Quantidade</label>
-                        <input type="number" id="product-pick-qty" value="1" min="1" step="1"
-                               inputmode="numeric" />
-                      </div>
+                     
+<div class="field">
+  <label for="product-pick-qty">Quantidade</label>
+  <div class="qty-stepper">
+    <button type="button" class="qty-stepper__btn" data-step="-1" aria-label="Diminuir">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14"/></svg>
+    </button>
+    <input type="number" id="product-pick-qty" value="1" min="1" step="1" inputmode="numeric" />
+    <button type="button" class="qty-stepper__btn" data-step="1" aria-label="Aumentar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+  </div>
+</div>
+
 
                       <button type="button" class="btn btn--primary" id="product-pick-add">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -534,7 +543,21 @@
   <script src="js/auth.js"></script>
   <script src="js/nav.js"></script>
   <script src="js/permissions.js"></script>
-  <script src="js/vendas.js"></script>
+  <script src="js/vendas/config.js"></script>
+<script src="js/vendas/state.js"></script>
+<script src="js/vendas/utils.js"></script>
+<script src="js/vendas/ui.js"></script>
+<script src="js/vendas/errors.js"></script>
+<script src="js/vendas/session.js"></script>
+<script src="js/vendas/list.js"></script>
+<script src="js/vendas/product-search.js"></script>
+<script src="js/vendas/stepper.js"></script>
+<script src="js/vendas/cart.js"></script>
+<script src="js/vendas/modal-password.js"></script>
+<script src="js/vendas/modal-detail.js"></script>
+<script src="js/vendas/modal-audit.js"></script>
+<script src="js/vendas/form.js"></script>
+<script src="js/vendas/main.js"></script>
 </body>
 
 </html>

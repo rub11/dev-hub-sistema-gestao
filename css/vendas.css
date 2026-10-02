@@ -759,3 +759,213 @@
   }
   .product-pick__actions .field { max-width: none; }
 }
+
+/* =========================================================
+   FIX · Dropdown de sugestões sendo cortado pelo .card
+   ---------------------------------------------------------
+   O .card tem `overflow: hidden` (pra cortar os cantos
+   arredondados dos filhos). Mas isso também corta o dropdown
+   de sugestões, que é `position: absolute`.
+   Solução: libera o overflow no card que contém a busca.
+   ========================================================= */
+
+.card:has(.product-search) {
+  overflow: visible;
+}
+
+/* Fallback pra navegadores antigos (sem :has) */
+.card.card--search-open {
+  overflow: visible;
+}
+
+/* Como liberamos o overflow, garante que o border-radius
+   continue visualmente limpo quando os filhos têm background */
+.card:has(.product-search) .card__head {
+  border-top-left-radius: var(--radius-lg);
+  border-top-right-radius: var(--radius-lg);
+}
+/* =========================================================
+   FIX · Botão de busca do produto
+   ---------------------------------------------------------
+   O browser está aplicando o estilo nativo do <button>
+   (fundo branco, borda padrão). Este bloco força o visual
+   correto com alta especificidade.
+   ========================================================= */
+
+.product-search .product-search__btn,
+.product-search__control .product-search__btn,
+#product-search-btn {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+
+  position: absolute !important;
+  left: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+
+  display: grid !important;
+  place-items: center !important;
+
+  width: 34px;
+  height: 34px;
+  padding: 0 !important;
+  margin: 0 !important;
+
+  border: 0 !important;
+  border-radius: 8px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+
+  color: var(--text-muted);
+  cursor: pointer;
+  z-index: 2;
+
+  transition: background-color 140ms ease, color 140ms ease;
+}
+
+.product-search .product-search__btn:hover,
+.product-search__control .product-search__btn:hover {
+  background: var(--surface-2) !important;
+  color: var(--text) !important;
+}
+
+.product-search .product-search__btn:focus-visible,
+.product-search__control .product-search__btn:focus-visible {
+  outline: 2px solid var(--accent) !important;
+  outline-offset: 2px;
+}
+
+/* Garante que o SVG interno se comporte */
+.product-search .product-search__btn svg,
+.product-search__control .product-search__btn svg,
+#product-search-btn svg {
+  width: 18px !important;
+  height: 18px !important;
+  display: block !important;
+  stroke: currentColor !important;
+  fill: none !important;
+}
+
+/* Dark mode */
+[data-theme="dark"] .product-search .product-search__btn,
+[data-theme="dark"] #product-search-btn {
+  color: var(--text-muted);
+}
+/* =========================================================
+   FIX · Spinner do input number
+   ---------------------------------------------------------
+   Remove o spinner nativo feio do Chrome/Edge/Safari e dá
+   visual limpo ao campo de quantidade.
+   ========================================================= */
+
+/* Chrome, Safari, Edge, Opera */
+#product-pick-qty::-webkit-outer-spin-button,
+#product-pick-qty::-webkit-inner-spin-button,
+.qty-input::-webkit-outer-spin-button,
+.qty-input::-webkit-inner-spin-button,
+#sale-discount::-webkit-outer-spin-button,
+#sale-discount::-webkit-inner-spin-button,
+#sale-discount-pct::-webkit-outer-spin-button,
+#sale-discount-pct::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+}
+
+/* Firefox */
+#product-pick-qty,
+.qty-input,
+#sale-discount,
+#sale-discount-pct {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* Ajuste fino no campo de quantidade do pick */
+#product-pick-qty {
+  width: 100%;
+  height: 46px;
+  padding: 0 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 15px;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+#product-pick-qty:hover:not(:focus) {
+  border-color: #b9bfc9;
+}
+
+#product-pick-qty:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-ring);
+}
+.qty-stepper {
+  display: flex;
+  align-items: stretch;
+  height: 46px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  overflow: hidden;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.qty-stepper:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-ring);
+}
+
+.qty-stepper input {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  padding: 0 8px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 15px;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  outline: none;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.qty-stepper input::-webkit-outer-spin-button,
+.qty-stepper input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+}
+
+.qty-stepper__btn {
+  flex: 0 0 auto;
+  width: 40px;
+  border: 0;
+  background: var(--surface-2);
+  color: var(--text-soft);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: background-color 140ms ease, color 140ms ease;
+}
+
+.qty-stepper__btn svg { width: 14px; height: 14px; }
+
+.qty-stepper__btn:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.qty-stepper__btn:active {
+  background: color-mix(in srgb, var(--accent) 20%, var(--surface-2));
+}

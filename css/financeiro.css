@@ -1,6 +1,23 @@
 /* =========================================================
    DEV HUB · Financeiro
    ========================================================= */
+   /* =========================================================
+   DEV HUB · Financeiro
+   ========================================================= */
+
+body[data-page="financeiro"] {
+  background: var(--bg, #0b0d12);
+}
+
+body[data-page="financeiro"] .fin-content {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px 24px;
+  box-sizing: border-box;
+  background: var(--bg, #0b0d12);
+  min-height: calc(100vh - 56px);
+}
 
 /* Reset mínimo de scroll — o app shell cuida do resto */
 html:has(body[data-page="financeiro"]) {

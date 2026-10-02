@@ -529,11 +529,21 @@
 
   <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="false"></div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/nav.js"></script>
   <script src="js/permissions.js"></script>
-  <script src="js/parceiros.js"></script>
+
+  <!-- parceiros — ordem importa! -->
+  <script src="js/parceiros/state.js"></script>
+  <script src="js/parceiros/api.js"></script>
+  <script src="js/parceiros/render.js"></script>
+  <script src="js/parceiros/form.js"></script>
+  <script src="js/parceiros/context-menu.js"></script>
+  <script src="js/parceiros/export.js"></script>
+  <script src="js/parceiros/init.js"></script>
+</body>
+</html>
 </body>
 </html>
