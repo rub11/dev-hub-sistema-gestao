@@ -823,3 +823,126 @@ body.login-page {
   .btn:hover:not(:disabled) .btn__arrow { transform: none; }
   .btn--primary:hover:not(:disabled):not([aria-busy="true"]) { transform: none; }
 }
+
+/* ============================================================
+   PICKER DE EMPRESA (multi-tenant)
+   ============================================================ */
+
+#company-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  animation: login-fade-up 260ms ease both;
+}
+
+/* O select herda o visual do input de login (mesma altura, borda, foco) */
+.login__select {
+  width: 100%;
+  height: 46px;
+  padding: 0 40px 0 40px;   /* espaço p/ o ícone à esquerda + chevron à direita */
+  border: 1px solid var(--login-border);
+  border-radius: var(--login-radius-md);
+  background-color: var(--login-surface);
+  color: var(--login-text);
+  font-family: inherit;
+  font-size: 14.5px;
+  outline: none;
+  box-shadow: var(--login-shadow-sm);
+  cursor: pointer;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+
+  /* Chevron customizado */
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px 16px;
+
+  transition:
+    border-color var(--login-transition),
+    box-shadow var(--login-transition),
+    background-color var(--login-transition);
+}
+
+.login__select:hover:not(:focus) {
+  border-color: var(--login-border-hover);
+}
+
+.login__select:focus {
+  border-color: var(--login-accent);
+  box-shadow: 0 0 0 4px var(--login-accent-ring);
+}
+
+[data-theme="dark"] .login__select {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+}
+
+/* ============================================================
+   PICKER DE EMPRESA (multi-tenant)
+   ------------------------------------------------------------
+   Aparece quando o usuário logado tem 2+ vínculos e o auth.js
+   chama enterChoiceMode(). O <select> herda o visual dos inputs.
+   ============================================================ */
+
+#company-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  animation: login-fade-up 260ms ease both;
+}
+
+.login__select {
+  width: 100%;
+  height: 46px;
+  padding: 0 40px 0 40px;
+  border: 1px solid var(--login-border);
+  border-radius: var(--login-radius-md);
+  background-color: var(--login-surface);
+  color: var(--login-text);
+  font-family: inherit;
+  font-size: 14.5px;
+  outline: none;
+  box-shadow: var(--login-shadow-sm);
+  cursor: pointer;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px 16px;
+
+  transition:
+    border-color var(--login-transition),
+    box-shadow var(--login-transition),
+    background-color var(--login-transition);
+}
+
+.login__select:hover:not(:focus) {
+  border-color: var(--login-border-hover);
+}
+
+.login__select:focus {
+  border-color: var(--login-accent);
+  box-shadow: 0 0 0 4px var(--login-accent-ring);
+}
+
+[data-theme="dark"] .login__select {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+}
+
+/* O botão "Voltar" precisa de um espaçamento */
+#back-to-login {
+  align-self: flex-start;
+  padding: 0 14px;
+  height: 40px;
+  font-size: 13.5px;
+  color: var(--login-text-soft);
+  border-color: var(--login-border);
+}
+#back-to-login:hover {
+  color: var(--login-text);
+  border-color: var(--login-border-hover);
+}

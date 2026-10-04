@@ -6,14 +6,9 @@
    - Atalhos de teclado 1-9 para abrir rapidamente
    - Enter abre o primeiro resultado
    ---------------------------------------------------------
-   CORREÇÃO (v2):
-   - `hasPerm` e `hasCapability` agora replicam o FALLBACK
-     do nav.js (BASE_CAPS). Antes, capabilities como
-     `purchases.view`, `finance.view`, `stock.receive` e
-     `purchases.approve` não estavam em `Perms.DEFAULTS`
-     (permissions.js) e por isso Compras, Fornecedores,
-     Financeiro, Aprovações etc. eram filtrados fora do
-     welcome — mesmo aparecendo no menu "+".
+   Sincroniza capabilities direto de window.NAV (nav/config.js)
+   em vez de duplicar. Uma capability nova adicionada no
+   nav/config.js já reflete no welcome sem tocar aqui.
    ========================================================= */
 
 (function () {
@@ -26,97 +21,16 @@
   let searchQuery = '';
 
   /* =========================================================
-     FALLBACK DE CAPABILITIES (espelho do nav.js)
-     ---------------------------------------------------------
-     Estrutura idêntica ao nav.js para manter consistência
-     entre a barra de abas (+ menu) e a tela inicial.
+     FONTE DE VERDADE — window.NAV
      ========================================================= */
-  const CAPABILITIES = {
-    platform_admin: ['platform'],
-    admin:          ['operations', 'management', 'admin_settings'],
-    administrador:  ['operations', 'management', 'admin_settings'],
-    gestor:         ['operations', 'management'],
-    manager:        ['operations', 'management'],
-    user:           ['operations'],
-    usuario:        ['operations'],
-    'usuário':      ['operations']
-  };
-
-  const BASE_CAPS = {
-    admin: [
-      'dashboard.view',
-      'sales.view', 'sales.create', 'sales.edit', 'sales.delete',
-      'notes.view', 'notes.create',
-      'invoices.view',
-      'customers.view', 'customers.create', 'customers.edit',
-      'products.view', 'products.create', 'products.edit', 'products.delete',
-      'stock.view', 'stock.receive', 'stock.movements',
-      'reports.view',
-      'management.view',
-      'purchases.view', 'purchases.create', 'purchases.approve', 'purchases.cancel',
-      'purchases.receive', 'purchases.dispute', 'purchases.return', 'purchases.reject',
-      'finance.view', 'finance.create', 'finance.pay', 'finance.edit',
-      'finance.settle', 'finance.reverse', 'finance.transfer', 'finance.reconcile', 'finance.cancel',
-      'platform'
-    ],
-    administrador: [
-      'dashboard.view',
-      'sales.view', 'sales.create', 'sales.edit', 'sales.delete',
-      'notes.view', 'notes.create',
-      'invoices.view',
-      'customers.view', 'customers.create', 'customers.edit',
-      'products.view', 'products.create', 'products.edit', 'products.delete',
-      'stock.view', 'stock.receive', 'stock.movements',
-      'reports.view',
-      'management.view',
-      'purchases.view', 'purchases.create', 'purchases.approve', 'purchases.cancel',
-      'purchases.receive', 'purchases.dispute', 'purchases.return', 'purchases.reject',
-      'finance.view', 'finance.create', 'finance.pay', 'finance.edit',
-      'finance.settle', 'finance.reverse', 'finance.transfer', 'finance.reconcile', 'finance.cancel',
-      'platform'
-    ],
-    gestor: [
-      'dashboard.view',
-      'sales.view', 'sales.create', 'sales.edit',
-      'notes.view', 'invoices.view',
-      'customers.view', 'customers.create', 'customers.edit',
-      'products.view', 'products.create', 'products.edit',
-      'stock.view', 'stock.receive', 'stock.movements',
-      'reports.view', 'management.view',
-      'purchases.view', 'purchases.create', 'purchases.approve',
-      'purchases.receive', 'purchases.dispute', 'purchases.return',
-      'finance.view', 'finance.create', 'finance.pay', 'finance.edit',
-      'finance.settle', 'finance.reverse', 'finance.transfer'
-    ],
-    manager: [
-      'dashboard.view',
-      'sales.view', 'sales.create', 'sales.edit',
-      'notes.view', 'invoices.view',
-      'customers.view', 'customers.create', 'customers.edit',
-      'products.view', 'products.create', 'products.edit',
-      'stock.view', 'stock.receive', 'stock.movements',
-      'reports.view', 'management.view',
-      'purchases.view', 'purchases.create', 'purchases.approve',
-      'purchases.receive', 'purchases.dispute', 'purchases.return',
-      'finance.view', 'finance.create', 'finance.pay', 'finance.edit',
-      'finance.settle', 'finance.reverse', 'finance.transfer'
-    ],
-    user: [
-      'dashboard.view', 'sales.view', 'notes.view',
-      'customers.view', 'products.view', 'stock.view',
-      'purchases.view', 'finance.view'
-    ],
-    usuario: [
-      'dashboard.view', 'sales.view', 'notes.view',
-      'customers.view', 'products.view', 'stock.view',
-      'purchases.view', 'finance.view'
-    ],
-    'usuário': [
-      'dashboard.view', 'sales.view', 'notes.view',
-      'customers.view', 'products.view', 'stock.view',
-      'purchases.view', 'finance.view'
-    ]
-  };
+  function getNavConfig() {
+    const NAV = window.NAV;
+    if (!NAV) return { CAPABILITIES: {}, BASE_CAPS: {} };
+    return {
+      CAPABILITIES: NAV.CAPABILITIES || {},
+      BASE_CAPS:    NAV.BASE_CAPS    || {}
+    };
+  }
 
   /* ---------- Contexto do usuário (sessionStorage) ---------- */
   function readContext() {
@@ -134,6 +48,7 @@
   }
 
   function capsForRole(role, isPlatform) {
+    const { CAPABILITIES } = getNavConfig();
     const baseCaps = CAPABILITIES[String(role || '').toLowerCase()] || ['operations'];
     if (isPlatform && baseCaps.indexOf('platform') === -1) {
       return baseCaps.concat(['platform']);
@@ -144,7 +59,11 @@
   function baseCapsForRole() {
     const ctx = readContext();
     const r = String(ctx.role || '').toLowerCase();
-    const caps = BASE_CAPS[r] || BASE_CAPS.user;
+
+    const { BASE_CAPS } = getNavConfig();
+    const fallback = BASE_CAPS.user || ['dashboard.view'];
+
+    const caps = BASE_CAPS[r] || fallback;
     if (ctx.isPlatform && caps.indexOf('platform') === -1) {
       return caps.concat(['platform']);
     }
@@ -152,10 +71,9 @@
   }
 
   /**
-   * Verificação de capability com fallback — MESMA lógica
-   * do nav.js `hasCapability()`. Substitui o uso direto de
-   * `Perms.has()`, que não conhecia `purchases.*`, `finance.*`
-   * nem `stock.receive`.
+   * Verificação de capability com fallback — MESMA lógica do nav.js.
+   * Prioriza Perms.has() do banco; se não houver, cai no BASE_CAPS
+   * do nav/config.js (que é uma lista estática de permissões por role).
    */
   function hasCapWithFallback(cap) {
     if (!cap) return true;
@@ -267,13 +185,9 @@
     const ITEM_PERM = window.DHItemPerm || {};
 
     index = all.filter(function (item) {
-      /* Capability do próprio módulo (ex.: 'purchases.approve') */
       if (item.capability && !hasCapWithFallback(item.capability)) return false;
-
-      /* Capability extra do map ITEM_PERM (ex.: 'finance.view') */
       const cap = ITEM_PERM[item.id];
       if (cap && !hasCapWithFallback(cap)) return false;
-
       return true;
     });
 
@@ -375,7 +289,6 @@
     return btn;
   }
 
-  /* Numera os primeiros 9 cards visíveis */
   function updateShortcuts() {
     const cards = els.grid.querySelectorAll('.welcome__card');
     cards.forEach(function (card, i) {

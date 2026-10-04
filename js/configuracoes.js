@@ -2,32 +2,17 @@
    DEV HUB · Módulo de Configurações
    ---------------------------------------------------------
    Usa apenas window.db. Protegido por sessão (requireSession).
-   ---------------------------------------------------------
-   CORREÇÕES APLICADAS:
-   1. `init()` usa `Auth.requireSession()` — antes pulava o
-      guard de status (banned/suspended/vacation) chamando
-      `getUser()` direto.
-   2. `setupSignOut()` roda ANTES de `setupLogoutButtons()`
-      para garantir que `outEls.modal` esteja populado.
-   3. `openPasswordModal` reseta o estado visual dos toggles
-      de senha (aria-pressed / aria-label / type).
-   4. `onSubmitProfile` sincroniza `organization_members.name`
-      e `sessionStorage.devhub_user` (best-effort).
-   5. Guards de null em vários pontos.
-   6. `mapDbError` trata duplicate/unique.
    ========================================================= */
 
 (function () {
   'use strict';
 
-  /* ---------- Formatadores ---------- */
   const dateFormatter = new Intl.DateTimeFormat('pt-BR', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric'
   });
 
-  /* ---------- Estado ---------- */
   const state = {
     user: null,
     profile: null,
@@ -50,7 +35,6 @@
       return;
     }
 
-    /* CORREÇÃO #2: setupSignOut roda antes para popular outEls.modal. */
     setupSignOut();
     setupSidebar();
     setupUserMenu();
@@ -59,9 +43,6 @@
     setupAvatar();
     setupLogoutButtons();
 
-    /* CORREÇÃO #1: requireSession roda o guard de status.
-       Antes usávamos getUser(), que não bloqueia usuário
-       banido/suspenso/em férias. */
     const session = await window.Auth.requireSession();
     if (!session) return;
 
@@ -69,14 +50,12 @@
 
     watchAuthChanges();
 
-    // Carrega perfil da tabela profiles
     state.profile = await loadProfile(state.user.id);
 
     renderUser(state.user, state.profile);
     renderProfileForm();
     renderAccountInfo();
 
-    // Renderiza a foto no card de avatar
     renderAvatarPreview((state.profile && state.profile.avatar_url) || null);
 
     showLoading(false);
@@ -229,9 +208,6 @@
 
       if (error) throw error;
 
-      /* CORREÇÃO #4: sincroniza organization_members (best-effort)
-         e sessionStorage.devhub_user — sem isso o topnav continua
-         mostrando o nome antigo até próximo login. */
       try {
         await window.db
           .from('organization_members')
@@ -257,8 +233,6 @@
     }
   }
 
-  /* CORREÇÃO #4 (continuação): escreve o novo nome no
-     sessionStorage usado por nav.js. */
   function syncSessionUserName(name) {
     try {
       const raw = sessionStorage.getItem('devhub_user');
@@ -330,7 +304,6 @@
       if (event.key === 'Escape' && !pwEls.modal.hidden) closePasswordModal();
     });
 
-    // Toggle mostrar/ocultar senha
     pwEls.modal.querySelectorAll('[data-pw-toggle]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         const targetId = btn.getAttribute('data-pw-toggle');
@@ -348,7 +321,6 @@
     pwEls.form.addEventListener('submit', onSubmitPassword);
   }
 
-  /* CORREÇÃO #3: reseta o estado visual dos toggles ao reabrir. */
   function openPasswordModal() {
     pwEls.form.reset();
 
@@ -365,7 +337,6 @@
     pwEls.modal.hidden = false;
     document.body.style.overflow = 'hidden';
 
-    /* CORREÇÃO #5: guard de null */
     if (pwEls.new) pwEls.new.focus();
   }
 
@@ -540,7 +511,6 @@
       const ext = (file.name.split('.').pop() || 'png').toLowerCase();
       const path = userId + '/avatar-' + Date.now() + '.' + ext;
 
-      // Upload
       const { error: upErr } = await window.db.storage
         .from('avatars')
         .upload(path, file, {
@@ -550,7 +520,6 @@
         });
       if (upErr) throw upErr;
 
-      // URL pública
       const { data: urlData } = window.db.storage
         .from('avatars')
         .getPublicUrl(path);
@@ -558,14 +527,12 @@
       const publicUrl = urlData && urlData.publicUrl;
       if (!publicUrl) throw new Error('Não foi possível gerar a URL pública.');
 
-      // Persiste em profiles
       const { error: dbErr } = await window.db
         .from('profiles')
         .update({ avatar_url: publicUrl })
         .eq('id', userId);
       if (dbErr) throw dbErr;
 
-      // Estado local
       state.profile = Object.assign({}, state.profile || {}, { avatar_url: publicUrl });
 
       syncSessionAvatar(publicUrl);
@@ -594,14 +561,12 @@
     try {
       const userId = state.user.id;
 
-      // Limpa no banco
       const { error: dbErr } = await window.db
         .from('profiles')
         .update({ avatar_url: null })
         .eq('id', userId);
       if (dbErr) throw dbErr;
 
-      // Remove do Storage (best-effort)
       try {
         const { data: files } = await window.db.storage
           .from('avatars')
@@ -615,7 +580,6 @@
         console.warn('[DEV HUB] Falha ao remover arquivos antigos:', e);
       }
 
-      // Estado local
       state.profile = Object.assign({}, state.profile || {}, { avatar_url: null });
 
       syncSessionAvatar(null);
@@ -632,7 +596,6 @@
     }
   }
 
-  /* Sincroniza sessionStorage.avatar_url com fallback seguro. */
   function syncSessionAvatar(url) {
     try {
       const raw = sessionStorage.getItem('devhub_user');
@@ -711,12 +674,6 @@
   }
 
   /* =========================================================
-     Preferências / tema
-     ========================================================= */
-  
-  
-
-  /* =========================================================
      Sair da conta
      ========================================================= */
   const outEls = {};
@@ -785,7 +742,7 @@
   }
 
   /* =========================================================
-     Sidebar / user menu / logout (via data-action)
+     Sidebar / user menu / logout
      ========================================================= */
   function setupSidebar() {
     const toggle = document.getElementById('menu-toggle');
@@ -860,12 +817,10 @@
     });
   }
 
-  // Botões data-action="logout" — abrem a confirmação
   function setupLogoutButtons() {
     document.querySelectorAll('[data-action="logout"]').forEach(function (button) {
       button.addEventListener('click', function (event) {
         event.preventDefault();
-        // Se o modal de saída existir, usa ele; senão desloga direto.
         if (outEls.modal) openSignOutModal();
         else onConfirmSignOut();
       });
@@ -920,7 +875,6 @@
     if (message.includes('violates not-null')) {
       return 'Preencha todos os campos obrigatórios.';
     }
-    /* CORREÇÃO #7: trata duplicate/unique. */
     if (message.includes('duplicate') || message.includes('unique')) {
       return 'Já existe um registro com esses dados.';
     }

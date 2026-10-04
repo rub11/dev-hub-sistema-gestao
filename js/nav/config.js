@@ -109,6 +109,8 @@
 
   /* ---------- Permissões por item do menu ---------- */
   NAV.ITEM_PERM = {
+        gestao:              'management.view',
+    permissoes:          'management.roles',
     dashboard:           'dashboard.view',
     vendas:              'sales.view',
     notas:               'notes.view',
@@ -133,6 +135,8 @@
 
   /* ---------- Estrutura do menu ---------- */
   NAV.TOPNAV = [
+        { id: 'gestao',        label: 'Gestão de usuários', href: 'gestao.html',  icon: 'gestao',       group: 'Administração', capability: 'management' },
+    { id: 'permissoes',    label: 'Permissões',         href: 'permissoes.html', icon: 'lock',      group: 'Administração', capability: 'management.roles' },
     { id: 'dashboard', label: 'Dashboard', href: 'dashboard.html', icon: 'dashboard', group: null },
     { id: 'vendas',        label: 'Vendas',        href: 'vendas.html',       icon: 'vendas',       group: 'Comercial' },
     { id: 'notas',         label: 'Notas',         href: 'notas.html',        icon: 'notas',        group: 'Comercial' },
@@ -156,6 +160,8 @@
 
   /* ---------- Mapeamento URL → id ---------- */
   NAV.PAGE_MAP = {
+        gestao: 'gestao', funcionarios: 'gestao', aprovacoes: 'aprovacoes',
+    permissoes: 'permissoes',
     dashboard: 'dashboard', vendas: 'vendas', notas: 'notas',
     'notas-fiscal': 'notas-fiscal', clientes: 'parceiros',
     parceiros: 'parceiros',

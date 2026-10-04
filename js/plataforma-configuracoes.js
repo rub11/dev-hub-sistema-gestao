@@ -4,17 +4,6 @@
    Apenas platform_admin. Edita:
      - platform_settings (nome da plataforma, e-mail de suporte)
      - próprio perfil (nome, senha)
-     - preferências (tema)
-   ---------------------------------------------------------
-   CORREÇÕES APLICADAS:
-   1. `onSubmitPlatform` detecta quando a linha de
-      `platform_settings` não existe (UPDATE afeta 0 linhas)
-      e faz INSERT — antes, falhava em silêncio e mostrava
-      toast de sucesso falso.
-   2. `openPasswordModal` reseta o estado visual do toggle
-      de senha (aria-pressed / aria-label).
-   3. Guards de null em `pwEls.new.focus()`.
-   4. Comentário duplicado removido.
    ========================================================= */
 
 (function () {
@@ -53,7 +42,6 @@
     setupPasswordModal();
     setupSignOut();
 
-    // Guard: só platform_admin
     const context = await window.Auth.requirePlatformAdmin();
     if (!context) return;
 
@@ -62,7 +50,6 @@
 
     state.user = session.user;
 
-    // Confirma no banco (defesa em profundidade)
     const allowed = await checkPlatformAdmin(session.user.id);
     if (!allowed) {
       window.location.replace('dashboard.html');
@@ -267,8 +254,6 @@
     setPlatformBusy(true);
 
     try {
-      /* CORREÇÃO #1: detecta se a linha singleton existe.
-         Se o UPDATE não afetar nenhuma linha, faz INSERT. */
       const { data, error } = await window.db
         .from('platform_settings')
         .update({
@@ -281,7 +266,6 @@
       if (error) throw error;
 
       if (!data || data.length === 0) {
-        // Linha não existia — cria agora
         const { error: insErr } = await window.db
           .from('platform_settings')
           .insert({
@@ -397,7 +381,6 @@
 
       if (error) throw error;
 
-      // Atualiza também em organization_members (best-effort)
       try {
         await window.db
           .from('organization_members')
@@ -493,7 +476,6 @@
   function openPasswordModal() {
     pwEls.form.reset();
 
-    /* CORREÇÃO #2: reseta o estado visual dos toggles */
     if (pwEls.new) pwEls.new.type = 'password';
     if (pwEls.confirm) pwEls.confirm.type = 'password';
     pwEls.modal.querySelectorAll('[data-pw-toggle]').forEach(function (btn) {
@@ -506,7 +488,6 @@
     pwEls.modal.hidden = false;
     document.body.style.overflow = 'hidden';
 
-    /* CORREÇÃO #3: guard de null */
     if (pwEls.new) pwEls.new.focus();
   }
 
@@ -578,11 +559,6 @@
     if (msg.includes('rate limit') || msg.includes('too many')) return 'Muitas tentativas. Aguarde alguns minutos.';
     return 'Não foi possível alterar a senha. Tente novamente.';
   }
-
-  /* =========================================================
-     Preferências / tema
-     ========================================================= */
-  
 
   /* =========================================================
      Sair
