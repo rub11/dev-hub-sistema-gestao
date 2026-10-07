@@ -296,30 +296,51 @@
                 <div class="product-search" id="product-search-wrap">
                   <label for="product-search-input" class="field__label">Buscar produto</label>
 
-                  <div class="product-search__control">
-                    <button type="button" class="product-search__btn" id="product-search-btn"
-                            aria-label="Buscar produto" title="Buscar">
-                      <svg viewBox="0 0 24 24" fill="none"
-                           stroke="currentColor" stroke-width="1.9" stroke-linecap="round"
+                  <!-- Wrapper: input de busca + botão scanner na mesma linha -->
+                  <div style="display:flex; gap:8px; align-items:stretch;">
+
+                    <div class="product-search__control" style="flex:1; min-width:0;">
+                      <button type="button" class="product-search__btn" id="product-search-btn"
+                              aria-label="Buscar produto" title="Buscar">
+                        <svg viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="1.9" stroke-linecap="round"
+                             stroke-linejoin="round" aria-hidden="true">
+                          <circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" />
+                        </svg>
+                      </button>
+
+                      <input type="text" id="product-search-input"
+                             placeholder="Nome, código ou código de barras…"
+                             autocomplete="off" spellcheck="false"
+                             aria-autocomplete="list"
+                             aria-controls="product-suggestions"
+                             aria-expanded="false" />
+
+                      <button type="button" class="product-search__clear" id="product-search-clear"
+                              aria-label="Limpar busca" hidden>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                             stroke-linecap="round" aria-hidden="true">
+                          <path d="M6 6l12 12M18 6L6 18" />
+                        </svg>
+                      </button>
+                    </div>
+
+                    <!-- Botão scanner — mesmo ID que o scanner-modal.js procura -->
+                    <button type="button" id="scanner-mode-btn" class="btn btn--ghost"
+                            title="Escanear código de barras"
+                            style="white-space:nowrap; display:inline-flex; align-items:center; gap:6px; padding:0 16px;">
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none"
+                           stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
                            stroke-linejoin="round" aria-hidden="true">
-                        <circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" />
+                        <path d="M3 7V5a2 2 0 0 1 2-2h2"/>
+                        <path d="M17 3h2a2 2 0 0 1 2 2v2"/>
+                        <path d="M21 17v2a2 2 0 0 1-2 2h-2"/>
+                        <path d="M7 21H5a2 2 0 0 1-2-2v-2"/>
+                        <path d="M7 8v8M11 8v8M15 8v8"/>
                       </svg>
+                      <span>Scanner</span>
                     </button>
 
-                    <input type="text" id="product-search-input"
-                           placeholder="Nome, código ou código de barras…"
-                           autocomplete="off" spellcheck="false"
-                           aria-autocomplete="list"
-                           aria-controls="product-suggestions"
-                           aria-expanded="false" />
-
-                    <button type="button" class="product-search__clear" id="product-search-clear"
-                            aria-label="Limpar busca" hidden>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                           stroke-linecap="round" aria-hidden="true">
-                        <path d="M6 6l12 12M18 6L6 18" />
-                      </svg>
-                    </button>
                   </div>
 
                   <p class="field__hint">
@@ -596,9 +617,6 @@
       </footer>
     </div>
   </div>
-  <button type="button" id="scanner-mode-btn" class="btn btn--primary">
-  <span class="btn__label">Modo Scanner</span>
-</button>
 
   <!-- ================= MODAL: DETALHE / AUDITORIA ================= -->
   <div class="modal" id="detail-modal" hidden>
@@ -720,52 +738,51 @@
   </div>
 
   <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="false"></div>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/supabase.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/permissions.js"></script>
 
-<!-- ⬇️ ADICIONAR AQUI: modal de confirmação global -->
-<script src="js/ui-confirm.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/permissions.js"></script>
 
-<script src="js/nav/config.js"></script>
-<script src="js/nav/state.js"></script>
-<script src="js/nav/roles.js"></script>
-<script src="js/nav/styles.js"></script>
-<script src="js/nav/permission-modal.js"></script>
-<script src="js/nav/tabs.js"></script>
-<script src="js/nav/module-menu.js"></script>
-<script src="js/nav/notifications.js"></script>
-<script src="js/nav/user-menu.js"></script>
-<script src="js/nav/search.js"></script>
-<script src="js/nav/org-switcher.js"></script>
-<script src="js/nav/bar.js"></script>
-<script src="js/nav/main.js"></script>
+  <script src="js/ui-confirm.js"></script>
 
-<script src="js/vendas/config.js"></script>
-<script src="js/vendas/state.js"></script>
-<script src="js/vendas/utils.js"></script>
-<script src="js/vendas/ui.js"></script>
-<script src="js/vendas/errors.js"></script>
-<script src="js/vendas/session.js"></script>
-<script src="js/vendas/list.js"></script>
-<script src="js/vendas/product-search.js"></script>
-<script src="js/vendas/stepper.js"></script>
-<script src="js/vendas/cart.js"></script>
-<script src="js/vendas/modal-password.js"></script>
-<script src="js/vendas/customer-modal.js"></script>
-<script src="js/vendas/modal-detail.js"></script>
-<script src="js/vendas/modal-audit.js"></script>
-<script src="js/vendas/modal-approvals.js"></script>
-<script src="js/vendas/quotes-print.js"></script>
-<script src="js/vendas/quotes.js"></script>
-<script src="js/vendas/installments.js"></script>
-<script src="js/vendas/form.js"></script>
-<script src="js/vendas/draft.js"></script>
-<script src="js/vendas/main.js"></script>
+  <script src="js/nav/config.js"></script>
+  <script src="js/nav/state.js"></script>
+  <script src="js/nav/roles.js"></script>
+  <script src="js/nav/styles.js"></script>
+  <script src="js/nav/permission-modal.js"></script>
+  <script src="js/nav/tabs.js"></script>
+  <script src="js/nav/module-menu.js"></script>
+  <script src="js/nav/notifications.js"></script>
+  <script src="js/nav/user-menu.js"></script>
+  <script src="js/nav/search.js"></script>
+  <script src="js/nav/org-switcher.js"></script>
+  <script src="js/nav/bar.js"></script>
+  <script src="js/nav/main.js"></script>
 
-<!-- ⬇️ ADICIONAR AQUI: scanner (por ÚLTIMO, depois do vendas/main.js) -->
-<script src="js/scanner-modal.js"></script>
+  <script src="js/vendas/config.js"></script>
+  <script src="js/vendas/state.js"></script>
+  <script src="js/vendas/utils.js"></script>
+  <script src="js/vendas/ui.js"></script>
+  <script src="js/vendas/errors.js"></script>
+  <script src="js/vendas/session.js"></script>
+  <script src="js/vendas/list.js"></script>
+  <script src="js/vendas/product-search.js"></script>
+  <script src="js/vendas/stepper.js"></script>
+  <script src="js/vendas/cart.js"></script>
+  <script src="js/vendas/modal-password.js"></script>
+  <script src="js/vendas/customer-modal.js"></script>
+  <script src="js/vendas/modal-detail.js"></script>
+  <script src="js/vendas/modal-audit.js"></script>
+  <script src="js/vendas/modal-approvals.js"></script>
+  <script src="js/vendas/quotes-print.js"></script>
+  <script src="js/vendas/quotes.js"></script>
+  <script src="js/vendas/installments.js"></script>
+  <script src="js/vendas/form.js"></script>
+  <script src="js/vendas/draft.js"></script>
+  <script src="js/vendas/main.js"></script>
+
+  <script src="js/scanner-modal.js"></script>
 </body>
 
 </html>
