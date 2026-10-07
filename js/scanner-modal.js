@@ -1,12 +1,5 @@
 /* =========================================================
    DEV HUB · Scanner Mode (Vendas) v2
-   ---------------------------------------------------------
-   - Botão: se #scanner-mode-btn existir, usa. Senão, injeta
-     ao lado do input de busca.
-   - QR pra parear celular
-   - Itens agrupados (upsert)
-   - Remoção com motivo + senha do gestor
-   - Realtime + sync automático com o carrinho
    ========================================================= */
 
 (function () {
@@ -52,9 +45,6 @@
     observarBotao();
   }
 
-  /* =========================================================
-     CSS autossuficiente
-     ========================================================= */
   function ensureStyles() {
     if (document.getElementById('dh-scan-styles')) return;
     const style = document.createElement('style');
@@ -79,79 +69,34 @@
         animation:dhScanPop 180ms cubic-bezier(.2,.9,.3,1.2) forwards;
       }
       @keyframes dhScanPop{to{transform:translateY(0) scale(1)}}
-      .dh-scan-header{
-        display:flex;align-items:center;justify-content:space-between;
-        padding:16px 20px;border-bottom:1px solid rgba(255,255,255,.08);flex-shrink:0;
-      }
+      .dh-scan-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid rgba(255,255,255,.08);flex-shrink:0;}
       .dh-scan-header h2{margin:0;font-size:16px;font-weight:600;color:#f5f7fb;}
-      .dh-scan-close{
-        appearance:none;border:0;background:transparent;color:#8b95a7;
-        font-size:22px;line-height:1;cursor:pointer;width:32px;height:32px;
-        border-radius:8px;display:flex;align-items:center;justify-content:center;
-        transition:background 120ms ease,color 120ms ease;
-      }
+      .dh-scan-close{appearance:none;border:0;background:transparent;color:#8b95a7;font-size:22px;line-height:1;cursor:pointer;width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;transition:background 120ms ease,color 120ms ease;}
       .dh-scan-close:hover{background:rgba(255,255,255,.06);color:#e6eaf2;}
       .dh-scan-body{padding:20px;overflow-y:auto;}
       .dh-scan-body p{margin:0 0 12px;font-size:13.5px;line-height:1.5;color:#b7c0cf;}
       .dh-scan-body p.dh-scan-center{text-align:center;}
-      .dh-scan-qr{
-        display:flex;justify-content:center;align-items:center;
-        padding:14px;background:#fff;border-radius:14px;
-        margin:0 auto 14px;width:fit-content;
-        box-shadow:0 4px 20px rgba(0,0,0,.4);
-      }
-      .dh-scan-qr img{
-        display:block;width:240px;height:240px;
-        image-rendering:pixelated;image-rendering:crisp-edges;
-      }
+      .dh-scan-qr{display:flex;justify-content:center;align-items:center;padding:14px;background:#fff;border-radius:14px;margin:0 auto 14px;width:fit-content;box-shadow:0 4px 20px rgba(0,0,0,.4);}
+      .dh-scan-qr img{display:block;width:240px;height:240px;image-rendering:pixelated;image-rendering:crisp-edges;}
       .dh-scan-token{text-align:center;font-size:12.5px;color:#8b95a7;margin:0 0 20px;}
-      .dh-scan-token strong{
-        display:inline-block;margin-top:6px;font-size:20px;letter-spacing:3px;
-        color:#e6eaf2;font-weight:700;font-family:monospace;
-      }
-      .dh-scan-listhead{
-        display:flex;justify-content:space-between;align-items:baseline;margin:0 0 8px;
-      }
+      .dh-scan-token strong{display:inline-block;margin-top:6px;font-size:20px;letter-spacing:3px;color:#e6eaf2;font-weight:700;font-family:monospace;}
+      .dh-scan-listhead{display:flex;justify-content:space-between;align-items:baseline;margin:0 0 8px;}
       .dh-scan-listhead h3{margin:0;font-size:14px;font-weight:600;color:#e6eaf2;}
       .dh-scan-total{font-size:14px;color:#8b95a7;font-weight:600;}
-      .dh-scan-items{
-        max-height:280px;overflow-y:auto;
-        border:1px solid rgba(255,255,255,.08);border-radius:10px;
-        padding:4px 14px;background:rgba(255,255,255,.015);
-      }
-      .dh-scan-item{
-        display:flex;justify-content:space-between;align-items:center;
-        padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);
-        gap:12px;
-      }
+      .dh-scan-items{max-height:280px;overflow-y:auto;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:4px 14px;background:rgba(255,255,255,.015);}
+      .dh-scan-item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);gap:12px;}
       .dh-scan-item:last-child{border-bottom:0;}
       .dh-scan-item-main{min-width:0;flex:1;}
-      .dh-scan-item-name{
-        font-weight:600;font-size:13.5px;color:#e6eaf2;
-        white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-      }
+      .dh-scan-item-name{font-weight:600;font-size:13.5px;color:#e6eaf2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
       .dh-scan-item-code{font-size:11.5px;color:#8b95a7;margin-top:2px;}
       .dh-scan-item-right{text-align:right;flex-shrink:0;}
       .dh-scan-item-qty{font-weight:700;font-size:13.5px;}
       .dh-scan-item-price{font-size:11.5px;color:#8b95a7;margin-top:2px;}
-      .dh-scan-item-remove{
-        appearance:none;border:1px solid rgba(239,68,68,.28);background:transparent;
-        color:#ef4444;width:30px;height:30px;border-radius:8px;cursor:pointer;
-        display:flex;align-items:center;justify-content:center;flex-shrink:0;
-        transition:background 120ms ease,border-color 120ms ease;
-      }
+      .dh-scan-item-remove{appearance:none;border:1px solid rgba(239,68,68,.28);background:transparent;color:#ef4444;width:30px;height:30px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background 120ms ease,border-color 120ms ease;}
       .dh-scan-item-remove:hover{background:rgba(239,68,68,.10);border-color:rgba(239,68,68,.5);}
       .dh-scan-empty{padding:18px 4px;text-align:center;font-size:13px;color:#8b95a7;}
-      .dh-scan-footer{
-        display:flex;justify-content:flex-end;gap:10px;
-        padding:14px 20px;border-top:1px solid rgba(255,255,255,.08);
-        background:#0a0f16;flex-shrink:0;
-      }
-      .dh-scan-btn{
-        appearance:none;border:1px solid transparent;border-radius:9px;
-        padding:10px 18px;font-size:13.5px;font-weight:600;font-family:inherit;
-        cursor:pointer;transition:background 120ms ease,border-color 120ms ease,opacity 120ms ease;
-      }
+      .dh-scan-footer{display:flex;justify-content:flex-end;gap:10px;padding:14px 20px;border-top:1px solid rgba(255,255,255,.08);background:#0a0f16;flex-shrink:0;}
+      .dh-scan-btn{appearance:none;border:1px solid transparent;border-radius:9px;padding:10px 18px;font-size:13.5px;font-weight:600;font-family:inherit;cursor:pointer;transition:background 120ms ease,border-color 120ms ease,opacity 120ms ease;}
       .dh-scan-btn:disabled{opacity:.6;cursor:not-allowed;}
       .dh-scan-btn--ghost{background:transparent;color:#c7d0dd;border-color:rgba(255,255,255,.14);}
       .dh-scan-btn--ghost:hover{background:rgba(255,255,255,.05);}
@@ -160,76 +105,24 @@
       .dh-scan-btn--danger{background:#dc2626;color:#fff;}
       .dh-scan-btn--danger:hover{background:#c81e1e;}
       body.dh-scan-open{overflow:hidden;}
-
-      /* Estilo padrão do botão injetado (usado só se você NÃO
-         colocar o botão manualmente no HTML) */
-      .dh-scan-trigger{
-        appearance:none;border:1px solid rgba(255,255,255,.14);
-        background:transparent;color:#c7d0dd;
-        border-radius:9px;padding:10px 14px;font-size:13.5px;font-weight:600;
-        font-family:inherit;cursor:pointer;white-space:nowrap;
-        display:inline-flex;align-items:center;gap:6px;
-        transition:background 120ms ease,border-color 120ms ease;
-        margin-left:8px;
-      }
+      .dh-scan-trigger{appearance:none;border:1px solid rgba(255,255,255,.14);background:transparent;color:#c7d0dd;border-radius:9px;padding:10px 14px;font-size:13.5px;font-weight:600;font-family:inherit;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:6px;transition:background 120ms ease,border-color 120ms ease;margin-left:8px;}
       .dh-scan-trigger:hover{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.22);}
-
-      /* Modal de remoção */
-      .dh-rm-backdrop{
-        position:fixed;inset:0;z-index:9999;
-        background:rgba(5,8,14,.78);
-        backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
-        display:flex;align-items:center;justify-content:center;padding:20px;
-        opacity:0;animation:dhScanFade 140ms ease forwards;
-      }
-      .dh-rm-card{
-        width:100%;max-width:440px;background:#0d131c;color:#e6eaf2;
-        border:1px solid rgba(255,255,255,.10);border-radius:14px;
-        box-shadow:0 24px 60px rgba(0,0,0,.65);overflow:hidden;
-        display:flex;flex-direction:column;max-height:92vh;
-        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-      }
-      .dh-rm-header{
-        padding:16px 20px;border-bottom:1px solid rgba(255,255,255,.08);
-        display:flex;align-items:center;justify-content:space-between;
-      }
+      .dh-rm-backdrop{position:fixed;inset:0;z-index:9999;background:rgba(5,8,14,.78);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;animation:dhScanFade 140ms ease forwards;}
+      .dh-rm-card{width:100%;max-width:440px;background:#0d131c;color:#e6eaf2;border:1px solid rgba(255,255,255,.10);border-radius:14px;box-shadow:0 24px 60px rgba(0,0,0,.65);overflow:hidden;display:flex;flex-direction:column;max-height:92vh;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
+      .dh-rm-header{padding:16px 20px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:space-between;}
       .dh-rm-header h3{margin:0;font-size:15px;font-weight:600;color:#f5f7fb;}
       .dh-rm-body{padding:20px;overflow-y:auto;}
-      .dh-rm-produto{
-        padding:12px;border-radius:10px;background:rgba(255,255,255,.04);
-        margin-bottom:16px;font-size:13px;
-      }
+      .dh-rm-produto{padding:12px;border-radius:10px;background:rgba(255,255,255,.04);margin-bottom:16px;font-size:13px;}
       .dh-rm-produto strong{color:#e6eaf2;display:block;margin-bottom:4px;}
       .dh-rm-produto span{color:#8b95a7;font-size:12px;}
       .dh-rm-field{margin-bottom:12px;}
-      .dh-rm-field label{
-        display:block;font-size:12.5px;color:#c7d0dd;font-weight:600;
-        margin-bottom:6px;
-      }
-      .dh-rm-field input,
-      .dh-rm-field textarea{
-        width:100%;box-sizing:border-box;padding:10px 12px;
-        background:#131a24;color:#fff;font-family:inherit;font-size:13.5px;
-        border:1px solid rgba(255,255,255,.12);border-radius:9px;
-        transition:border-color 120ms ease,box-shadow 120ms ease;
-      }
-      .dh-rm-field input:focus,
-      .dh-rm-field textarea:focus{
-        outline:0;border-color:#3b82f6;
-        box-shadow:0 0 0 3px rgba(59,130,246,.18);
-      }
+      .dh-rm-field label{display:block;font-size:12.5px;color:#c7d0dd;font-weight:600;margin-bottom:6px;}
+      .dh-rm-field input,.dh-rm-field textarea{width:100%;box-sizing:border-box;padding:10px 12px;background:#131a24;color:#fff;font-family:inherit;font-size:13.5px;border:1px solid rgba(255,255,255,.12);border-radius:9px;transition:border-color 120ms ease,box-shadow 120ms ease;}
+      .dh-rm-field input:focus,.dh-rm-field textarea:focus{outline:0;border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.18);}
       .dh-rm-field textarea{min-height:70px;resize:vertical;}
-      .dh-rm-feedback{
-        padding:10px 12px;border-radius:9px;font-size:12.5px;
-        background:rgba(239,68,68,.10);color:#fca5a5;
-        border:1px solid rgba(239,68,68,.28);margin-bottom:12px;
-      }
+      .dh-rm-feedback{padding:10px 12px;border-radius:9px;font-size:12.5px;background:rgba(239,68,68,.10);color:#fca5a5;border:1px solid rgba(239,68,68,.28);margin-bottom:12px;}
       .dh-rm-feedback:empty{display:none;}
-      .dh-rm-footer{
-        display:flex;justify-content:flex-end;gap:10px;
-        padding:14px 20px;border-top:1px solid rgba(255,255,255,.08);
-        background:#0a0f16;
-      }
+      .dh-rm-footer{display:flex;justify-content:flex-end;gap:10px;padding:14px 20px;border-top:1px solid rgba(255,255,255,.08);background:#0a0f16;}
     `;
     document.head.appendChild(style);
   }
@@ -244,25 +137,14 @@
     }
   }
 
-  /* =========================================================
-     Botão
-     ========================================================= */
   function observarBotao() {
-    // 1) Se já existe #scanner-mode-btn no HTML, usa ela
     const existente = document.getElementById('scanner-mode-btn');
-    if (existente) {
-      wireBotao(existente);
-      return;
-    }
+    if (existente) { wireBotao(existente); return; }
 
-    // 2) Senão, espera a página montar e injeta
     let tentativas = 0;
     const tick = () => {
       const btn = encontrarOuInjetarBotao();
-      if (btn) {
-        wireBotao(btn);
-        return;
-      }
+      if (btn) { wireBotao(btn); return; }
       tentativas += 1;
       if (tentativas < 25) setTimeout(tick, 400);
     };
@@ -275,16 +157,13 @@
     btn.addEventListener('click', abrir);
   }
 
-  /* Injeta o botão logo DEPOIS do input de busca (como irmão),
-     dentro do mesmo container — assim fica inline na linha. */
   function encontrarOuInjetarBotao() {
     const anchor =
       document.querySelector('[data-scanner-mount]') ||
       document.getElementById('product-search') ||
+      document.getElementById('product-search-input') ||
       document.getElementById('buscar-produto') ||
-      document.querySelector('input[placeholder*="código de barras"]') ||
-      document.querySelector('input[placeholder*="Nome, código"]') ||
-      document.querySelector('input[placeholder*="Nome,"]');
+      document.querySelector('input[placeholder*="código de barras"]');
 
     if (!anchor) return null;
 
@@ -306,9 +185,6 @@
     return btn;
   }
 
-  /* =========================================================
-     Sessão + modal
-     ========================================================= */
   async function abrir() {
     if (!state.orgId) { toast('Empresa não identificada.', 'error'); return; }
     if (state.session) { abrirModal(); return; }
@@ -378,23 +254,15 @@
     modal.className = 'dh-scan-backdrop';
     modal.hidden = true;
     modal.innerHTML = `
-      <div class="dh-scan-card" role="dialog" aria-modal="true"
-           aria-labelledby="dh-scan-title">
+      <div class="dh-scan-card" role="dialog" aria-modal="true">
         <header class="dh-scan-header">
-          <h2 id="dh-scan-title">Modo Scanner</h2>
-          <button type="button" class="dh-scan-close" data-close
-                  aria-label="Fechar">×</button>
+          <h2>Modo Scanner</h2>
+          <button type="button" class="dh-scan-close" data-close aria-label="Fechar">×</button>
         </header>
         <div class="dh-scan-body">
-          <p class="dh-scan-center">
-            Abra a câmera do <strong>celular</strong> e aponte pro QR abaixo.
-          </p>
+          <p class="dh-scan-center">Abra a câmera do <strong>celular</strong> e aponte pro QR abaixo.</p>
           <div class="dh-scan-qr" id="dh-scan-qr-box"></div>
-          <p class="dh-scan-token">
-            Se preferir, digite no celular:
-            <br>
-            <strong id="dh-scan-token">—</strong>
-          </p>
+          <p class="dh-scan-token">Se preferir, digite no celular:<br><strong id="dh-scan-token">—</strong></p>
           <div class="dh-scan-listhead">
             <h3>Itens escaneados (<span id="dh-scan-count">0</span>)</h3>
             <span class="dh-scan-total" id="dh-scan-total">R$ 0,00</span>
@@ -404,10 +272,8 @@
           </div>
         </div>
         <footer class="dh-scan-footer">
-          <button type="button" class="dh-scan-btn dh-scan-btn--ghost"
-                  data-close id="dh-scan-close-btn">Fechar</button>
-          <button type="button" class="dh-scan-btn dh-scan-btn--primary"
-                  id="dh-scan-flush-btn">Enviar para o carrinho</button>
+          <button type="button" class="dh-scan-btn dh-scan-btn--ghost" data-close id="dh-scan-close-btn">Fechar</button>
+          <button type="button" class="dh-scan-btn dh-scan-btn--primary" id="dh-scan-flush-btn">Enviar para o carrinho</button>
         </footer>
       </div>
     `;
@@ -415,10 +281,7 @@
     modal.querySelectorAll('[data-close]').forEach((el) => {
       el.addEventListener('click', encerrarSessao);
     });
-
-    modal.querySelector('#dh-scan-flush-btn')
-         .addEventListener('click', flushNoCarrinho);
-
+    modal.querySelector('#dh-scan-flush-btn').addEventListener('click', flushNoCarrinho);
     modal.addEventListener('click', (e) => { if (e.target === modal) encerrarSessao(); });
 
     document.addEventListener('keydown', (e) => {
@@ -435,9 +298,7 @@
       try { window.db.removeChannel(state.channel); } catch (e) {}
       state.channel = null;
     }
-
     syncFromDB();
-
     state.channel = window.db
       .channel('scanner:' + state.session.id)
       .on('postgres_changes', {
@@ -566,7 +427,6 @@
       btn.type = 'button';
       btn.className = 'dh-scan-item-remove';
       btn.title = 'Remover 1 unidade';
-      btn.setAttribute('aria-label', 'Remover 1 unidade de ' + (it.product_name || ''));
       btn.innerHTML =
         '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" ' +
         'stroke="currentColor" stroke-width="2" stroke-linecap="round" ' +
@@ -584,9 +444,6 @@
     });
   }
 
-  /* =========================================================
-     Modal de remoção
-     ========================================================= */
   function abrirRemocao(item) {
     if (!state.removeModal) state.removeModal = buildRemoveModal();
     if (!state.removeModal.parentNode) document.body.appendChild(state.removeModal);
@@ -628,33 +485,24 @@
             <label for="dh-rm-qty">Quantidade a remover</label>
             <input type="number" id="dh-rm-qty" min="1" step="1" value="1" required>
           </div>
-
           <div class="dh-rm-field">
             <label for="dh-rm-reason">Motivo da remoção</label>
-            <textarea id="dh-rm-reason"
-                      placeholder="Ex: bipou duas vezes sem querer, cliente desistiu do item…"
-                      required></textarea>
+            <textarea id="dh-rm-reason" placeholder="Ex: bipou duas vezes sem querer, cliente desistiu do item…" required></textarea>
           </div>
-
           <div class="dh-rm-field">
             <label for="dh-rm-email">E-mail do gestor</label>
-            <input type="email" id="dh-rm-email"
-                   placeholder="gestor@empresa.com" autocomplete="off" required>
+            <input type="email" id="dh-rm-email" placeholder="gestor@empresa.com" autocomplete="off" required>
           </div>
-
           <div class="dh-rm-field">
             <label for="dh-rm-pass">Senha do gestor</label>
-            <input type="password" id="dh-rm-pass"
-                   placeholder="••••••••" autocomplete="off" required>
+            <input type="password" id="dh-rm-pass" placeholder="••••••••" autocomplete="off" required>
           </div>
 
           <div class="dh-rm-feedback" id="dh-rm-feedback"></div>
         </form>
         <footer class="dh-rm-footer">
-          <button type="button" class="dh-scan-btn dh-scan-btn--ghost"
-                  data-rm-close>Cancelar</button>
-          <button type="button" class="dh-scan-btn dh-scan-btn--danger"
-                  id="dh-rm-confirm">Remover</button>
+          <button type="button" class="dh-scan-btn dh-scan-btn--ghost" data-rm-close>Cancelar</button>
+          <button type="button" class="dh-scan-btn dh-scan-btn--danger" id="dh-rm-confirm">Remover</button>
         </footer>
       </div>
     `;
@@ -662,13 +510,8 @@
     modal.querySelectorAll('[data-rm-close]').forEach((el) => {
       el.addEventListener('click', fecharRemoveModal);
     });
-
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) fecharRemoveModal();
-    });
-
-    modal.querySelector('#dh-rm-confirm')
-         .addEventListener('click', confirmarRemocao);
+    modal.addEventListener('click', (e) => { if (e.target === modal) fecharRemoveModal(); });
+    modal.querySelector('#dh-rm-confirm').addEventListener('click', confirmarRemocao);
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && !modal.hidden) fecharRemoveModal();
@@ -710,18 +553,15 @@
     }
     if (reason.length < 3) {
       fbEl.textContent = 'Descreva o motivo da remoção (mínimo 3 caracteres).';
-      reasonEl.focus();
-      return;
+      reasonEl.focus(); return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       fbEl.textContent = 'Informe um e-mail de gestor válido.';
-      emailEl.focus();
-      return;
+      emailEl.focus(); return;
     }
     if (!pass) {
       fbEl.textContent = 'Informe a senha do gestor.';
-      passEl.focus();
-      return;
+      passEl.focus(); return;
     }
 
     btnEl.disabled = true;
@@ -778,8 +618,7 @@
     let user = null;
     try {
       const { data, error } = await tempClient.auth.signInWithPassword({
-        email: email,
-        password: senha
+        email: email, password: senha
       });
       if (error || !data || !data.user) {
         throw new Error('E-mail ou senha do gestor inválidos.');
@@ -878,9 +717,7 @@
         .update({ status: 'closed' }).eq('id', state.session.id);
       await window.db.from('scan_items')
         .delete().eq('session_id', state.session.id);
-    } catch (e) {
-      console.warn('[scanner] close:', e);
-    }
+    } catch (e) { console.warn('[scanner] close:', e); }
 
     state.session = null;
     state.items = [];

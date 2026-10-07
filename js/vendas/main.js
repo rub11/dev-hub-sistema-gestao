@@ -181,3 +181,85 @@
 
   console.log('[scanner-hook] pronto');
 })();
+
+/* =========================================================
+   Scanner · ponte com o carrinho
+   ========================================================= */
+(function setupScannerHook() {
+  function getCart() { return (window.DH && window.DH.state && window.DH.state.cart) || null; }
+  function getUtils() { return (window.DH && window.DH.utils) || null; }
+
+  window.addEventListener('scanner:probe', (e) => { e.preventDefault(); });
+
+  window.addEventListener('scanner:item', (e) => {
+    const detail = e.detail || {};
+    const action = detail.action || 'add';
+    const p = detail.product || {};
+    const q = Math.max(1, Math.floor(Number(detail.quantity) || 1));
+
+    const cart = getCart();
+    const utils = getUtils();
+    if (!cart) { console.warn('[scanner-hook] DH.state.cart indisponível'); return; }
+
+    const productId = p.product_id || p.id;
+    if (!productId) { console.warn('[scanner-hook] item sem product_id'); return; }
+
+    const unitPrice = Number(p.unit_price != null ? p.unit_price : p.price) || 0;
+    const stockAvail = Number(p.stock_available) || 0;
+    const round2 = utils && utils.round2 ? utils.round2 : (n) => Math.round(n * 100) / 100;
+
+    const idx = cart.findIndex((it) => it.product_id === productId);
+
+    if (action === 'force') {
+      if (idx !== -1) {
+        cart[idx].quantity = q;
+        cart[idx].subtotal = round2(cart[idx].quantity * cart[idx].unit_price);
+        if (cart[idx].stock_available == null) cart[idx].stock_available = stockAvail;
+      } else {
+        cart.push({
+          product_id: productId,
+          product_name: p.product_name || p.name || '—',
+          unit_price: unitPrice,
+          quantity: q,
+          subtotal: round2(unitPrice * q),
+          stock_available: stockAvail
+        });
+      }
+    } else if (action === 'remove') {
+      if (idx === -1) return;
+      const item = cart[idx];
+      item.quantity -= q;
+      if (item.quantity <= 0) {
+        cart.splice(idx, 1);
+      } else {
+        item.subtotal = round2(item.quantity * item.unit_price);
+      }
+    } else {
+      if (idx !== -1) {
+        cart[idx].quantity += q;
+        cart[idx].subtotal = round2(cart[idx].quantity * cart[idx].unit_price);
+        if (cart[idx].stock_available == null) cart[idx].stock_available = stockAvail;
+      } else {
+        cart.push({
+          product_id: productId,
+          product_name: p.product_name || p.name || '—',
+          unit_price: unitPrice,
+          quantity: q,
+          subtotal: round2(unitPrice * q),
+          stock_available: stockAvail
+        });
+      }
+    }
+
+    if (window.DH && window.DH.cart) {
+      try {
+        window.DH.cart.render();
+        window.DH.cart.recalc();
+      } catch (err) {
+        console.error('[scanner-hook] render/recalc:', err);
+      }
+    }
+  });
+
+  console.log('[scanner-hook] pronto');
+})();

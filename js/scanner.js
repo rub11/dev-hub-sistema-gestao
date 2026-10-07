@@ -1,5 +1,6 @@
 /* =========================================================
-   DEV HUB · Scanner móvel
+   DEV HUB · Scanner móvel (v3)
+   - Upsert: bipar o mesmo produto SOMA a quantidade
    ========================================================= */
 
 (function () {
@@ -92,36 +93,29 @@
 
   function assinarEncerramento() {
     if (!session) return;
-
     channel = window.db
       .channel('scanner-mob:' + session.id)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'scan_sessions',
-          filter: 'id=eq.' + session.id
-        },
-        (payload) => {
-          const novo = payload.new;
-          if (novo && (novo.status === 'closed' || novo.status === 'expired')) {
-            encerrarTela();
-          }
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'scan_sessions',
+        filter: 'id=eq.' + session.id
+      }, (payload) => {
+        const novo = payload.new;
+        if (novo && (novo.status === 'closed' || novo.status === 'expired')) {
+          encerrarTela();
         }
-      )
+      })
       .subscribe();
   }
 
   function encerrarTela() {
     if (encerrada) return;
     encerrada = true;
-
     if (html5Qr) {
       try { html5Qr.stop().catch(() => {}); } catch (e) {}
       html5Qr = null;
     }
-
     const tela = document.getElementById('tela-encerrada');
     if (tela) tela.classList.remove('hidden');
   }
@@ -140,12 +134,9 @@
 
     const config = {
       fps: 10,
-      qrbox: function (w, h) {
+      qrbox: (w, h) => {
         const min = Math.min(w, h);
-        return {
-          width:  Math.floor(min * 0.85),
-          height: Math.floor(min * 0.42)
-        };
+        return { width: Math.floor(min * 0.85), height: Math.floor(min * 0.42) };
       },
       aspectRatio: 1.0,
       experimentalFeatures: { useBarCodeDetectorIfSupported: true },
@@ -168,7 +159,7 @@
       () => {}
     ).catch((err) => {
       console.error('[scanner] start:', err);
-      const msg = String(err && err.message || err || '');
+      const msg = String((err && err.message) || err || '');
       if (msg.toLowerCase().includes('permission')) {
         setLast('Permissão de câmera negada.', 'err');
       } else if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
@@ -201,7 +192,6 @@
   async function adicionarItem(barcode) {
     const codigo = String(barcode || '').trim();
     if (!codigo) return;
-
     if (!session) { setLast('Sem sessão pareada.', 'err'); return; }
 
     setLast('Buscando "' + codigo + '"…');
@@ -210,7 +200,7 @@
       .rpc('find_product_by_barcode', { p_barcode: codigo });
 
     if (prodErr) {
-      console.error('[scanner] rpc:', prodErr);
+      console.error('[scanner] rpc find:', prodErr);
       setLast('Erro ao buscar produto.', 'err');
       vibrar(180);
       return;
@@ -224,36 +214,40 @@
       return;
     }
 
-    const s = await window.Auth.requireSession().catch(() => null);
-    const userId = s && s.user && s.user.id;
+    const { data: itemId, error: upErr } = await window.db
+      .rpc('scan_upsert_item', {
+        p_session_id:      session.id,
+        p_product_id:      product.id,
+        p_barcode:         codigo,
+        p_product_name:    product.name,
+        p_unit_price:      Number(product.price) || 0,
+        p_stock_available: Number(product.stock) || 0
+      });
 
-    /* ⬇️ ÚNICA MUDANÇA: manda também stock_available */
-    const { data: inserted, error: insErr } = await window.db
-      .from('scan_items')
-      .insert({
-        session_id:      session.id,
-        product_id:      product.id,
-        barcode:         codigo,
-        product_name:    product.name,
-        unit_price:      Number(product.price) || 0,
-        quantity:        1,
-        stock_available: Number(product.stock) || 0,
-        scanned_by:      userId
-      })
-      .select('id')
-      .single();
-
-    if (insErr) {
-      console.error('[scanner] insert:', insErr);
-      setLast('Erro ao inserir item.', 'err');
+    if (upErr) {
+      console.error('[scanner] upsert:', upErr);
+      setLast('Erro ao inserir: ' + (upErr.message || 'erro'), 'err');
       vibrar(180);
       return;
     }
 
-    ultimoItemId = inserted.id;
+    ultimoItemId = itemId;
 
-    setLast('✅ ' + product.name + ' · R$ ' +
-      (Number(product.price) || 0).toFixed(2).replace('.', ','), 'ok');
+    let qtyAtual = 1;
+    try {
+      const { data: row } = await window.db
+        .from('scan_items')
+        .select('quantity')
+        .eq('id', itemId)
+        .single();
+      if (row && row.quantity) qtyAtual = Number(row.quantity);
+    } catch (e) {}
+
+    setLast(
+      '✅ ' + product.name + ' · ' + qtyAtual + '× · R$ ' +
+      (Number(product.price) || 0).toFixed(2).replace('.', ','),
+      'ok'
+    );
     vibrar(60);
   }
 
@@ -278,15 +272,22 @@
 
     rmLast.addEventListener('click', async () => {
       if (!ultimoItemId) { setLast('Nada pra remover.', 'err'); return; }
-      const { error } = await window.db
-        .from('scan_items').delete().eq('id', ultimoItemId);
-      if (error) { setLast('Erro ao remover.', 'err'); return; }
-      ultimoItemId = null;
-      setLast('Último item removido.', 'ok');
+
+      const { data: novaQty, error } = await window.db
+        .rpc('scan_decrement_item', { p_item_id: ultimoItemId });
+
+      if (error) {
+        setLast('Erro ao remover: ' + (error.message || ''), 'err');
+        return;
+      }
+
+      if (Number(novaQty) === 0) ultimoItemId = null;
+      setLast('Item decrementado (' + novaQty + '×).', 'ok');
     });
 
     encerrar.addEventListener('click', async () => {
       if (!session) return;
+
       const ok = window.UI && window.UI.confirm
         ? await window.UI.confirm('Encerrar a sessão de scanner?', {
             title: 'Encerrar', danger: true, confirmLabel: 'Encerrar'
