@@ -7,6 +7,9 @@
 
   function els() { return formEls; }
 
+  /* =========================================================
+     SETUP
+     ========================================================= */
   function setupFormView() {
     const back = document.getElementById('back-to-list');
     const cancel = document.getElementById('cancel-sale');
@@ -37,12 +40,14 @@
     if (formEls.discount) {
       formEls.discount.addEventListener('input', () => {
         state.lastDiscountEdit = 'brl';
+        state.appliedMethodDiscount = null;  // desconto manual cancela o do método
         DH.cart.recalc();
       });
     }
     if (formEls.discountPct) {
       formEls.discountPct.addEventListener('input', () => {
         state.lastDiscountEdit = 'pct';
+        state.appliedMethodDiscount = null;
         DH.cart.recalc();
       });
     }
@@ -59,7 +64,13 @@
       });
     }
 
-    /* Botão "+ Novo parceiro" — fallback caso o customer-modal não esteja ligado */
+    if (formEls.payment) {
+      formEls.payment.addEventListener('change', () => {
+        applyMethodDiscount();
+        refreshSubmitEnabled();
+      });
+    }
+
     const newCustomerBtn = document.getElementById('new-customer-btn');
     if (newCustomerBtn) {
       newCustomerBtn.addEventListener('click', () => {
@@ -71,7 +82,109 @@
       });
     }
 
+    if (DH.installments) DH.installments.setup();
+
     formEls.form.addEventListener('submit', onSubmit);
+
+    refreshSubmitEnabled();
+  }
+
+  /* =========================================================
+     FORMAS DE PAGAMENTO
+     ========================================================= */
+  async function loadPaymentMethods() {
+    try {
+      const { data, error } = await window.db
+        .from('payment_methods')
+        .select('*')
+        .eq('active', true)
+        .order('sort_order', { ascending: true });
+      if (error) throw error;
+      state.paymentMethods = data || [];
+    } catch (e) {
+      console.warn('[DEV HUB] loadPaymentMethods:', e);
+      state.paymentMethods = [
+        { code:'cash', label:'Dinheiro', category:'cash', active:true, discount_type:'none' },
+        { code:'pix',  label:'Pix',      category:'pix',  active:true, discount_type:'none' },
+        { code:'debit_card', label:'Cartão de Débito',  category:'debit',  active:true, discount_type:'none' },
+        { code:'credit_card',label:'Cartão de Crédito', category:'credit', active:true, discount_type:'none' },
+        { code:'check',label:'Cheque',   category:'check',active:true, discount_type:'none' },
+        { code:'meal_voucher',label:'Vale Alimentação (VA)',category:'voucher',active:true,discount_type:'none' },
+        { code:'food_voucher',label:'Vale Refeição (VR)',   category:'voucher',active:true,discount_type:'none' },
+        { code:'boleto',label:'Boleto',  category:'other',active:true, discount_type:'none' },
+        { code:'transfer',label:'Transferência',category:'transfer',active:true,discount_type:'none' },
+        { code:'other',label:'Outro',    category:'other',active:true, discount_type:'none' }
+      ];
+    }
+    populatePaymentSelect();
+  }
+
+  function populatePaymentSelect() {
+    const select = document.getElementById('sale-payment');
+    if (!select) return;
+    const cur = select.value;
+    const methods = (state.paymentMethods || []).filter(m => m.active);
+
+    select.innerHTML = '<option value="">Selecione…</option>' + methods.map(m =>
+      '<option value="' + m.code + '">' + m.label + '</option>'
+    ).join('');
+
+    if (cur) select.value = cur;
+  }
+
+  function applyMethodDiscount() {
+    if (!formEls.payment) return;
+    const code = formEls.payment.value;
+    const method = (state.paymentMethods || []).find(m => m.code === code);
+
+    if (!method || method.discount_type === 'none' || !method.discount_amount) {
+      if (state.appliedMethodDiscount) {
+        state.appliedMethodDiscount = null;
+      }
+      return;
+    }
+
+    const subtotal = state.cart.reduce((s, it) => s + (Number(it.subtotal) || 0), 0);
+    if (subtotal <= 0) return;
+
+    if (method.discount_type === 'percent') {
+      const pct = Number(method.discount_amount) || 0;
+      if (formEls.discountPct) formEls.discountPct.value = String(pct);
+      state.lastDiscountEdit = 'pct';
+    } else {
+      const val = Number(method.discount_amount) || 0;
+      if (formEls.discount) formEls.discount.value = String(val);
+      state.lastDiscountEdit = 'brl';
+    }
+
+    state.appliedMethodDiscount = {
+      type: method.discount_type,
+      value: method.discount_amount
+    };
+
+    DH.cart.recalc();
+
+    DH.toast(
+      'Desconto de ' + (method.discount_type === 'percent'
+        ? method.discount_amount + '%'
+        : DH.utils.formatMoney(method.discount_amount)) +
+      ' aplicado por ' + method.label + '.',
+      'info'
+    );
+  }
+
+  /* =========================================================
+     Habilita/desabilita botão Finalizar
+     ========================================================= */
+  function refreshSubmitEnabled() {
+    if (!formEls.submitBtn) return;
+    if (state.submitting) return;
+
+    const hasPayment = !!(formEls.payment && formEls.payment.value);
+    const hasItems   = Array.isArray(state.cart) && state.cart.length > 0;
+
+    formEls.submitBtn.disabled = !(hasPayment && hasItems);
+    formEls.submitBtn.classList.toggle('is-disabled', !(hasPayment && hasItems));
   }
 
   function showView(name) {
@@ -98,18 +211,20 @@
     state.correctingSale = null;
     state.convertingFromQuote = null;
     state.noStock = false;
+    state.appliedMethodDiscount = null;
 
     if (formEls.noStock) formEls.noStock.checked = false;
 
     setFormMode('create');
     showView('form');
 
-    const validField = document.getElementById('quote-valid-field');
-    if (validField) validField.hidden = true;
-    const noStockField = document.getElementById('no-stock-field');
-    if (noStockField) noStockField.hidden = false;
+    document.getElementById('quote-valid-field').hidden = true;
+    document.getElementById('no-stock-field').hidden = false;
+
+    if (DH.installments) DH.installments.reset();
 
     if (!state.formDataLoaded) await loadFormData();
+    refreshSubmitEnabled();
   }
 
   /* =========================================================
@@ -126,14 +241,14 @@
     state.correctingSale = null;
     state.convertingFromQuote = null;
     state.noStock = false;
+    state.appliedMethodDiscount = null;
     if (formEls.noStock) formEls.noStock.checked = false;
 
     showView('form');
-    const validField = document.getElementById('quote-valid-field');
-    if (validField) validField.hidden = true;
-    const noStockField = document.getElementById('no-stock-field');
-    if (noStockField) noStockField.hidden = false;
+    document.getElementById('quote-valid-field').hidden = true;
+    document.getElementById('no-stock-field').hidden = false;
 
+    if (DH.installments) DH.installments.reset();
     if (!state.formDataLoaded) await loadFormData();
 
     const items = await fetchSaleItems(sale.id);
@@ -164,6 +279,7 @@
     setFormMode('edit', sale);
     DH.cart.render();
     DH.cart.recalc();
+    refreshSubmitEnabled();
   }
 
   /* =========================================================
@@ -184,14 +300,14 @@
     state.editingSale = null;
     state.convertingFromQuote = null;
     state.noStock = false;
+    state.appliedMethodDiscount = null;
     if (formEls.noStock) formEls.noStock.checked = false;
 
     showView('form');
-    const validField = document.getElementById('quote-valid-field');
-    if (validField) validField.hidden = true;
-    const noStockField = document.getElementById('no-stock-field');
-    if (noStockField) noStockField.hidden = false;
+    document.getElementById('quote-valid-field').hidden = true;
+    document.getElementById('no-stock-field').hidden = false;
 
+    if (DH.installments) DH.installments.reset();
     if (!state.formDataLoaded) await loadFormData();
 
     const items = await fetchSaleItems(sale.id);
@@ -222,6 +338,7 @@
     setFormMode('correct', sale);
     DH.cart.render();
     DH.cart.recalc();
+    refreshSubmitEnabled();
   }
 
   /* =========================================================
@@ -229,7 +346,6 @@
      ========================================================= */
   function setFormMode(mode, sale) {
     state.formMode = mode;
-
     const title = document.querySelector('#view-form .page-head__title');
     const sub = document.querySelector('#view-form .page-head__sub');
     const submitLabel = formEls.submitBtn ? formEls.submitBtn.querySelector('.btn__label') : null;
@@ -273,17 +389,18 @@
     state.convertingFromQuote = null;
     state.noStock = false;
     state.formMode = null;
+    state.appliedMethodDiscount = null;
 
-    const validField = document.getElementById('quote-valid-field');
-    if (validField) validField.hidden = true;
-    const noStockField = document.getElementById('no-stock-field');
-    if (noStockField) noStockField.hidden = false;
+    if (DH.installments) DH.installments.reset();
+
+    document.getElementById('quote-valid-field').hidden = true;
+    document.getElementById('no-stock-field').hidden = false;
 
     showView('list');
   }
 
   /* =========================================================
-     CARREGAR DADOS — colunas corretas da tabela `customers`
+     CARREGAR DADOS
      ========================================================= */
   async function loadFormData() {
     state.formDataLoaded = false;
@@ -296,18 +413,16 @@
         .eq('active', true).order('name', { ascending: true })
     ]);
 
-    if (customersRes.error) {
-      console.error('[DEV HUB] Falha ao carregar clientes:', customersRes.error);
-      DH.toast('Não foi possível carregar os clientes.', 'error');
-    }
-    if (productsRes.error) {
-      console.error('[DEV HUB] Falha ao carregar produtos:', productsRes.error);
-      DH.toast('Não foi possível carregar os produtos.', 'error');
-    }
+    if (customersRes.error) console.error('[DEV HUB] loadCustomers:', customersRes.error);
+    if (productsRes.error) console.error('[DEV HUB] loadProducts:', productsRes.error);
 
     state.customers = customersRes.data || [];
     state.products = productsRes.data || [];
     populateCustomerSelect();
+
+    /* Carrega métodos de pagamento */
+    await loadPaymentMethods();
+
     state.formDataLoaded = true;
   }
 
@@ -328,15 +443,12 @@
   function addCustomerToSelect(customer) {
     if (!customer || !customer.id) return;
     if (!Array.isArray(state.customers)) state.customers = [];
-
     const idx = state.customers.findIndex(c => c.id === customer.id);
     if (idx >= 0) state.customers[idx] = customer;
     else state.customers.push(customer);
-
     state.customers.sort((a, b) =>
       (a.name || '').localeCompare((b.name || ''), 'pt-BR')
     );
-
     populateCustomerSelect();
   }
 
@@ -349,6 +461,18 @@
     DH.cart.clearFeedback();
 
     const mode = state.formMode;
+
+    if (!formEls.payment.value) {
+      formEls.payment.classList.add('is-invalid');
+      const warn = document.getElementById('payment-warn');
+      if (warn) warn.hidden = false;
+      DH.cart.showFeedback('Selecione a forma de pagamento.');
+      formEls.payment.focus();
+      return;
+    }
+    formEls.payment.classList.remove('is-invalid');
+    const warnEl = document.getElementById('payment-warn');
+    if (warnEl) warnEl.hidden = true;
 
     if (mode === 'correct') {
       if (!state.perms.correct) { DH.cart.showFeedback('Apenas supervisores podem corrigir vendas.'); return; }
@@ -379,14 +503,10 @@
         if (mode === 'from_quote') {
           state.noStock = true;
           if (formEls.noStock) formEls.noStock.checked = true;
-          DH.toast(
-            'Itens sem estoque detectados — a venda seguirá para aprovação do gestor.',
-            'info'
-          );
+          DH.toast('Itens sem estoque detectados — a venda seguirá para aprovação do gestor.', 'info');
         } else {
           DH.cart.showFeedback(
-            'Há itens sem estoque no carrinho. Marque "Vender sem estoque" ' +
-            'para que a venda vá para aprovação do gestor.'
+            'Há itens sem estoque no carrinho. Marque "Vender sem estoque" para que a venda vá para aprovação do gestor.'
           );
           return;
         }
@@ -407,6 +527,12 @@
     if (!Number.isFinite(depositAmount) || depositAmount < 0) depositAmount = 0;
     if (depositAmount > total) depositAmount = total;
 
+    const installment = DH.installments ? DH.installments.getSelection() : { count: null, value: null };
+
+    /* Método exige aprovação? */
+    const method = (state.paymentMethods || []).find(m => m.code === formEls.payment.value);
+    const methodRequiresApproval = !!(method && method.requires_approval);
+
     const payload = {
       customer_id: formEls.customer.value || null,
       subtotal,
@@ -416,6 +542,9 @@
       payment_method: formEls.payment.value || '',
       notes: formEls.notes.value.trim() || '',
       allow_no_stock: !!state.noStock,
+      method_requires_approval: methodRequiresApproval,
+      installment_count: installment.count,
+      installment_value: installment.value,
       items: state.cart.map(item => ({
         product_id: item.product_id,
         product_name: item.product_name,
@@ -425,17 +554,12 @@
       }))
     };
 
-    if (mode === 'quote') {
-      await submitQuote(payload);
-      return;
-    }
+    if (mode === 'quote') { await submitQuote(payload); return; }
 
     if (mode === 'correct') {
-      const saleLabel = state.correctingSale
-        ? utils.formatSaleNumber(state.correctingSale) : '#—';
+      const saleLabel = state.correctingSale ? utils.formatSaleNumber(state.correctingSale) : '#—';
       DH.modalPassword.request(
-        'Para corrigir a venda ' + saleLabel + ', confirme sua senha. ' +
-        'A venda original será marcada como "Corrigida" e uma nova venda será criada.',
+        'Para corrigir a venda ' + saleLabel + ', confirme sua senha.',
         async pwd => { await submitCorrection(payload, pwd); }
       );
       return;
@@ -444,8 +568,7 @@
     if (mode === 'edit') {
       const saleLabel = state.editingSale ? utils.formatSaleNumber(state.editingSale) : '#—';
       DH.modalPassword.request(
-        'Para salvar as alterações da venda ' + saleLabel +
-        ', confirme sua senha. A alteração fica registrada no histórico.',
+        'Para salvar as alterações da venda ' + saleLabel + ', confirme sua senha.',
         async pwd => { await submitEdit(payload, pwd); }
       );
       return;
@@ -469,7 +592,10 @@
         p_notes: payload.notes,
         p_items: payload.items,
         p_allow_no_stock: payload.allow_no_stock,
-        p_deposit_amount: payload.deposit_amount
+        p_deposit_amount: payload.deposit_amount,
+        p_installment_count: payload.installment_count,
+        p_installment_value: payload.installment_value,
+        p_method_requires_appr: payload.method_requires_approval
       });
       if (error) throw error;
 
@@ -486,39 +612,31 @@
       state.editingSaleId = null;
       state.editingSale = null;
       state.formMode = null;
+      state.appliedMethodDiscount = null;
       showView('list');
       state.formDataLoaded = false;
 
-      const validField = document.getElementById('quote-valid-field');
-      if (validField) validField.hidden = true;
-      const noStockField = document.getElementById('no-stock-field');
-      if (noStockField) noStockField.hidden = false;
+      if (DH.installments) DH.installments.reset();
+      document.getElementById('quote-valid-field').hidden = true;
+      document.getElementById('no-stock-field').hidden = false;
 
       await DH.list.loadSales();
-      if (DH.quotes) {
-        await DH.quotes.loadQuotes();
-        DH.quotes.switchTab('sales');
-      }
+      if (DH.quotes) { await DH.quotes.loadQuotes(); DH.quotes.switchTab('sales'); }
       if (state.perms.approve && DH.modalApprovals) {
         try { await DH.modalApprovals.refreshCount(); } catch (e) {}
       }
 
       if (requiresApproval) {
-        DH.toast(
-          'Venda #' + utils.padNumber(saleNumber) +
-          ' registrada e aguardando aprovação do gestor.',
-          'info'
-        );
+        DH.toast('Venda #' + utils.padNumber(saleNumber) + ' registrada e aguardando aprovação.', 'info');
       } else {
-        DH.toast(saleNumber
-          ? 'Venda #' + utils.padNumber(saleNumber) + ' registrada.'
-          : 'Venda registrada com sucesso.', 'success');
+        DH.toast(saleNumber ? 'Venda #' + utils.padNumber(saleNumber) + ' registrada.' : 'Venda registrada.', 'success');
       }
     } catch (error) {
-      console.error('[DEV HUB] Falha ao finalizar venda:', error);
+      console.error('[DEV HUB] submitCreate:', error);
       DH.cart.showFeedback(DH.mapSaleError(error));
     } finally {
       setSubmitting(false);
+      refreshSubmitEnabled();
     }
   }
 
@@ -542,15 +660,18 @@
       state.editingSaleId = null;
       state.editingSale = null;
       state.formMode = null;
+      state.appliedMethodDiscount = null;
       showView('list');
       state.formDataLoaded = false;
+      if (DH.installments) DH.installments.reset();
       await DH.list.loadSales();
       DH.toast('Venda atualizada com sucesso.', 'success');
     } catch (error) {
-      console.error('[DEV HUB] Falha ao atualizar venda:', error);
+      console.error('[DEV HUB] submitEdit:', error);
       DH.cart.showFeedback(DH.mapSaleError(error));
     } finally {
       setSubmitting(false);
+      refreshSubmitEnabled();
     }
   }
 
@@ -579,29 +700,26 @@
       state.correctingSaleId = null;
       state.correctingSale = null;
       state.formMode = null;
+      state.appliedMethodDiscount = null;
       showView('list');
       state.formDataLoaded = false;
+      if (DH.installments) DH.installments.reset();
       await DH.list.loadSales();
       if (state.perms.approve && DH.modalApprovals) {
         try { await DH.modalApprovals.refreshCount(); } catch (e) {}
       }
 
       if (requiresApproval) {
-        DH.toast(
-          'Venda corrigida. Nova venda #' + utils.padNumber(newNumber) +
-          ' aguardando aprovação do gestor.',
-          'info'
-        );
+        DH.toast('Venda corrigida. Nova venda #' + utils.padNumber(newNumber) + ' aguardando aprovação.', 'info');
       } else {
-        DH.toast(newNumber
-          ? 'Venda corrigida. Nova venda #' + utils.padNumber(newNumber) + ' criada.'
-          : 'Venda corrigida com sucesso.', 'success');
+        DH.toast(newNumber ? 'Venda corrigida. Nova venda #' + utils.padNumber(newNumber) + ' criada.' : 'Venda corrigida.', 'success');
       }
     } catch (error) {
-      console.error('[DEV HUB] Falha ao corrigir venda:', error);
+      console.error('[DEV HUB] submitCorrection:', error);
       DH.cart.showFeedback(DH.mapSaleError(error));
     } finally {
       setSubmitting(false);
+      refreshSubmitEnabled();
     }
   }
 
@@ -613,25 +731,24 @@
 
       DH.cart.reset();
       state.formMode = null;
+      state.appliedMethodDiscount = null;
       showView('list');
       state.formDataLoaded = false;
 
-      const validField = document.getElementById('quote-valid-field');
-      if (validField) validField.hidden = true;
-      const noStockField = document.getElementById('no-stock-field');
-      if (noStockField) noStockField.hidden = false;
+      if (DH.installments) DH.installments.reset();
+      document.getElementById('quote-valid-field').hidden = true;
+      document.getElementById('no-stock-field').hidden = false;
 
       await DH.quotes.loadQuotes();
       DH.quotes.switchTab('quotes');
 
-      DH.toast(num
-        ? 'Orçamento ORC-' + utils.padNumber(num) + ' salvo.'
-        : 'Orçamento salvo.', 'success');
+      DH.toast(num ? 'Orçamento ORC-' + utils.padNumber(num) + ' salvo.' : 'Orçamento salvo.', 'success');
     } catch (e) {
       console.error('[DEV HUB] submitQuote:', e);
       DH.cart.showFeedback(DH.mapSaleError(e));
     } finally {
       setSubmitting(false);
+      refreshSubmitEnabled();
     }
   }
 
@@ -667,10 +784,7 @@
     const { data, error } = await window.db
       .from('sale_items').select('*').eq('sale_id', saleId)
       .order('created_at', { ascending: true });
-    if (error) {
-      console.error('[DEV HUB] Erro ao carregar itens:', error);
-      return [];
-    }
+    if (error) return [];
     return data || [];
   }
 
@@ -682,6 +796,10 @@
     fetchSaleItems,
     loadFormData,
     populateCustomerSelect,
-    addCustomerToSelect
+    addCustomerToSelect,
+    refreshSubmitEnabled,
+    loadPaymentMethods,
+    populatePaymentSelect,
+    applyMethodDiscount
   };
 })();

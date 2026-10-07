@@ -16,6 +16,9 @@
       caps `invoices.*` não eram configuráveis pela UI.
    5. Toggle de senha reseta ao abrir o modal do usuário.
    6. `resolveOrgId()` com fallback pro sessionStorage.
+   7. `deleteRoleType` usa `UI.confirm` (modal custom) em vez do
+      `window.confirm` nativo — com fallback seguro caso o
+      ui-confirm.js não esteja carregado.
    ========================================================= */
 
 (function () {
@@ -109,6 +112,25 @@
   let permsGeneration = 0;
 
   document.addEventListener('DOMContentLoaded', init);
+
+  /* =========================================================
+     Confirm helper (usa UI.confirm se existir, senão nativo)
+     ---------------------------------------------------------
+     CORREÇÃO #7: substitui window.confirm pelo modal custom,
+     com fallback seguro caso o ui-confirm.js não tenha sido
+     carregado (evita "UI is not defined" quebrar a página).
+     ========================================================= */
+  function confirmDialog(message, options) {
+    if (window.UI && typeof window.UI.confirm === 'function') {
+      return window.UI.confirm(message, options || {});
+    }
+    // Fallback: usa o confirm nativo do navegador.
+    try {
+      return Promise.resolve(window.confirm(message));
+    } catch (e) {
+      return Promise.resolve(false);
+    }
+  }
 
   /* =========================================================
      Init
@@ -1640,11 +1662,18 @@
       return;
     }
 
-    if (!window.confirm(
+    /* CORREÇÃO #7: modal custom em vez do window.confirm nativo. */
+    const ok = await confirmDialog(
       'Excluir o tipo "' + rt.label + '"?\n\n' +
       'Usuários já vinculados a ele continuarão existindo, mas o nome exibido ' +
-      'cairá para o papel base.'
-    )) return;
+      'cairá para o papel base.',
+      {
+        title: 'Excluir tipo de perfil',
+        danger: true,
+        confirmLabel: 'Excluir'
+      }
+    );
+    if (!ok) return;
 
     setRoleTypeBusy(true);
     try {

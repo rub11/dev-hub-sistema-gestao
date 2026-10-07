@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dados da empresa · DEV HUB</title>
+
+  <script src="js/theme.js"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/global.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/theme.css" />
+  <link rel="stylesheet" href="css/clientes.css" />
+  <link rel="stylesheet" href="css/configuracoes-empresa.css" />
+
+  <script>
+    (function () {
+      try {
+        if (!/[?&]blocked=1/.test(location.search)) {
+          document.documentElement.classList.add('layout-topnav');
+        }
+      } catch (e) {}
+    })();
+  </script>
+</head>
+
+<body class="layout-topnav" data-page="config-empresa">
+
+  <a class="skip-link" href="#main">Pular para o conteúdo principal</a>
+  <aside class="sidebar" id="sidebar" aria-label="Menu principal"></aside>
+  <div class="sidebar-overlay" id="sidebar-overlay" hidden></div>
+
+  <div class="app__body">
+    <header class="topbar">
+      <button type="button" class="icon-btn menu-toggle" id="menu-toggle"
+              aria-label="Abrir menu" aria-expanded="false" aria-controls="sidebar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+             stroke-linecap="round"><path d="M3.5 6.5h17M3.5 12h17M3.5 17.5h17"/></svg>
+      </button>
+      <span class="topbar__brand">DEV HUB</span>
+      <div class="topbar__actions"></div>
+    </header>
+
+    <main class="content" id="main">
+
+      <div class="page-head page-head--with-back">
+        <a class="btn btn--ghost btn--back" href="administracao.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+               stroke-linecap="round" stroke-linejoin="round"
+               style="width:16px;height:16px">
+            <path d="m15 18-6-6 6-6"/>
+          </svg>
+          <span>Administração</span>
+        </a>
+
+        <div>
+          <h1 class="page-head__title">Dados da empresa</h1>
+          <p class="page-head__sub">
+            Mantenha os dados cadastrais atualizados. Eles aparecem em documentos, notas e relatórios.
+          </p>
+        </div>
+      </div>
+
+      <div id="cmp-loading" class="state-block">
+        <span class="spinner"></span>
+        <p>Carregando dados da empresa…</p>
+      </div>
+
+      <div id="cmp-error" class="state-block" hidden>
+        <h3>Não foi possível carregar</h3>
+        <p id="cmp-error-msg">Tente novamente em instantes.</p>
+      </div>
+
+      <div id="cmp-app" hidden>
+
+        <section class="cmp-identity">
+          <div class="cmp-logo">
+            <img id="cmp-logo-img" alt="" />
+            <div class="cmp-logo__placeholder" id="cmp-logo-placeholder">🏢</div>
+          </div>
+          <div class="cmp-identity__body">
+            <h2 class="cmp-identity__name" id="cmp-display-name">Carregando…</h2>
+            <p class="cmp-identity__doc" id="cmp-display-doc">—</p>
+            <p class="cmp-identity__meta" id="cmp-display-meta"></p>
+          </div>
+        </section>
+
+        <form id="cmp-form" novalidate>
+
+          <section class="cfg-card">
+            <header class="cfg-card__head">
+              <h3 class="cfg-card__title">
+                <span class="cfg-card__title-icon">🪪</span>
+                Identificação
+              </h3>
+              <p class="cfg-card__desc">Razão social, nome fantasia, documento e logotipo.</p>
+            </header>
+            <div class="cfg-card__body">
+              <div class="field">
+                <label for="cmp-name">Razão social *</label>
+                <input type="text" id="cmp-name" required maxlength="150"
+                       placeholder="Ex.: Minha Empresa LTDA" autocomplete="organization" />
+              </div>
+
+              <div class="field-row">
+                <div class="field">
+                  <label for="cmp-trade-name">Nome fantasia</label>
+                  <input type="text" id="cmp-trade-name" maxlength="150"
+                         placeholder="Como sua empresa é conhecida" />
+                </div>
+                <div class="field">
+                  <label for="cmp-document">CNPJ / CPF</label>
+                  <input type="text" id="cmp-document" maxlength="20"
+                         placeholder="00.000.000/0000-00" autocomplete="off" />
+                </div>
+              </div>
+
+              <div class="field">
+                <label for="cmp-logo-url">URL do logotipo</label>
+                <input type="url" id="cmp-logo-url" maxlength="500"
+                       placeholder="https://exemplo.com/logo.png" />
+                <p class="field__hint">Cole o link de uma imagem (PNG ou JPG).</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="cfg-card">
+            <header class="cfg-card__head">
+              <h3 class="cfg-card__title">
+                <span class="cfg-card__title-icon">📞</span>
+                Contato
+              </h3>
+              <p class="cfg-card__desc">Como clientes e fornecedores falam com a empresa.</p>
+            </header>
+            <div class="cfg-card__body">
+              <div class="field-row">
+                <div class="field">
+                  <label for="cmp-email">E-mail</label>
+                  <input type="email" id="cmp-email" maxlength="150"
+                         placeholder="contato@empresa.com" autocomplete="email" />
+                </div>
+                <div class="field">
+                  <label for="cmp-phone">Telefone / WhatsApp</label>
+                  <input type="tel" id="cmp-phone" maxlength="20"
+                         placeholder="(00) 00000-0000" autocomplete="tel" />
+                </div>
+              </div>
+              <div class="field">
+                <label for="cmp-website">Site</label>
+                <input type="url" id="cmp-website" maxlength="200"
+                       placeholder="https://empresa.com" />
+              </div>
+            </div>
+          </section>
+
+          <section class="cfg-card">
+            <header class="cfg-card__head">
+              <h3 class="cfg-card__title">
+                <span class="cfg-card__title-icon">📍</span>
+                Endereço
+              </h3>
+              <p class="cfg-card__desc">Endereço fiscal e comercial da empresa.</p>
+            </header>
+            <div class="cfg-card__body">
+              <div class="field-row">
+                <div class="field">
+                  <label for="cmp-cep">CEP</label>
+                  <input type="text" id="cmp-cep" maxlength="9" placeholder="00000-000" />
+                </div>
+                <div class="field">
+                  <label for="cmp-address">Rua / Logradouro</label>
+                  <input type="text" id="cmp-address" maxlength="200" />
+                </div>
+              </div>
+
+              <div class="field-row field-row--3">
+                <div class="field">
+                  <label for="cmp-address-number">Número</label>
+                  <input type="text" id="cmp-address-number" maxlength="20" />
+                </div>
+                <div class="field">
+                  <label for="cmp-address-complement">Complemento</label>
+                  <input type="text" id="cmp-address-complement" maxlength="80" />
+                </div>
+                <div class="field">
+                  <label for="cmp-neighborhood">Bairro</label>
+                  <input type="text" id="cmp-neighborhood" maxlength="80" />
+                </div>
+              </div>
+
+              <div class="field-row field-row--3">
+                <div class="field" style="grid-column: span 2;">
+                  <label for="cmp-city">Cidade</label>
+                  <input type="text" id="cmp-city" maxlength="80" />
+                </div>
+                <div class="field">
+                  <label for="cmp-state">UF</label>
+                  <input type="text" id="cmp-state" maxlength="2"
+                         placeholder="SP" style="text-transform:uppercase" />
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="cfg-card">
+            <header class="cfg-card__head">
+              <h3 class="cfg-card__title">
+                <span class="cfg-card__title-icon">📊</span>
+                Dados fiscais
+              </h3>
+              <p class="cfg-card__desc">Informações tributárias e regime da empresa.</p>
+            </header>
+            <div class="cfg-card__body">
+              <div class="field-row">
+                <div class="field">
+                  <label for="cmp-tax-regime">Regime tributário</label>
+                  <select id="cmp-tax-regime">
+                    <option value="">Não informado</option>
+                    <option value="MEI">MEI</option>
+                    <option value="Simples Nacional">Simples Nacional</option>
+                    <option value="Lucro Presumido">Lucro Presumido</option>
+                    <option value="Lucro Real">Lucro Real</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="cmp-cnae">CNAE principal</label>
+                  <input type="text" id="cmp-cnae" maxlength="20" placeholder="00.00-0-00" />
+                </div>
+              </div>
+
+              <div class="field-row">
+                <div class="field">
+                  <label for="cmp-state-registration">Inscrição estadual</label>
+                  <input type="text" id="cmp-state-registration" maxlength="30" />
+                </div>
+                <div class="field">
+                  <label for="cmp-municipal-registration">Inscrição municipal</label>
+                  <input type="text" id="cmp-municipal-registration" maxlength="30" />
+                </div>
+              </div>
+
+              <div class="field">
+                <label for="cmp-segment">Segmento / Ramo de atuação</label>
+                <input type="text" id="cmp-segment" maxlength="100"
+                       placeholder="Ex.: Comércio varejista de alimentos" />
+              </div>
+            </div>
+          </section>
+
+          <section class="cfg-card">
+            <header class="cfg-card__head">
+              <h3 class="cfg-card__title">
+                <span class="cfg-card__title-icon">📝</span>
+                Observações internas
+              </h3>
+              <p class="cfg-card__desc">Notas que só a sua equipe vê.</p>
+            </header>
+            <div class="cfg-card__body">
+              <div class="field">
+                <textarea id="cmp-notes" rows="4" maxlength="1000"
+                          placeholder="Ex.: alvará vence em dezembro, contato do contador…"></textarea>
+              </div>
+
+              <p id="cmp-feedback" class="feedback feedback--error"
+                 role="alert" aria-live="polite" hidden></p>
+
+              <div class="cmp-actions">
+                <span class="cmp-actions__meta" id="cmp-saved-meta"></span>
+                <div class="cmp-actions__btns">
+                  <button type="button" class="btn btn--ghost" id="cmp-reset-btn">Reverter</button>
+                  <button type="submit" class="btn btn--primary" id="cmp-save-btn">
+                    <span class="btn__label">Salvar alterações</span>
+                    <span class="btn__spinner"></span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+        </form>
+      </div>
+
+    </main>
+  </div>
+
+  <div id="toast-region" class="toast-region"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/permissions.js"></script>
+
+  <script src="js/nav/config.js"></script>
+  <script src="js/nav/state.js"></script>
+  <script src="js/nav/roles.js"></script>
+  <script src="js/nav/styles.js"></script>
+  <script src="js/nav/permission-modal.js"></script>
+  <script src="js/nav/tabs.js"></script>
+  <script src="js/nav/module-menu.js"></script>
+  <script src="js/nav/notifications.js"></script>
+  <script src="js/nav/user-menu.js"></script>
+  <script src="js/nav/search.js"></script>
+  <script src="js/nav/org-switcher.js"></script>   <!-- ⬅️ NOVO -->
+  <script src="js/nav/org-switcher.js"></script>
+<script src="js/nav/bar.js"></script>
+  <script src="js/nav/main.js"></script>
+
+  <script src="js/configuracoes-empresa.js"></script>
+</body>
+
+</html>

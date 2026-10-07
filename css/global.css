@@ -490,3 +490,528 @@ body.layout-topnav .app__body {
 *::-webkit-scrollbar-track {
   background: transparent;
 }
+
+/* =========================================================
+   CHECKBOX GLOBAL — evita SVG gigante
+   ========================================================= */
+.checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+}
+
+.checkbox input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  width: 0;
+  height: 0;
+}
+
+.checkbox__box {
+  flex: 0 0 auto !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  width: 20px !important;
+  height: 20px !important;
+  min-width: 20px !important;
+  min-height: 20px !important;
+  max-width: 20px !important;
+  max-height: 20px !important;
+  border: 1.5px solid var(--border-strong);
+  border-radius: 6px;
+  background: var(--surface);
+  color: transparent;
+  overflow: hidden;
+  line-height: 0;
+  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+
+/* ⬇️ ESSA É A REGRA QUE FALTAVA */
+.checkbox__box svg,
+.checkbox__box svg * {
+  width: 12px !important;
+  height: 12px !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-width: 12px !important;
+  max-height: 12px !important;
+  display: block !important;
+  flex: none !important;
+}
+
+.checkbox input:checked + .checkbox__box {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.checkbox input:focus-visible + .checkbox__box {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.checkbox__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-size: 13.5px;
+  color: var(--text);
+}
+.checkbox__text strong { font-weight: 600; }
+.checkbox__text small { color: var(--text-muted); font-size: 12px; }
+
+/* Variante alerta */
+.checkbox--alert .checkbox__box { border-color: rgba(245,158,11,0.45); }
+.checkbox--alert input:checked + .checkbox__box {
+  background: #f59e0b; border-color: #f59e0b; color: #fff;
+}
+.checkbox--alert .checkbox__text strong { color: #f59e0b; }
+
+/* =========================================================
+   ABAS · scroll horizontal
+   ========================================================= */
+
+/* Container de scroll */
+.app-tabs__scroll {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+  scrollbar-width: none;              /* Firefox */
+  -ms-overflow-style: none;            /* IE/Edge */
+  padding: 0 4px;
+}
+.app-tabs__scroll::-webkit-scrollbar {
+  display: none;                       /* Chrome/Safari */
+}
+
+/* Cada aba: nunca encolhe, largura mínima consistente */
+.app-tabs__scroll > * {
+  flex: 0 0 auto !important;
+  min-width: 120px;
+  max-width: 220px;
+}
+
+/* Rótulo não quebra */
+.app-tabs__scroll .app-tabs__tab-label,
+.app-tabs__scroll .app-tabs__tab {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Sombra suave nas bordas quando tiver scroll */
+.app-tabs__scroll.is-scrollable {
+  mask-image: linear-gradient(to right,
+    transparent 0,
+    black 12px,
+    black calc(100% - 12px),
+    transparent 100%);
+  -webkit-mask-image: linear-gradient(to right,
+    transparent 0,
+    black 12px,
+    black calc(100% - 12px),
+    transparent 100%);
+}
+
+/* Botões fixos (marca, +, sino, busca, user) não podem encolher */
+.app-tabs__brand,
+.app-tabs__new,
+.app-tabs__bell,
+.app-tabs__search,
+.app-tabs__user {
+  flex: 0 0 auto !important;
+}
+/* =========================================================
+   ABAS · scroll horizontal com setas
+   ========================================================= */
+
+/* Wrapper que agrupa setas + scroll */
+.app-tabs__scroll-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+}
+
+/* Container de scroll */
+.app-tabs__scroll {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: 0 4px;
+}
+.app-tabs__scroll::-webkit-scrollbar { display: none; }
+
+/* Cada aba */
+.app-tabs__scroll > * {
+  flex: 0 0 auto !important;
+  min-width: 120px;
+  max-width: 220px;
+}
+.app-tabs__scroll .app-tabs__tab-label,
+.app-tabs__scroll .app-tabs__tab {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Setas */
+.app-tabs__arrow {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin: 0 2px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text-soft);
+  cursor: pointer;
+  transition: background-color 140ms ease, color 140ms ease, opacity 160ms ease,
+              border-color 140ms ease;
+  opacity: 0;
+  pointer-events: none;
+}
+.app-tabs__arrow:hover:not(:disabled) {
+  background: var(--surface-2);
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+.app-tabs__arrow:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+}
+.app-tabs__arrow svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Só aparecem quando tem overflow */
+.app-tabs__scroll-wrap.has-overflow .app-tabs__arrow {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Botões fixos (marca, +, sino, busca, user) não encolhem */
+.app-tabs__brand,
+.app-tabs__new,
+.app-tabs__bell,
+.app-tabs__search,
+.app-tabs__user {
+  flex: 0 0 auto !important;
+}
+
+/* Spacer e slot do seletor — transparentes */
+.app-tabs__spacer,
+.app-tabs__org {
+  background: transparent !important;
+}
+
+.app-tabs__org:empty {
+  display: none !important;
+}
+
+.app-tabs__org {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  margin-left: 8px;
+}
+
+/* =========================================================
+   TOPBAR · slot do seletor de empresa
+   ========================================================= */
+
+/* Transparente por padrão */
+.app-tabs__spacer,
+.app-tabs__org {
+  background: transparent !important;
+}
+
+/* Spacer apenas espaça */
+.app-tabs__spacer {
+  flex: 1 1 auto;
+  min-width: 8px;
+}
+
+/* Slot do seletor — centraliza o botão */
+.app-tabs__org {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  margin-left: 8px;
+}
+
+/* Se o JS não injetou o botão ainda, esconde o slot */
+.app-tabs__org:empty {
+  display: none !important;
+}
+
+/* =========================================================
+   ORG SWITCHER · botão + dropdown
+   ========================================================= */
+.org-switcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  max-width: 200px;
+  transition: background-color 140ms ease, border-color 140ms ease;
+}
+.org-switcher:hover {
+  background: var(--surface-2);
+  border-color: var(--border-strong);
+}
+.org-switcher.is-loading { opacity: 0.6; pointer-events: none; }
+
+.org-switcher__icon {
+  display: inline-grid;
+  place-items: center;
+  width: 15px;
+  height: 15px;
+  flex: none;
+  color: var(--accent);
+}
+.org-switcher__icon svg { width: 15px; height: 15px; }
+
+.org-switcher__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.org-switcher__chevron {
+  display: inline-grid;
+  place-items: center;
+  width: 12px;
+  height: 12px;
+  flex: none;
+  color: var(--text-muted);
+  transition: transform 140ms ease;
+}
+.org-switcher__chevron svg { width: 12px; height: 12px; }
+.org-switcher[aria-expanded="true"] .org-switcher__chevron {
+  transform: rotate(180deg);
+}
+
+@media (max-width: 720px) {
+  .org-switcher { max-width: 140px; }
+  .org-switcher__name { max-width: 90px; }
+}
+
+/* Dropdown */
+.org-switcher__menu {
+  position: fixed;
+  z-index: 9999;
+  min-width: 260px;
+  max-width: 320px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 12px 32px -8px rgba(16, 24, 40, 0.24);
+  opacity: 0;
+  transform: translateY(-4px) scale(0.98);
+  transform-origin: top left;
+  transition: opacity 140ms ease, transform 140ms cubic-bezier(.2,.9,.3,1);
+  pointer-events: none;
+}
+.org-switcher__menu.is-open {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.org-switcher__menu-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 10px 6px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.org-switcher__menu-head span:last-child {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+}
+
+.org-switcher__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+.org-switcher__item:hover { background: var(--surface-2); }
+.org-switcher__item.is-active { background: var(--accent-soft); }
+
+.org-switcher__avatar {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.org-switcher__item-body {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.org-switcher__item-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.org-switcher__item-role {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.org-switcher__check {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  color: var(--accent);
+}
+.org-switcher__check svg { width: 14px; height: 14px; }
+
+.org-switcher__empty {
+  padding: 20px 12px;
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+/* =========================================================
+   SELECTS · tema dark global (corrige dropdowns brancos)
+   ========================================================= */
+
+/* Avisa o navegador pra renderizar dropdowns em dark */
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+}
+[data-theme="light"] {
+  color-scheme: light;
+}
+
+/* ---------- Selects em modais ---------- */
+.modal__body select,
+.modal select,
+.control-select {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 40px 0 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background-color: var(--surface);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+  box-sizing: border-box;
+  cursor: pointer;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+
+  /* Chevron custom (dark) */
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a8b0ba' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px 16px;
+
+  transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+}
+
+.modal__body select:hover,
+.modal select:hover,
+.control-select:hover {
+  border-color: color-mix(in srgb, var(--border-strong) 70%, var(--text) 30%);
+}
+
+.modal__body select:focus,
+.modal select:focus,
+.control-select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-ring);
+}
+
+/* ---------- Dropdown (opções) ---------- */
+.modal select option,
+.control-select option {
+  background-color: var(--surface);
+  color: var(--text);
+}
+
+/* Optgroups (títulos tipo "— Tipos personalizados —") */
+.modal select optgroup,
+.control-select optgroup {
+  background-color: var(--surface);
+  color: var(--text-muted);
+  font-style: normal;
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 6px 0;
+}

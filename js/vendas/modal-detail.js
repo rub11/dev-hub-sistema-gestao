@@ -21,7 +21,6 @@
       if (e.key === 'Escape' && !els.modal.hidden) close();
     });
 
-    /* Corrigir */
     els.editBtn.addEventListener('click', () => {
       if (!state.perms.correct) {
         DH.toast('Apenas supervisores podem corrigir vendas.', 'error');
@@ -41,7 +40,6 @@
       DH.form.openCorrectSale(sale);
     });
 
-    /* Excluir — só platform admin */
     els.delBtn.addEventListener('click', () => {
       if (!state.isPlatformAdmin) {
         DH.toast('Apenas o administrador da plataforma pode excluir vendas.', 'error');
@@ -56,7 +54,6 @@
       );
     });
 
-    /* Histórico */
     els.auditBtn.addEventListener('click', () => {
       const sale = els.modal.__sale; if (!sale) return;
       DH.modalAudit.open(sale);
@@ -70,10 +67,8 @@
     els.status.innerHTML = '';
     els.status.appendChild(buildStatusBadge(sale.status));
 
-    /* Excluir: só platform admin */
     if (els.delBtn) els.delBtn.hidden = !state.isPlatformAdmin;
 
-    /* Corrigir: supervisor + não corrigida */
     if (els.editBtn) {
       const jaCorrigida = sale.status === 'corrected' ||
                           sale.status === 'replaced' ||
@@ -148,7 +143,7 @@
     grid.className = 'detail-grid';
     grid.appendChild(buildDetailItem('Cliente', utils.customerNameOf(sale)));
     grid.appendChild(buildDetailItem('Data', utils.formatDateTime(sale.created_at)));
-    grid.appendChild(buildDetailItem('Pagamento', utils.paymentLabel(sale.payment_method)));
+    grid.appendChild(buildDetailItem('Forma de pagamento', utils.paymentLabel(sale.payment_method)));
     grid.appendChild(buildDetailItem('Status', utils.statusInfo(sale.status).label));
     grid.appendChild(buildDetailItem('Criada por', sale.created_by_name || '—'));
 
@@ -207,10 +202,10 @@
     }
     frag.appendChild(s2);
 
-    /* Totais */
+    /* Totais + pagamento */
     const s3 = document.createElement('section');
     s3.className = 'detail-section';
-    s3.innerHTML = '<h3 class="detail-section__title">Totais</h3>';
+    s3.innerHTML = '<h3 class="detail-section__title">Totais e pagamento</h3>';
     const totals = document.createElement('div');
     totals.className = 'detail-totals';
     totals.appendChild(buildTotalRow('Subtotal', utils.formatMoney(sale.subtotal)));
@@ -218,14 +213,28 @@
     totals.appendChild(buildTotalRow('Total', utils.formatMoney(sale.total), true));
 
     const deposit = utils.toNumber(sale.deposit_amount, 0);
+    const saldo   = Math.max(0, utils.toNumber(sale.total, 0) - deposit);
+
     if (deposit > 0) {
-      totals.appendChild(buildTotalRow('Sinal', utils.formatMoney(deposit)));
+      totals.appendChild(buildTotalRow('Valor pago', utils.formatMoney(deposit)));
       totals.appendChild(buildTotalRow(
-        'Saldo a receber',
-        utils.formatMoney(Math.max(0, utils.toNumber(sale.total, 0) - deposit)),
+        saldo > 0 ? 'Saldo a receber' : 'Quitado',
+        utils.formatMoney(saldo),
         true
       ));
+    } else {
+      totals.appendChild(buildTotalRow('Valor pago', utils.formatMoney(0)));
+      totals.appendChild(buildTotalRow('Saldo a receber', utils.formatMoney(sale.total), true));
     }
+
+    /* ⬇️ Parcelamento */
+    if (sale.installment_count && sale.installment_count > 1) {
+      totals.appendChild(buildTotalRow(
+        'Parcelamento',
+        sale.installment_count + 'x de ' + utils.formatMoney(sale.installment_value)
+      ));
+    }
+
     s3.appendChild(totals);
     frag.appendChild(s3);
 

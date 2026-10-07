@@ -2,7 +2,7 @@
    DEV HUB · Vendas · product-search.js
    Busca/autocomplete de produto + preview.
    Regras:
-     • Modo orçamento → permite adicionar sem estoque (com aviso laranja)
+     • Modo orçamento → permite adicionar sem estoque (com aviso)
      • Modo venda     → exige toggle "Vender sem estoque"
    ========================================================= */
 (function () {
@@ -98,7 +98,7 @@
   function runSearch() {
     const q = state.productQuery.toLowerCase();
     if (!q) { showTop(); return; }
-    els.clear.hidden = false;
+    if (els.clear) els.clear.hidden = false;
     const items = state.products.filter(p =>
       utils.matches(p.name, q) ||
       utils.matches(p.code, q) ||
@@ -228,37 +228,43 @@
     state.productQuery = '';
     state.productSuggestions = [];
     state.productSuggestionIndex = -1;
-    els.clear.hidden = true;
+    if (els.clear) els.clear.hidden = true;
     closeSuggestions();
     closePick();
     try { els.input.focus(); } catch (e) {}
   }
 
+  /* =========================================================
+     PICK — com guardas para elementos opcionais
+     ========================================================= */
   function pick(product) {
     state.pickedProduct = product;
     closeSuggestions();
-    els.input.value = product.name || '';
-    state.productQuery = product.name || '';
-    els.clear.hidden = false;
 
-    els.pickName.textContent = product.name || '—';
-    els.pickDesc.textContent = product.description || 'Sem descrição cadastrada.';
-    els.pickPrice.textContent = utils.formatMoney(product.price);
-    els.pickStock.textContent = String(utils.toInteger(product.stock, 0));
-    els.pickCode.textContent = product.code || '—';
-    els.pickBarcode.textContent = product.barcode || '—';
-    els.pickQty.value = '1';
+    if (els.input) {
+      els.input.value = product.name || '';
+    }
+    state.productQuery = product.name || '';
+    if (els.clear) els.clear.hidden = false;
+
+    if (els.pickName)    els.pickName.textContent    = product.name || '—';
+    if (els.pickDesc)    els.pickDesc.textContent    = product.description || 'Sem descrição cadastrada.';
+    if (els.pickPrice)   els.pickPrice.textContent   = utils.formatMoney(product.price);
+    if (els.pickStock)   els.pickStock.textContent   = String(utils.toInteger(product.stock, 0));
+    if (els.pickCode)    els.pickCode.textContent    = product.code || '—';
+    if (els.pickBarcode) els.pickBarcode.textContent = product.barcode || '—';
+    if (els.pickQty)     els.pickQty.value           = '1';
 
     if (product.image_url) {
-      els.pickImage.src = product.image_url;
-      els.pickImage.hidden = false;
-      els.pickPlaceholder.hidden = true;
+      if (els.pickImage)       els.pickImage.src = product.image_url;
+      if (els.pickImage)       els.pickImage.hidden = false;
+      if (els.pickPlaceholder) els.pickPlaceholder.hidden = true;
     } else {
-      els.pickImage.hidden = true;
-      els.pickPlaceholder.hidden = false;
+      if (els.pickImage)       els.pickImage.hidden = true;
+      if (els.pickPlaceholder) els.pickPlaceholder.hidden = false;
     }
 
-    els.pick.hidden = false;
+    if (els.pick) els.pick.hidden = false;
     refreshPickState();
   }
 
@@ -266,8 +272,8 @@
     const product = state.pickedProduct;
     if (!product) return;
 
-    const stock       = utils.toInteger(product.stock, 0);
-    const qty         = utils.toInteger(els.pickQty.value, 0);
+    const stock        = utils.toInteger(product.stock, 0);
+    const qty          = els.pickQty ? utils.toInteger(els.pickQty.value, 0) : 0;
     const allowNoStock = !!state.noStock;
     const quoteMode    = isQuoteMode();
 
@@ -301,6 +307,7 @@
       }
     }
 
+    if (!els.pickAdd) return;
     if (qty <= 0) { els.pickAdd.disabled = true; return; }
     if (falta && !quoteMode && !allowNoStock) { els.pickAdd.disabled = true; return; }
     els.pickAdd.disabled = false;
@@ -316,14 +323,14 @@
     const product = state.pickedProduct;
     if (!product) return;
 
-    const stock   = utils.toInteger(product.stock, 0);
-    const qty     = utils.toInteger(els.pickQty.value, 0);
+    const stock        = utils.toInteger(product.stock, 0);
+    const qty          = els.pickQty ? utils.toInteger(els.pickQty.value, 0) : 0;
     const quoteMode    = isQuoteMode();
     const allowNoStock = !!state.noStock;
 
     if (qty <= 0) {
       DH.cart.showFeedback('Informe uma quantidade válida.');
-      els.pickQty.focus();
+      if (els.pickQty) els.pickQty.focus();
       return;
     }
 

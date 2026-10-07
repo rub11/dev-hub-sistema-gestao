@@ -42,6 +42,8 @@
         NAV.ICONS.plus +
       '</button>' +
       '<span class="app-tabs__spacer"></span>' +
+      /* ⬇️ NOVO — slot do seletor de empresa */
+      '<div class="app-tabs__org" id="org-switcher-slot"></div>' +
       '<button type="button" class="app-tabs__bell" id="app-tabs-bell" ' +
               'aria-label="Notificações" aria-expanded="false">' +
         NAV.ICONS.bell +
@@ -116,6 +118,102 @@
       'data-role',
       ctx.isPlatform ? 'platform_admin' : (ctx.role || 'guest')
     );
+
+    /* Ativa o scroll horizontal com setas */
+    setupTabsScroll();
+
+    /* ⬇️ NOVO — ativa o seletor de empresa */
+    if (NAV.orgSwitcher && typeof NAV.orgSwitcher.init === 'function') {
+      NAV.orgSwitcher.init();
+    }
+  }
+
+  /* =========================================================
+     ABAS · scroll horizontal com setas + roda do mouse
+     ========================================================= */
+  function setupTabsScroll() {
+    const scroll = document.getElementById('app-tabs-scroll');
+    if (!scroll) return;
+
+    if (scroll.dataset.scrollReady === '1') return;
+    scroll.dataset.scrollReady = '1';
+
+    /* Wrapper + setas */
+    let wrapper = scroll.parentNode;
+    if (!wrapper.classList.contains('app-tabs__scroll-wrap')) {
+      const newWrap = document.createElement('div');
+      newWrap.className = 'app-tabs__scroll-wrap';
+      wrapper.insertBefore(newWrap, scroll);
+      newWrap.appendChild(scroll);
+      wrapper = newWrap;
+    }
+
+    const leftBtn = document.createElement('button');
+    leftBtn.type = 'button';
+    leftBtn.className = 'app-tabs__arrow app-tabs__arrow--left';
+    leftBtn.setAttribute('aria-label', 'Rolar abas para a esquerda');
+    leftBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>';
+
+    const rightBtn = document.createElement('button');
+    rightBtn.type = 'button';
+    rightBtn.className = 'app-tabs__arrow app-tabs__arrow--right';
+    rightBtn.setAttribute('aria-label', 'Rolar abas para a direita');
+    rightBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>';
+
+    wrapper.insertBefore(leftBtn, scroll);
+    wrapper.appendChild(rightBtn);
+
+    function updateArrows() {
+      const hasOverflow = scroll.scrollWidth > scroll.clientWidth + 2;
+      wrapper.classList.toggle('has-overflow', hasOverflow);
+
+      const atStart = scroll.scrollLeft <= 2;
+      const atEnd   = scroll.scrollLeft + scroll.clientWidth >= scroll.scrollWidth - 2;
+
+      leftBtn.disabled = !hasOverflow || atStart;
+      rightBtn.disabled = !hasOverflow || atEnd;
+    }
+
+    leftBtn.addEventListener('click', () => {
+      scroll.scrollBy({ left: -200, behavior: 'smooth' });
+    });
+    rightBtn.addEventListener('click', () => {
+      scroll.scrollBy({ left: 200, behavior: 'smooth' });
+    });
+
+    scroll.addEventListener('wheel', (e) => {
+      if (e.deltaY === 0) return;
+      e.preventDefault();
+      scroll.scrollLeft += e.deltaY;
+    }, { passive: false });
+
+    scroll.addEventListener('scroll', updateArrows, { passive: true });
+    window.addEventListener('resize', updateArrows);
+
+    const mo = new MutationObserver(() => {
+      updateArrows();
+      scrollToActive();
+    });
+    mo.observe(scroll, { childList: true, subtree: false });
+
+    function scrollToActive() {
+      const active = scroll.querySelector('.is-active');
+      if (!active) return;
+      const sl = scroll.scrollLeft;
+      const cw = scroll.clientWidth;
+      const al = active.offsetLeft;
+      const aw = active.offsetWidth;
+      if (al < sl || al + aw > sl + cw) {
+        scroll.scrollTo({ left: Math.max(0, al - 24), behavior: 'smooth' });
+      }
+    }
+    document.addEventListener('app-tab-changed', scrollToActive);
+    scroll.addEventListener('click', () => setTimeout(scrollToActive, 100));
+
+    setTimeout(() => {
+      updateArrows();
+      scrollToActive();
+    }, 60);
   }
 
   NAV.bar = { render: renderBar };

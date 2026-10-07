@@ -167,3 +167,518 @@
    classe (não o ID) para manter a especificidade baixa:
      .modal__dialog--user-perms { max-width: 700px; }
    ========================================================= */
+
+
+   /* =========================================================
+   MODAL · TIPOS DE PERFIL
+   ========================================================= */
+
+/* ---------- Corpo do modal ---------- */
+#role-types-modal .modal__body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px;
+}
+
+#role-types-modal .confirm-text {
+  margin: 0;
+  padding: 12px 14px;
+  background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--text-soft);
+  line-height: 1.5;
+}
+#role-types-modal .confirm-text strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* ---------- Formulário (bloco de adicionar) ---------- */
+#role-types-modal .role-type-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+#role-types-modal .role-type-form .form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 560px) {
+  #role-types-modal .role-type-form .form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+#role-types-modal .role-type-form .field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+}
+
+#role-types-modal .role-type-form label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-soft);
+}
+
+#role-types-modal .role-type-form input[type="text"],
+#role-types-modal .role-type-form select {
+  width: 100%;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background-color: var(--surface);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+#role-types-modal .role-type-form select {
+  padding-right: 40px;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a8b0ba' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px 16px;
+}
+#role-types-modal .role-type-form select option {
+  background-color: var(--surface);
+  color: var(--text);
+}
+#role-types-modal .role-type-form input:focus,
+#role-types-modal .role-type-form select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-ring);
+}
+
+#role-types-modal .role-type-form .field__hint {
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+/* Botões do form */
+#role-types-modal .role-type-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 4px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--border);
+}
+
+/* =========================================================
+   LISTA DE TIPOS
+   ========================================================= */
+
+/* Container */
+#role-types-list,
+.role-types-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 340px;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-width: thin;
+}
+#role-types-list::-webkit-scrollbar,
+.role-types-list::-webkit-scrollbar { width: 6px; }
+#role-types-list::-webkit-scrollbar-thumb,
+.role-types-list::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+/* Título de grupo (ex.: "Tipos personalizados") */
+#role-types-list > h3,
+#role-types-list > h4,
+#role-types-list > .role-types-group,
+#role-types-list > .role-types-group-title,
+.role-types-list > h3,
+.role-types-list > h4 {
+  margin: 12px 0 4px;
+  padding: 0 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+#role-types-list > h3:first-child,
+.role-types-list > h3:first-child { margin-top: 0; }
+
+/* ---------- Item (pega vários padrões de nome) ---------- */
+#role-types-list > li,
+#role-types-list > .role-type-item,
+#role-types-list > .role-type-row,
+.role-types-list > li,
+.role-types-list > .role-type-item,
+.role-types-list [class*="role-type"][class*="item"],
+.role-types-list [class*="role-type"][class*="row"] {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  transition: background-color 140ms ease, border-color 140ms ease, transform 140ms ease;
+}
+#role-types-list > li:hover,
+.role-types-list > li:hover,
+.role-types-list [class*="role-type"][class*="item"]:hover {
+  background: var(--surface);
+  border-color: var(--border-strong);
+  transform: translateX(2px);
+}
+
+/* Conteúdo (nome + slug + base) */
+#role-types-list [class*="role-type"][class*="info"],
+#role-types-list [class*="role-type"][class*="body"],
+#role-types-list [class*="role-type"][class*="content"],
+#role-types-list [class*="role-type"][class*="main"] {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+#role-types-list [class*="role-type"][class*="name"],
+#role-types-list [class*="role-type"][class*="label"] {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#role-types-list [class*="role-type"][class*="slug"],
+#role-types-list [class*="role-type"][class*="meta"],
+#role-types-list [class*="role-type"][class*="sub"] {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/* Ações (✏️ 🗑️) — botões redondos, alinhados à direita */
+#role-types-list [class*="role-type"][class*="actions"],
+#role-types-list [class*="role-type"][class*="buttons"],
+#role-types-list [class*="role-type"][class*="tools"] {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+}
+
+/* Botões de ação dentro do item */
+#role-types-list [class*="role-type"] button,
+.role-types-list [class*="role-type"] button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+#role-types-list [class*="role-type"] button:hover,
+.role-types-list [class*="role-type"] button:hover {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text);
+}
+#role-types-list [class*="role-type"] button svg,
+.role-types-list [class*="role-type"] button svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* Botão de excluir (perigo) */
+#role-types-list [class*="role-type"] button[class*="delete"],
+#role-types-list [class*="role-type"] button[class*="remove"],
+#role-types-list [class*="role-type"] button[class*="danger"],
+.role-types-list [class*="role-type"] button[class*="delete"] {
+  color: var(--danger);
+}
+#role-types-list [class*="role-type"] button[class*="delete"]:hover,
+.role-types-list [class*="role-type"] button[class*="delete"]:hover {
+  background: var(--danger-soft);
+  border-color: var(--danger-border);
+  color: var(--danger);
+}
+
+/* ---------- Estado vazio / "Sem tipos" ---------- */
+#role-types-list .state-block,
+.role-types-list .state-block {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+  background: var(--surface-2);
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+}
+#role-types-list .state-block p,
+.role-types-list .state-block p { margin: 8px 0 0; }
+
+/* Badge de "Tipo personalizado" (se existir) */
+#role-types-list [class*="role-type"][class*="badge"],
+#role-types-list [class*="role-type"][class*="tag"] {
+  flex: 0 0 auto;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-hover);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+/* =========================================================
+   MODAL · TIPOS DE PERFIL · layout 2 colunas
+   ========================================================= */
+
+/* Modal mais largo */
+#role-types-modal .modal__dialog,
+#role-types-modal .modal__dialog--lg {
+  max-width: 960px;
+  width: calc(100% - 32px);
+}
+
+/* Corpo em grid 2 colunas */
+#role-types-modal .modal__body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  padding: 20px;
+  align-items: start;
+  overflow-y: auto;
+  max-height: calc(100vh - 220px);
+}
+
+/* Texto de ajuda ocupa a linha inteira */
+#role-types-modal .confirm-text {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 12px 14px;
+  background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--text-soft);
+  line-height: 1.5;
+}
+#role-types-modal .confirm-text strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* Formulário em coluna 1 */
+#role-types-modal .role-type-form {
+  grid-column: 1 / 2;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  height: fit-content;
+  position: sticky;
+  top: 0;
+}
+
+/* Lista em coluna 2 */
+#role-types-modal .role-types-list,
+#role-types-modal #role-types-list {
+  grid-column: 2 / 3;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 520px;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-width: thin;
+}
+
+/* Rodapé ocupa a linha inteira */
+#role-types-modal .modal__body > .modal__foot,
+#role-types-modal .modal__foot {
+  grid-column: 1 / -1;
+  margin-top: 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+/* ---------- Mobile: volta pra coluna única ---------- */
+@media (max-width: 780px) {
+  #role-types-modal .modal__dialog,
+  #role-types-modal .modal__dialog--lg {
+    max-width: 640px;
+  }
+  #role-types-modal .modal__body {
+    grid-template-columns: 1fr;
+    max-height: calc(100vh - 180px);
+  }
+  #role-types-modal .role-type-form {
+    position: static;
+  }
+  #role-types-modal .role-types-list {
+    max-height: 280px;
+  }
+}
+/* =========================================================
+   ITENS DA LISTA · cards compactos
+   ========================================================= */
+
+#role-types-list > li,
+#role-types-list > div:not([class*="state"]):not([class*="empty"]):not(.state-block) {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  transition: background-color 140ms ease, border-color 140ms ease, transform 140ms ease;
+}
+#role-types-list > li:hover,
+#role-types-list > div:not([class*="state"]):not(.state-block):hover {
+  background: var(--surface);
+  border-color: var(--border-strong);
+  transform: translateX(2px);
+}
+
+/* Nome */
+#role-types-list [class*="role-type"][class*="name"],
+#role-types-list [class*="role-type"][class*="label"],
+#role-types-list li > strong,
+#role-types-list li > b {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.3;
+}
+
+/* Slug / base / meta */
+#role-types-list [class*="role-type"][class*="slug"],
+#role-types-list [class*="role-type"][class*="meta"],
+#role-types-list [class*="role-type"][class*="sub"],
+#role-types-list li > small,
+#role-types-list li > code {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/* Ações (botões) */
+#role-types-list button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+#role-types-list button:hover {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text);
+}
+#role-types-list button svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* Botões de perigo (excluir) */
+#role-types-list button[class*="delete"],
+#role-types-list button[class*="remove"],
+#role-types-list button[class*="danger"],
+#role-types-list button[title*="Excluir"],
+#role-types-list button[title*="Remover"] {
+  color: var(--danger);
+}
+#role-types-list button[class*="delete"]:hover,
+#role-types-list button[title*="Excluir"]:hover {
+  background: var(--danger-soft);
+  border-color: var(--danger-border);
+  color: var(--danger);
+}
+
+/* =========================================================
+   UI CONFIRM · modal de confirmação
+   ========================================================= */
+.ui-confirm .modal__dialog {
+  max-width: 420px;
+  width: calc(100% - 32px);
+}
+
+.ui-confirm__text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text-soft);
+  white-space: pre-line;
+}
+
+.ui-confirm .modal__foot {
+  gap: 10px;
+}
+
+/* Botão de perigo já existe no sistema (btn--danger) */
+.ui-confirm #ui-confirm-ok.btn--danger {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
+.ui-confirm #ui-confirm-ok.btn--danger:hover {
+  background: color-mix(in srgb, var(--danger) 88%, black);
+  border-color: color-mix(in srgb, var(--danger) 88%, black);
+}
+
+.ui-confirm .modal__dialog { max-width: 420px; width: calc(100% - 32px); }
+.ui-confirm__text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text-soft);
+  white-space: pre-line;
+}
+.ui-confirm .modal__foot { gap: 10px; }

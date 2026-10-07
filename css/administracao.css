@@ -1,0 +1,136 @@
+/* =========================================================
+   DEV HUB · Central de Administração
+   ========================================================= */
+
+.adm-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+  margin-top: 8px;
+}
+
+@media (max-width: 640px) {
+  .adm-grid { grid-template-columns: 1fr; gap: 12px; }
+}
+
+/* ---------- Card ---------- */
+.adm-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition: transform 160ms ease, border-color 160ms ease,
+              box-shadow 160ms ease, background-color 160ms ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.adm-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: var(--accent);
+  opacity: 0;
+  transition: opacity 160ms ease;
+}
+
+.adm-card:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  box-shadow: 0 8px 24px -8px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.adm-card:hover::before { opacity: 1; }
+
+/* ---------- Ícone ---------- */
+.adm-card__icon {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  transition: background-color 160ms ease, color 160ms ease;
+}
+.adm-card__icon svg {
+  width: 20px;
+  height: 20px;
+}
+.adm-card:hover .adm-card__icon {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* ---------- Texto ---------- */
+.adm-card__body {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.adm-card__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+.adm-card__desc {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+/* ---------- Badge "breve" ---------- */
+.adm-card__tag {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.adm-card--disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ---------- Setinha à direita ---------- */
+.adm-card__arrow {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  color: var(--text-muted);
+  align-self: center;
+  transition: transform 160ms ease, color 160ms ease;
+}
+.adm-card__arrow svg {
+  width: 16px;
+  height: 16px;
+}
+.adm-card:hover .adm-card__arrow {
+  transform: translateX(3px);
+  color: var(--accent);
+}

@@ -109,7 +109,8 @@
 
   /* ---------- Permissões por item do menu ---------- */
   NAV.ITEM_PERM = {
-        gestao:              'management.view',
+    administracao:       'management.view',   /* ⬅️ NOVO — hub único */
+    gestao:              'management.view',
     permissoes:          'management.roles',
     dashboard:           'dashboard.view',
     vendas:              'sales.view',
@@ -121,7 +122,6 @@
     estoque:             'stock.view',
     relatorios:          'reports.view',
     dre:                 'reports.view',
-    gestao:              'management.view',
     aprovacoes:          'purchases.approve',
     financeiro:          'finance.view',
     plataforma:          'platform',
@@ -130,13 +130,16 @@
     'plat-config':       'platform',
     compras:             'purchases.view',
     'compras-receber':   'stock.receive',
-    fornecedores:        'purchases.view'
+    fornecedores:        'purchases.view',
+    'config-pagamentos':   'management.view',
+    'config-parcelamento': 'management.view'
   };
 
   /* ---------- Estrutura do menu ---------- */
   NAV.TOPNAV = [
-        { id: 'gestao',        label: 'Gestão de usuários', href: 'gestao.html',  icon: 'gestao',       group: 'Administração', capability: 'management' },
-    { id: 'permissoes',    label: 'Permissões',         href: 'permissoes.html', icon: 'lock',      group: 'Administração', capability: 'management.roles' },
+    /* ⬇️ HUB ÚNICO DE ADMINISTRAÇÃO */
+    { id: 'administracao', label: 'Administração', href: 'administracao.html', icon: 'lock', group: 'Administração', capability: 'management.view' },
+
     { id: 'dashboard', label: 'Dashboard', href: 'dashboard.html', icon: 'dashboard', group: null },
     { id: 'vendas',        label: 'Vendas',        href: 'vendas.html',       icon: 'vendas',       group: 'Comercial' },
     { id: 'notas',         label: 'Notas',         href: 'notas.html',        icon: 'notas',        group: 'Comercial' },
@@ -148,8 +151,6 @@
     { id: 'financeiro',    label: 'Financeiro',    href: 'financeiro.html',   icon: 'finance',      group: 'Financeiro', capability: 'finance.view' },
     { id: 'relatorios',    label: 'Relatórios',    href: 'relatorios.html',   icon: 'relatorios',   group: 'Análise' },
     { id: 'dre',           label: 'DRE',           href: 'relatorios-dre.html', icon: 'dre',        group: 'Análise' },
-    { id: 'aprovacoes',    label: 'Aprovações',    href: 'aprovacoes.html',   icon: 'check',        group: 'Administração', capability: 'purchases.approve' },
-    { id: 'gestao',        label: 'Gestão de usuários', href: 'gestao.html',  icon: 'gestao',       group: 'Administração', capability: 'management' },
     { id: 'plataforma',    label: 'Dashboard da plataforma',     href: 'plataforma.html',               icon: 'dashboard',      group: 'Plataforma', capability: 'platform' },
     { id: 'empresas',      label: 'Empresas',                    href: 'plataforma.html#empresas',      icon: 'empresas',       group: 'Plataforma', capability: 'platform' },
     { id: 'plat-usuarios', label: 'Usuários da plataforma',      href: 'plataforma-usuarios.html',      icon: 'usuarios',       group: 'Plataforma', capability: 'platform' },
@@ -160,17 +161,23 @@
 
   /* ---------- Mapeamento URL → id ---------- */
   NAV.PAGE_MAP = {
-        gestao: 'gestao', funcionarios: 'gestao', aprovacoes: 'aprovacoes',
+    administracao: 'administracao',
+    adm: 'administracao',
+
+    gestao: 'gestao', funcionarios: 'gestao', aprovacoes: 'aprovacoes',
     permissoes: 'permissoes',
     dashboard: 'dashboard', vendas: 'vendas', notas: 'notas',
     'notas-fiscal': 'notas-fiscal', clientes: 'parceiros',
     parceiros: 'parceiros',
     produtos: 'produtos', estoque: 'estoque', relatorios: 'relatorios',
     'relatorios-dre': 'dre',
-    gestao: 'gestao', funcionarios: 'gestao', aprovacoes: 'aprovacoes',
     financeiro: 'financeiro', financeiro_novo: 'financeiro',
     'contas-bancarias': 'contas-bancarias',
     configuracoes: 'configuracoes',
+
+    'configuracoes-pagamentos':   'config-pagamentos',
+    'configuracoes-parcelamento': 'config-parcelamento',
+
     'plataforma-configuracoes': 'plat-config',
     'plataforma-usuarios': 'plat-usuarios',
     compras: 'compras',
@@ -202,7 +209,8 @@
     chevron: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>',
     lock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="10" rx="2" /><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5" /></svg>',
     bell: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>',
-    finance: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="6" width="19" height="12" rx="2"/><path d="M2.5 10h19"/><circle cx="17" cy="14" r="1"/></svg>'
+    finance: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="6" width="19" height="12" rx="2"/><path d="M2.5 10h19"/><circle cx="17" cy="14" r="1"/></svg>',
+    payment: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 15h4"/></svg>'
   };
 
   /* ---------- Helpers ---------- */

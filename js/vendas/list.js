@@ -77,25 +77,29 @@
   }
 
   /* =========================================================
-     Badge de pagamento (sem sinal / sinal / pago)
+     Badge de pagamento (não pago / parcial / pago + parcelas)
      ========================================================= */
   function buildPaymentBadge(sale) {
     const total   = utils.toNumber(sale.total, 0);
     const deposit = utils.toNumber(sale.deposit_amount, 0);
     const wrap = document.createElement('span');
 
+    const instSuffix = (sale.installment_count && sale.installment_count > 1)
+      ? ' · ' + sale.installment_count + 'x'
+      : '';
+
     if (deposit <= 0) {
       wrap.className = 'badge badge--muted';
-      wrap.textContent = 'Sem sinal';
+      wrap.textContent = 'Não pago' + instSuffix;
       return wrap;
     }
     if (deposit >= total) {
       wrap.className = 'badge badge--success';
-      wrap.textContent = 'Pago';
+      wrap.textContent = 'Pago' + instSuffix;
       return wrap;
     }
     wrap.className = 'badge badge--warning';
-    wrap.textContent = 'Sinal ' + utils.formatMoney(deposit);
+    wrap.textContent = 'Parcial ' + utils.formatMoney(deposit) + instSuffix;
     return wrap;
   }
 
@@ -105,7 +109,7 @@
     const wrap = document.createElement('div');
     wrap.className = 'row-actions';
 
-    /* 👁️ Ver */
+    /* 👁️ Ver detalhes */
     const viewBtn = document.createElement('button');
     viewBtn.type = 'button';
     viewBtn.className = 'row-action';
@@ -152,15 +156,12 @@
     row.appendChild(createCell(utils.formatDateTime(sale.created_at), 'cell--muted'));
     row.appendChild(createCell(utils.formatMoney(sale.total), 'cell--num cell-price'));
 
-    /* Pagamento (badge) */
     const paymentCell = document.createElement('td');
     paymentCell.appendChild(buildPaymentBadge(sale));
     row.appendChild(paymentCell);
 
-    /* Forma de pagamento */
     row.appendChild(createCell(utils.paymentLabel(sale.payment_method), 'cell--muted'));
 
-    /* Status */
     const statusCell = document.createElement('td');
     statusCell.appendChild(buildStatusBadge(sale.status));
     row.appendChild(statusCell);

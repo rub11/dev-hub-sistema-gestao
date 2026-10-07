@@ -1,14 +1,14 @@
 /* =========================================================
    DEV HUB · Vendas · draft.js
-   Salva o rascunho da venda em sessionStorage.
-   v3: inclui deposit_amount, formMode, convertingFromQuote.
+   Salva rascunho da venda em sessionStorage.
+   v3: inclui deposit, installments, formMode, convertingFromQuote.
    ========================================================= */
 (function () {
   'use strict';
 
   const DH = window.DH;
   if (!DH) {
-    console.error('[DEV HUB] draft.js: window.DH não existe. Carregue state.js antes.');
+    console.error('[DEV HUB] draft.js: window.DH não existe.');
     return;
   }
 
@@ -33,6 +33,7 @@
 
     const depositEl = document.getElementById('sale-deposit');
     const validEl   = document.getElementById('sale-valid-until');
+    const instEl    = document.getElementById('sale-installments');
 
     return {
       v: 3,
@@ -64,14 +65,15 @@
 
       noStock: !!st.noStock,
 
-      customerId:  f.customer    ? f.customer.value    : '',
-      discount:    f.discount    ? f.discount.value    : '0',
-      discountPct: f.discountPct ? f.discountPct.value : '0',
+      customerId:   f.customer    ? f.customer.value    : '',
+      discount:     f.discount    ? f.discount.value    : '0',
+      discountPct:  f.discountPct ? f.discountPct.value : '0',
       depositAmount: depositEl ? depositEl.value : '0',
-      validUntil:  validEl ? validEl.value : '',
+      validUntil:   validEl ? validEl.value : '',
+      installmentCount: instEl ? instEl.value : null,
       lastDiscountEdit: st.lastDiscountEdit || 'brl',
-      payment:     f.payment     ? f.payment.value     : '',
-      notes:       f.notes       ? f.notes.value       : '',
+      payment:      f.payment     ? f.payment.value     : '',
+      notes:        f.notes       ? f.notes.value       : '',
 
       cart: (st.cart || []).map(it => ({
         product_id: it.product_id,
@@ -159,7 +161,6 @@
 
       DH.form.showView('form');
 
-      /* Restaura modo */
       if (data.convertingFromQuote) {
         st.convertingFromQuote = data.convertingFromQuote;
         st.editingSaleId = null;
@@ -197,7 +198,6 @@
         if (DH.form.setFormMode) DH.form.setFormMode('create');
       }
 
-      /* Restaura campos do formulário */
       const f = DH.form.els();
       if (f.customer)    f.customer.value    = data.customerId || '';
       if (f.discount)    f.discount.value    = data.discount || '0';
@@ -212,7 +212,6 @@
       const validEl = document.getElementById('sale-valid-until');
       if (validEl && data.validUntil) validEl.value = data.validUntil;
 
-      /* Campos de visibilidade */
       const validField = document.getElementById('quote-valid-field');
       if (validField) validField.hidden = data.formMode !== 'quote' && !data.editingSaleId && !data.correctingSaleId;
       const noStockField = document.getElementById('no-stock-field');
@@ -221,7 +220,6 @@
       st.lastDiscountEdit = data.lastDiscountEdit || 'brl';
       st.noStock = !!data.noStock;
 
-      /* Restaura carrinho */
       st.cart = (data.cart || []).map(it => ({
         product_id: it.product_id,
         product_name: it.product_name || '',
@@ -234,8 +232,28 @@
       DH.cart.render();
       DH.cart.recalc();
 
+      /* ⬇️ Rebuild installments com GUARDAS */
+      try {
+        if (data.payment === 'credit_card' &&
+            DH.installments &&
+            typeof DH.installments.ensureLoaded === 'function' &&
+            typeof DH.installments.buildOptions === 'function') {
+          Promise.resolve(DH.installments.ensureLoaded())
+            .then(() => {
+              DH.installments.buildOptions();
+              const instEl = document.getElementById('sale-installments');
+              if (instEl && data.installmentCount) {
+                instEl.value = String(data.installmentCount);
+                instEl.dispatchEvent(new Event('change', { bubbles: true }));
+              }
+            })
+            .catch(() => {});
+        }
+      } catch (e) {
+        console.warn('[DEV HUB] rebuild installments:', e);
+      }
+
       DH.toast('Rascunho da venda restaurado.', 'info');
-      log('restaurado com sucesso');
       return true;
     } catch (e) {
       console.error('[DEV HUB] draft.tryRestore falhou:', e);
@@ -253,6 +271,9 @@
       el.addEventListener('input', saveDebounced);
       el.addEventListener('change', saveDebounced);
     });
+
+    const instEl = document.getElementById('sale-installments');
+    if (instEl) instEl.addEventListener('change', saveDebounced);
 
     window.addEventListener('beforeunload', saveNow);
     window.addEventListener('pagehide', saveNow);

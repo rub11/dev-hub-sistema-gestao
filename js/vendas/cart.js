@@ -1,5 +1,6 @@
 /* =========================================================
    DEV HUB · Vendas · cart.js
+   Carrinho com avisos de estoque + valor pago + evento de recalc.
    ========================================================= */
 (function () {
   'use strict';
@@ -29,6 +30,7 @@
       cartWrap.hidden = true;
       cartEmpty.hidden = false;
       cartBody.innerHTML = '';
+      if (DH.form && DH.form.refreshSubmitEnabled) DH.form.refreshSubmitEnabled();
       return;
     }
 
@@ -104,6 +106,8 @@
       fragment.appendChild(row);
     });
     cartBody.appendChild(fragment);
+
+    if (DH.form && DH.form.refreshSubmitEnabled) DH.form.refreshSubmitEnabled();
   }
 
   function onQuantityChange(productId, rawValue, inputEl) {
@@ -141,9 +145,6 @@
     clearFeedback();
   }
 
-  /* =========================================================
-     RECALC — agora com sinal/depósito
-     ========================================================= */
   function recalc() {
     const subtotal = state.cart.reduce((sum, item) =>
       sum + utils.toNumber(item.subtotal, 0), 0);
@@ -171,7 +172,7 @@
 
     const total = Math.max(0, utils.round2(subtotal - discount));
 
-    /* ---- Sinal ---- */
+    /* Valor pago */
     const depositEl = document.getElementById('sale-deposit');
     let deposit = depositEl ? utils.toNumber(depositEl.value, 0) : 0;
     if (!Number.isFinite(deposit) || deposit < 0) deposit = 0;
@@ -186,7 +187,7 @@
     if (totalSubEl) totalSubEl.textContent = utils.formatMoney(subtotal);
     if (totalTotalEl) totalTotalEl.textContent = utils.formatMoney(total);
 
-    /* ---- Saldo a receber ---- */
+    /* Saldo a receber */
     const balanceRow = document.getElementById('totals-balance-row');
     const balanceEl  = document.getElementById('total-balance');
     if (balanceRow && balanceEl) {
@@ -197,6 +198,12 @@
         balanceRow.hidden = true;
       }
     }
+
+    /* Atualiza botão finalizar */
+    if (DH.form && DH.form.refreshSubmitEnabled) DH.form.refreshSubmitEnabled();
+
+    /* ⬇️ Dispara evento pra installments.js recalcular as opções */
+    document.dispatchEvent(new CustomEvent('sale:recalc'));
   }
 
   function reset() {
@@ -221,8 +228,15 @@
     const noStockEl = document.getElementById('sale-no-stock');
     if (noStockEl) noStockEl.checked = false;
 
+    const payEl = document.getElementById('sale-payment');
+    if (payEl) payEl.classList.remove('is-invalid');
+    const warn = document.getElementById('payment-warn');
+    if (warn) warn.hidden = true;
+
     clearFeedback();
     if (DH.productSearch && DH.productSearch.clear) DH.productSearch.clear();
+    if (DH.installments) DH.installments.reset();
+
     render();
     recalc();
   }

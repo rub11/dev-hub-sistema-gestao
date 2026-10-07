@@ -24,10 +24,10 @@
     DH.modalDetail.setup();
     DH.modalAudit.setup();
     DH.modalPassword.setup();
-    if (DH.customerModal) DH.customerModal.setup();
-    if (DH.modalApprovals) DH.modalApprovals.setup();
-    if (DH.quotes) DH.quotes.setup();
-    if (DH.draft) DH.draft.init();
+    if (DH.customerModal)   DH.customerModal.setup();
+    if (DH.modalApprovals)  DH.modalApprovals.setup();
+    if (DH.quotes)          DH.quotes.setup();
+    if (DH.draft)           DH.draft.init();
 
     /* Sessão */
     const session = await Auth.requireSession();
