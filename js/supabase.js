@@ -8,6 +8,12 @@ const SUPABASE_URL =
 const SUPABASE_PUBLISHABLE_KEY =
     'sb_publishable_fDh4lu5aH29N3GWm784KxA_LBLpTcKs';
 
+// ⬇️ Expõe globalmente — usado pelo scanner-modal.js para
+//    validar a senha do gestor sem deslogar o usuário atual.
+window.SUPABASE_URL = SUPABASE_URL;
+window.SUPABASE_ANON_KEY = SUPABASE_PUBLISHABLE_KEY;
+window.SUPABASE_PUBLISHABLE_KEY = SUPABASE_PUBLISHABLE_KEY;
+
 // Verifica se o SDK foi carregado
 if (
     !window.supabase ||
