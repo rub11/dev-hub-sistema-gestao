@@ -14,6 +14,13 @@
      4. Existe     → abre modal "Adicionar estoque" →
                      UPDATE products.stock → loga
      5. Volta pra câmera (sessão continua ativa)
+
+   CORREÇÃO APLICADA:
+     - INSERT em products NÃO manda mais `organization_id`.
+       O banco preenche automaticamente com
+       get_user_organization_id() (mesma função que a RLS
+       usa pra validar). Assim evita o erro
+       "new row violates row-level security policy".
    ========================================================= */
 
 (function () {
@@ -48,7 +55,6 @@
       return;
     }
 
-    // Ajusta título conforme o modo
     const titleEl = document.getElementById('page-title');
     if (titleEl) {
       titleEl.textContent = mode === 'products' ? 'Cadastro rápido' : 'Scanner';
@@ -230,7 +236,7 @@
   }
 
   /* =========================================================
-     MODO VENDA (igual antes)
+     MODO VENDA
      ========================================================= */
   async function adicionarItemVenda(barcode) {
     const codigo = String(barcode || '').trim();
@@ -318,10 +324,8 @@
     const product = Array.isArray(prod) ? prod[0] : prod;
 
     if (!product) {
-      // Abre modal "Novo produto" com o barcode já preenchido
       abrirNovoProduto(codigo);
     } else {
-      // Abre modal "Adicionar estoque"
       abrirAdicionarEstoque(product);
     }
   }
@@ -374,22 +378,15 @@
     npEls.save.innerHTML = '<span class="sm-busy"></span>Salvando…';
 
     try {
-      // Pega org do usuário
       const s = await window.Auth.requireSession();
-      const { data: profile } = await window.db
-        .from('profiles')
-        .select('organization_id')
-        .eq('id', s.user.id)
-        .maybeSingle();
 
-      if (!profile || !profile.organization_id) {
-        throw new Error('Empresa não identificada.');
-      }
-
+      /* 🔧 CORREÇÃO: NÃO manda organization_id.
+         O banco tem trigger/default que preenche com
+         get_user_organization_id() — a mesma função que a
+         policy RLS usa pra validar o INSERT. */
       const { data: inserted, error } = await window.db
         .from('products')
         .insert({
-          organization_id: profile.organization_id,
           name: name,
           code: code,
           barcode: barcode,
@@ -432,8 +429,18 @@
     } catch (err) {
       console.error('[scanner] salvar produto:', err);
       const msg = String(err.message || '');
-      if (msg.toLowerCase().includes('duplicate') || msg.toLowerCase().includes('unique')) {
+      const lower = msg.toLowerCase();
+
+      if (lower.includes('duplicate') || lower.includes('unique')) {
         npEls.feedback.textContent = 'Já existe produto com este código.';
+      } else if (lower.includes('row-level security') || lower.includes('permission denied')) {
+        npEls.feedback.textContent =
+          'Sem permissão pra cadastrar produto. Fale com o administrador.';
+      } else if (lower.includes('violates not-null')) {
+        npEls.feedback.textContent =
+          'Faltam dados obrigatórios: ' + msg;
+      } else if (lower.includes('failed to fetch') || lower.includes('network')) {
+        npEls.feedback.textContent = 'Sem conexão. Tente novamente.';
       } else {
         npEls.feedback.textContent = msg || 'Erro ao cadastrar produto.';
       }
@@ -509,7 +516,15 @@
       setTimeout(() => { if (!encerrada) retomarCamera(); }, 500);
     } catch (err) {
       console.error('[scanner] add estoque:', err);
-      asEls.feedback.textContent = err.message || 'Erro ao adicionar estoque.';
+      const msg = String(err.message || '');
+      const lower = msg.toLowerCase();
+
+      if (lower.includes('row-level security') || lower.includes('permission denied')) {
+        asEls.feedback.textContent =
+          'Sem permissão pra alterar estoque. Fale com o administrador.';
+      } else {
+        asEls.feedback.textContent = msg || 'Erro ao adicionar estoque.';
+      }
     } finally {
       asEls.save.disabled = false;
       asEls.save.textContent = 'Adicionar';
@@ -521,16 +536,16 @@
      ========================================================= */
   function setupModais() {
     // ---- Novo produto ----
-    npEls.modal      = document.getElementById('sm-new-product');
-    npEls.name       = document.getElementById('sm-np-name');
-    npEls.price      = document.getElementById('sm-np-price');
-    npEls.stock      = document.getElementById('sm-np-stock');
-    npEls.code       = document.getElementById('sm-np-code');
-    npEls.barcode    = document.getElementById('sm-np-barcode');
+    npEls.modal        = document.getElementById('sm-new-product');
+    npEls.name         = document.getElementById('sm-np-name');
+    npEls.price        = document.getElementById('sm-np-price');
+    npEls.stock        = document.getElementById('sm-np-stock');
+    npEls.code         = document.getElementById('sm-np-code');
+    npEls.barcode      = document.getElementById('sm-np-barcode');
     npEls.barcodeLabel = document.getElementById('sm-np-barcode-label');
-    npEls.description = document.getElementById('sm-np-description');
-    npEls.feedback   = document.getElementById('sm-np-feedback');
-    npEls.save       = document.getElementById('sm-np-save');
+    npEls.description  = document.getElementById('sm-np-description');
+    npEls.feedback     = document.getElementById('sm-np-feedback');
+    npEls.save         = document.getElementById('sm-np-save');
 
     if (npEls.modal) {
       npEls.modal.querySelectorAll('[data-sm-close]').forEach(el => {
