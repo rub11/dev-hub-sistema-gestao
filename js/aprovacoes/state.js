@@ -1,31 +1,25 @@
 /* =========================================================
    DEV HUB · Aprovacoes · state
-   ---------------------------------------------------------
-   Namespace compartilhado (window.Appr) com:
-     • Helpers DOM ($, $$)
-     • Helpers de formatação (escapeHTML, fmtBRL, fmtDate...)
-     • Cliente Supabase + toast
-     • Estado global (all, currentUser)
-   ---------------------------------------------------------
-   Carregar SEMPRE antes dos outros arquivos de /aprovacoes/.
    ========================================================= */
-
 (function () {
   'use strict';
 
-  /* ---------- DOM ---------- */
   const $  = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
-  /* ---------- String ---------- */
   const escapeHTML = (s) =>
     String(s || '').replace(/[&<>"']/g, (ch) => ({
       '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
     }[ch]));
 
-  /* ---------- Números / datas ---------- */
   const fmtBRL = (cents) =>
     ((Number(cents) || 0) / 100).toLocaleString('pt-BR', {
+      style: 'currency', currency: 'BRL'
+    });
+
+  /* ⬇️ NOVO: formata valor em REAIS (vendas usam reais, não centavos) */
+  const fmtBRLFromReais = (reais) =>
+    (Number(reais) || 0).toLocaleString('pt-BR', {
       style: 'currency', currency: 'BRL'
     });
 
@@ -50,14 +44,19 @@
     return Math.floor(diff / 86400) + ' d';
   };
 
-  /* ---------- Supabase ---------- */
+  const padNum = (n) => {
+    const s = String(n == null ? '' : n);
+    return s.length >= 6 ? s : '0'.repeat(6 - s.length) + s;
+  };
+  const fmtSaleNumber = (sale) =>
+    sale && sale.sale_number != null ? '#' + padNum(sale.sale_number) : '—';
+
   const db = () => {
     if (window.db && window.db.from) return window.db;
     if (window.supabaseClient && window.supabaseClient.from) return window.supabaseClient;
     throw new Error('Supabase client não encontrado.');
   };
 
-  /* ---------- Toast ---------- */
   const toast = (msg, kind) => {
     if (window.Toast && typeof window.Toast.show === 'function') {
       return window.Toast.show(msg, kind);
@@ -75,21 +74,20 @@
     setTimeout(() => el.remove(), 4000);
   };
 
-  /* =========================================================
-     STATE
-     ========================================================= */
   const state = {
+    /* Compras */
     all: [],
-    currentUser: null
+    /* ⬇️ NOVO: vendas */
+    sales: [],
+    currentUser: null,
+    isPlatformAdmin: false
   };
 
-  /* =========================================================
-     PUBLICA
-     ========================================================= */
   window.Appr = Object.assign(window.Appr || {}, {
     $, $$,
     escapeHTML,
-    fmtBRL, fmtDate, fmtDateTime, timeAgo,
+    fmtBRL, fmtBRLFromReais, fmtDate, fmtDateTime, timeAgo,
+    padNum, fmtSaleNumber,
     db, toast,
     state
   });

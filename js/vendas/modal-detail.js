@@ -21,14 +21,32 @@
       if (e.key === 'Escape' && !els.modal.hidden) close();
     });
 
+    /* Corrigir */
     els.editBtn.addEventListener('click', () => {
-      if (!state.perms.edit) { DH.toast('Você não tem permissão para editar vendas.', 'error'); return; }
+      if (!state.perms.correct) {
+        DH.toast('Apenas supervisores podem corrigir vendas.', 'error');
+        return;
+      }
       const sale = els.modal.__sale; if (!sale) return;
-      close(); DH.form.openEditSale(sale);
+
+      const jaCorrigida = sale.status === 'corrected' ||
+                          sale.status === 'replaced' ||
+                          !!sale.corrected_at;
+      if (jaCorrigida) {
+        DH.toast('Esta venda já foi corrigida.', 'info');
+        return;
+      }
+
+      close();
+      DH.form.openCorrectSale(sale);
     });
 
+    /* Excluir — só platform admin */
     els.delBtn.addEventListener('click', () => {
-      if (!state.perms.remove) { DH.toast('Você não tem permissão para excluir vendas.', 'error'); return; }
+      if (!state.isPlatformAdmin) {
+        DH.toast('Apenas o administrador da plataforma pode excluir vendas.', 'error');
+        return;
+      }
       const sale = els.modal.__sale; if (!sale) return;
       close();
       DH.modalPassword.request(
@@ -38,6 +56,7 @@
       );
     });
 
+    /* Histórico */
     els.auditBtn.addEventListener('click', () => {
       const sale = els.modal.__sale; if (!sale) return;
       DH.modalAudit.open(sale);
@@ -51,8 +70,20 @@
     els.status.innerHTML = '';
     els.status.appendChild(buildStatusBadge(sale.status));
 
-    if (els.editBtn) els.editBtn.hidden = !state.perms.edit;
-    if (els.delBtn) els.delBtn.hidden = !state.perms.remove;
+    /* Excluir: só platform admin */
+    if (els.delBtn) els.delBtn.hidden = !state.isPlatformAdmin;
+
+    /* Corrigir: supervisor + não corrigida */
+    if (els.editBtn) {
+      const jaCorrigida = sale.status === 'corrected' ||
+                          sale.status === 'replaced' ||
+                          !!sale.corrected_at;
+      const podeCorrigir = (state.perms.correct || state.isPlatformAdmin) && !jaCorrigida;
+      els.editBtn.hidden = !podeCorrigir;
+
+      const label = els.editBtn.querySelector('.btn__label');
+      if (label) label.textContent = 'Corrigir venda';
+    }
 
     els.body.innerHTML =
       '<div class="state-block"><span class="spinner" aria-hidden="true"></span>' +
@@ -120,15 +151,35 @@
     grid.appendChild(buildDetailItem('Pagamento', utils.paymentLabel(sale.payment_method)));
     grid.appendChild(buildDetailItem('Status', utils.statusInfo(sale.status).label));
     grid.appendChild(buildDetailItem('Criada por', sale.created_by_name || '—'));
+
     if (sale.updated_by_name || sale.updated_at) {
       grid.appendChild(buildDetailItem(
         'Última alteração',
         (sale.updated_by_name || '—') + ' · ' + utils.formatDateTime(sale.updated_at)
       ));
     }
+    if (sale.corrected_at) {
+      grid.appendChild(buildDetailItem('Corrigida em', utils.formatDateTime(sale.corrected_at)));
+      if (sale.corrected_by_name) {
+        grid.appendChild(buildDetailItem('Corrigida por', sale.corrected_by_name));
+      }
+    }
+    if (sale.requires_approval || sale.status === 'pending_approval') {
+      grid.appendChild(buildDetailItem('Requer aprovação', 'Sim'));
+    }
+    if (sale.approved_at) {
+      grid.appendChild(buildDetailItem('Aprovada em', utils.formatDateTime(sale.approved_at)));
+      if (sale.approved_by_name) {
+        grid.appendChild(buildDetailItem('Aprovada por', sale.approved_by_name));
+      }
+    }
+    if (sale.rejection_reason) {
+      grid.appendChild(buildDetailItem('Motivo da rejeição', sale.rejection_reason));
+    }
     s1.appendChild(grid);
     frag.appendChild(s1);
 
+    /* Produtos */
     const s2 = document.createElement('section');
     s2.className = 'detail-section';
     s2.innerHTML = '<h3 class="detail-section__title">Produtos</h3>';
@@ -156,6 +207,7 @@
     }
     frag.appendChild(s2);
 
+    /* Totais */
     const s3 = document.createElement('section');
     s3.className = 'detail-section';
     s3.innerHTML = '<h3 class="detail-section__title">Totais</h3>';
@@ -164,6 +216,16 @@
     totals.appendChild(buildTotalRow('Subtotal', utils.formatMoney(sale.subtotal)));
     totals.appendChild(buildTotalRow('Desconto', '- ' + utils.formatMoney(sale.discount)));
     totals.appendChild(buildTotalRow('Total', utils.formatMoney(sale.total), true));
+
+    const deposit = utils.toNumber(sale.deposit_amount, 0);
+    if (deposit > 0) {
+      totals.appendChild(buildTotalRow('Sinal', utils.formatMoney(deposit)));
+      totals.appendChild(buildTotalRow(
+        'Saldo a receber',
+        utils.formatMoney(Math.max(0, utils.toNumber(sale.total, 0) - deposit)),
+        true
+      ));
+    }
     s3.appendChild(totals);
     frag.appendChild(s3);
 
@@ -182,8 +244,9 @@
   }
 
   async function executeDelete(sale, password) {
-    if (!state.perms.remove) {
-      DH.toast('Você não tem permissão para excluir vendas.', 'error'); return;
+    if (!state.isPlatformAdmin) {
+      DH.toast('Apenas o administrador da plataforma pode excluir vendas.', 'error');
+      return;
     }
     try {
       const { error } = await window.db.rpc('delete_sale', {

@@ -2,9 +2,10 @@
    DEV HUB · Aprovacoes · init
    ---------------------------------------------------------
    Bootstrap da página de Aprovações.
+   Carrega compras + vendas, monta KPIs e tabelas.
    ---------------------------------------------------------
    Depende de: state.js, api.js, render.js, modals.js
-   Publica em: window.Appr (reload, state)
+   Publica em: window.Appr (reload)
    ========================================================= */
 
 (function () {
@@ -12,56 +13,63 @@
 
   const { $, escapeHTML, state } = window.Appr;
 
-  /* =========================================================
-     CARREGAR TUDO (chamado pela init e pelo botão Atualizar)
-     ========================================================= */
-  async function loadPending() {
-    const tbody = $('#appr-tbody');
-    if (!tbody) return;
+  async function loadAll() {
+    const tbody  = $('#appr-tbody');
+    const stbody = $('#appr-sales-tbody');
+    if (!tbody || !stbody) return;
 
-    tbody.innerHTML = `<tr><td colspan="7"><div class="appr-loading">Carregando...</div></td></tr>`;
+    tbody.innerHTML  = `<tr><td colspan="7"><div class="appr-loading">Carregando...</div></td></tr>`;
+    stbody.innerHTML = `<tr><td colspan="7"><div class="appr-loading">Carregando...</div></td></tr>`;
 
+    /* Compras */
     try {
       const data = await window.Appr.loadPending();
       state.all = data;
-      window.Appr.renderKpis();
-      window.Appr.renderTable();
     } catch (e) {
       console.error('[aprovacoes] loadPending:', e);
+      state.all = [];
       tbody.innerHTML = `
         <tr><td colspan="7" style="padding:0;border:0">
-          <div class="appr-empty">
-            <div class="appr-empty__icon" style="background:var(--danger-soft);color:var(--danger)">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="9"/>
-                <path d="M12 8v4M12 16h.01"/>
-              </svg>
-            </div>
-            <h3 class="appr-empty__title">Erro ao carregar</h3>
-            <p class="appr-empty__text">${escapeHTML(e.message)}</p>
+          <div class="appr-panel__empty">
+            <div class="appr-panel__empty-title">Erro ao carregar compras</div>
+            <p class="appr-panel__empty-text">${escapeHTML(e.message)}</p>
           </div>
         </td></tr>`;
     }
+
+    /* Vendas */
+    try {
+      const data = await window.Appr.loadPendingSales();
+      state.sales = data;
+    } catch (e) {
+      console.error('[aprovacoes] loadPendingSales:', e);
+      state.sales = [];
+      stbody.innerHTML = `
+        <tr><td colspan="7" style="padding:0;border:0">
+          <div class="appr-panel__empty">
+            <div class="appr-panel__empty-title">Erro ao carregar vendas</div>
+            <p class="appr-panel__empty-text">${escapeHTML(e.message)}</p>
+          </div>
+        </td></tr>`;
+    }
+
+    window.Appr.renderKpis();
+    window.Appr.renderTable();
+    window.Appr.renderSalesTable();
   }
 
-  /* =========================================================
-     BOOTSTRAP
-     ========================================================= */
   document.addEventListener('DOMContentLoaded', async () => {
     if (document.body.dataset.page !== 'aprovacoes') return;
 
     const refresh = $('#appr-refresh');
-    if (refresh) refresh.addEventListener('click', loadPending);
+    if (refresh) refresh.addEventListener('click', loadAll);
 
     await window.Appr.loadCurrentUser();
-    await loadPending();
+    await loadAll();
   });
 
-  /* =========================================================
-     API GLOBAL
-     ========================================================= */
   Object.assign(window.Appr, {
-    reload: loadPending
+    reload: loadAll
   });
 
 })();

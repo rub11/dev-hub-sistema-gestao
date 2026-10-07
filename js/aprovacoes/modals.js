@@ -1,7 +1,8 @@
 /* =========================================================
    DEV HUB · Aprovacoes · modals
    ---------------------------------------------------------
-   Modais de ver detalhes, aprovar e rejeitar.
+   Modais de ver detalhes, aprovar e rejeitar (compras + vendas).
+   Vendas exigem senha (as RPCs pedem p_password).
    ---------------------------------------------------------
    Depende de: state.js, api.js
    Publica em: window.Appr
@@ -11,12 +12,36 @@
   'use strict';
 
   const {
-    $, escapeHTML, fmtBRL, fmtDateTime,
+    $, escapeHTML, fmtBRL, fmtBRLFromReais, fmtDateTime, fmtSaleNumber,
     toast
   } = window.Appr;
 
+  /* ---------- Helpers de senha ---------- */
+  function pwdToggleHTML(inputId) {
+    return `
+      <button type="button" class="appr-pwd-toggle" data-pw-toggle="${inputId}" aria-label="Mostrar senha" aria-pressed="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+      </button>`;
+  }
+
+  function bindPwdToggle(modal) {
+    modal.querySelectorAll('[data-pw-toggle]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const input = modal.querySelector('#' + btn.dataset.pwToggle);
+        if (!input) return;
+        const visible = input.type === 'text';
+        input.type = visible ? 'password' : 'text';
+        btn.setAttribute('aria-pressed', String(!visible));
+        input.focus({ preventScroll: true });
+      });
+    });
+  }
+
   /* =========================================================
-     MODAL · VER DETALHES
+     COMPRAS · Ver
      ========================================================= */
   async function openViewModal(row) {
     try {
@@ -39,12 +64,9 @@
             </button>
           </header>
           <div class="appr-modal__body">
-
             <div style="display:flex;gap:12px;flex-wrap:wrap">
               <span class="appr-chip">Aguardando aprovação</span>
-              ${row.payment_method ? `<span style="font-size:13px;color:var(--text-soft);align-self:center">${escapeHTML(row.payment_method)}</span>` : ''}
             </div>
-
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
               <div>
                 <strong style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em">Fornecedor</strong>
@@ -55,7 +77,6 @@
                 <div style="font-size:18px;font-weight:700;margin-top:2px">${fmtBRL(row.total_cents)}</div>
               </div>
             </div>
-
             <h4 style="margin:4px 0 0;font-size:13.5px;font-weight:600">Itens do pedido</h4>
             <div style="overflow-x:auto;border:1px solid var(--border);border-radius:12px">
               <table style="width:100%;border-collapse:collapse;font-size:13.5px;min-width:420px">
@@ -77,27 +98,20 @@
                 </tbody>
               </table>
             </div>
-
             ${row.notes ? `
               <div>
                 <strong style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em">Observações</strong>
                 <p style="margin:6px 0 0;font-size:13.5px;color:var(--text-soft);line-height:1.5;white-space:pre-wrap">${escapeHTML(row.notes)}</p>
-              </div>
-            ` : ''}
-
+              </div>` : ''}
           </div>
           <footer class="appr-modal__foot">
             <button type="button" class="appr-btn appr-btn--ghost" data-close>Fechar</button>
             <button type="button" class="appr-btn appr-btn--danger" id="m-reject">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M18 6 6 18M6 6l12 12"/>
-              </svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
               Rejeitar
             </button>
             <button type="button" class="appr-btn appr-btn--success" id="m-approve">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M20 6 9 17l-5-5"/>
-              </svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
               Aprovar
             </button>
           </footer>
@@ -107,14 +121,8 @@
       const close = () => modal.remove();
       modal.querySelectorAll('[data-close]').forEach((el) => el.addEventListener('click', close));
 
-      modal.querySelector('#m-approve').addEventListener('click', () => {
-        close();
-        openApproveModal(row);
-      });
-      modal.querySelector('#m-reject').addEventListener('click', () => {
-        close();
-        openRejectModal(row);
-      });
+      modal.querySelector('#m-approve').addEventListener('click', () => { close(); openApproveModal(row); });
+      modal.querySelector('#m-reject').addEventListener('click',  () => { close(); openRejectModal(row); });
     } catch (e) {
       console.error('[aprovacoes] openViewModal:', e);
       toast('Não foi possível abrir os detalhes.', 'error');
@@ -122,7 +130,7 @@
   }
 
   /* =========================================================
-     MODAL · APROVAR
+     COMPRAS · Aprovar
      ========================================================= */
   function openApproveModal(row) {
     const modal = document.createElement('div');
@@ -180,7 +188,7 @@
   }
 
   /* =========================================================
-     MODAL · REJEITAR
+     COMPRAS · Rejeitar
      ========================================================= */
   function openRejectModal(row) {
     const modal = document.createElement('div');
@@ -251,12 +259,253 @@
   }
 
   /* =========================================================
+     VENDAS · Ver detalhes
+     ========================================================= */
+  async function openViewSaleModal(sale) {
+    try {
+      const items = await window.Appr.fetchSaleItems(sale.id);
+      const cliente = (sale.customers && sale.customers.name) ? sale.customers.name : '—';
+
+      const modal = document.createElement('div');
+      modal.className = 'appr-modal';
+      modal.innerHTML = `
+        <div class="appr-modal__backdrop" data-close></div>
+        <div class="appr-modal__dialog appr-modal__dialog--lg">
+          <header class="appr-modal__head">
+            <div>
+              <h3 class="appr-modal__title">${escapeHTML(fmtSaleNumber(sale))}</h3>
+              <p class="appr-modal__sub">
+                Solicitada por ${escapeHTML(sale.created_by_name || '—')} · ${fmtDateTime(sale.created_at)}
+              </p>
+            </div>
+            <button class="appr-modal__close" data-close aria-label="Fechar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+            </button>
+          </header>
+          <div class="appr-modal__body">
+            <div style="display:flex;gap:12px;flex-wrap:wrap">
+              <span class="appr-chip">Aguardando aprovação</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+              <div>
+                <strong style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em">Cliente</strong>
+                <div style="font-size:15px;margin-top:2px">${escapeHTML(cliente)}</div>
+              </div>
+              <div>
+                <strong style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em">Valor total</strong>
+                <div style="font-size:18px;font-weight:700;margin-top:2px">${fmtBRLFromReais(sale.total)}</div>
+              </div>
+            </div>
+            <h4 style="margin:4px 0 0;font-size:13.5px;font-weight:600">Itens da venda</h4>
+            <div style="overflow-x:auto;border:1px solid var(--border);border-radius:12px">
+              <table style="width:100%;border-collapse:collapse;font-size:13.5px;min-width:420px">
+                <thead>
+                  <tr style="border-bottom:1px solid var(--border);text-align:left;color:var(--text-muted);font-size:11px;text-transform:uppercase">
+                    <th style="padding:10px 14px">Produto</th>
+                    <th style="padding:10px 14px;text-align:right">Qtd</th>
+                    <th style="padding:10px 14px;text-align:right">Preço un.</th>
+                    <th style="padding:10px 14px;text-align:right">Subtotal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${(items || []).map((it) => `
+                    <tr style="border-bottom:1px solid var(--border)">
+                      <td style="padding:10px 14px">${escapeHTML(it.product_name || '—')}</td>
+                      <td style="padding:10px 14px;text-align:right">${Number(it.quantity)}</td>
+                      <td style="padding:10px 14px;text-align:right;font-variant-numeric:tabular-nums">${fmtBRLFromReais(it.unit_price)}</td>
+                      <td style="padding:10px 14px;text-align:right;font-variant-numeric:tabular-nums">${fmtBRLFromReais(it.subtotal)}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+            ${sale.notes ? `
+              <div>
+                <strong style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em">Observações</strong>
+                <p style="margin:6px 0 0;font-size:13.5px;color:var(--text-soft);line-height:1.5;white-space:pre-wrap">${escapeHTML(sale.notes)}</p>
+              </div>` : ''}
+          </div>
+          <footer class="appr-modal__foot">
+            <button type="button" class="appr-btn appr-btn--ghost" data-close>Fechar</button>
+            <button type="button" class="appr-btn appr-btn--danger" id="m-reject">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              Rejeitar
+            </button>
+            <button type="button" class="appr-btn appr-btn--success" id="m-approve">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+              Aprovar
+            </button>
+          </footer>
+        </div>`;
+      document.body.appendChild(modal);
+
+      const close = () => modal.remove();
+      modal.querySelectorAll('[data-close]').forEach((el) => el.addEventListener('click', close));
+
+      modal.querySelector('#m-approve').addEventListener('click', () => { close(); openApproveSaleModal(sale); });
+      modal.querySelector('#m-reject').addEventListener('click',  () => { close(); openRejectSaleModal(sale); });
+    } catch (e) {
+      console.error('[aprovacoes] openViewSaleModal:', e);
+      toast('Não foi possível abrir os detalhes.', 'error');
+    }
+  }
+
+  /* =========================================================
+     VENDAS · Aprovar (com senha)
+     ========================================================= */
+  function openApproveSaleModal(sale) {
+    const modal = document.createElement('div');
+    modal.className = 'appr-modal';
+    modal.innerHTML = `
+      <div class="appr-modal__backdrop" data-close></div>
+      <div class="appr-modal__dialog">
+        <header class="appr-modal__head">
+          <div>
+            <h3 class="appr-modal__title">Aprovar venda</h3>
+            <p class="appr-modal__sub">${escapeHTML(fmtSaleNumber(sale))} · ${fmtBRLFromReais(sale.total)}</p>
+          </div>
+          <button class="appr-modal__close" data-close aria-label="Fechar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+          </button>
+        </header>
+        <div class="appr-modal__body">
+          <p style="margin:0;font-size:14px;line-height:1.55;color:var(--text-soft)">
+            O estoque será baixado agora e a venda ficará <strong>concluída</strong>.
+            Confirme sua senha para continuar.
+          </p>
+          <div class="appr-field appr-field--pwd">
+            <label for="ap-pwd">Senha</label>
+            <input type="password" id="ap-pwd" autocomplete="current-password" maxlength="72" />
+            ${pwdToggleHTML('ap-pwd')}
+          </div>
+          <div class="appr-err" id="ap-error" hidden></div>
+        </div>
+        <footer class="appr-modal__foot">
+          <button type="button" class="appr-btn appr-btn--ghost" data-close>Cancelar</button>
+          <button type="button" class="appr-btn appr-btn--success" id="ap-confirm">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 6 9 17l-5-5"/>
+            </svg>
+            Aprovar venda
+          </button>
+        </footer>
+      </div>`;
+    document.body.appendChild(modal);
+
+    const close = () => modal.remove();
+    modal.querySelectorAll('[data-close]').forEach((el) => el.addEventListener('click', close));
+    bindPwdToggle(modal);
+
+    const pwdEl = modal.querySelector('#ap-pwd');
+    pwdEl.focus();
+
+    modal.querySelector('#ap-confirm').addEventListener('click', async () => {
+      const err = modal.querySelector('#ap-error');
+      err.hidden = true;
+      const pwd = pwdEl.value;
+      if (!pwd) { err.textContent = 'Informe sua senha.'; err.hidden = false; return; }
+
+      const btn = modal.querySelector('#ap-confirm');
+      btn.disabled = true;
+      try {
+        await window.Appr.approveSale(sale.id, pwd);
+        close();
+        toast('Venda aprovada! Estoque baixado.', 'success');
+        await window.Appr.reload();
+      } catch (e) {
+        console.error('[aprovacoes] approve_sale:', e);
+        err.textContent = e.message || 'Erro ao aprovar.';
+        err.hidden = false;
+        btn.disabled = false;
+      }
+    });
+  }
+
+  /* =========================================================
+     VENDAS · Rejeitar (com senha + motivo)
+     ========================================================= */
+  function openRejectSaleModal(sale) {
+    const modal = document.createElement('div');
+    modal.className = 'appr-modal';
+    modal.innerHTML = `
+      <div class="appr-modal__backdrop" data-close></div>
+      <div class="appr-modal__dialog">
+        <header class="appr-modal__head">
+          <div>
+            <h3 class="appr-modal__title">Rejeitar venda</h3>
+            <p class="appr-modal__sub">${escapeHTML(fmtSaleNumber(sale))} · ${fmtBRLFromReais(sale.total)}</p>
+          </div>
+          <button class="appr-modal__close" data-close aria-label="Fechar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+          </button>
+        </header>
+        <div class="appr-modal__body">
+          <p style="margin:0;font-size:13.5px;line-height:1.5;color:var(--text-soft)">
+            A venda ficará marcada como <strong>rejeitada</strong>. O solicitante será notificado.
+          </p>
+          <div class="appr-field">
+            <label for="rj-reason">Motivo da rejeição *</label>
+            <textarea id="rj-reason" rows="3" placeholder="Ex.: cliente não pagou, estoque continua zerado..."></textarea>
+          </div>
+          <div class="appr-field appr-field--pwd">
+            <label for="rj-pwd">Senha</label>
+            <input type="password" id="rj-pwd" autocomplete="current-password" maxlength="72" />
+            ${pwdToggleHTML('rj-pwd')}
+          </div>
+          <div class="appr-err" id="rj-error" hidden></div>
+        </div>
+        <footer class="appr-modal__foot">
+          <button type="button" class="appr-btn appr-btn--ghost" data-close>Cancelar</button>
+          <button type="button" class="appr-btn appr-btn--danger" id="rj-confirm">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 6 6 18M6 6l12 12"/>
+            </svg>
+            Rejeitar venda
+          </button>
+        </footer>
+      </div>`;
+    document.body.appendChild(modal);
+
+    const close = () => modal.remove();
+    modal.querySelectorAll('[data-close]').forEach((el) => el.addEventListener('click', close));
+    bindPwdToggle(modal);
+
+    modal.querySelector('#rj-reason').focus();
+
+    modal.querySelector('#rj-confirm').addEventListener('click', async () => {
+      const err = modal.querySelector('#rj-error');
+      err.hidden = true;
+      const reason = (modal.querySelector('#rj-reason').value || '').trim();
+      const pwd    = modal.querySelector('#rj-pwd').value;
+      if (reason.length < 5) { err.textContent = 'Informe um motivo com pelo menos 5 caracteres.'; err.hidden = false; return; }
+      if (!pwd) { err.textContent = 'Informe sua senha.'; err.hidden = false; return; }
+
+      const btn = modal.querySelector('#rj-confirm');
+      btn.disabled = true;
+      try {
+        await window.Appr.rejectSale(sale.id, pwd, reason);
+        close();
+        toast('Venda rejeitada. Solicitante notificado.', 'info');
+        await window.Appr.reload();
+      } catch (e) {
+        console.error('[aprovacoes] reject_sale:', e);
+        err.textContent = e.message || 'Erro ao rejeitar.';
+        err.hidden = false;
+        btn.disabled = false;
+      }
+    });
+  }
+
+  /* =========================================================
      PUBLICA
      ========================================================= */
   Object.assign(window.Appr, {
     openViewModal,
     openApproveModal,
-    openRejectModal
+    openRejectModal,
+    openViewSaleModal,
+    openApproveSaleModal,
+    openRejectSaleModal
   });
 
 })();

@@ -76,38 +76,68 @@
     return badge;
   }
 
+  /* =========================================================
+     Badge de pagamento (sem sinal / sinal / pago)
+     ========================================================= */
+  function buildPaymentBadge(sale) {
+    const total   = utils.toNumber(sale.total, 0);
+    const deposit = utils.toNumber(sale.deposit_amount, 0);
+    const wrap = document.createElement('span');
+
+    if (deposit <= 0) {
+      wrap.className = 'badge badge--muted';
+      wrap.textContent = 'Sem sinal';
+      return wrap;
+    }
+    if (deposit >= total) {
+      wrap.className = 'badge badge--success';
+      wrap.textContent = 'Pago';
+      return wrap;
+    }
+    wrap.className = 'badge badge--warning';
+    wrap.textContent = 'Sinal ' + utils.formatMoney(deposit);
+    return wrap;
+  }
+
   function buildActionsCell(sale) {
     const cell = document.createElement('td');
     cell.className = 'cell--num';
     const wrap = document.createElement('div');
     wrap.className = 'row-actions';
 
+    /* 👁️ Ver */
     const viewBtn = document.createElement('button');
     viewBtn.type = 'button';
     viewBtn.className = 'row-action';
-    viewBtn.setAttribute('aria-label', 'Ver detalhes da venda ' + utils.formatSaleNumber(sale));
     viewBtn.title = 'Ver detalhes';
+    viewBtn.setAttribute('aria-label', 'Ver detalhes da venda ' + utils.formatSaleNumber(sale));
     viewBtn.innerHTML =
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"' +
       ' stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
       '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/>' +
       '<circle cx="12" cy="12" r="3"/></svg>';
-    viewBtn.addEventListener('click', () => DH.modalDetail.open(sale)); // ← corrigido
+    viewBtn.addEventListener('click', () => DH.modalDetail.open(sale));
     wrap.appendChild(viewBtn);
 
-    if (state.perms.edit) {
-      const editBtn = document.createElement('button');
-      editBtn.type = 'button';
-      editBtn.className = 'row-action';
-      editBtn.title = 'Editar venda';
-      editBtn.setAttribute('aria-label', 'Editar venda ' + utils.formatSaleNumber(sale));
-      editBtn.innerHTML =
+    /* ✏️ Corrigir */
+    const jaCorrigida = sale.status === 'corrected' ||
+                        sale.status === 'replaced' ||
+                        !!sale.corrected_at;
+
+    if (state.perms.correct && !jaCorrigida) {
+      const correctBtn = document.createElement('button');
+      correctBtn.type = 'button';
+      correctBtn.className = 'row-action';
+      correctBtn.title = 'Corrigir venda';
+      correctBtn.setAttribute('aria-label', 'Corrigir venda ' + utils.formatSaleNumber(sale));
+      correctBtn.innerHTML =
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"' +
         ' stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
         '<path d="M12 20h9"/>' +
-        '<path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
-      editBtn.addEventListener('click', () => DH.form.openEditSale(sale));
-      wrap.appendChild(editBtn);
+        '<path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/>' +
+        '<path d="M18 9v6"/><path d="M15 12h6"/></svg>';
+      correctBtn.addEventListener('click', () => DH.form.openCorrectSale(sale));
+      wrap.appendChild(correctBtn);
     }
 
     cell.appendChild(wrap);
@@ -121,8 +151,16 @@
     row.appendChild(createCell(utils.customerNameOf(sale), 'cell--muted'));
     row.appendChild(createCell(utils.formatDateTime(sale.created_at), 'cell--muted'));
     row.appendChild(createCell(utils.formatMoney(sale.total), 'cell--num cell-price'));
+
+    /* Pagamento (badge) */
+    const paymentCell = document.createElement('td');
+    paymentCell.appendChild(buildPaymentBadge(sale));
+    row.appendChild(paymentCell);
+
+    /* Forma de pagamento */
     row.appendChild(createCell(utils.paymentLabel(sale.payment_method), 'cell--muted'));
 
+    /* Status */
     const statusCell = document.createElement('td');
     statusCell.appendChild(buildStatusBadge(sale.status));
     row.appendChild(statusCell);

@@ -20,6 +20,10 @@
     if (message.includes('Venda não encontrada')) return message;
     if (message.includes('Venda não pertence')) return message;
     if (message.includes('Sem permissão')) return message;
+    if (message.includes('já foi corrigida')) return message;
+    if (message.includes('não pode ser corrigida')) return message;
+    if (message.includes('aguardando aprovação')) return message;
+    if (message.includes('Apenas o administrador da plataforma')) return message;
 
     if (lower.includes('failed to fetch') || lower.includes('network')) {
       return 'Não foi possível conectar ao servidor.';

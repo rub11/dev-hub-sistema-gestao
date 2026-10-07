@@ -22,10 +22,13 @@
     formEls.cartEmpty   = document.getElementById('cart-empty');
     formEls.discount    = document.getElementById('sale-discount');
     formEls.discountPct = document.getElementById('sale-discount-pct');
+    formEls.deposit     = document.getElementById('sale-deposit');
     formEls.totalSub    = document.getElementById('total-subtotal');
     formEls.totalTotal  = document.getElementById('total-total');
     formEls.payment     = document.getElementById('sale-payment');
     formEls.notes       = document.getElementById('sale-notes');
+    formEls.noStock     = document.getElementById('sale-no-stock');
+    formEls.validUntil  = document.getElementById('sale-valid-until');
     formEls.feedback    = document.getElementById('sale-form-feedback');
     formEls.submitBtn   = document.getElementById('submit-sale-btn');
 
@@ -43,6 +46,31 @@
         DH.cart.recalc();
       });
     }
+    if (formEls.deposit) {
+      formEls.deposit.addEventListener('input', () => DH.cart.recalc());
+    }
+    if (formEls.noStock) {
+      formEls.noStock.addEventListener('change', () => {
+        state.noStock = formEls.noStock.checked;
+        DH.cart.render();
+        DH.cart.recalc();
+        if (DH.productSearch.onToggleNoStock) DH.productSearch.onToggleNoStock();
+        if (DH.draft && DH.draft.saveDebounced) DH.draft.saveDebounced();
+      });
+    }
+
+    /* Botão "+ Novo parceiro" — fallback caso o customer-modal não esteja ligado */
+    const newCustomerBtn = document.getElementById('new-customer-btn');
+    if (newCustomerBtn) {
+      newCustomerBtn.addEventListener('click', () => {
+        if (DH.customerModal && typeof DH.customerModal.open === 'function') {
+          DH.customerModal.open();
+        } else {
+          DH.toast('Módulo de cadastro de parceiro não carregado.', 'error');
+        }
+      });
+    }
+
     formEls.form.addEventListener('submit', onSubmit);
   }
 
@@ -56,6 +84,9 @@
     if (isForm) window.scrollTo({ top: 0, behavior: 'auto' });
   }
 
+  /* =========================================================
+     NOVA VENDA
+     ========================================================= */
   async function openFormView() {
     if (!state.perms.create) {
       DH.toast('Você não tem permissão para criar vendas.', 'error');
@@ -63,11 +94,27 @@
     }
     state.editingSaleId = null;
     state.editingSale = null;
+    state.correctingSaleId = null;
+    state.correctingSale = null;
+    state.convertingFromQuote = null;
+    state.noStock = false;
+
+    if (formEls.noStock) formEls.noStock.checked = false;
+
     setFormMode('create');
     showView('form');
+
+    const validField = document.getElementById('quote-valid-field');
+    if (validField) validField.hidden = true;
+    const noStockField = document.getElementById('no-stock-field');
+    if (noStockField) noStockField.hidden = false;
+
     if (!state.formDataLoaded) await loadFormData();
   }
 
+  /* =========================================================
+     EDITAR
+     ========================================================= */
   async function openEditSale(sale) {
     if (!state.perms.edit) {
       DH.toast('Você não tem permissão para editar vendas.', 'error');
@@ -75,11 +122,21 @@
     }
     state.editingSaleId = sale.id;
     state.editingSale = sale;
+    state.correctingSaleId = null;
+    state.correctingSale = null;
+    state.convertingFromQuote = null;
+    state.noStock = false;
+    if (formEls.noStock) formEls.noStock.checked = false;
+
     showView('form');
+    const validField = document.getElementById('quote-valid-field');
+    if (validField) validField.hidden = true;
+    const noStockField = document.getElementById('no-stock-field');
+    if (noStockField) noStockField.hidden = false;
+
     if (!state.formDataLoaded) await loadFormData();
 
     const items = await fetchSaleItems(sale.id);
-
     state.cart = items.map(it => ({
       product_id: it.product_id,
       product_name: it.product_name,
@@ -91,6 +148,7 @@
 
     formEls.customer.value = sale.customer_id || '';
     formEls.discount.value = String(utils.toNumber(sale.discount, 0));
+    if (formEls.deposit) formEls.deposit.value = String(utils.toNumber(sale.deposit_amount, 0));
 
     const subSaved = utils.toNumber(sale.subtotal, 0);
     const dscSaved = utils.toNumber(sale.discount, 0);
@@ -108,18 +166,101 @@
     DH.cart.recalc();
   }
 
+  /* =========================================================
+     CORRIGIR
+     ========================================================= */
+  async function openCorrectSale(sale) {
+    if (!state.perms.correct) {
+      DH.toast('Apenas supervisores podem corrigir vendas.', 'error');
+      return;
+    }
+    if (sale.status === 'corrected' || sale.status === 'replaced' || sale.corrected_at) {
+      DH.toast('Esta venda já foi corrigida.', 'info');
+      return;
+    }
+    state.correctingSaleId = sale.id;
+    state.correctingSale = sale;
+    state.editingSaleId = null;
+    state.editingSale = null;
+    state.convertingFromQuote = null;
+    state.noStock = false;
+    if (formEls.noStock) formEls.noStock.checked = false;
+
+    showView('form');
+    const validField = document.getElementById('quote-valid-field');
+    if (validField) validField.hidden = true;
+    const noStockField = document.getElementById('no-stock-field');
+    if (noStockField) noStockField.hidden = false;
+
+    if (!state.formDataLoaded) await loadFormData();
+
+    const items = await fetchSaleItems(sale.id);
+    state.cart = items.map(it => ({
+      product_id: it.product_id,
+      product_name: it.product_name,
+      unit_price: utils.toNumber(it.unit_price, 0),
+      quantity: utils.toInteger(it.quantity, 0),
+      subtotal: utils.toNumber(it.subtotal, 0),
+      stock_available: (utils.findProduct(it.product_id) || {}).stock || 0
+    }));
+
+    formEls.customer.value = sale.customer_id || '';
+    formEls.discount.value = String(utils.toNumber(sale.discount, 0));
+    if (formEls.deposit) formEls.deposit.value = String(utils.toNumber(sale.deposit_amount, 0));
+
+    const subSaved = utils.toNumber(sale.subtotal, 0);
+    const dscSaved = utils.toNumber(sale.discount, 0);
+    if (formEls.discountPct) {
+      formEls.discountPct.value = subSaved > 0
+        ? String(utils.round2(dscSaved / subSaved * 100)) : '0';
+    }
+    state.lastDiscountEdit = 'brl';
+
+    formEls.payment.value = sale.payment_method || '';
+    formEls.notes.value = sale.notes || '';
+
+    setFormMode('correct', sale);
+    DH.cart.render();
+    DH.cart.recalc();
+  }
+
+  /* =========================================================
+     MODOS
+     ========================================================= */
   function setFormMode(mode, sale) {
-    const isEdit = mode === 'edit';
+    state.formMode = mode;
+
     const title = document.querySelector('#view-form .page-head__title');
     const sub = document.querySelector('#view-form .page-head__sub');
     const submitLabel = formEls.submitBtn ? formEls.submitBtn.querySelector('.btn__label') : null;
 
-    if (title) title.textContent = isEdit
-      ? 'Editar venda ' + utils.formatSaleNumber(sale) : 'Nova venda';
-    if (sub) sub.textContent = isEdit
-      ? 'Alterações serão registradas no histórico com seu nome e horário.'
-      : 'Selecione o cliente, adicione produtos e finalize.';
-    if (submitLabel) submitLabel.textContent = isEdit ? 'Salvar alterações' : 'Finalizar venda';
+    if (mode === 'edit') {
+      if (title) title.textContent = 'Editar venda ' + utils.formatSaleNumber(sale);
+      if (sub) sub.textContent = 'Alterações serão registradas no histórico com seu nome e horário.';
+      if (submitLabel) submitLabel.textContent = 'Salvar alterações';
+      return;
+    }
+    if (mode === 'correct') {
+      if (title) title.textContent = 'Corrigir venda ' + utils.formatSaleNumber(sale);
+      if (sub) sub.textContent = 'A venda original ficará marcada como "Corrigida". Uma nova venda será criada.';
+      if (submitLabel) submitLabel.textContent = 'Salvar correção';
+      return;
+    }
+    if (mode === 'quote') {
+      if (title) title.textContent = 'Novo orçamento';
+      if (sub) sub.textContent = 'Orçamentos podem incluir itens sem estoque — a falta será tratada na hora de virar venda.';
+      if (submitLabel) submitLabel.textContent = 'Salvar orçamento';
+      return;
+    }
+    if (mode === 'from_quote') {
+      if (title) title.textContent = 'Converter orçamento ' + (DH.quotes ? DH.quotes.fmtQuoteNumber(sale) : '');
+      if (sub) sub.textContent = 'Confira os itens e finalize a venda. O orçamento será marcado como convertido.';
+      if (submitLabel) submitLabel.textContent = 'Finalizar venda';
+      return;
+    }
+    if (title) title.textContent = 'Nova venda';
+    if (sub) sub.textContent = 'Selecione o cliente, adicione produtos e finalize.';
+    if (submitLabel) submitLabel.textContent = 'Finalizar venda';
   }
 
   function closeFormView() {
@@ -127,13 +268,29 @@
     DH.cart.reset();
     state.editingSaleId = null;
     state.editingSale = null;
+    state.correctingSaleId = null;
+    state.correctingSale = null;
+    state.convertingFromQuote = null;
+    state.noStock = false;
+    state.formMode = null;
+
+    const validField = document.getElementById('quote-valid-field');
+    if (validField) validField.hidden = true;
+    const noStockField = document.getElementById('no-stock-field');
+    if (noStockField) noStockField.hidden = false;
+
     showView('list');
   }
 
+  /* =========================================================
+     CARREGAR DADOS — colunas corretas da tabela `customers`
+     ========================================================= */
   async function loadFormData() {
     state.formDataLoaded = false;
     const [customersRes, productsRes] = await Promise.all([
-      window.db.from('customers').select('id, name').order('name', { ascending: true }),
+      window.db.from('customers')
+        .select('id, name, phone, email, cpf_cnpj')
+        .order('name', { ascending: true }),
       window.db.from('products')
         .select('id, name, code, barcode, description, image_url, price, stock, minimum_stock, active')
         .eq('active', true).order('name', { ascending: true })
@@ -157,35 +314,82 @@
   function populateCustomerSelect() {
     const select = document.getElementById('sale-customer');
     if (!select) return;
+    const currentValue = select.value;
     while (select.options.length > 1) select.remove(1);
-    state.customers.forEach(c => {
+    (state.customers || []).forEach(c => {
       const option = document.createElement('option');
       option.value = c.id;
       option.textContent = c.name || '(sem nome)';
       select.appendChild(option);
     });
+    if (currentValue) select.value = currentValue;
   }
 
+  function addCustomerToSelect(customer) {
+    if (!customer || !customer.id) return;
+    if (!Array.isArray(state.customers)) state.customers = [];
+
+    const idx = state.customers.findIndex(c => c.id === customer.id);
+    if (idx >= 0) state.customers[idx] = customer;
+    else state.customers.push(customer);
+
+    state.customers.sort((a, b) =>
+      (a.name || '').localeCompare((b.name || ''), 'pt-BR')
+    );
+
+    populateCustomerSelect();
+  }
+
+  /* =========================================================
+     SUBMIT
+     ========================================================= */
   async function onSubmit(event) {
     event.preventDefault();
     if (state.submitting) return;
     DH.cart.clearFeedback();
 
-    if (state.editingSaleId && !state.perms.edit) {
-      DH.cart.showFeedback('Você não tem permissão para editar vendas.'); return;
+    const mode = state.formMode;
+
+    if (mode === 'correct') {
+      if (!state.perms.correct) { DH.cart.showFeedback('Apenas supervisores podem corrigir vendas.'); return; }
+    } else if (mode === 'edit') {
+      if (!state.perms.edit) { DH.cart.showFeedback('Você não tem permissão para editar vendas.'); return; }
+    } else {
+      if (!state.perms.create) { DH.cart.showFeedback('Você não tem permissão para criar.'); return; }
     }
-    if (!state.editingSaleId && !state.perms.create) {
-      DH.cart.showFeedback('Você não tem permissão para criar vendas.'); return;
-    }
+
     if (state.cart.length === 0) {
-      DH.cart.showFeedback('Adicione pelo menos um produto à venda.'); return;
+      DH.cart.showFeedback('Adicione pelo menos um produto.');
+      return;
     }
 
     for (let i = 0; i < state.cart.length; i += 1) {
       const item = state.cart[i];
-      if (item.quantity <= 0) { DH.cart.showFeedback('Quantidade inválida.'); return; }
-      if (item.quantity > item.stock_available) {
-        DH.cart.showFeedback('Estoque insuficiente para "' + item.product_name + '".'); return;
+      if (item.quantity <= 0) {
+        DH.cart.showFeedback('Quantidade inválida.');
+        return;
+      }
+    }
+
+    const temSemEstoque = state.cart.some(it => it.quantity > it.stock_available);
+
+    if (mode !== 'quote') {
+      const allowNoStock = !!state.noStock;
+      if (temSemEstoque && !allowNoStock) {
+        if (mode === 'from_quote') {
+          state.noStock = true;
+          if (formEls.noStock) formEls.noStock.checked = true;
+          DH.toast(
+            'Itens sem estoque detectados — a venda seguirá para aprovação do gestor.',
+            'info'
+          );
+        } else {
+          DH.cart.showFeedback(
+            'Há itens sem estoque no carrinho. Marque "Vender sem estoque" ' +
+            'para que a venda vá para aprovação do gestor.'
+          );
+          return;
+        }
       }
     }
 
@@ -199,13 +403,19 @@
     const total = utils.round2(subtotal - discount);
     if (total < 0) { DH.cart.showFeedback('O total não pode ser negativo.'); return; }
 
+    let depositAmount = formEls.deposit ? utils.toNumber(formEls.deposit.value, 0) : 0;
+    if (!Number.isFinite(depositAmount) || depositAmount < 0) depositAmount = 0;
+    if (depositAmount > total) depositAmount = total;
+
     const payload = {
       customer_id: formEls.customer.value || null,
       subtotal,
       discount: utils.round2(discount),
       total,
+      deposit_amount: utils.round2(depositAmount),
       payment_method: formEls.payment.value || '',
       notes: formEls.notes.value.trim() || '',
+      allow_no_stock: !!state.noStock,
       items: state.cart.map(item => ({
         product_id: item.product_id,
         product_name: item.product_name,
@@ -215,7 +425,23 @@
       }))
     };
 
-    if (state.editingSaleId) {
+    if (mode === 'quote') {
+      await submitQuote(payload);
+      return;
+    }
+
+    if (mode === 'correct') {
+      const saleLabel = state.correctingSale
+        ? utils.formatSaleNumber(state.correctingSale) : '#—';
+      DH.modalPassword.request(
+        'Para corrigir a venda ' + saleLabel + ', confirme sua senha. ' +
+        'A venda original será marcada como "Corrigida" e uma nova venda será criada.',
+        async pwd => { await submitCorrection(payload, pwd); }
+      );
+      return;
+    }
+
+    if (mode === 'edit') {
       const saleLabel = state.editingSale ? utils.formatSaleNumber(state.editingSale) : '#—';
       DH.modalPassword.request(
         'Para salvar as alterações da venda ' + saleLabel +
@@ -224,9 +450,13 @@
       );
       return;
     }
+
     await submitCreate(payload);
   }
 
+  /* =========================================================
+     RPCs
+     ========================================================= */
   async function submitCreate(payload) {
     setSubmitting(true);
     try {
@@ -237,22 +467,53 @@
         p_total: payload.total,
         p_payment_method: payload.payment_method,
         p_notes: payload.notes,
-        p_items: payload.items
+        p_items: payload.items,
+        p_allow_no_stock: payload.allow_no_stock,
+        p_deposit_amount: payload.deposit_amount
       });
       if (error) throw error;
+
       const result = Array.isArray(data) ? data[0] : data;
       const saleNumber = result && result.sale_number;
+      const requiresApproval = result && result.requires_approval;
+
+      if (state.convertingFromQuote && DH.quotes && result && result.sale_id) {
+        await DH.quotes.markQuoteConverted(result.sale_id);
+        state.convertingFromQuote = null;
+      }
 
       DH.cart.reset();
       state.editingSaleId = null;
       state.editingSale = null;
+      state.formMode = null;
       showView('list');
       state.formDataLoaded = false;
-      await DH.list.loadSales();
 
-      DH.toast(saleNumber
-        ? 'Venda #' + utils.padNumber(saleNumber) + ' registrada.'
-        : 'Venda registrada com sucesso.', 'success');
+      const validField = document.getElementById('quote-valid-field');
+      if (validField) validField.hidden = true;
+      const noStockField = document.getElementById('no-stock-field');
+      if (noStockField) noStockField.hidden = false;
+
+      await DH.list.loadSales();
+      if (DH.quotes) {
+        await DH.quotes.loadQuotes();
+        DH.quotes.switchTab('sales');
+      }
+      if (state.perms.approve && DH.modalApprovals) {
+        try { await DH.modalApprovals.refreshCount(); } catch (e) {}
+      }
+
+      if (requiresApproval) {
+        DH.toast(
+          'Venda #' + utils.padNumber(saleNumber) +
+          ' registrada e aguardando aprovação do gestor.',
+          'info'
+        );
+      } else {
+        DH.toast(saleNumber
+          ? 'Venda #' + utils.padNumber(saleNumber) + ' registrada.'
+          : 'Venda registrada com sucesso.', 'success');
+      }
     } catch (error) {
       console.error('[DEV HUB] Falha ao finalizar venda:', error);
       DH.cart.showFeedback(DH.mapSaleError(error));
@@ -280,6 +541,7 @@
       DH.cart.reset();
       state.editingSaleId = null;
       state.editingSale = null;
+      state.formMode = null;
       showView('list');
       state.formDataLoaded = false;
       await DH.list.loadSales();
@@ -292,6 +554,90 @@
     }
   }
 
+  async function submitCorrection(payload, password) {
+    setSubmitting(true);
+    try {
+      const { data, error } = await window.db.rpc('correct_sale', {
+        p_sale_id: state.correctingSaleId,
+        p_password: password,
+        p_customer_id: payload.customer_id,
+        p_subtotal: payload.subtotal,
+        p_discount: payload.discount,
+        p_total: payload.total,
+        p_payment_method: payload.payment_method,
+        p_notes: payload.notes,
+        p_items: payload.items,
+        p_allow_no_stock: payload.allow_no_stock
+      });
+      if (error) throw error;
+
+      const result = Array.isArray(data) ? data[0] : data;
+      const newNumber = result && result.new_sale_number;
+      const requiresApproval = result && result.requires_approval;
+
+      DH.cart.reset();
+      state.correctingSaleId = null;
+      state.correctingSale = null;
+      state.formMode = null;
+      showView('list');
+      state.formDataLoaded = false;
+      await DH.list.loadSales();
+      if (state.perms.approve && DH.modalApprovals) {
+        try { await DH.modalApprovals.refreshCount(); } catch (e) {}
+      }
+
+      if (requiresApproval) {
+        DH.toast(
+          'Venda corrigida. Nova venda #' + utils.padNumber(newNumber) +
+          ' aguardando aprovação do gestor.',
+          'info'
+        );
+      } else {
+        DH.toast(newNumber
+          ? 'Venda corrigida. Nova venda #' + utils.padNumber(newNumber) + ' criada.'
+          : 'Venda corrigida com sucesso.', 'success');
+      }
+    } catch (error) {
+      console.error('[DEV HUB] Falha ao corrigir venda:', error);
+      DH.cart.showFeedback(DH.mapSaleError(error));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function submitQuote(payload) {
+    setSubmitting(true);
+    try {
+      const result = await DH.quotes.saveQuote(payload);
+      const num = result && result.quote_number;
+
+      DH.cart.reset();
+      state.formMode = null;
+      showView('list');
+      state.formDataLoaded = false;
+
+      const validField = document.getElementById('quote-valid-field');
+      if (validField) validField.hidden = true;
+      const noStockField = document.getElementById('no-stock-field');
+      if (noStockField) noStockField.hidden = false;
+
+      await DH.quotes.loadQuotes();
+      DH.quotes.switchTab('quotes');
+
+      DH.toast(num
+        ? 'Orçamento ORC-' + utils.padNumber(num) + ' salvo.'
+        : 'Orçamento salvo.', 'success');
+    } catch (e) {
+      console.error('[DEV HUB] submitQuote:', e);
+      DH.cart.showFeedback(DH.mapSaleError(e));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  /* =========================================================
+     HELPERS
+     ========================================================= */
   function setSubmitting(isSubmitting) {
     state.submitting = isSubmitting;
     if (formEls.submitBtn) {
@@ -300,9 +646,18 @@
       formEls.submitBtn.setAttribute('aria-busy', String(isSubmitting));
       const label = formEls.submitBtn.querySelector('.btn__label');
       if (label) {
-        label.textContent = isSubmitting
-          ? (state.editingSaleId ? 'Salvando...' : 'Finalizando...')
-          : (state.editingSaleId ? 'Salvar alterações' : 'Finalizar venda');
+        const mode = state.formMode;
+        if (isSubmitting) {
+          label.textContent = mode === 'correct' ? 'Corrigindo...'
+                            : mode === 'edit'    ? 'Salvando...'
+                            : mode === 'quote'   ? 'Salvando orçamento...'
+                            : 'Finalizando...';
+        } else {
+          label.textContent = mode === 'correct' ? 'Salvar correção'
+                            : mode === 'edit'    ? 'Salvar alterações'
+                            : mode === 'quote'   ? 'Salvar orçamento'
+                            : 'Finalizar venda';
+        }
       }
     }
   }
@@ -322,7 +677,11 @@
   DH.form = {
     els,
     setupFormView, setupSaleForm,
-    openFormView, openEditSale, closeFormView, showView,
-    fetchSaleItems
+    openFormView, openEditSale, openCorrectSale, closeFormView, showView,
+    setFormMode,
+    fetchSaleItems,
+    loadFormData,
+    populateCustomerSelect,
+    addCustomerToSelect
   };
 })();

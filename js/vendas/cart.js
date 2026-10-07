@@ -1,9 +1,16 @@
+/* =========================================================
+   DEV HUB · Vendas · cart.js
+   ========================================================= */
 (function () {
   'use strict';
   const DH = window.DH;
   const { state, utils } = DH;
 
   function el(name) { return DH.form.els()[name]; }
+
+  function isQuoteMode() {
+    return state.formMode === 'quote';
+  }
 
   function createCell(text, className) {
     const cell = document.createElement('td');
@@ -29,6 +36,8 @@
     cartWrap.hidden = false;
     cartBody.innerHTML = '';
 
+    const quoteMode = isQuoteMode();
+
     const fragment = document.createDocumentFragment();
     state.cart.forEach(item => {
       const row = document.createElement('tr');
@@ -36,7 +45,22 @@
 
       const nameCell = document.createElement('td');
       nameCell.className = 'cart-table__name';
-      nameCell.textContent = item.product_name || '—';
+
+      const nameSpan = document.createElement('span');
+      nameSpan.textContent = item.product_name || '—';
+      nameCell.appendChild(nameSpan);
+
+      const faltaEstoque = item.quantity > item.stock_available;
+
+      if (faltaEstoque) {
+        const warn = document.createElement('span');
+        warn.className = quoteMode
+          ? 'cart-badge cart-badge--warn'
+          : 'cart-badge cart-badge--danger';
+        warn.title = 'Estoque disponível: ' + item.stock_available;
+        warn.textContent = 'sem estoque';
+        nameCell.appendChild(warn);
+      }
       row.appendChild(nameCell);
 
       row.appendChild(createCell(utils.formatMoney(item.unit_price), 'cell--num'));
@@ -86,14 +110,19 @@
     const item = state.cart.find(i => i.product_id === productId);
     if (!item) return;
     const qty = utils.toInteger(rawValue, 0);
+    const quoteMode = isQuoteMode();
+    const allowNoStock = !!state.noStock;
 
     if (qty <= 0) {
       showFeedback('Informe uma quantidade válida.');
       inputEl.value = String(item.quantity);
       return;
     }
-    if (qty > item.stock_available) {
-      showFeedback('Estoque insuficiente.');
+
+    if (qty > item.stock_available && !quoteMode && !allowNoStock) {
+      showFeedback(
+        'Estoque insuficiente. Marque "Vender sem estoque" para continuar.'
+      );
       inputEl.value = String(item.quantity);
       return;
     }
@@ -112,6 +141,9 @@
     clearFeedback();
   }
 
+  /* =========================================================
+     RECALC — agora com sinal/depósito
+     ========================================================= */
   function recalc() {
     const subtotal = state.cart.reduce((sum, item) =>
       sum + utils.toNumber(item.subtotal, 0), 0);
@@ -138,8 +170,33 @@
     }
 
     const total = Math.max(0, utils.round2(subtotal - discount));
-    el('totalSub').textContent = utils.formatMoney(subtotal);
-    el('totalTotal').textContent = utils.formatMoney(total);
+
+    /* ---- Sinal ---- */
+    const depositEl = document.getElementById('sale-deposit');
+    let deposit = depositEl ? utils.toNumber(depositEl.value, 0) : 0;
+    if (!Number.isFinite(deposit) || deposit < 0) deposit = 0;
+    if (deposit > total) {
+      deposit = total;
+      if (depositEl) depositEl.value = String(utils.round2(deposit));
+    }
+    const balance = Math.max(0, utils.round2(total - deposit));
+
+    const totalSubEl = el('totalSub');
+    const totalTotalEl = el('totalTotal');
+    if (totalSubEl) totalSubEl.textContent = utils.formatMoney(subtotal);
+    if (totalTotalEl) totalTotalEl.textContent = utils.formatMoney(total);
+
+    /* ---- Saldo a receber ---- */
+    const balanceRow = document.getElementById('totals-balance-row');
+    const balanceEl  = document.getElementById('total-balance');
+    if (balanceRow && balanceEl) {
+      if (deposit > 0) {
+        balanceRow.hidden = false;
+        balanceEl.textContent = utils.formatMoney(balance);
+      } else {
+        balanceRow.hidden = true;
+      }
+    }
   }
 
   function reset() {
@@ -151,10 +208,21 @@
     if (el('discountPct')) el('discountPct').value = '0';
     el('payment').value = '';
     el('notes').value = '';
+
+    const depositEl = document.getElementById('sale-deposit');
+    if (depositEl) depositEl.value = '0';
+
+    const validEl = document.getElementById('sale-valid-until');
+    if (validEl) validEl.value = '';
+
     state.cart = [];
     state.lastDiscountEdit = 'brl';
+    state.noStock = false;
+    const noStockEl = document.getElementById('sale-no-stock');
+    if (noStockEl) noStockEl.checked = false;
+
     clearFeedback();
-    DH.productSearch.clear();
+    if (DH.productSearch && DH.productSearch.clear) DH.productSearch.clear();
     render();
     recalc();
   }

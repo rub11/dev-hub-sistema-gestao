@@ -1,6 +1,9 @@
 /* =========================================================
    DEV HUB · Vendas · product-search.js
    Busca/autocomplete de produto + preview.
+   Regras:
+     • Modo orçamento → permite adicionar sem estoque (com aviso laranja)
+     • Modo venda     → exige toggle "Vender sem estoque"
    ========================================================= */
 (function () {
   'use strict';
@@ -9,6 +12,10 @@
 
   const els = {};
   let debounce = null;
+
+  function isQuoteMode() {
+    return state.formMode === 'quote';
+  }
 
   function setup() {
     els.wrap            = document.getElementById('product-search-wrap');
@@ -28,6 +35,7 @@
     els.pickQty         = document.getElementById('product-pick-qty');
     els.pickAdd         = document.getElementById('product-pick-add');
     els.pickClose       = document.getElementById('product-pick-close');
+    els.pickWarn        = document.getElementById('product-pick-warn');
 
     if (!els.input) return;
 
@@ -40,6 +48,13 @@
     if (els.clear) els.clear.addEventListener('click', clear);
     if (els.pickClose) els.pickClose.addEventListener('click', closePick);
     if (els.pickAdd) els.pickAdd.addEventListener('click', addPicked);
+
+    const noStockEl = document.getElementById('sale-no-stock');
+    if (noStockEl) {
+      noStockEl.addEventListener('change', () => {
+        if (els.pick && !els.pick.hidden) refreshPickState();
+      });
+    }
   }
 
   function onInput() {
@@ -64,12 +79,6 @@
     try { els.input.focus(); } catch (err) {}
     if (state.productQuery) runSearch();
     else showTop();
-    if (window.innerWidth <= 720) {
-      setTimeout(() => {
-        try { els.input.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
-        catch (err) {}
-      }, 200);
-    }
   }
 
   function onDocPointerDown(e) {
@@ -151,12 +160,16 @@
       if (p.barcode) parts.push('EAN ' + p.barcode);
       else if (p.code) parts.push('Cód. ' + p.code);
       parts.push(utils.formatMoney(p.price));
+      const stockNum = utils.toInteger(p.stock, 0);
+      if (stockNum <= 0) parts.push('em falta');
       meta.textContent = parts.join(' · ');
 
       info.appendChild(name);
       info.appendChild(meta);
       li.appendChild(thumb);
       li.appendChild(info);
+
+      if (stockNum <= 0) li.classList.add('is-out-of-stock');
 
       li.addEventListener('mouseenter', () => {
         state.productSuggestionIndex = idx;
@@ -246,21 +259,67 @@
     }
 
     els.pick.hidden = false;
-    const stock = utils.toInteger(product.stock, 0);
-    els.pickAdd.disabled = stock === 0;
-    if (stock === 0) els.pickQty.value = '0';
+    refreshPickState();
+  }
+
+  function refreshPickState() {
+    const product = state.pickedProduct;
+    if (!product) return;
+
+    const stock       = utils.toInteger(product.stock, 0);
+    const qty         = utils.toInteger(els.pickQty.value, 0);
+    const allowNoStock = !!state.noStock;
+    const quoteMode    = isQuoteMode();
+
+    const existing   = state.cart.find(i => i.product_id === product.id);
+    const alreadyQty = existing ? existing.quantity : 0;
+    const totalQty   = alreadyQty + qty;
+    const falta      = totalQty > stock;
+
+    if (els.pickWarn) {
+      if (falta && quoteMode) {
+        els.pickWarn.hidden = false;
+        els.pickWarn.classList.add('product-pick__warn--info');
+        els.pickWarn.innerHTML =
+          '⚠️ Este item <strong>está em falta</strong> no estoque. ' +
+          'Você pode incluir no orçamento normalmente — ' +
+          'a falta será considerada na hora de virar venda.';
+      } else if (falta && !allowNoStock) {
+        els.pickWarn.hidden = false;
+        els.pickWarn.classList.remove('product-pick__warn--info');
+        els.pickWarn.innerHTML =
+          '⚠️ Estoque insuficiente. Marque <strong>"Vender sem estoque"</strong> no resumo ' +
+          'para continuar — a venda ficará pendente de aprovação do gestor.';
+      } else if (falta && allowNoStock && !quoteMode) {
+        els.pickWarn.hidden = false;
+        els.pickWarn.classList.remove('product-pick__warn--info');
+        els.pickWarn.innerHTML =
+          '⚠️ Vendendo <strong>sem estoque</strong>. ' +
+          'A venda ficará pendente de aprovação do gestor.';
+      } else {
+        els.pickWarn.hidden = true;
+      }
+    }
+
+    if (qty <= 0) { els.pickAdd.disabled = true; return; }
+    if (falta && !quoteMode && !allowNoStock) { els.pickAdd.disabled = true; return; }
+    els.pickAdd.disabled = false;
   }
 
   function closePick() {
     state.pickedProduct = null;
     if (els.pick) els.pick.hidden = true;
+    if (els.pickWarn) els.pickWarn.hidden = true;
   }
 
   function addPicked() {
     const product = state.pickedProduct;
     if (!product) return;
-    const stock = utils.toInteger(product.stock, 0);
-    const qty = utils.toInteger(els.pickQty.value, 0);
+
+    const stock   = utils.toInteger(product.stock, 0);
+    const qty     = utils.toInteger(els.pickQty.value, 0);
+    const quoteMode    = isQuoteMode();
+    const allowNoStock = !!state.noStock;
 
     if (qty <= 0) {
       DH.cart.showFeedback('Informe uma quantidade válida.');
@@ -268,11 +327,14 @@
       return;
     }
 
-    const existing = state.cart.find(i => i.product_id === product.id);
+    const existing   = state.cart.find(i => i.product_id === product.id);
     const alreadyQty = existing ? existing.quantity : 0;
 
-    if (alreadyQty + qty > stock) {
-      DH.cart.showFeedback('Estoque insuficiente para "' + product.name + '".');
+    if (alreadyQty + qty > stock && !quoteMode && !allowNoStock) {
+      DH.cart.showFeedback(
+        'Estoque insuficiente para "' + product.name + '". ' +
+        'Marque "Vender sem estoque" no resumo se quiser continuar.'
+      );
       return;
     }
 
@@ -297,5 +359,5 @@
     DH.cart.recalc();
   }
 
-  DH.productSearch = { setup, clear, closePick };
+  DH.productSearch = { setup, clear, closePick, onToggleNoStock: refreshPickState };
 })();

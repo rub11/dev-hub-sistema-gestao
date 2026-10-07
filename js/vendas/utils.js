@@ -10,9 +10,16 @@
       const n = Number(String(v).replace(',', '.').trim());
       return Number.isFinite(n) ? n : fb;
     },
-    toInteger(v, fb) { const n = parseInt(v, 10); return Number.isFinite(n) ? n : fb; },
-    round2(v) { return Math.round((Number(v) + Number.EPSILON) * 100) / 100; },
-    formatMoney(v) { return DH.CURRENCY.format(DH.utils.toNumber(v, 0)); },
+    toInteger(v, fb) {
+      const n = parseInt(v, 10);
+      return Number.isFinite(n) ? n : fb;
+    },
+    round2(v) {
+      return Math.round((Number(v) + Number.EPSILON) * 100) / 100;
+    },
+    formatMoney(v) {
+      return DH.CURRENCY.format(DH.utils.toNumber(v, 0));
+    },
     formatDateTime(v) {
       if (!v) return '—';
       const d = new Date(v);

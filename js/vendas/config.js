@@ -16,10 +16,14 @@
   };
 
   DH.STATUS_LABELS = {
-    completed: { label: 'Concluída', modifier: 'badge--success' },
-    pending:   { label: 'Pendente',  modifier: 'badge--warning' },
-    canceled:  { label: 'Cancelada', modifier: 'badge--danger'  },
-    cancelled: { label: 'Cancelada', modifier: 'badge--danger'  }
+    completed:        { label: 'Concluída',            modifier: 'badge--success' },
+    pending:          { label: 'Pendente',             modifier: 'badge--warning' },
+    pending_approval: { label: 'Aguardando aprovação', modifier: 'badge--warning' },
+    canceled:         { label: 'Cancelada',            modifier: 'badge--danger'  },
+    cancelled:        { label: 'Cancelada',            modifier: 'badge--danger'  },
+    rejected:         { label: 'Rejeitada',            modifier: 'badge--danger'  },
+    corrected:        { label: 'Corrigida',            modifier: 'badge--muted'   },
+    replaced:         { label: 'Substituída',          modifier: 'badge--muted'   }
   };
 
   DH.TOAST_ICONS = {

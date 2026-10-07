@@ -969,3 +969,606 @@
 .qty-stepper__btn:active {
   background: color-mix(in srgb, var(--accent) 20%, var(--surface-2));
 }
+
+.badge--warning { background: rgba(245,158,11,0.14); color: #f59e0b; }
+.badge--muted   { background: var(--surface-2); color: var(--text-muted); }
+
+/* =========================================================
+   NOVOS status + sem estoque + aprovações
+   ========================================================= */
+.badge--warning { background: rgba(245,158,11,0.14); color: #f59e0b; }
+.badge--muted   { background: var(--surface-2); color: var(--text-muted); }
+.badge--danger  { background: rgba(220,80,60,0.14); color: #f97066; }
+
+/* Botão "Aprovações" no toolbar */
+#approvals-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+#approvals-btn .badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* Aviso no preview de produto (estoque insuficiente) */
+.product-pick__warn {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(245,158,11,0.10);
+  border: 1px solid rgba(245,158,11,0.35);
+  color: #f59e0b;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.product-pick__warn strong { color: #fbbf24; }
+
+/* Checkbox "Vender sem estoque" */
+.checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+.checkbox input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.checkbox__box {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: 6px;
+  background: var(--surface);
+  color: transparent;
+  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+.checkbox__box svg { width: 12px; height: 12px; }
+.checkbox input:checked + .checkbox__box {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.checkbox input:focus-visible + .checkbox__box {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.checkbox__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-size: 13.5px;
+  color: var(--text);
+}
+.checkbox__text strong { font-weight: 600; }
+.checkbox__text small { color: var(--text-muted); font-size: 12px; }
+
+.checkbox--alert .checkbox__box {
+  border-color: rgba(245,158,11,0.45);
+}
+.checkbox--alert input:checked + .checkbox__box {
+  background: #f59e0b;
+  border-color: #f59e0b;
+  color: #fff;
+}
+.checkbox--alert .checkbox__text strong { color: #f59e0b; }
+
+/* Modal de aprovações */
+.approvals-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.approvals-item {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+.approvals-item__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.approvals-item__number {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-weight: 700;
+  color: var(--text);
+  font-size: 14px;
+}
+.approvals-item__when {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.approvals-item__info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  font-size: 13px;
+  color: var(--text-soft);
+}
+.approvals-item__info strong { color: var(--text-muted); font-weight: 600; }
+.approvals-item__actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.btn--sm { height: 34px; padding: 0 12px; font-size: 12.5px; }
+
+/* =========================================================
+   Abas Vendas / Orçamentos
+   ========================================================= */
+.sales-tabs {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: 16px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.sales-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: 0; border-radius: 8px;
+  background: transparent;
+  color: var(--text-soft);
+  font-family: inherit; font-size: 13.5px; font-weight: 600;
+  cursor: pointer;
+  transition: background-color 140ms ease, color 140ms ease;
+}
+.sales-tab:hover { color: var(--text); }
+.sales-tab.is-active {
+  background: var(--surface); color: var(--text);
+  box-shadow: 0 1px 3px rgba(16,24,40,.08);
+}
+.sales-tab__count {
+  padding: 1px 7px; border-radius: 999px;
+  background: var(--accent-soft); color: var(--accent-hover);
+  font-size: 11px; font-weight: 700;
+}
+
+/* =========================================================
+   Status de orçamento
+   ========================================================= */
+.badge--draft     { background: var(--surface-2); color: var(--text-muted); }
+.badge--sent      { background: rgba(99,102,241,.14); color: var(--accent); }
+.badge--converted { background: rgba(16,185,129,.14); color: #10b981; }
+.badge--expired   { background: rgba(245,158,11,.14); color: #f59e0b; }
+.badge--cancelled { background: rgba(220,80,60,.14);  color: #f97066; }
+
+/* =========================================================
+   Abas Vendas / Orçamentos
+   ========================================================= */
+.sales-tabs {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: 16px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.sales-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: 0; border-radius: 8px;
+  background: transparent;
+  color: var(--text-soft);
+  font-family: inherit; font-size: 13.5px; font-weight: 600;
+  cursor: pointer;
+  transition: background-color 140ms ease, color 140ms ease;
+}
+.sales-tab:hover { color: var(--text); }
+.sales-tab.is-active {
+  background: var(--surface); color: var(--text);
+  box-shadow: 0 1px 3px rgba(16,24,40,.08);
+}
+.sales-tab__count {
+  padding: 1px 7px; border-radius: 999px;
+  background: var(--accent-soft); color: var(--accent-hover);
+  font-size: 11px; font-weight: 700;
+}
+
+/* =========================================================
+   Status de orçamento
+   ========================================================= */
+.badge--draft     { background: var(--surface-2); color: var(--text-muted); }
+.badge--sent      { background: rgba(99,102,241,.14); color: var(--accent); }
+.badge--converted { background: rgba(16,185,129,.14); color: #10b981; }
+.badge--expired   { background: rgba(245,158,11,.14); color: #f59e0b; }
+.badge--cancelled { background: rgba(220,80,60,.14);  color: #f97066; }
+
+/* =========================================================
+   Badges "sem estoque" no carrinho
+   ========================================================= */
+.cart-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.cart-badge--warn {
+  background: rgba(245,158,11,0.16);
+  color: #f59e0b;
+}
+.cart-badge--danger {
+  background: rgba(220,80,60,0.16);
+  color: #f97066;
+}
+
+/* Item da lista de sugestões sem estoque */
+.product-suggestions__item.is-out-of-stock .product-suggestions__name {
+  color: var(--text-soft);
+}
+.product-suggestions__item.is-out-of-stock .product-suggestions__meta::after {
+  content: ' · em falta';
+  color: #f59e0b;
+  font-weight: 600;
+}
+
+/* Aviso laranja (informativo) no preview */
+.product-pick__warn--info {
+  background: rgba(245,158,11,0.10);
+  border-color: rgba(245,158,11,0.35);
+  color: #f59e0b;
+}
+
+/* =========================================================
+   Abas Vendas / Orçamentos
+   ========================================================= */
+.sales-tabs {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: 16px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.sales-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: 0; border-radius: 8px;
+  background: transparent;
+  color: var(--text-soft);
+  font-family: inherit; font-size: 13.5px; font-weight: 600;
+  cursor: pointer;
+  transition: background-color 140ms ease, color 140ms ease;
+}
+.sales-tab:hover { color: var(--text); }
+.sales-tab.is-active {
+  background: var(--surface); color: var(--text);
+  box-shadow: 0 1px 3px rgba(16,24,40,.08);
+}
+.sales-tab__count {
+  padding: 1px 7px; border-radius: 999px;
+  background: var(--accent-soft); color: var(--accent-hover);
+  font-size: 11px; font-weight: 700;
+}
+
+/* =========================================================
+   Status de orçamento
+   ========================================================= */
+.badge--draft     { background: var(--surface-2); color: var(--text-muted); }
+.badge--sent      { background: rgba(99,102,241,.14); color: var(--accent); }
+.badge--converted { background: rgba(16,185,129,.14); color: #10b981; }
+.badge--expired   { background: rgba(245,158,11,.14); color: #f59e0b; }
+.badge--cancelled { background: rgba(220,80,60,.14);  color: #f97066; }
+
+/* =========================================================
+   Badge de pagamento (success)
+   ========================================================= */
+.badge--success {
+  background: rgba(16,185,129,0.14);
+  color: #10b981;
+}
+
+/* =========================================================
+   Badges "sem estoque" no carrinho
+   ========================================================= */
+.cart-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.cart-badge--warn {
+  background: rgba(245,158,11,0.16);
+  color: #f59e0b;
+}
+.cart-badge--danger {
+  background: rgba(220,80,60,0.16);
+  color: #f97066;
+}
+
+/* Item da lista de sugestões sem estoque */
+.product-suggestions__item.is-out-of-stock .product-suggestions__name {
+  color: var(--text-soft);
+}
+.product-suggestions__item.is-out-of-stock .product-suggestions__meta::after {
+  content: ' · em falta';
+  color: #f59e0b;
+  font-weight: 600;
+}
+
+/* Aviso laranja (informativo) no preview */
+.product-pick__warn--info {
+  background: rgba(245,158,11,0.10);
+  border-color: rgba(245,158,11,0.35);
+  color: #f59e0b;
+}
+
+/* =========================================================
+   Linha de saldo a receber (verde/azul)
+   ========================================================= */
+.totals__row--balance {
+  padding-top: 10px;
+  margin-top: 6px;
+  border-top: 1px dashed var(--border);
+}
+.totals__value--balance {
+  font-weight: 600;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+/* =========================================================
+   Campo com botão inline (label + ação "+ Novo parceiro")
+   ========================================================= */
+.field__label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+.field__label-row > label {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-soft);
+}
+
+/* Botão extra pequeno */
+.btn--xs {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+.btn--xs svg,
+.btn--xs svg * {
+  width: 13px !important;
+  height: 13px !important;
+  flex: none;
+}
+
+/* Garante tamanho correto dentro do label-row */
+.field__label-row .btn--xs {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 480px) {
+  .field__label-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .field__label-row .btn--xs {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* =========================================================
+   MODAL · NOVO PARCEIRO
+   ========================================================= */
+
+/* Inputs, selects e textarea */
+#customer-modal input[type="text"],
+#customer-modal input[type="email"],
+#customer-modal input[type="tel"],
+#customer-modal select,
+#customer-modal textarea {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background-color: var(--surface);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+/* Textarea */
+#customer-modal textarea {
+  min-height: 72px;
+  padding: 10px 14px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+/* Select com chevron customizado */
+#customer-modal select {
+  padding-right: 40px;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px 16px;
+}
+[data-theme="dark"] #customer-modal select {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a8b0ba' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+}
+
+/* Options no dark mode */
+#customer-modal select option {
+  background-color: var(--surface);
+  color: var(--text);
+}
+
+/* Hover */
+#customer-modal input:hover,
+#customer-modal select:hover,
+#customer-modal textarea:hover {
+  border-color: color-mix(in srgb, var(--border-strong) 70%, var(--text) 30%);
+}
+
+/* Focus */
+#customer-modal input:focus,
+#customer-modal select:focus,
+#customer-modal textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-ring);
+}
+
+/* Grid 2 colunas (Tipo + CPF, Telefone + Email) */
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 560px) {
+  .field-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Labels */
+#customer-modal .field > label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-soft);
+}
+
+/* Ajuste do texto do hint */
+#customer-modal .prm-hint {
+  margin: 0;
+  padding: 12px 14px;
+  background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--text-soft);
+  line-height: 1.5;
+}
+
+/* =========================================================
+   MODAL · NOVO PARCEIRO — espaçamento correto entre campos
+   ========================================================= */
+
+/* Cada campo como coluna, com respiro entre label/input */
+#customer-modal .field {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+  margin-bottom: 14px !important;
+}
+
+/* Label sempre em cima, separado */
+#customer-modal .field > label {
+  display: block !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: var(--text-soft) !important;
+  line-height: 1.3 !important;
+}
+
+/* O form em si empilha os campos verticalmente */
+#customer-modal .modal__body {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+  padding: 20px !important;
+}
+
+/* Remove o margin-bottom do último (não fica buraco antes do footer) */
+#customer-modal .field:last-child {
+  margin-bottom: 0 !important;
+}
+
+/* Grid de 2 colunas: não deixa o gap vertical esmagar */
+#customer-modal .field-row {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 12px !important;
+  margin-bottom: 14px !important;
+}
+
+/* Os fields dentro do field-row não precisam de margin extra */
+#customer-modal .field-row .field {
+  margin-bottom: 0 !important;
+}
+
+/* Hint com espaçamento adequado */
+#customer-modal .prm-hint {
+  margin: 0 0 16px 0 !important;
+}
+
+/* Feedback */
+#customer-modal .feedback {
+  margin: 0 !important;
+}
+
+/* Footer do modal */
+#customer-modal .modal__foot {
+  padding: 14px 20px !important;
+}
+
+@media (max-width: 560px) {
+  #customer-modal .field-row {
+    grid-template-columns: 1fr !important;
+  }
+}

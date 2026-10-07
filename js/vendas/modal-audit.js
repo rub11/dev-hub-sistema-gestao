@@ -1,6 +1,3 @@
-
-
-
 (function () {
   'use strict';
   const DH = window.DH;
@@ -45,13 +42,18 @@
   }
 
   function actionLabel(action) {
-    if (action === 'created') return 'Venda criada';
-    if (action === 'updated') return 'Venda alterada';
-    if (action === 'deleted') return 'Venda excluída';
+    if (action === 'created')     return 'Venda criada';
+    if (action === 'updated')     return 'Venda alterada';
+    if (action === 'deleted')     return 'Venda excluída';
+    if (action === 'corrected')   return 'Venda corrigida';
+    if (action === 'approved')    return 'Venda aprovada';
+    if (action === 'rejected')    return 'Venda rejeitada';
+    if (action === 'created_from_correction') return 'Criada por correção';
     return action;
   }
 
   function formatChanges(changes) {
+    if (!changes || typeof changes !== 'object') return '';
     const lines = [];
     Object.keys(changes).forEach(k => {
       const c = changes[k];
