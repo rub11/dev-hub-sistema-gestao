@@ -1,6 +1,5 @@
 /* =========================================================
    DEV HUB · Navegação · config
-   Constantes, módulos e ícones.
    ========================================================= */
 (function () {
   'use strict';
@@ -12,7 +11,6 @@
   NAV.TABS_KEY = 'devhub_tabs';
   NAV.MAX_TABS = 12;
 
-  /* ---------- Capacidades por role ---------- */
   NAV.CAPABILITIES = {
     platform_admin: ['platform'],
     admin: ['operations', 'management', 'admin_settings'],
@@ -107,9 +105,8 @@
     'usuário': 'Funcionário'
   };
 
-  /* ---------- Permissões por item do menu ---------- */
   NAV.ITEM_PERM = {
-    administracao:       'management.view',   /* ⬅️ NOVO — hub único */
+    administracao:       'management.view',
     gestao:              'management.view',
     permissoes:          'management.roles',
     dashboard:           'dashboard.view',
@@ -135,9 +132,13 @@
     'config-parcelamento': 'management.view'
   };
 
-  /* ---------- Estrutura do menu ---------- */
+  /* ---------- Estrutura do menu ----------
+     Gestão NÃO aparece no menu lateral — ela é acessada
+     via card dentro de administracao.html.
+     O mapeamento de URL continua, pra que a aba "Gestão"
+     apareça quando você abrir gestao.html.
+  ------------------------------------------ */
   NAV.TOPNAV = [
-    /* ⬇️ HUB ÚNICO DE ADMINISTRAÇÃO */
     { id: 'administracao', label: 'Administração', href: 'administracao.html', icon: 'lock', group: 'Administração', capability: 'management.view' },
 
     { id: 'dashboard', label: 'Dashboard', href: 'dashboard.html', icon: 'dashboard', group: null },
@@ -159,12 +160,13 @@
 
   NAV.GROUP_ORDER = ['Comercial', 'Catálogo', 'Suprimentos', 'Financeiro', 'Análise', 'Administração', 'Plataforma'];
 
-  /* ---------- Mapeamento URL → id ---------- */
   NAV.PAGE_MAP = {
     administracao: 'administracao',
     adm: 'administracao',
 
-    gestao: 'gestao', funcionarios: 'gestao', aprovacoes: 'aprovacoes',
+    gestao: 'gestao',
+    funcionarios: 'gestao',
+    aprovacoes: 'aprovacoes',
     permissoes: 'permissoes',
     dashboard: 'dashboard', vendas: 'vendas', notas: 'notas',
     'notas-fiscal': 'notas-fiscal', clientes: 'parceiros',
@@ -186,7 +188,6 @@
     fornecedores: 'fornecedores'
   };
 
-  /* ---------- Ícones ---------- */
   NAV.ICONS = {
     dashboard: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7.5" height="7.5" rx="1.8" /><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.8" /><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.8" /><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.8" /></svg>',
     vendas: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="20" r="1.4" /><circle cx="18" cy="20" r="1.4" /><path d="M2.5 3.5h2.3l2.3 11.6a1.8 1.8 0 0 0 1.8 1.4h8.8a1.8 1.8 0 0 0 1.8-1.4L21 7.5H6" /></svg>',
@@ -213,7 +214,6 @@
     payment: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 15h4"/></svg>'
   };
 
-  /* ---------- Helpers ---------- */
   NAV.findItemById = function (id) {
     for (let i = 0; i < NAV.TOPNAV.length; i += 1) {
       if (NAV.TOPNAV[i].id === id) return NAV.TOPNAV[i];

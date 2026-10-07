@@ -1,320 +1,375 @@
 /* =========================================================
-   DEV HUB · Scanner móvel (v3)
-   - Upsert: bipar o mesmo produto SOMA a quantidade
+   DEV HUB · Scanner Mobile
+   ---------------------------------------------------------
+   Fluxo:
+     1. Abre scanner.html?token=XXXXXX (vindo do QR do PC)
+     2. Valida a sessão no Supabase
+     3. Abre a câmera, lê código de barras (EAN/UPC/Code128)
+     4. Consulta produto pelo barcode via find_product_by_barcode
+     5. Envia pra scan_items via scan_upsert_item
+     6. PC recebe via realtime
+
+   Modo "products":
+     - ?mode=products → aceita enviar mesmo sem produto cadastrado
+       (o PC abre o modal de cadastro novo)
    ========================================================= */
 
 (function () {
   'use strict';
 
-  const params   = new URLSearchParams(location.search);
-  const tokenUrl = params.get('token');
+  const params = new URLSearchParams(location.search);
 
-  let session      = null;
-  let html5Qr      = null;
-  let lastCode     = '';
-  let lastTime     = 0;
-  let ultimoItemId = null;
-  let channel      = null;
-  let encerrada    = false;
+  const state = {
+    session: null,
+    token: null,
+    stream: null,
+    scanning: false,
+    detector: null,
+    ultimoItemId: null,
+    ultimoCodigo: null,
+    ultimoTimestamp: 0,
+    cooldownMs: 1200,
+    modoProdutos: false
+  };
+
+  // Elementos
+  let videoEl, canvasEl, statusEl, lastEl, btnTorch, btnSwitch, btnStop;
 
   document.addEventListener('DOMContentLoaded', init);
 
+  /* =========================================================
+     Init
+     ========================================================= */
   async function init() {
-    const Auth = window.Auth;
-    if (!Auth || !Auth.isConfigured || !Auth.isConfigured() || !window.db) {
-      alert('Supabase não configurado.');
+    videoEl   = document.getElementById('scanner-video');
+    canvasEl  = document.getElementById('scanner-canvas');
+    statusEl  = document.getElementById('scanner-status');
+    lastEl    = document.getElementById('scanner-last');
+    btnTorch  = document.getElementById('scanner-torch');
+    btnSwitch = document.getElementById('scanner-switch');
+    btnStop   = document.getElementById('scanner-stop');
+
+    state.modoProdutos = params.get('mode') === 'products';
+    state.token = (params.get('token') || '').trim().toUpperCase();
+
+    if (!state.token) {
+      setStatus('Token ausente. Volte e escaneie o QR novamente.', 'err');
       return;
     }
 
-    const s = await Auth.requireSession().catch(() => null);
-    if (!s) {
-      const next = encodeURIComponent(location.pathname + location.search);
-      location.replace('index.html?next=' + next);
-      return;
+    if (state.modoProdutos) {
+      document.body.classList.add('mode-products');
+      setStatus('Modo: cadastro/estoque de produtos', 'info');
     }
 
-    setupBotoes();
+    wireBotoes();
 
-    if (tokenUrl) {
-      const ok = await parearPorToken(tokenUrl);
-      if (!ok) {
-        setLast('❌ Token inválido ou expirado.', 'err');
-        mostrarSessao('Sessão inválida');
-        return;
-      }
-    } else {
-      await pegarSessaoAtiva(s.user.id);
+    // Valida sessão
+    const ok = await validarSessao();
+    if (!ok) return;
+
+    // Inicia câmera
+    await iniciarCamera();
+  }
+
+  /* =========================================================
+     UI
+     ========================================================= */
+  function setStatus(txt, kind) {
+    if (!statusEl) { console.log('[scanner]', txt); return; }
+    statusEl.textContent = txt;
+    statusEl.dataset.kind = kind || 'info';
+  }
+
+  function setLast(txt, kind) {
+    if (!lastEl) { console.log('[scanner]', txt); return; }
+    lastEl.textContent = txt;
+    lastEl.dataset.kind = kind || 'info';
+  }
+
+  function vibrar(ms) {
+    try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {}
+  }
+
+  function wireBotoes() {
+    if (btnTorch) {
+      btnTorch.addEventListener('click', toggleTorch);
+      btnTorch.hidden = true; // mostra só se suportado
     }
-
-    if (session) {
-      iniciarCamera();
-      assinarEncerramento();
-    } else {
-      mostrarSessao('Nenhuma sessão ativa');
-      setLast('Abra o Modo Scanner no PC primeiro.', 'err');
+    if (btnSwitch) {
+      btnSwitch.addEventListener('click', trocarCamera);
+    }
+    if (btnStop) {
+      btnStop.addEventListener('click', () => {
+        pararCamera();
+        setStatus('Scanner pausado.', 'info');
+      });
     }
   }
 
-  async function parearPorToken(token) {
+  /* =========================================================
+     Sessão
+     ========================================================= */
+  async function validarSessao() {
+    setStatus('Validando sessão…', 'info');
+
     const { data, error } = await window.db
       .from('scan_sessions')
-      .select('id, token, status, expires_at')
-      .eq('token', token)
-      .eq('status', 'active')
+      .select('id, token, status, organization_id, user_id, expires_at')
+      .eq('token', state.token)
       .maybeSingle();
 
-    if (error || !data) return false;
-    if (new Date(data.expires_at) < new Date()) return false;
+    if (error) {
+      console.error('[scanner] erro validar:', error);
+      setStatus('Erro ao validar. Tente novamente.', 'err');
+      return false;
+    }
 
-    session = data;
-    mostrarSessao('Sessão: ' + session.token);
+    if (!data) {
+      setStatus('Sessão não encontrada. Gere um novo QR no PC.', 'err');
+      return false;
+    }
+
+    if (data.status !== 'active') {
+      setStatus('Sessão encerrada. Gere um novo QR no PC.', 'err');
+      return false;
+    }
+
+    if (data.expires_at && new Date(data.expires_at).getTime() < Date.now()) {
+      setStatus('Sessão expirada. Gere um novo QR no PC.', 'err');
+      return false;
+    }
+
+    state.session = data;
+    setStatus('Pronto! Aponte a câmera pro código de barras.', 'ok');
     return true;
   }
 
-  async function pegarSessaoAtiva(userId) {
-    const { data } = await window.db
-      .from('scan_sessions')
-      .select('id, token, status, created_at')
-      .eq('user_id', userId)
-      .eq('status', 'active')
-      .order('created_at', { ascending: false })
-      .limit(1);
-
-    if (data && data[0]) {
-      session = data[0];
-      mostrarSessao('Sessão: ' + session.token);
-    }
-  }
-
-  function mostrarSessao(txt) {
-    const el = document.getElementById('sessao-info');
-    if (el) el.textContent = txt;
-  }
-
-  function assinarEncerramento() {
-    if (!session) return;
-    channel = window.db
-      .channel('scanner-mob:' + session.id)
-      .on('postgres_changes', {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'scan_sessions',
-        filter: 'id=eq.' + session.id
-      }, (payload) => {
-        const novo = payload.new;
-        if (novo && (novo.status === 'closed' || novo.status === 'expired')) {
-          encerrarTela();
-        }
-      })
-      .subscribe();
-  }
-
-  function encerrarTela() {
-    if (encerrada) return;
-    encerrada = true;
-    if (html5Qr) {
-      try { html5Qr.stop().catch(() => {}); } catch (e) {}
-      html5Qr = null;
-    }
-    const tela = document.getElementById('tela-encerrada');
-    if (tela) tela.classList.remove('hidden');
-  }
-
-  function iniciarCamera() {
-    if (typeof Html5Qrcode === 'undefined') {
-      setLast('Biblioteca de scan não carregou.', 'err');
-      return;
-    }
+  /* =========================================================
+     Câmera
+     ========================================================= */
+  async function iniciarCamera() {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      setLast('Câmera não disponível (precisa HTTPS).', 'err');
+      setStatus('Navegador não suporta câmera.', 'err');
       return;
     }
 
-    html5Qr = new Html5Qrcode('reader', { verbose: false });
+    try {
+      state.stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: 'environment' },
+          width:  { ideal: 1280 },
+          height: { ideal: 720 }
+        },
+        audio: false
+      });
 
-    const config = {
-      fps: 10,
-      qrbox: (w, h) => {
-        const min = Math.min(w, h);
-        return { width: Math.floor(min * 0.85), height: Math.floor(min * 0.42) };
-      },
-      aspectRatio: 1.0,
-      experimentalFeatures: { useBarCodeDetectorIfSupported: true },
-      formatsToSupport: [
-        Html5QrcodeSupportedFormats.EAN_13,
-        Html5QrcodeSupportedFormats.EAN_8,
-        Html5QrcodeSupportedFormats.UPC_A,
-        Html5QrcodeSupportedFormats.UPC_E,
-        Html5QrcodeSupportedFormats.CODE_128,
-        Html5QrcodeSupportedFormats.CODE_39,
-        Html5QrcodeSupportedFormats.ITF,
-        Html5QrcodeSupportedFormats.QR_CODE
-      ]
+      videoEl.srcObject = state.stream;
+      videoEl.setAttribute('playsinline', '');
+      await videoEl.play();
+
+      iniciarDeteccao();
+      configurarTorch();
+    } catch (err) {
+      console.error('[scanner] câmera:', err);
+      setStatus('Não foi possível acessar a câmera. Verifique permissões.', 'err');
+    }
+  }
+
+  function pararCamera() {
+    if (state.stream) {
+      state.stream.getTracks().forEach(t => t.stop());
+      state.stream = null;
+    }
+  }
+
+  async function trocarCamera() {
+    pararCamera();
+    await iniciarCamera();
+  }
+
+  async function configurarTorch() {
+    if (!btnTorch || !state.stream) return;
+    const track = state.stream.getVideoTracks()[0];
+    if (!track) return;
+    const caps = track.getCapabilities ? track.getCapabilities() : {};
+    if (caps && caps.torch) {
+      btnTorch.hidden = false;
+    }
+  }
+
+  async function toggleTorch() {
+    if (!state.stream) return;
+    const track = state.stream.getVideoTracks()[0];
+    if (!track) return;
+    const caps = track.getCapabilities ? track.getCapabilities() : {};
+    if (!caps || !caps.torch) return;
+    const atual = track.getSettings().torch || false;
+    try {
+      await track.applyConstraints({ advanced: [{ torch: !atual }] });
+    } catch (e) {}
+  }
+
+  /* =========================================================
+     Detecção
+     ========================================================= */
+  async function iniciarDeteccao() {
+    // Preferência: BarcodeDetector nativo (Chrome Android, Safari iOS 17+)
+    if ('BarcodeDetector' in window) {
+      try {
+        state.detector = new window.BarcodeDetector({
+          formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39', 'itf', 'qr_code']
+        });
+      } catch (e) {
+        state.detector = null;
+      }
+    }
+
+    if (state.detector) {
+      loopBarcodeDetector();
+    } else {
+      // Fallback: lib externa (ZXing) — se você já carregou
+      if (window.ZXing && window.ZXing.BrowserMultiFormatReader) {
+        const reader = new window.ZXing.BrowserMultiFormatReader();
+        reader.decodeFromVideoDevice(null, videoEl, (result, err) => {
+          if (result) onCodigoLido(result.getText());
+        });
+      } else {
+        setStatus('Este navegador não suporta leitura de código. Use Chrome Android.', 'err');
+      }
+    }
+  }
+
+  async function loopBarcodeDetector() {
+    if (!state.detector || !videoEl || !state.stream) return;
+
+    // Só detecta a cada ~250ms pra economizar bateria
+    const INTERVALO = 250;
+
+    const tick = async () => {
+      if (!state.stream) return;
+      if (videoEl.readyState >= 2) {
+        try {
+          const codes = await state.detector.detect(videoEl);
+          if (codes && codes.length) {
+            const raw = codes[0].rawValue || '';
+            if (raw) onCodigoLido(raw);
+          }
+        } catch (e) {}
+      }
+      setTimeout(tick, INTERVALO);
     };
 
-    html5Qr.start(
-      { facingMode: 'environment' },
-      config,
-      onScanSuccess,
-      () => {}
-    ).catch((err) => {
-      console.error('[scanner] start:', err);
-      const msg = String((err && err.message) || err || '');
-      if (msg.toLowerCase().includes('permission')) {
-        setLast('Permissão de câmera negada.', 'err');
-      } else if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
-        setLast('A câmera exige HTTPS.', 'err');
-      } else {
-        setLast('Não foi possível abrir a câmera.', 'err');
-      }
-    });
+    tick();
   }
 
-  async function onScanSuccess(decodedText) {
-    if (encerrada) return;
-
-    const now = Date.now();
-    if (decodedText === lastCode && (now - lastTime) < 1600) return;
-    lastCode = decodedText;
-    lastTime = now;
-
-    if (html5Qr) { try { html5Qr.pause(true); } catch (e) {} }
-
-    await adicionarItem(decodedText);
-
-    setTimeout(() => {
-      if (html5Qr && !encerrada) {
-        try { html5Qr.resume(); } catch (e) {}
-      }
-    }, 800);
-  }
-
-  async function adicionarItem(barcode) {
-    const codigo = String(barcode || '').trim();
+  /* =========================================================
+     Bipou!
+     ========================================================= */
+  async function onCodigoLido(codigo) {
     if (!codigo) return;
-    if (!session) { setLast('Sem sessão pareada.', 'err'); return; }
+    codigo = String(codigo).trim();
+    if (!codigo) return;
 
-    setLast('Buscando "' + codigo + '"…');
+    // Cooldown anti-duplicata
+    const agora = Date.now();
+    if (codigo === state.ultimoCodigo && (agora - state.ultimoTimestamp) < state.cooldownMs) {
+      return;
+    }
+    state.ultimoCodigo = codigo;
+    state.ultimoTimestamp = agora;
 
-    const { data: prod, error: prodErr } = await window.db
-      .rpc('find_product_by_barcode', { p_barcode: codigo });
+    if (state.scanning) return;
+    state.scanning = true;
 
-    if (prodErr) {
-      console.error('[scanner] rpc find:', prodErr);
-      setLast('Erro ao buscar produto.', 'err');
+    setStatus('Lido: ' + codigo, 'ok');
+    vibrar(40);
+
+    try {
+      await adicionarItem(codigo);
+    } catch (err) {
+      console.error('[scanner] adicionarItem:', err);
+      setLast('❌ Erro ao enviar: ' + (err.message || err), 'err');
       vibrar(180);
+    } finally {
+      setTimeout(() => { state.scanning = false; }, 400);
+    }
+  }
+
+  /* =========================================================
+     Envia pro PC
+     ========================================================= */
+  async function adicionarItem(codigo) {
+    if (!state.session) {
+      setLast('❌ Sessão não iniciada.', 'err');
       return;
     }
 
-    const product = Array.isArray(prod) ? prod[0] : prod;
+    // 1. Busca produto pelo barcode
+    let prod = null;
+    try {
+      const { data, error } = await window.db
+        .rpc('find_product_by_barcode', {
+          p_org_id: state.session.organization_id,
+          p_barcode: codigo
+        });
+      if (error) throw error;
+      prod = Array.isArray(data) ? data[0] : data;
+    } catch (e) {
+      console.error('[scanner] find_product_by_barcode:', e);
+    }
 
-    if (!product) {
+    const product = prod || null;
+
+    /* Modo "produtos": aceita registrar mesmo se não existir,
+       pra que o PC abra o modal de cadastro. */
+    if (!product && !state.modoProdutos) {
       setLast('❌ ' + codigo + ' não cadastrado.', 'err');
       vibrar(180);
       return;
     }
 
+    // 2. UPSERT: soma se já existe, insere se não
     const { data: itemId, error: upErr } = await window.db
       .rpc('scan_upsert_item', {
-        p_session_id:      session.id,
-        p_product_id:      product.id,
+        p_session_id:      state.session.id,
+        p_product_id:      product ? product.id : null,
         p_barcode:         codigo,
-        p_product_name:    product.name,
-        p_unit_price:      Number(product.price) || 0,
-        p_stock_available: Number(product.stock) || 0
+        p_product_name:    product ? product.name : '(novo)',
+        p_unit_price:      product ? (Number(product.price) || 0) : 0,
+        p_stock_available: product ? (Number(product.stock) || 0) : 0
       });
 
     if (upErr) {
-      console.error('[scanner] upsert:', upErr);
-      setLast('Erro ao inserir: ' + (upErr.message || 'erro'), 'err');
+      console.error('[scanner] scan_upsert_item:', upErr);
+      setLast('❌ Erro ao enviar: ' + upErr.message, 'err');
       vibrar(180);
       return;
     }
 
-    ultimoItemId = itemId;
+    state.ultimoItemId = itemId;
 
-    let qtyAtual = 1;
-    try {
-      const { data: row } = await window.db
-        .from('scan_items')
-        .select('quantity')
-        .eq('id', itemId)
-        .single();
-      if (row && row.quantity) qtyAtual = Number(row.quantity);
-    } catch (e) {}
-
-    setLast(
-      '✅ ' + product.name + ' · ' + qtyAtual + '× · R$ ' +
-      (Number(product.price) || 0).toFixed(2).replace('.', ','),
-      'ok'
-    );
-    vibrar(60);
-  }
-
-  function setupBotoes() {
-    const manualInput = document.getElementById('manual-input');
-    const manualAdd   = document.getElementById('manual-add');
-    const rmLast      = document.getElementById('btn-remove-last');
-    const encerrar    = document.getElementById('btn-encerrar');
-    const sair        = document.getElementById('btn-sair');
-
-    manualAdd.addEventListener('click', () => {
-      const v = manualInput.value.trim();
-      if (!v) return;
-      adicionarItem(v);
-      manualInput.value = '';
-      manualInput.focus();
-    });
-
-    manualInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') { e.preventDefault(); manualAdd.click(); }
-    });
-
-    rmLast.addEventListener('click', async () => {
-      if (!ultimoItemId) { setLast('Nada pra remover.', 'err'); return; }
-
-      const { data: novaQty, error } = await window.db
-        .rpc('scan_decrement_item', { p_item_id: ultimoItemId });
-
-      if (error) {
-        setLast('Erro ao remover: ' + (error.message || ''), 'err');
-        return;
-      }
-
-      if (Number(novaQty) === 0) ultimoItemId = null;
-      setLast('Item decrementado (' + novaQty + '×).', 'ok');
-    });
-
-    encerrar.addEventListener('click', async () => {
-      if (!session) return;
-
-      const ok = window.UI && window.UI.confirm
-        ? await window.UI.confirm('Encerrar a sessão de scanner?', {
-            title: 'Encerrar', danger: true, confirmLabel: 'Encerrar'
-          })
-        : window.confirm('Encerrar a sessão de scanner?');
-      if (!ok) return;
-
+    if (!product) {
+      setLast('📥 ' + codigo + ' enviado (não cadastrado)', 'ok');
+    } else {
+      let qtyAtual = 1;
       try {
-        await window.db.from('scan_sessions')
-          .update({ status: 'closed' }).eq('id', session.id);
+        const { data: row } = await window.db
+          .from('scan_items')
+          .select('quantity')
+          .eq('id', itemId)
+          .maybeSingle();
+        if (row && row.quantity) qtyAtual = Number(row.quantity);
       } catch (e) {}
-      encerrarTela();
-    });
 
-    sair.addEventListener('click', async () => {
-      try { await window.Auth.signOut(); } catch (e) {}
-    });
-  }
+      setLast(
+        '✅ ' + product.name + ' · ' + qtyAtual + '× · R$ ' +
+        (Number(product.price) || 0).toFixed(2).replace('.', ','),
+        'ok'
+      );
+    }
 
-  function setLast(msg, kind) {
-    const el = document.getElementById('last-scan');
-    if (!el) return;
-    el.textContent = msg;
-    el.className = 'last' + (kind ? ' ' + kind : '');
-  }
-
-  function vibrar(ms) {
-    if (navigator.vibrate) { try { navigator.vibrate(ms); } catch (e) {} }
+    vibrar(60);
+    setStatus('Pronto! Aponte pro próximo código.', 'ok');
   }
 })();

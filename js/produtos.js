@@ -19,6 +19,13 @@
    6. Inputs de foto ficam bloqueados enquanto salva.
    7. Update de produto detecta "0 linhas afetadas" (registro
       removido por outro usuário).
+   8. [NOVO] API pública `window.Produtos` exposta para o
+      scanner de código de barras (js/produtos-scanner.js):
+        - openCreateModal()
+        - openCreateModalWithBarcode(barcode)
+        - openEditModal(product)
+        - reload()
+        - getProducts()
    ========================================================= */
 
 (function () {
@@ -1243,4 +1250,31 @@
     const el = document.getElementById(elementId);
     if (el) el.textContent = text;
   }
+
+  /* =========================================================
+     API pública — consumida pelo scanner de código de barras
+     (js/produtos-scanner.js)
+     ========================================================= */
+
+  /**
+   * Abre o modal "Novo produto" e pré-preenche o campo
+   * código de barras. Usado quando o scanner bipa um EAN que
+   * ainda não existe no catálogo.
+   */
+  function openCreateModalWithBarcode(barcode) {
+    openCreateModal();
+    if (barcode && modalEls.barcode) {
+      modalEls.barcode.value = String(barcode);
+    }
+    // Foco no nome (o usuário só precisa digitar o nome, preço, etc.)
+    if (modalEls.name) modalEls.name.focus();
+  }
+
+  window.Produtos = {
+    openCreateModal: openCreateModal,
+    openCreateModalWithBarcode: openCreateModalWithBarcode,
+    openEditModal: openEditModal,
+    reload: loadProducts,
+    getProducts: function () { return state.all.slice(); }
+  };
 })();

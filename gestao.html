@@ -8,6 +8,34 @@
   <!-- Tema ANTES da CSS (evita flash de tema) -->
   <script src="js/theme.js"></script>
 
+  <!-- =========================================================
+       GUARD · esconde a página até a verificação de acesso
+       ========================================================= -->
+  <style id="guard-style">
+    html.guard-locked body { visibility: hidden !important; }
+    html.guard-locked::after {
+      content: 'Verificando acesso…';
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #0a0f16;
+      color: #8b95a7;
+      font-family: system-ui, -apple-system, sans-serif;
+      font-size: 14px;
+      z-index: 99999;
+    }
+  </style>
+  <script>
+    (function () {
+      document.documentElement.classList.add('guard-locked');
+      window.__gestaoGuardTimeout = setTimeout(function () {
+        document.documentElement.classList.remove('guard-locked');
+      }, 5000);
+    })();
+  </script>
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -488,10 +516,17 @@
 
   <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="false"></div>
 
+  <!-- =========================================================
+       Scripts (ordem importa)
+       ========================================================= -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/supabase.js"></script>
-  <script src="js/auth.js"></script>
-  <script src="js/nav/config.js"></script>
+<script src="js/supabase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/permissions.js"></script>
+<script src="js/ui-confirm.js"></script>
+<script src="js/access-guard.js"></script>
+
+<script src="js/nav/config.js"></script>
 <script src="js/nav/state.js"></script>
 <script src="js/nav/roles.js"></script>
 <script src="js/nav/styles.js"></script>
@@ -504,8 +539,17 @@
 <script src="js/nav/org-switcher.js"></script>
 <script src="js/nav/bar.js"></script>
 <script src="js/nav/main.js"></script>
-  <script src="js/permissions.js"></script>
- <script src="js/ui-confirm.js"></script>
-<script src="js/gestao.js"></script>
+
+<!-- Módulos de Gestão (ordem importa!) -->
+<script src="js/gestao/state.js"></script>
+<script src="js/gestao/utils.js"></script>
+<script src="js/gestao/guard.js"></script>
+<script src="js/gestao/session.js"></script>
+<script src="js/gestao/nav.js"></script>
+<script src="js/gestao/members.js"></script>
+<script src="js/gestao/user-modal.js"></script>
+<script src="js/gestao/role-types.js"></script>
+<script src="js/gestao/confirm-modal.js"></script>
+<script src="js/gestao/main.js"></script>
 </body>
 </html>

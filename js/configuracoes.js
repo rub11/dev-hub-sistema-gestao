@@ -109,7 +109,26 @@
     const firstName = String(fullName).trim().split(/\s+/)[0] || 'Usuário';
     const initial = firstName.charAt(0).toUpperCase() || '?';
 
-    setText('user-avatar', initial);
+    /* Avatar: só define a inicial se NÃO houver foto.
+       Se houver avatar_url, quem cuida do topbar é o
+       applyTopbarAvatar() — não sobrescrevemos aqui. */
+    const avatarEl = document.getElementById('user-avatar');
+    if (avatarEl) {
+      const hasPhoto = profile && profile.avatar_url;
+      if (hasPhoto) {
+        // Garante que o img esteja no lugar (idempotente)
+        if (avatarEl.dataset.avatarUrl !== profile.avatar_url) {
+          applyTopbarAvatar(profile.avatar_url);
+        }
+      } else {
+        // Sem foto: mostra a inicial
+        avatarEl.innerHTML = '';
+        avatarEl.dataset.avatarUrl = '';
+        avatarEl.style.background = '';
+        avatarEl.textContent = initial;
+      }
+    }
+
     setText('user-name', fullName);
     setText('user-role', roleText || user.email || '');
     setText('greeting-name', 'Olá, ' + firstName);
@@ -160,6 +179,7 @@
     if (!role) return '';
     const key = String(role).trim().toLowerCase();
     if (key === 'admin' || key === 'administrador') return 'Administrador';
+    if (key === 'gestor' || key === 'manager') return 'Gestor';
     if (key === 'user' || key === 'usuario' || key === 'usuário') return 'Usuário';
     if (window.Auth && typeof window.Auth.roleLabel === 'function') {
       return window.Auth.roleLabel(role);
@@ -222,6 +242,8 @@
       state.profile = Object.assign({}, state.profile || {}, { name: name });
 
       renderUser(state.user, state.profile);
+      // Re-aplica o avatar (garante que não some ao salvar nome)
+      applyTopbarAvatar((state.profile && state.profile.avatar_url) || null);
       renderProfileForm();
 
       showToast('Nome atualizado com sucesso.', 'success');
@@ -554,7 +576,14 @@
 
     clearAvatarFeedback();
 
-    if (!window.confirm('Remover sua foto de perfil?')) return;
+    const ok = window.UI && window.UI.confirm
+      ? await window.UI.confirm('Remover sua foto de perfil?', {
+          title: 'Remover foto',
+          danger: true,
+          confirmLabel: 'Remover'
+        })
+      : window.confirm('Remover sua foto de perfil?');
+    if (!ok) return;
 
     setAvatarBusy(true);
 
@@ -596,12 +625,26 @@
     }
   }
 
+  /* =========================================================
+     Sync do avatar no sessionStorage
+     ---------------------------------------------------------
+     Delega pro utilitário do user-menu quando existir.
+     Isso garante o mesmo formato de dados em todo o app e
+     cria o `devhub_user` caso ainda não exista.
+     ========================================================= */
   function syncSessionAvatar(url) {
     try {
-      const raw = sessionStorage.getItem('devhub_user');
-      if (!raw) return;
-      const ctx = JSON.parse(raw);
-      if (!ctx || typeof ctx !== 'object') return;
+      if (window.NAV && NAV.userMenu && typeof NAV.userMenu.writeCachedAvatar === 'function') {
+        NAV.userMenu.writeCachedAvatar(url);
+        return;
+      }
+
+      let raw = sessionStorage.getItem('devhub_user');
+      let ctx = {};
+      if (raw) {
+        try { ctx = JSON.parse(raw) || {}; } catch (e) { ctx = {}; }
+      }
+      if (typeof ctx !== 'object' || ctx === null) ctx = {};
 
       if (url) ctx.avatar_url = url;
       else delete ctx.avatar_url;
@@ -617,12 +660,19 @@
     if (!el) return;
 
     el.innerHTML = '';
+    el.dataset.avatarUrl = url || '';
 
     if (url) {
       el.style.background = 'none';
       const img = document.createElement('img');
       img.src = url;
       img.alt = '';
+      img.onerror = function () {
+        el.innerHTML = '';
+        el.style.background = '';
+        el.dataset.avatarUrl = '';
+        el.textContent = getUserInitial();
+      };
       el.appendChild(img);
     } else {
       el.style.background = '';
