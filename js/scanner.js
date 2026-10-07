@@ -227,16 +227,18 @@
     const s = await window.Auth.requireSession().catch(() => null);
     const userId = s && s.user && s.user.id;
 
+    /* ⬇️ ÚNICA MUDANÇA: manda também stock_available */
     const { data: inserted, error: insErr } = await window.db
       .from('scan_items')
       .insert({
-        session_id:   session.id,
-        product_id:   product.id,
-        barcode:      codigo,
-        product_name: product.name,
-        unit_price:   Number(product.price) || 0,
-        quantity:     1,
-        scanned_by:   userId
+        session_id:      session.id,
+        product_id:      product.id,
+        barcode:         codigo,
+        product_name:    product.name,
+        unit_price:      Number(product.price) || 0,
+        quantity:        1,
+        stock_available: Number(product.stock) || 0,
+        scanned_by:      userId
       })
       .select('id')
       .single();

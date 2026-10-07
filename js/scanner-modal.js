@@ -1,14 +1,9 @@
 /* =========================================================
-   DEV HUB · Scanner Mode (integração Vendas)
+   DEV HUB · Scanner Mode (Vendas) — só QR
    ---------------------------------------------------------
-   - Botão "Modo Scanner" na página
-   - Cria sessão, mostra QR, pareia com celular
-   - Escuta scan_items em tempo real
-   - Se o vendas.js registrou listener (scanner:probe),
-     dispara 'scanner:item' para cada leitura → integra
-     com o carrinho da tela.
-   - Caso contrário, cria a venda em sales/sale_items ao
-     clicar em "Finalizar venda".
+   Estilos autossuficientes: injeta um <style> próprio com
+   classes prefixadas dh-scan-* pra não depender do CSS da
+   página. Assim não importa onde for carregado, fica certo.
    ========================================================= */
 
 (function () {
@@ -47,14 +42,160 @@
       } catch (e) {}
     }
 
+    ensureStyles();
     detectarCartListener();
     observarBotao();
   }
 
   /* =========================================================
-     Detecta se o vendas.js quer receber os itens.
-     Faz um dispatch de teste — se alguém chamar
-     preventDefault(), é sinal que quer os itens.
+     CSS autossuficiente
+     ========================================================= */
+  function ensureStyles() {
+    if (document.getElementById('dh-scan-styles')) return;
+
+    const style = document.createElement('style');
+    style.id = 'dh-scan-styles';
+    style.textContent = `
+      .dh-scan-backdrop{
+        position:fixed;inset:0;z-index:9998;
+        background:rgba(5,8,14,.78);
+        backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+        display:flex;align-items:center;justify-content:center;
+        padding:20px;
+        opacity:0;animation:dhScanFade 160ms ease forwards;
+      }
+      @keyframes dhScanFade{to{opacity:1}}
+
+      .dh-scan-card{
+        position:relative;width:100%;max-width:480px;
+        background:#0d131c;
+        color:#e6eaf2;
+        border:1px solid rgba(255,255,255,.10);
+        border-radius:16px;
+        box-shadow:0 24px 60px rgba(0,0,0,.65);
+        display:flex;flex-direction:column;
+        max-height:92vh;overflow:hidden;
+        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+        transform:translateY(6px) scale(.98);
+        animation:dhScanPop 180ms cubic-bezier(.2,.9,.3,1.2) forwards;
+      }
+      @keyframes dhScanPop{to{transform:translateY(0) scale(1)}}
+
+      .dh-scan-header{
+        display:flex;align-items:center;justify-content:space-between;
+        padding:16px 20px;border-bottom:1px solid rgba(255,255,255,.08);
+        flex-shrink:0;
+      }
+      .dh-scan-header h2{
+        margin:0;font-size:16px;font-weight:600;color:#f5f7fb;
+      }
+      .dh-scan-close{
+        appearance:none;border:0;background:transparent;
+        color:#8b95a7;font-size:22px;line-height:1;cursor:pointer;
+        width:32px;height:32px;border-radius:8px;
+        display:flex;align-items:center;justify-content:center;
+        transition:background 120ms ease,color 120ms ease;
+      }
+      .dh-scan-close:hover{background:rgba(255,255,255,.06);color:#e6eaf2;}
+
+      .dh-scan-body{
+        padding:20px;overflow-y:auto;
+      }
+      .dh-scan-body p{
+        margin:0 0 12px;font-size:13.5px;line-height:1.5;color:#b7c0cf;
+      }
+      .dh-scan-body p.dh-scan-center{text-align:center;}
+
+      .dh-scan-qr{
+        display:flex;justify-content:center;align-items:center;
+        padding:14px;background:#ffffff;border-radius:14px;
+        margin:0 auto 14px;width:fit-content;
+        box-shadow:0 4px 20px rgba(0,0,0,.4);
+      }
+      .dh-scan-qr img{
+        display:block;
+        width:240px;height:240px;
+        image-rendering:pixelated;
+        image-rendering:crisp-edges;
+      }
+
+      .dh-scan-token{
+        text-align:center;font-size:12.5px;color:#8b95a7;
+        margin:0 0 20px;
+      }
+      .dh-scan-token strong{
+        display:inline-block;margin-top:6px;
+        font-size:20px;letter-spacing:3px;color:#e6eaf2;
+        font-weight:700;font-family:monospace;
+      }
+
+      .dh-scan-listhead{
+        display:flex;justify-content:space-between;align-items:baseline;
+        margin:0 0 8px;
+      }
+      .dh-scan-listhead h3{
+        margin:0;font-size:14px;font-weight:600;color:#e6eaf2;
+      }
+      .dh-scan-listhead .dh-scan-total{
+        font-size:14px;color:#8b95a7;font-weight:600;
+      }
+
+      .dh-scan-items{
+        max-height:220px;overflow-y:auto;
+        border:1px solid rgba(255,255,255,.08);
+        border-radius:10px;padding:4px 14px;
+        background:rgba(255,255,255,.015);
+      }
+      .dh-scan-item{
+        display:flex;justify-content:space-between;align-items:center;
+        padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);
+      }
+      .dh-scan-item:last-child{border-bottom:0;}
+      .dh-scan-item-name{
+        font-weight:600;font-size:13.5px;color:#e6eaf2;
+        white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+      }
+      .dh-scan-item-code{
+        font-size:11.5px;color:#8b95a7;margin-top:2px;
+      }
+      .dh-scan-item-right{
+        text-align:right;flex-shrink:0;margin-left:12px;
+      }
+      .dh-scan-item-qty{font-weight:700;font-size:13.5px;}
+      .dh-scan-item-price{font-size:11.5px;color:#8b95a7;margin-top:2px;}
+
+      .dh-scan-empty{
+        padding:18px 4px;text-align:center;
+        font-size:13px;color:#8b95a7;
+      }
+
+      .dh-scan-footer{
+        display:flex;justify-content:flex-end;gap:10px;
+        padding:14px 20px;border-top:1px solid rgba(255,255,255,.08);
+        background:#0a0f16;flex-shrink:0;
+      }
+      .dh-scan-btn{
+        appearance:none;border:1px solid transparent;border-radius:9px;
+        padding:10px 18px;font-size:13.5px;font-weight:600;
+        font-family:inherit;cursor:pointer;
+        transition:background 120ms ease,border-color 120ms ease,opacity 120ms ease;
+      }
+      .dh-scan-btn:disabled{opacity:.6;cursor:not-allowed;}
+      .dh-scan-btn--ghost{
+        background:transparent;color:#c7d0dd;
+        border-color:rgba(255,255,255,.14);
+      }
+      .dh-scan-btn--ghost:hover{background:rgba(255,255,255,.05);}
+      .dh-scan-btn--primary{background:#3b82f6;color:#fff;}
+      .dh-scan-btn--primary:hover{background:#2f74e6;}
+
+      body.dh-scan-open{overflow:hidden;}
+    `;
+    document.head.appendChild(style);
+  }
+
+  /* =========================================================
+     Detecta se o vendas.js registrou o listener
      ========================================================= */
   function detectarCartListener() {
     try {
@@ -121,7 +262,7 @@
   }
 
   /* =========================================================
-     Abrir sessão
+     Sessão + modal
      ========================================================= */
   async function abrir() {
     if (!state.orgId) { toast('Empresa não identificada.', 'error'); return; }
@@ -158,103 +299,79 @@
     return digits + '-' + chars;
   }
 
-  /* =========================================================
-     Modal
-     ========================================================= */
   function abrirModal() {
     if (!state.modal) state.modal = buildModal();
     if (!state.modal.parentNode) document.body.appendChild(state.modal);
 
     state.modal.hidden = false;
-    document.body.style.overflow = 'hidden';
+    document.body.classList.add('dh-scan-open');
 
     const url = location.origin +
                 location.pathname.replace(/[^/]*$/, '') +
                 'scanner.html?token=' + encodeURIComponent(state.session.token);
 
-    const qrBox = state.modal.querySelector('#scan-qr');
+    const qrBox = state.modal.querySelector('#dh-scan-qr-box');
     qrBox.innerHTML = '';
+
+    // Gera em alta resolução (480) e exibe em 240 → nítido em telas retina
     const img = document.createElement('img');
     img.alt = 'QR para parear celular';
-    img.width = 220; img.height = 220;
-    img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=' +
-              encodeURIComponent(url);
+    img.src = 'https://api.qrserver.com/v1/create-qr-code/' +
+              '?size=480x480&margin=0&ecc=M&data=' + encodeURIComponent(url);
     qrBox.appendChild(img);
 
-    state.modal.querySelector('#scan-token').textContent = state.session.token;
-
-    const hint = state.modal.querySelector('#scan-hint');
-    if (hint) {
-      hint.textContent = state.hasCartListener
-        ? 'Cada item escaneado cai no carrinho da venda atual.'
-        : 'Cada item escaneado vai pra uma venda nova ao finalizar.';
-    }
+    state.modal.querySelector('#dh-scan-token').textContent = state.session.token;
 
     renderItens();
     setTimeout(() => {
-      const b = state.modal.querySelector('#scan-close-btn');
+      const b = state.modal.querySelector('#dh-scan-close-btn');
       if (b) b.focus();
     }, 40);
   }
 
   function buildModal() {
     const modal = document.createElement('div');
-    modal.id = 'scanner-modal';
-    modal.className = 'modal';
+    modal.id = 'dh-scan-modal';
+    modal.className = 'dh-scan-backdrop';
     modal.hidden = true;
     modal.innerHTML = `
-      <div class="modal__backdrop" data-close></div>
-      <div class="modal__card" role="dialog" aria-modal="true"
-           aria-labelledby="scanner-title" style="max-width:520px;">
-        <header class="modal__header">
-          <h2 class="modal__title" id="scanner-title">Modo Scanner</h2>
-          <button type="button" class="modal__close" data-close aria-label="Fechar">×</button>
+      <div class="dh-scan-card" role="dialog" aria-modal="true"
+           aria-labelledby="dh-scan-title">
+        <header class="dh-scan-header">
+          <h2 id="dh-scan-title">Modo Scanner</h2>
+          <button type="button" class="dh-scan-close" data-close
+                  aria-label="Fechar">×</button>
         </header>
 
-        <div class="modal__body">
-          <p class="cell--muted" style="margin:0 0 12px;">
-            Abra o <strong>celular</strong>, faça login e escaneie o QR.
+        <div class="dh-scan-body">
+          <p class="dh-scan-center">
+            Abra a câmera do <strong>celular</strong> e aponte pro QR abaixo.
+            Depois é só escanear os produtos da venda.
           </p>
-          <p class="cell--muted" id="scan-hint"
-             style="margin:0 0 12px;font-size:12px;color:#8b95a7;"></p>
 
-          <div id="scan-qr"
-               style="display:flex;justify-content:center;padding:16px;
-                      background:#fff;border-radius:12px;"></div>
+          <div class="dh-scan-qr" id="dh-scan-qr-box"></div>
 
-          <p class="cell--muted"
-             style="text-align:center;font-size:13px;margin:12px 0 20px;">
-            Ou digite no celular:
+          <p class="dh-scan-token">
+            Se preferir, digite no celular:
             <br>
-            <strong id="scan-token"
-                    style="font-size:18px;letter-spacing:2px;">—</strong>
+            <strong id="dh-scan-token">—</strong>
           </p>
 
-          <div style="display:flex;justify-content:space-between;
-                      align-items:baseline;margin-bottom:8px;">
-            <h3 style="margin:0;font-size:15px;">
-              Itens recebidos (<span id="scan-count">0</span>)
-            </h3>
-            <strong id="scan-total" class="cell--muted"
-                    style="font-size:14px;">R$ 0,00</strong>
+          <div class="dh-scan-listhead">
+            <h3>Itens escaneados (<span id="dh-scan-count">0</span>)</h3>
+            <span class="dh-scan-total" id="dh-scan-total">R$ 0,00</span>
           </div>
 
-          <div id="scan-items"
-               style="max-height:280px;overflow:auto;
-                      border:1px solid rgba(255,255,255,.06);
-                      border-radius:10px;padding:6px 12px;">
-            <div class="state-block state-block--compact">
-              <p>Aguardando o primeiro item…</p>
-            </div>
+          <div class="dh-scan-items" id="dh-scan-items">
+            <div class="dh-scan-empty">Aguardando o primeiro item…</div>
           </div>
         </div>
 
-        <footer class="modal__footer">
-          <button type="button" class="btn btn--ghost" data-close
-                  id="scan-close-btn">Fechar</button>
-          <button type="button" class="btn btn--primary" id="scan-flush-btn">
-            Inserir no carrinho
-          </button>
+        <footer class="dh-scan-footer">
+          <button type="button" class="dh-scan-btn dh-scan-btn--ghost"
+                  data-close id="dh-scan-close-btn">Fechar</button>
+          <button type="button" class="dh-scan-btn dh-scan-btn--primary"
+                  id="dh-scan-flush-btn">Enviar para o carrinho</button>
         </footer>
       </div>
     `;
@@ -263,8 +380,13 @@
       el.addEventListener('click', encerrarSessao);
     });
 
-    modal.querySelector('#scan-flush-btn')
+    modal.querySelector('#dh-scan-flush-btn')
          .addEventListener('click', flushNoCarrinho);
+
+    // Fecha clicando fora
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) encerrarSessao();
+    });
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && state.modal && !state.modal.hidden) encerrarSessao();
@@ -298,7 +420,6 @@
           const it = payload.new;
           state.items.push(it);
 
-          // Se o carrinho quer os itens, manda direto.
           if (state.hasCartListener) {
             enviarParaCarrinho(it, 'add');
           }
@@ -326,45 +447,33 @@
   async function carregarItens() {
     const { data, error } = await window.db
       .from('scan_items')
-      .select('id, product_id, product_name, barcode, unit_price, quantity, created_at')
+      .select('id, product_id, product_name, barcode, unit_price, quantity, stock_available, created_at')
       .eq('session_id', state.session.id)
       .order('created_at', { ascending: true });
 
-    if (error) {
-      console.error('[scanner] load items:', error);
-      return;
-    }
+    if (error) return;
     state.items = data || [];
 
-    // Se tiver listener, também injeta o que já veio na retomada.
     if (state.hasCartListener) {
       state.items.forEach((it) => enviarParaCarrinho(it, 'add'));
     }
   }
 
   /* =========================================================
-     Integração com o carrinho do vendas.js
-     ---------------------------------------------------------
-     Dispara CustomEvent 'scanner:item'.
-     O vendas.js escuta assim:
-
-         window.addEventListener('scanner:probe', (e) => {
-           e.preventDefault();   // aceita receber itens
-         });
-         window.addEventListener('scanner:item', (e) => {
-           const p = e.detail.product;
-           addItemAoCarrinho(p, e.detail.quantity);
-         });
+     Envia pro carrinho
      ========================================================= */
   function enviarParaCarrinho(item, action) {
     try {
       const prod = {
-        id:         item.product_id,
-        product_id: item.product_id,
-        name:       item.product_name,
-        barcode:    item.barcode,
-        price:      Number(item.unit_price) || 0,
-        quantity:   Number(item.quantity) || 1
+        id:              item.product_id,
+        product_id:      item.product_id,
+        name:            item.product_name,
+        product_name:    item.product_name,
+        barcode:         item.barcode,
+        price:           Number(item.unit_price) || 0,
+        unit_price:      Number(item.unit_price) || 0,
+        quantity:        Number(item.quantity) || 1,
+        stock_available: Number(item.stock_available) || 0
       };
       const ev = new CustomEvent('scanner:item', {
         detail: {
@@ -376,13 +485,13 @@
       });
       window.dispatchEvent(ev);
     } catch (e) {
-      console.warn('[scanner] dispatch falhou:', e);
+      console.warn('[scanner] dispatch:', e);
     }
   }
 
   function flushNoCarrinho() {
     if (!state.hasCartListener) {
-      // Sem listener: cai no modo "venda nova"
+      toast('Carrinho não conectado. Criando venda direta.', 'error');
       finalizarVenda();
       return;
     }
@@ -390,8 +499,8 @@
       toast('Nenhum item recebido ainda.', 'error');
       return;
     }
-    state.items.forEach((it) => enviarParaCarrinho(it, 'add'));
-    toast(state.items.length + ' itens enviados pro carrinho.', 'success');
+    state.items.forEach((it) => enviarParaCarrinho(it, 'force'));
+    toast(state.items.length + ' itens reenviados pro carrinho.', 'success');
   }
 
   /* =========================================================
@@ -400,9 +509,9 @@
   function renderItens() {
     if (!state.modal) return;
 
-    const wrap    = state.modal.querySelector('#scan-items');
-    const countEl = state.modal.querySelector('#scan-count');
-    const totalEl = state.modal.querySelector('#scan-total');
+    const wrap    = state.modal.querySelector('#dh-scan-items');
+    const countEl = state.modal.querySelector('#dh-scan-count');
+    const totalEl = state.modal.querySelector('#dh-scan-total');
 
     const total = state.items.reduce(
       (a, it) => a + (Number(it.unit_price) || 0) * (Number(it.quantity) || 1),
@@ -413,29 +522,22 @@
     totalEl.textContent = 'R$ ' + total.toFixed(2).replace('.', ',');
 
     if (state.items.length === 0) {
-      wrap.innerHTML =
-        '<div class="state-block state-block--compact">' +
-        '<p>Aguardando o primeiro item…</p></div>';
+      wrap.innerHTML = '<div class="dh-scan-empty">Aguardando o primeiro item…</div>';
       return;
     }
 
     wrap.innerHTML = '';
     state.items.forEach((it) => {
       const row = document.createElement('div');
-      row.style.cssText =
-        'display:flex;justify-content:space-between;align-items:center;' +
-        'padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06);';
+      row.className = 'dh-scan-item';
       row.innerHTML =
         '<div style="min-width:0;flex:1;">' +
-          '<div style="font-weight:600;white-space:nowrap;overflow:hidden;' +
-               'text-overflow:ellipsis;">' + esc(it.product_name || '—') + '</div>' +
-          '<div class="cell--muted" style="font-size:12px;">' +
-            esc(it.barcode || '') +
-          '</div>' +
+          '<div class="dh-scan-item-name">' + esc(it.product_name || '—') + '</div>' +
+          '<div class="dh-scan-item-code">' + esc(it.barcode || '') + '</div>' +
         '</div>' +
-        '<div style="text-align:right;flex-shrink:0;margin-left:12px;">' +
-          '<div><strong>' + Number(it.quantity || 1) + '×</strong></div>' +
-          '<div class="cell--muted" style="font-size:12px;">R$ ' +
+        '<div class="dh-scan-item-right">' +
+          '<div class="dh-scan-item-qty">' + Number(it.quantity || 1) + '×</div>' +
+          '<div class="dh-scan-item-price">R$ ' +
             (Number(it.unit_price) || 0).toFixed(2).replace('.', ',') + '</div>' +
         '</div>';
       wrap.appendChild(row);
@@ -444,7 +546,7 @@
 
   function piscarTotal() {
     if (!state.modal) return;
-    const el = state.modal.querySelector('#scan-total');
+    const el = state.modal.querySelector('#dh-scan-total');
     if (!el) return;
     el.style.transition = 'color 300ms';
     el.style.color = '#22c55e';
@@ -452,18 +554,14 @@
   }
 
   /* =========================================================
-     Modo "venda nova" (fallback)
+     Fallback: cria venda direta
      ========================================================= */
   async function finalizarVenda() {
     if (state.finalizing) return;
-    if (state.items.length === 0) {
-      toast('Nenhum item escaneado.', 'error');
-      return;
-    }
+    if (state.items.length === 0) { toast('Nenhum item escaneado.', 'error'); return; }
 
     const total = state.items.reduce(
-      (a, it) => a + (Number(it.unit_price) || 0) * (Number(it.quantity) || 1),
-      0
+      (a, it) => a + (Number(it.unit_price) || 0) * (Number(it.quantity) || 1), 0
     );
 
     const ok = window.UI && window.UI.confirm
@@ -473,13 +571,9 @@
           { title: 'Finalizar venda', confirmLabel: 'Criar venda' }
         )
       : window.confirm('Criar venda?');
-
     if (!ok) return;
 
     state.finalizing = true;
-    const btn = state.modal.querySelector('#scan-flush-btn');
-    if (btn) { btn.disabled = true; btn.classList.add('is-loading'); }
-
     try {
       const { data: sale, error: saleErr } = await window.db
         .from('sales')
@@ -489,22 +583,17 @@
           total:           total,
           status:          'pending'
         })
-        .select('id')
-        .single();
-
+        .select('id').single();
       if (saleErr) throw saleErr;
-
-      const payload = state.items.map((it) => ({
-        sale_id:    sale.id,
-        product_id: it.product_id,
-        quantity:   it.quantity,
-        unit_price: it.unit_price
-      }));
 
       const { error: itemsErr } = await window.db
         .from('sale_items')
-        .insert(payload);
-
+        .insert(state.items.map((it) => ({
+          sale_id:    sale.id,
+          product_id: it.product_id,
+          quantity:   it.quantity,
+          unit_price: it.unit_price
+        })));
       if (itemsErr) throw itemsErr;
 
       await window.db.from('scan_items').delete().eq('session_id', state.session.id);
@@ -514,14 +603,13 @@
     } catch (err) {
       console.error('[scanner] finalizar:', err);
       toast('Não foi possível finalizar: ' + (err.message || 'erro'), 'error');
-      if (btn) { btn.disabled = false; btn.classList.remove('is-loading'); }
     } finally {
       state.finalizing = false;
     }
   }
 
   /* =========================================================
-     Encerrar sessão
+     Encerrar
      ========================================================= */
   async function encerrarSessao() {
     if (!state.session) return;
@@ -542,14 +630,10 @@
     }
 
     try {
-      await window.db
-        .from('scan_sessions')
-        .update({ status: 'closed' })
-        .eq('id', state.session.id);
-      await window.db
-        .from('scan_items')
-        .delete()
-        .eq('session_id', state.session.id);
+      await window.db.from('scan_sessions')
+        .update({ status: 'closed' }).eq('id', state.session.id);
+      await window.db.from('scan_items')
+        .delete().eq('session_id', state.session.id);
     } catch (e) {
       console.warn('[scanner] close:', e);
     }
@@ -562,7 +646,7 @@
       if (state.modal.parentNode) state.modal.parentNode.removeChild(state.modal);
       state.modal = null;
     }
-    document.body.style.overflow = '';
+    document.body.classList.remove('dh-scan-open');
   }
 
   /* =========================================================
@@ -592,10 +676,10 @@
   }
 
   window.ScannerModal = {
-    abrir:         abrir,
-    encerrar:      encerrarSessao,
-    flush:         flushNoCarrinho,
-    state:         state,
-    temCarrinho:   () => state.hasCartListener
+    abrir:       abrir,
+    encerrar:    encerrarSessao,
+    flush:       flushNoCarrinho,
+    state:       state,
+    temCarrinho: () => state.hasCartListener
   };
 })();
