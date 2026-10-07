@@ -10,17 +10,11 @@
      1. Bipa código
      2. Busca produto
      3. NÃO existe → abre modal "Novo produto" → salva em
-                     products → loga em scan_items
+                     products com status='pending_approval'
+                     → gestor precisa aprovar com preço
      4. Existe     → abre modal "Adicionar estoque" →
                      UPDATE products.stock → loga
      5. Volta pra câmera (sessão continua ativa)
-
-   CORREÇÃO APLICADA:
-     - INSERT em products NÃO manda mais `organization_id`.
-       O banco preenche automaticamente com
-       get_user_organization_id() (mesma função que a RLS
-       usa pra validar). Assim evita o erro
-       "new row violates row-level security policy".
    ========================================================= */
 
 (function () {
@@ -335,7 +329,6 @@
 
   function abrirNovoProduto(barcode) {
     npEls.name.value = '';
-    npEls.price.value = '0';
     npEls.stock.value = '0';
     npEls.code.value = '';
     npEls.barcode.value = barcode;
@@ -350,7 +343,6 @@
 
   async function salvarNovoProduto() {
     const name = npEls.name.value.trim();
-    const price = Number(npEls.price.value) || 0;
     const stock = parseInt(npEls.stock.value, 10) || 0;
     const code  = npEls.code.value.trim() || null;
     const barcode = npEls.barcode.value.trim();
@@ -359,10 +351,6 @@
     if (!name) {
       npEls.feedback.textContent = 'Informe o nome do produto.';
       npEls.name.focus();
-      return;
-    }
-    if (price < 0) {
-      npEls.feedback.textContent = 'Preço inválido.';
       return;
     }
     if (stock < 0) {
@@ -375,15 +363,13 @@
     }
 
     npEls.save.disabled = true;
-    npEls.save.innerHTML = '<span class="sm-busy"></span>Salvando…';
+    npEls.save.innerHTML = '<span class="sm-busy"></span>Enviando…';
 
     try {
       const s = await window.Auth.requireSession();
 
-      /* 🔧 CORREÇÃO: NÃO manda organization_id.
-         O banco tem trigger/default que preenche com
-         get_user_organization_id() — a mesma função que a
-         policy RLS usa pra validar o INSERT. */
+      /* Produto entra como PENDENTE. Preço e aprovação ficam
+         com o gestor. O banco preenche organization_id sozinho. */
       const { data: inserted, error } = await window.db
         .from('products')
         .insert({
@@ -391,10 +377,12 @@
           code: code,
           barcode: barcode,
           description: description,
-          price: price,
+          price: 0,
           stock: stock,
           minimum_stock: 0,
-          active: true,
+          active: false,
+          status: 'pending_approval',      // ⬅️ ESSENCIAL
+          created_by: s.user.id,           // ⬅️ ESSENCIAL
           image_urls: []
         })
         .select('id, name')
@@ -402,27 +390,27 @@
 
       if (error) throw error;
 
-      // Log em scan_items
+      // Log pra painel do PC
       await window.db.from('scan_items').insert({
         session_id: session.id,
         product_id: inserted.id,
         barcode: barcode,
         product_name: name,
-        unit_price: price,
+        unit_price: 0,
         stock_available: stock,
         quantity: 1,
         action_type: 'product_created',
         metadata: {
           name: name,
-          price: price,
           stock: stock,
-          code: code
+          code: code,
+          pending: true
         },
         scanned_by: s.user.id
       });
 
       npEls.modal.hidden = true;
-      setLast('✅ Novo produto: ' + name, 'ok');
+      setLast('📥 ' + name + ' enviado pro gestor aprovar', 'ok');
       vibrar(80);
 
       setTimeout(() => { if (!encerrada) retomarCamera(); }, 500);
@@ -437,8 +425,7 @@
         npEls.feedback.textContent =
           'Sem permissão pra cadastrar produto. Fale com o administrador.';
       } else if (lower.includes('violates not-null')) {
-        npEls.feedback.textContent =
-          'Faltam dados obrigatórios: ' + msg;
+        npEls.feedback.textContent = 'Faltam dados obrigatórios.';
       } else if (lower.includes('failed to fetch') || lower.includes('network')) {
         npEls.feedback.textContent = 'Sem conexão. Tente novamente.';
       } else {
@@ -446,7 +433,7 @@
       }
     } finally {
       npEls.save.disabled = false;
-      npEls.save.textContent = 'Cadastrar';
+      npEls.save.textContent = 'Enviar pro gestor';
     }
   }
 
@@ -538,7 +525,6 @@
     // ---- Novo produto ----
     npEls.modal        = document.getElementById('sm-new-product');
     npEls.name         = document.getElementById('sm-np-name');
-    npEls.price        = document.getElementById('sm-np-price');
     npEls.stock        = document.getElementById('sm-np-stock');
     npEls.code         = document.getElementById('sm-np-code');
     npEls.barcode      = document.getElementById('sm-np-barcode');
