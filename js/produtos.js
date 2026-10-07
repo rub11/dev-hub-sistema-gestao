@@ -4,28 +4,23 @@
    - CRUD de produtos
    - Até 3 fotos (Supabase Storage: bucket `product-images`)
    - Código interno + código de barras (EAN)
+   - Filtro de status: só mostra produtos APROVADOS
    ---------------------------------------------------------
    CORREÇÕES APLICADAS:
-   1. Preview de imagem agora usa `previewUrl` cacheado e é
-      revogado (URL.revokeObjectURL) em troca/remoção/reset —
-      elimina vazamento de memória.
-   2. Checkbox "Ativo" usa `disabled` (não aceita `readOnly`)
-      durante o salvamento.
+   1. Preview de imagem usa `previewUrl` cacheado e é
+      revogado (URL.revokeObjectURL) em troca/remoção/reset.
+   2. Checkbox "Ativo" usa `disabled` (não aceita `readOnly`).
    3. Guards de null em `setupProductForm`, `openConfirmModal`,
       `onSubmitProduct` e `setSaving`.
-   4. `parseNumber` agora entende o formato brasileiro
-      ("1.234,56") e o formato US ("1234.56").
+   4. `parseNumber` entende formato BR ("1.234,56") e US
+      ("1234.56").
    5. `onPhotoSelected` ignora seleção durante salvamento.
    6. Inputs de foto ficam bloqueados enquanto salva.
-   7. Update de produto detecta "0 linhas afetadas" (registro
-      removido por outro usuário).
-   8. [NOVO] API pública `window.Produtos` exposta para o
-      scanner de código de barras (js/produtos-scanner.js):
-        - openCreateModal()
-        - openCreateModalWithBarcode(barcode)
-        - openEditModal(product)
-        - reload()
-        - getProducts()
+   7. Update de produto detecta "0 linhas afetadas".
+   8. API pública `window.Produtos` exposta pro scanner.
+   9. [NOVO] `loadProducts` filtra por status='approved' —
+      produtos pendentes de aprovação NÃO aparecem aqui.
+      Eles ficam na página Aprovações.
    ========================================================= */
 
 (function () {
@@ -47,12 +42,6 @@
     deletingId: null,
     saving: false,
     deleting: false,
-
-    // Fotos: array de até 3 slots.
-    // Cada slot: { url, file, previewUrl, uploading, removing }
-    //   url        = URL já persistida no banco
-    //   file       = arquivo novo ainda não upado
-    //   previewUrl = objectURL temporário (precisa ser revogado)
     photos: []
   };
 
@@ -87,6 +76,9 @@
     renderUser(session.user, profile);
 
     await loadProducts();
+
+    // Escuta o evento do módulo de aprovações pra recarregar
+    window.addEventListener('products:reload', loadProducts);
   }
 
   /* =========================================================
@@ -228,7 +220,7 @@
   }
 
   /* =========================================================
-     Carregar produtos
+     Carregar produtos (SÓ APROVADOS)
      ========================================================= */
   async function loadProducts() {
     showLoading(true);
@@ -236,6 +228,7 @@
     const { data, error } = await window.db
       .from('products')
       .select('*')
+      .eq('status', 'approved')                    // ⬅️ SÓ APROVADOS
       .order('created_at', { ascending: false });
 
     showLoading(false);
@@ -261,7 +254,7 @@
     const label = document.getElementById('products-count');
     if (!label) return;
 
-    if (total === 0) { label.textContent = 'Nenhum produto cadastrado'; return; }
+    if (total === 0) { label.textContent = 'Nenhum produto aprovado'; return; }
     label.textContent = total === 1
       ? '1 produto cadastrado'
       : total + ' produtos cadastrados';
@@ -277,8 +270,9 @@
 
     if (state.all.length === 0) {
       tableWrap.hidden = true;
-      showEmptyState('Nenhum produto cadastrado ainda.',
-                     'Comece adicionando o primeiro produto ao catálogo.', true);
+      showEmptyState('Nenhum produto aprovado ainda.',
+                     'Produtos cadastrados pelo estoque aparecem aqui após aprovação.',
+                     true);
       return;
     }
     if (state.filtered.length === 0) {
@@ -318,7 +312,6 @@
     const cell = document.createElement('td');
     cell.className = 'cell-product';
 
-    // Thumb
     const thumb = document.createElement('span');
     thumb.className = 'cell-product__thumb';
 
@@ -336,7 +329,6 @@
         '<path d="m21 8-9-5-9 5v8l9 5 9-5z"/><path d="m3 8 9 5 9-5"/><path d="M12 21v-8"/></svg>';
     }
 
-    // Info
     const info = document.createElement('div');
     info.className = 'cell-product__info';
 
@@ -356,7 +348,6 @@
 
     cell.appendChild(thumb);
     cell.appendChild(info);
-
     return cell;
   }
 
@@ -512,7 +503,6 @@
 
     photoEls.container.innerHTML = '';
 
-    // Cria 3 slots vazios
     for (let i = 0; i < MAX_PHOTOS; i += 1) {
       const slot = document.createElement('div');
       slot.className = 'product-photo';
@@ -522,7 +512,7 @@
   }
 
   /* =========================================================
-     Fotos: helpers (CORRIGIDO — preview cacheado + revogação)
+     Fotos: helpers
      ========================================================= */
   function makeEmptyPhotoSlot() {
     return {
@@ -534,16 +524,10 @@
     };
   }
 
-  /**
-   * Revoga todos os objectURLs pendentes. Chamado antes de:
-   *   - resetPhotos (novo produto)
-   *   - openEditModal (carregar outro produto)
-   *   - close do modal (opcional — deixamos pro reset)
-   */
   function releasePhotoPreviews() {
     state.photos.forEach(function (slot) {
       if (slot && slot.previewUrl) {
-        try { URL.revokeObjectURL(slot.previewUrl); } catch (e) { /* ignora */ }
+        try { URL.revokeObjectURL(slot.previewUrl); } catch (e) {}
         slot.previewUrl = null;
       }
     });
@@ -566,13 +550,12 @@
       slotEl.innerHTML = '';
       slotEl.classList.toggle('product-photo--filled', Boolean(slot && (slot.url || slot.file)));
 
-      // Está vazio?
       if (!slot || (!slot.url && !slot.file)) {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'product-photo__empty';
         btn.setAttribute('aria-label', 'Adicionar foto ' + (i + 1));
-        btn.disabled = state.saving === true;  // bloqueia durante save
+        btn.disabled = state.saving === true;
         btn.innerHTML =
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"' +
           ' stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
@@ -584,7 +567,7 @@
         input.accept = ALLOWED_TYPES.join(',');
         input.className = 'product-photo__input';
         input.setAttribute('aria-hidden', 'true');
-        input.disabled = state.saving === true;  // bloqueia durante save
+        input.disabled = state.saving === true;
 
         btn.addEventListener('click', function () { input.click(); });
         input.addEventListener('change', function (e) {
@@ -597,7 +580,6 @@
         return;
       }
 
-      // Preenchido — usa previewUrl cacheado (não cria novo objectURL)
       const url = slot.url || slot.previewUrl;
       if (!url) return;
 
@@ -607,7 +589,6 @@
       img.alt = '';
       slotEl.appendChild(img);
 
-      // Badge "principal" no primeiro slot
       if (i === 0) {
         const badge = document.createElement('span');
         badge.className = 'product-photo__badge';
@@ -615,19 +596,17 @@
         slotEl.appendChild(badge);
       }
 
-      // Botão remover
       const remove = document.createElement('button');
       remove.type = 'button';
       remove.className = 'product-photo__remove';
       remove.setAttribute('aria-label', 'Remover foto ' + (i + 1));
-      remove.disabled = state.saving === true;  // bloqueia durante save
+      remove.disabled = state.saving === true;
       remove.innerHTML =
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"' +
         ' stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
       remove.addEventListener('click', function () { onPhotoRemove(i); });
       slotEl.appendChild(remove);
 
-      // Estado de upload
       if (slot.uploading) {
         const overlay = document.createElement('div');
         overlay.className = 'product-photo__progress';
@@ -639,7 +618,7 @@
 
   function onPhotoSelected(index, file) {
     if (!file) return;
-    if (state.saving) return;  // CORREÇÃO #6
+    if (state.saving) return;
 
     if (ALLOWED_TYPES.indexOf(file.type) === -1) {
       showFormFeedback('Formato inválido. Use JPG, PNG ou WEBP.');
@@ -650,17 +629,16 @@
       return;
     }
 
-    // Revoga preview anterior do slot (se houver)
     const prev = state.photos[index];
     if (prev && prev.previewUrl) {
-      try { URL.revokeObjectURL(prev.previewUrl); } catch (e) { /* ignora */ }
+      try { URL.revokeObjectURL(prev.previewUrl); } catch (e) {}
     }
 
     clearFormFeedback();
     state.photos[index] = {
       url: null,
       file: file,
-      previewUrl: URL.createObjectURL(file),  // cacheado — será revogado depois
+      previewUrl: URL.createObjectURL(file),
       uploading: false,
       removing: false
     };
@@ -672,7 +650,7 @@
 
     const prev = state.photos[index];
     if (prev && prev.previewUrl) {
-      try { URL.revokeObjectURL(prev.previewUrl); } catch (e) { /* ignora */ }
+      try { URL.revokeObjectURL(prev.previewUrl); } catch (e) {}
     }
 
     state.photos[index] = makeEmptyPhotoSlot();
@@ -680,7 +658,7 @@
   }
 
   /* =========================================================
-     Fotos: upload para o Storage
+     Fotos: upload
      ========================================================= */
   async function uploadPhoto(file, userId, order) {
     const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
@@ -702,10 +680,6 @@
     return data && data.publicUrl ? data.publicUrl : null;
   }
 
-  /**
-   * Sobe todos os arquivos novos e devolve o array final de URLs
-   * (persistidas + novas, na ordem dos slots).
-   */
   async function uploadAllPhotos(userId) {
     const urls = [];
     for (let i = 0; i < state.photos.length; i += 1) {
@@ -750,7 +724,6 @@
       el.addEventListener('click', closeProductModal);
     });
 
-    // CORREÇÃO #3: guard de null no checkbox
     if (modalEls.active && modalEls.activeLabel) {
       modalEls.active.addEventListener('change', function () {
         modalEls.activeLabel.textContent = modalEls.active.checked ? 'Ativo' : 'Inativo';
@@ -795,7 +768,6 @@
     if (modalEls.activeLabel) modalEls.activeLabel.textContent = modalEls.active.checked ? 'Ativo' : 'Inativo';
     clearFormFeedback();
 
-    // Carrega fotos existentes nos slots — CORREÇÃO #1/8: revoga previews antigas
     releasePhotoPreviews();
 
     const existing = getProductImageUrls(product);
@@ -860,7 +832,6 @@
       const userId = session?.data?.session?.user?.id;
       if (!userId) throw new Error('Sessão expirada.');
 
-      // Upload das fotos novas
       const imageUrls = await uploadAllPhotos(userId);
 
       const payload = {
@@ -872,11 +843,11 @@
         stock: stock,
         minimum_stock: minimumStock,
         active: modalEls.active.checked === true,
-        image_urls: imageUrls
+        image_urls: imageUrls,
+        status: 'approved'                       // ⬅️ criado pelo PC já é aprovado
       };
 
       if (state.editingId) {
-        // CORREÇÃO #7: detecta update de 0 linhas (registro removido)
         const { data, error } = await window.db
           .from('products')
           .update(payload)
@@ -896,7 +867,6 @@
         showToast('Produto cadastrado com sucesso.', 'success');
       }
 
-      // Antes de fechar, revoga previews (o produto já está persistido)
       releasePhotoPreviews();
 
       closeModal(modalEls.modal);
@@ -925,16 +895,13 @@
       if (label) label.textContent = isSaving ? 'Salvando...' : 'Salvar';
     }
 
-    // CORREÇÃO #2: inputs de texto aceitam readOnly
     ['name', 'code', 'barcode', 'description', 'price', 'stock', 'minimumStock']
       .forEach(function (key) {
         if (modalEls[key]) modalEls[key].readOnly = isSaving;
       });
 
-    // CORREÇÃO #2: checkbox NÃO aceita readOnly → usar disabled
     if (modalEls.active) modalEls.active.disabled = isSaving;
 
-    // CORREÇÃO #7: re-renderiza slots pra bloquear botões/inputs de foto
     if (photoEls.container) renderPhotoSlots();
   }
 
@@ -973,7 +940,6 @@
   }
 
   function openConfirmModal(product) {
-    // CORREÇÃO #4: guard de null
     state.deletingId = product.id;
     if (confirmEls.text) {
       confirmEls.text.textContent =
@@ -1065,7 +1031,6 @@
         if (u && typeof u === 'string') urls.push(u);
       });
     }
-    // Fallback para image_url antigo
     if (urls.length === 0 && product.image_url) urls.push(product.image_url);
 
     return urls.slice(0, MAX_PHOTOS);
@@ -1155,22 +1120,17 @@
     return parseInteger(value, 0);
   }
 
-  /* CORREÇÃO #5: aceita formato BR e US */
   function parseNumber(value) {
     if (value === null || value === undefined || value === '') return null;
     if (typeof value === 'number') return Number.isFinite(value) ? value : null;
 
     let str = String(value).trim();
 
-    // Aceita "1.234,56" (BR) e "1234.56" (US)
     if (str.indexOf(',') !== -1 && str.indexOf('.') !== -1) {
-      // Tem os dois → assume BR: remove pontos (milhar), troca vírgula por ponto
       str = str.replace(/\./g, '').replace(',', '.');
     } else if (str.indexOf(',') !== -1) {
-      // Só vírgula → assume decimal BR
       str = str.replace(',', '.');
     }
-    // Só ponto ou nada → deixa como está
 
     const parsed = Number(str);
     return Number.isFinite(parsed) ? parsed : null;
@@ -1252,21 +1212,13 @@
   }
 
   /* =========================================================
-     API pública — consumida pelo scanner de código de barras
-     (js/produtos-scanner.js)
+     API pública — consumida pelo scanner
      ========================================================= */
-
-  /**
-   * Abre o modal "Novo produto" e pré-preenche o campo
-   * código de barras. Usado quando o scanner bipa um EAN que
-   * ainda não existe no catálogo.
-   */
   function openCreateModalWithBarcode(barcode) {
     openCreateModal();
     if (barcode && modalEls.barcode) {
       modalEls.barcode.value = String(barcode);
     }
-    // Foco no nome (o usuário só precisa digitar o nome, preço, etc.)
     if (modalEls.name) modalEls.name.focus();
   }
 
