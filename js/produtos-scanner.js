@@ -1,11 +1,12 @@
 /* =========================================================
-   DEV HUB · Produtos · Scanner de código de barras
+   DEV HUB · Produtos · Scanner de código de barras (PC)
    ---------------------------------------------------------
-   Fluxo (sessão persistente):
-     1. Botão "📷 Scanner" abre o QR
-     2. Celular pareia → bipa códigos sem parar
-     3. Cada bip processa e volta pro QR automaticamente
-     4. Só encerra quando o usuário clica em "Fechar"
+   Papel do PC agora:
+     - Abrir o QR pra parear o celular
+     - Mostrar em tempo real a ATIVIDADE do celular
+       (produtos criados / estoque alterado)
+     - Botão pra recarregar a lista de produtos
+   O cadastro em si acontece NO CELULAR.
    ========================================================= */
 
 (function () {
@@ -17,18 +18,12 @@
     session: null,
     channel: null,
     modal: null,
-    stockModal: null,
-    stockTarget: null,
-    processing: false,
-    lastProcessedId: null,
-    productModalObserver: null
+    atividade: [],
+    conhecidos: new Set()
   };
 
   document.addEventListener('DOMContentLoaded', boot);
 
-  /* =========================================================
-     Boot
-     ========================================================= */
   async function boot() {
     const Auth = window.Auth;
     if (!Auth || !window.db || !Auth.isConfigured || !Auth.isConfigured()) return;
@@ -52,9 +47,6 @@
     observarBotao();
   }
 
-  /* =========================================================
-     Botão
-     ========================================================= */
   function observarBotao() {
     let tentativas = 0;
     const tick = () => {
@@ -128,6 +120,8 @@
     }
 
     state.session = data;
+    state.atividade = [];
+    state.conhecidos = new Set();
     abrirModalQR();
     assinarCanal();
   }
@@ -139,7 +133,7 @@
   }
 
   function abrirModalQR() {
-    if (!state.modal) state.modal = buildModalQR();
+    if (!state.modal) state.modal = buildModal();
     if (!state.modal.parentNode) document.body.appendChild(state.modal);
 
     state.modal.hidden = false;
@@ -159,33 +153,44 @@
     qrBox.appendChild(img);
 
     state.modal.querySelector('#dh-p-token').textContent = state.session.token;
-    setStatus('Aguardando leitura do primeiro código…');
+    renderAtividade();
   }
 
-  function buildModalQR() {
+  function buildModal() {
     const modal = document.createElement('div');
     modal.id = 'dh-p-scanner-modal';
     modal.className = 'dh-scan-backdrop';
     modal.hidden = true;
     modal.innerHTML = `
-      <div class="dh-scan-card" role="dialog" aria-modal="true" style="max-width:480px;">
+      <div class="dh-scan-card" role="dialog" aria-modal="true" style="max-width:520px;">
         <header class="dh-scan-header">
-          <h2>Scanner de produtos</h2>
+          <h2>Cadastro rápido</h2>
           <button type="button" class="dh-scan-close" data-close aria-label="Fechar">×</button>
         </header>
         <div class="dh-scan-body">
           <p class="dh-scan-center">
-            Aponte a câmera do <strong>celular</strong> pra cada código de barras.
-            A janela continua aberta enquanto você cadastra ou adiciona estoque.
+            Abra o celular, faça login e aponte pro QR.
+            Bipando cada produto, o cadastro acontece <b>no próprio celular</b>.
           </p>
+
           <div class="dh-scan-qr" id="dh-p-qr"></div>
+
           <p class="dh-scan-token">
             Se preferir, digite no celular:
             <br>
             <strong id="dh-p-token">—</strong>
           </p>
-          <div class="dh-scan-status" id="dh-p-status">
-            Aguardando leitura do primeiro código…
+
+          <div class="dh-p-head">
+            <h3>Atividade recente</h3>
+            <button type="button" class="dh-scan-btn dh-scan-btn--ghost" id="dh-p-reload"
+                    style="padding:6px 12px; font-size:12.5px;">
+              Recarregar produtos
+            </button>
+          </div>
+
+          <div class="dh-p-activity" id="dh-p-activity">
+            <div class="dh-p-empty">Aguardando atividade do celular…</div>
           </div>
         </div>
         <footer class="dh-scan-footer">
@@ -202,34 +207,20 @@
       if (e.target === modal) encerrarSessao();
     });
 
+    modal.querySelector('#dh-p-reload').addEventListener('click', () => {
+      if (window.Produtos && typeof window.Produtos.reload === 'function') {
+        window.Produtos.reload();
+        toast('Lista recarregada.', 'success');
+      }
+    });
+
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' &&
-          state.modal && !state.modal.hidden &&
-          (!state.stockModal || state.stockModal.hidden)) {
+      if (e.key === 'Escape' && state.modal && !state.modal.hidden) {
         encerrarSessao();
       }
     });
 
     return modal;
-  }
-
-  function setStatus(txt, kind) {
-    if (!state.modal) return;
-    const el = state.modal.querySelector('#dh-p-status');
-    if (!el) return;
-    el.textContent = txt;
-    el.style.background =
-      kind === 'ok'  ? 'rgba(34,197,94,.10)' :
-      kind === 'err' ? 'rgba(239,68,68,.10)' :
-                       'rgba(59,130,246,.08)';
-    el.style.borderColor =
-      kind === 'ok'  ? 'rgba(34,197,94,.22)' :
-      kind === 'err' ? 'rgba(239,68,68,.22)' :
-                       'rgba(59,130,246,.18)';
-    el.style.color =
-      kind === 'ok'  ? '#86efac' :
-      kind === 'err' ? '#fca5a5' :
-                       '#93b6ff';
   }
 
   /* =========================================================
@@ -249,295 +240,88 @@
         table: 'scan_items',
         filter: 'session_id=eq.' + state.session.id
       }, (payload) => {
-        processarScan(payload.new);
+        const item = payload.new;
+        if (!item || state.conhecidos.has(item.id)) return;
+        state.conhecidos.add(item.id);
+
+        state.atividade.unshift(item);
+        if (state.atividade.length > 30) state.atividade.pop();
+
+        renderAtividade();
+
+        if (item.action_type === 'product_created') {
+          toast('Novo produto: ' + (item.product_name || ''), 'success');
+        } else if (item.action_type === 'stock_added') {
+          const qty = item.metadata && item.metadata.qty_added;
+          toast('+' + (qty || '') + ' un. de ' + (item.product_name || ''), 'success');
+        }
       })
       .subscribe();
   }
 
-  /* =========================================================
-     Processar 1 item (mantém sessão aberta)
-     ========================================================= */
-  async function processarScan(item) {
-    if (!item || !item.barcode) return;
-    if (state.processing) return;
-    if (state.lastProcessedId === item.id) return;
-    state.lastProcessedId = item.id;
-    state.processing = true;
+  function renderAtividade() {
+    if (!state.modal) return;
+    const wrap = state.modal.querySelector('#dh-p-activity');
+    if (!wrap) return;
 
-    const barcode = String(item.barcode).trim();
-    setStatus('Lido: ' + barcode, 'ok');
-
-    // Remove a linha do scan_items (não precisa manter histórico)
-    try {
-      await window.db.from('scan_items').delete().eq('id', item.id);
-    } catch (e) {}
-
-    // Busca produto pelo barcode
-    const { data: product, error } = await window.db
-      .from('products')
-      .select('id, name, code, barcode, description, price, stock, minimum_stock, active, image_urls, image_url')
-      .eq('barcode', barcode)
-      .maybeSingle();
-
-    state.processing = false;
-
-    if (error) {
-      console.error('[scanner-produtos] erro buscar:', error);
-      toast('Erro ao buscar produto.', 'error');
+    if (state.atividade.length === 0) {
+      wrap.innerHTML = '<div class="dh-p-empty">Aguardando atividade do celular…</div>';
       return;
     }
 
-    if (!product) {
-      toast('Produto não cadastrado. Preencha o cadastro.', 'info');
-      if (window.Produtos && typeof window.Produtos.openCreateModalWithBarcode === 'function') {
-        // Esconde o QR temporariamente enquanto o modal de produto está aberto
-        esconderQR();
+    wrap.innerHTML = '';
+    state.atividade.forEach(item => {
+      const kind = item.action_type || 'sale';
+      const isNew = kind === 'product_created';
+      const isStock = kind === 'stock_added';
 
-        window.Produtos.openCreateModalWithBarcode(barcode);
+      const row = document.createElement('div');
+      row.className = 'dh-p-item';
 
-        // Observa quando o #product-modal fechar pra reabrir o QR
-        observarFechamentoProdutoModal();
+      const icon = document.createElement('div');
+      icon.className = 'dh-p-item__icon ' +
+        (isNew ? 'dh-p-item__icon--new' : isStock ? 'dh-p-item__icon--stock' : '');
+      icon.innerHTML = isNew
+        ? '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" ' +
+          'stroke="currentColor" stroke-width="2" stroke-linecap="round" ' +
+          'stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>'
+        : '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" ' +
+          'stroke="currentColor" stroke-width="2" stroke-linecap="round" ' +
+          'stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+
+      const body = document.createElement('div');
+      body.className = 'dh-p-item__body';
+
+      const title = document.createElement('div');
+      title.className = 'dh-p-item__title';
+      title.textContent = item.product_name || '—';
+
+      const meta = document.createElement('div');
+      meta.className = 'dh-p-item__meta';
+      if (isNew) {
+        const p = item.metadata && item.metadata.price;
+        meta.textContent = 'Cadastrado · ' +
+          (p != null ? 'R$ ' + Number(p).toFixed(2).replace('.', ',') : '');
+      } else if (isStock) {
+        const qty = (item.metadata && item.metadata.qty_added) || item.quantity || 0;
+        const next = item.metadata && item.metadata.new_stock;
+        meta.textContent = '+' + qty + ' un.' +
+          (next != null ? ' (total ' + next + ')' : '');
       } else {
-        toast('Módulo de produtos indisponível.', 'error');
+        meta.textContent = 'Item vendido';
       }
-      return;
-    }
 
-    // Produto existe → abre modal de estoque (QR fica atrás)
-    abrirModalEstoque(product);
-  }
+      body.appendChild(title);
+      body.appendChild(meta);
 
-  /* =========================================================
-     Esconder/mostrar QR (durante modais por cima)
-     ========================================================= */
-  function esconderQR() {
-    if (state.modal) state.modal.hidden = true;
-  }
-
-  function reabrirQR() {
-    if (!state.session) return;
-    if (!state.modal) state.modal = buildModalQR();
-    if (!state.modal.parentNode) document.body.appendChild(state.modal);
-    state.modal.hidden = false;
-    document.body.classList.add('dh-scan-open');
-    setStatus('Pronto pra próxima leitura.', 'ok');
-  }
-
-  function observarFechamentoProdutoModal() {
-    if (state.productModalObserver) {
-      try { state.productModalObserver.disconnect(); } catch (e) {}
-      state.productModalObserver = null;
-    }
-
-    const modalProduto = document.getElementById('product-modal');
-    if (!modalProduto) {
-      // Fallback: se não achar, reabre o QR após 1s
-      setTimeout(reabrirQR, 1000);
-      return;
-    }
-
-    const check = () => {
-      if (modalProduto.hidden) {
-        if (state.productModalObserver) {
-          try { state.productModalObserver.disconnect(); } catch (e) {}
-          state.productModalObserver = null;
-        }
-        reabrirQR();
-      }
-    };
-
-    state.productModalObserver = new MutationObserver(check);
-    state.productModalObserver.observe(modalProduto, {
-      attributes: true,
-      attributeFilter: ['hidden']
+      row.appendChild(icon);
+      row.appendChild(body);
+      wrap.appendChild(row);
     });
   }
 
   /* =========================================================
-     Modal: adicionar estoque
-     ========================================================= */
-  function abrirModalEstoque(product) {
-    if (!state.stockModal) state.stockModal = buildModalEstoque();
-    if (!state.stockModal.parentNode) document.body.appendChild(state.stockModal);
-
-    state.stockTarget = product;
-
-    const thumb = state.stockModal.querySelector('#dh-p-thumb');
-    const imgUrl = (Array.isArray(product.image_urls) && product.image_urls[0]) ||
-                   product.image_url || null;
-
-    thumb.innerHTML = '';
-    if (imgUrl) {
-      const img = document.createElement('img');
-      img.src = imgUrl;
-      img.alt = '';
-      thumb.appendChild(img);
-    } else {
-      thumb.innerHTML =
-        '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" ' +
-        'stroke="currentColor" stroke-width="1.6" stroke-linecap="round" ' +
-        'stroke-linejoin="round"><path d="m21 8-9-5-9 5v8l9 5 9-5z"/>' +
-        '<path d="m3 8 9 5 9-5"/><path d="M12 21v-8"/></svg>';
-    }
-
-    state.stockModal.querySelector('#dh-p-name').textContent    = product.name || '—';
-    state.stockModal.querySelector('#dh-p-barcode').textContent = product.barcode || '—';
-    state.stockModal.querySelector('#dh-p-code').textContent    = product.code || '—';
-    state.stockModal.querySelector('#dh-p-current').textContent = toInt(product.stock) + ' un.';
-    state.stockModal.querySelector('#dh-p-price').textContent   =
-      'R$ ' + (Number(product.price) || 0).toFixed(2).replace('.', ',');
-
-    const qtyInput = state.stockModal.querySelector('#dh-p-qty');
-    qtyInput.value = '1';
-
-    const fb = state.stockModal.querySelector('#dh-p-fb');
-    fb.textContent = '';
-    fb.hidden = true;
-
-    // Esconde o QR (fica atrás)
-    esconderQR();
-
-    state.stockModal.hidden = false;
-    document.body.classList.add('dh-scan-open');
-    setTimeout(() => qtyInput.focus(), 40);
-  }
-
-  function buildModalEstoque() {
-    const modal = document.createElement('div');
-    modal.id = 'dh-p-stock-modal';
-    modal.className = 'dh-scan-backdrop';
-    modal.hidden = true;
-    modal.innerHTML = `
-      <div class="dh-scan-card" role="dialog" aria-modal="true" style="max-width:460px;">
-        <header class="dh-scan-header">
-          <h2>Produto encontrado</h2>
-          <button type="button" class="dh-scan-close" data-close aria-label="Fechar">×</button>
-        </header>
-        <div class="dh-scan-body">
-          <div class="dh-p-hero">
-            <div class="dh-p-thumb" id="dh-p-thumb" aria-hidden="true"></div>
-            <div class="dh-p-hero-info">
-              <strong id="dh-p-name">—</strong>
-              <span class="dh-p-line"><span>Cód. barras</span><b id="dh-p-barcode">—</b></span>
-              <span class="dh-p-line"><span>Cód. interno</span><b id="dh-p-code">—</b></span>
-            </div>
-          </div>
-
-          <div class="dh-p-grid">
-            <div>
-              <span>Estoque atual</span>
-              <strong id="dh-p-current">—</strong>
-            </div>
-            <div>
-              <span>Preço</span>
-              <strong id="dh-p-price">—</strong>
-            </div>
-          </div>
-
-          <div class="dh-p-field">
-            <label for="dh-p-qty">Quantidade a adicionar</label>
-            <div class="dh-p-qty">
-              <button type="button" data-step="-1" aria-label="Diminuir">−</button>
-              <input type="number" id="dh-p-qty" min="1" step="1" value="1" inputmode="numeric">
-              <button type="button" data-step="1" aria-label="Aumentar">+</button>
-            </div>
-          </div>
-
-          <p id="dh-p-fb" class="dh-p-fb" hidden></p>
-        </div>
-        <footer class="dh-scan-footer">
-          <button type="button" class="dh-scan-btn dh-scan-btn--ghost" data-close>Cancelar</button>
-          <button type="button" class="dh-scan-btn dh-scan-btn--primary" id="dh-p-confirm">
-            Adicionar ao estoque
-          </button>
-        </footer>
-      </div>
-    `;
-
-    modal.querySelectorAll('[data-close]').forEach(el => {
-      el.addEventListener('click', fecharModalEstoque);
-    });
-
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) fecharModalEstoque();
-    });
-
-    const qtyInput = modal.querySelector('#dh-p-qty');
-    modal.querySelectorAll('[data-step]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const step = Number(btn.getAttribute('data-step'));
-        const cur = Math.max(1, Number(qtyInput.value) || 1);
-        qtyInput.value = String(Math.max(1, cur + step));
-      });
-    });
-
-    modal.querySelector('#dh-p-confirm')
-         .addEventListener('click', confirmarEstoque);
-
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && !modal.hidden) fecharModalEstoque();
-    });
-
-    return modal;
-  }
-
-  function fecharModalEstoque() {
-    if (!state.stockModal) return;
-    state.stockModal.hidden = true;
-    state.stockTarget = null;
-    // Reabre o QR pra próxima leitura
-    if (state.session) reabrirQR();
-  }
-
-  async function confirmarEstoque() {
-    if (!state.stockTarget) return;
-
-    const input = state.stockModal.querySelector('#dh-p-qty');
-    const fb = state.stockModal.querySelector('#dh-p-fb');
-    const btn = state.stockModal.querySelector('#dh-p-confirm');
-
-    fb.textContent = '';
-    fb.hidden = true;
-
-    const qty = Math.max(1, Math.floor(Number(input.value) || 0));
-    if (!qty) {
-      fb.textContent = 'Informe uma quantidade válida.';
-      fb.hidden = false;
-      input.focus();
-      return;
-    }
-
-    btn.disabled = true;
-    btn.classList.add('is-loading');
-
-    try {
-      const next = toInt(state.stockTarget.stock) + qty;
-
-      const { error } = await window.db
-        .from('products')
-        .update({ stock: next })
-        .eq('id', state.stockTarget.id);
-
-      if (error) throw error;
-
-      toast('Estoque atualizado: ' + next + ' un.', 'success');
-      fecharModalEstoque(); // já reabre o QR
-
-      if (window.Produtos && typeof window.Produtos.reload === 'function') {
-        await window.Produtos.reload();
-      }
-    } catch (err) {
-      console.error('[scanner-produtos] erro update:', err);
-      fb.textContent = 'Não foi possível atualizar o estoque.';
-      fb.hidden = false;
-    } finally {
-      btn.disabled = false;
-      btn.classList.remove('is-loading');
-    }
-  }
-
-  /* =========================================================
-     Encerrar sessão (só quando clica em Fechar)
+     Encerrar sessão
      ========================================================= */
   async function encerrarSessao() {
     if (state.channel) {
@@ -555,24 +339,17 @@
       state.session = null;
     }
 
-    if (state.productModalObserver) {
-      try { state.productModalObserver.disconnect(); } catch (e) {}
-      state.productModalObserver = null;
-    }
-
     if (state.modal) {
       state.modal.hidden = true;
       if (state.modal.parentNode) state.modal.parentNode.removeChild(state.modal);
       state.modal = null;
     }
-
-    if (state.stockModal) {
-      state.stockModal.hidden = true;
-      if (state.stockModal.parentNode) state.stockModal.parentNode.removeChild(state.stockModal);
-      state.stockModal = null;
-    }
-
     document.body.classList.remove('dh-scan-open');
+
+    // Recarrega lista de produtos pra refletir mudanças
+    if (window.Produtos && typeof window.Produtos.reload === 'function') {
+      window.Produtos.reload();
+    }
   }
 
   /* =========================================================
@@ -592,7 +369,7 @@
       }
       @keyframes dhScanFade{to{opacity:1}}
       .dh-scan-card{
-        position:relative;width:100%;max-width:480px;
+        position:relative;width:100%;max-width:520px;
         background:#0d131c;color:#e6eaf2;
         border:1px solid rgba(255,255,255,.10);border-radius:16px;
         box-shadow:0 24px 60px rgba(0,0,0,.65);
@@ -619,18 +396,11 @@
         margin:0 auto 14px;width:fit-content;
         box-shadow:0 4px 20px rgba(0,0,0,.4);
       }
-      .dh-scan-qr img{display:block;width:240px;height:240px;}
+      .dh-scan-qr img{display:block;width:220px;height:220px;}
       .dh-scan-token{text-align:center;font-size:12.5px;color:#8b95a7;margin:0 0 20px;}
       .dh-scan-token strong{
-        display:inline-block;margin-top:6px;font-size:20px;letter-spacing:3px;
+        display:inline-block;margin-top:6px;font-size:18px;letter-spacing:2px;
         color:#e6eaf2;font-weight:700;font-family:monospace;
-      }
-      .dh-scan-status{
-        padding:10px 12px;border-radius:9px;
-        background:rgba(59,130,246,.08);
-        border:1px solid rgba(59,130,246,.18);
-        color:#93b6ff;font-size:12.5px;text-align:center;
-        transition:background 200ms ease,color 200ms ease,border-color 200ms ease;
       }
       .dh-scan-footer{
         display:flex;justify-content:flex-end;gap:10px;
@@ -642,69 +412,49 @@
         padding:10px 18px;font-size:13.5px;font-weight:600;font-family:inherit;
         cursor:pointer;transition:background 120ms ease,opacity 120ms ease;
       }
-      .dh-scan-btn:disabled{opacity:.6;cursor:not-allowed;}
       .dh-scan-btn--ghost{background:transparent;color:#c7d0dd;border-color:rgba(255,255,255,.14);}
       .dh-scan-btn--ghost:hover{background:rgba(255,255,255,.05);}
-      .dh-scan-btn--primary{background:#3b82f6;color:#fff;}
-      .dh-scan-btn--primary:hover{background:#2f74e6;}
       body.dh-scan-open{overflow:hidden;}
 
-      .dh-p-hero{
-        display:flex;gap:14px;padding:14px;border-radius:12px;
-        background:rgba(255,255,255,.04);
+      .dh-p-head{
+        display:flex;justify-content:space-between;align-items:center;
+        margin:20px 0 10px;
+      }
+      .dh-p-head h3{margin:0;font-size:13.5px;font-weight:600;}
+      .dh-p-activity{
         border:1px solid rgba(255,255,255,.08);
-        margin-bottom:14px;
+        border-radius:10px;
+        background:rgba(255,255,255,.015);
+        padding:6px 12px;
+        max-height:240px;overflow-y:auto;
       }
-      .dh-p-thumb{
-        flex-shrink:0;width:56px;height:56px;border-radius:10px;
-        background:rgba(122,162,255,.10);color:#7aa2ff;
-        display:flex;align-items:center;justify-content:center;overflow:hidden;
+      .dh-p-empty{
+        padding:24px 4px;text-align:center;
+        font-size:13px;color:#8b95a7;
       }
-      .dh-p-thumb img{width:100%;height:100%;object-fit:cover;}
-      .dh-p-hero-info{min-width:0;flex:1;display:flex;flex-direction:column;gap:4px;}
-      .dh-p-hero-info strong{
-        font-size:15px;color:#e6eaf2;font-weight:600;
+      .dh-p-item{
+        display:flex;gap:10px;align-items:flex-start;
+        padding:10px 0;
+        border-bottom:1px solid rgba(255,255,255,.05);
+        animation:dhPItem 200ms ease;
+      }
+      .dh-p-item:last-child{border-bottom:0;}
+      @keyframes dhPItem{from{opacity:0;transform:translateY(-3px);}to{opacity:1;transform:translateY(0);}}
+      .dh-p-item__icon{
+        flex-shrink:0;
+        width:24px;height:24px;border-radius:7px;
+        display:flex;align-items:center;justify-content:center;
+        background:rgba(255,255,255,.05);color:#8b95a7;
+      }
+      .dh-p-item__icon--new{background:rgba(34,197,94,.14);color:#22c55e;}
+      .dh-p-item__icon--stock{background:rgba(59,130,246,.14);color:#3b82f6;}
+      .dh-p-item__body{min-width:0;flex:1;}
+      .dh-p-item__title{
+        font-weight:600;font-size:13px;color:#e6eaf2;
         overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
       }
-      .dh-p-line{display:flex;justify-content:space-between;font-size:11.5px;color:#8b95a7;gap:8px;}
-      .dh-p-line b{color:#c7d0dd;font-weight:500;}
-      .dh-p-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
-      .dh-p-grid > div{
-        padding:10px 12px;border-radius:9px;
-        background:rgba(255,255,255,.03);
-        border:1px solid rgba(255,255,255,.06);
-        display:flex;flex-direction:column;gap:2px;
-      }
-      .dh-p-grid span{font-size:11.5px;color:#8b95a7;}
-      .dh-p-grid strong{font-size:14px;color:#e6eaf2;}
-      .dh-p-field{margin-bottom:12px;}
-      .dh-p-field label{
-        display:block;font-size:12.5px;color:#c7d0dd;font-weight:600;
-        margin-bottom:6px;
-      }
-      .dh-p-qty{
-        display:flex;align-items:stretch;
-        border:1px solid rgba(255,255,255,.12);border-radius:9px;
-        overflow:hidden;background:#131a24;
-      }
-      .dh-p-qty button{
-        appearance:none;border:0;background:transparent;
-        color:#c7d0dd;font-size:18px;font-weight:600;
-        cursor:pointer;width:44px;flex-shrink:0;
-        transition:background 120ms ease;
-      }
-      .dh-p-qty button:hover{background:rgba(255,255,255,.05);}
-      .dh-p-qty input{
-        flex:1;min-width:0;border:0;background:transparent;
-        color:#fff;text-align:center;
-        font-size:15px;font-weight:600;font-family:inherit;
-        padding:10px 8px;
-      }
-      .dh-p-qty input:focus{outline:0;}
-      .dh-p-fb{
-        padding:10px 12px;border-radius:9px;font-size:12.5px;
-        background:rgba(239,68,68,.10);color:#fca5a5;
-        border:1px solid rgba(239,68,68,.28);margin:0;
+      .dh-p-item__meta{
+        font-size:11.5px;color:#8b95a7;margin-top:2px;
       }
     `;
     document.head.appendChild(style);
@@ -728,10 +478,5 @@
       el.classList.add('is-leaving');
       setTimeout(() => el.remove(), 400);
     }, 3200);
-  }
-
-  function toInt(v) {
-    const n = parseInt(v, 10);
-    return Number.isFinite(n) ? n : 0;
   }
 })();

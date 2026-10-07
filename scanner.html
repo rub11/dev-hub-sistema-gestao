@@ -2,219 +2,413 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <meta name="theme-color" content="#0a0f16">
   <title>Scanner · DEV HUB</title>
 
   <style>
+    :root {
+      --bg:      #0a0f16;
+      --surface: #0d131c;
+      --line:    rgba(255,255,255,.08);
+      --text:    #e6eaf2;
+      --muted:   #8b95a7;
+      --ok:      #22c55e;
+      --err:     #ef4444;
+      --primary: #3b82f6;
+    }
     * { box-sizing: border-box; }
     html, body {
-      margin: 0; padding: 0;
-      height: 100%;
-      background: #06090f;
-      color: #e6eaf2;
+      height: 100%; margin: 0;
+      background: var(--bg); color: var(--text);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      overflow: hidden;
       -webkit-tap-highlight-color: transparent;
     }
-    body {
-      display: flex; flex-direction: column;
-      padding: env(safe-area-inset-top) env(safe-area-inset-right)
-               env(safe-area-inset-bottom) env(safe-area-inset-left);
-    }
 
-    header {
+    .scan-wrap { display: flex; flex-direction: column; height: 100dvh; }
+
+    .scan-head {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
       display: flex; align-items: center; justify-content: space-between;
-      padding: 12px 16px;
-      background: rgba(10,15,22,.9);
-      border-bottom: 1px solid rgba(255,255,255,.06);
+      background: var(--surface);
       flex-shrink: 0;
     }
-    header h1 {
-      margin: 0; font-size: 15px; font-weight: 600; color: #f5f7fb;
-      letter-spacing: .2px;
-    }
-    header .badge {
-      font-size: 11px; padding: 3px 8px; border-radius: 6px;
-      background: rgba(59,130,246,.15);
-      color: #93b6ff;
-      border: 1px solid rgba(59,130,246,.25);
-      font-weight: 600;
-    }
-    body.mode-products header .badge {
-      background: rgba(168,85,247,.15);
-      color: #d8b4fe;
-      border-color: rgba(168,85,247,.28);
-    }
+    .scan-head h1 { font-size: 15px; margin: 0 0 2px; font-weight: 600; }
+    .scan-head small { color: var(--muted); font-size: 12px; }
 
-    .video-wrap {
-      position: relative;
-      flex: 1;
-      background: #000;
-      overflow: hidden;
+    .btn {
+      appearance: none; border: 1px solid transparent; border-radius: 9px;
+      padding: 9px 14px; font-size: 13.5px; font-weight: 600;
+      font-family: inherit; cursor: pointer; color: #fff;
+      transition: background 120ms ease, opacity 120ms ease;
     }
-    #scanner-video {
-      position: absolute; inset: 0;
-      width: 100%; height: 100%;
-      object-fit: cover;
-      background: #000;
-    }
-    #scanner-canvas { display: none; }
+    .btn:disabled { opacity: .55; cursor: not-allowed; }
+    .btn--primary { background: var(--primary); }
+    .btn--danger  { background: #dc2626; }
+    .btn--ghost   { background: transparent; color: #c7d0dd; border-color: rgba(255,255,255,.14); }
 
-    .overlay {
-      position: absolute; inset: 0;
-      pointer-events: none;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .reticle {
-      width: 78%; max-width: 420px;
-      aspect-ratio: 3 / 2;
-      border-radius: 14px;
-      position: relative;
+    #reader { flex: 1; position: relative; background: #000; overflow: hidden; }
+    #reader video { width: 100% !important; height: 100% !important; object-fit: cover; }
+
+    #reader::after {
+      content: ''; position: absolute;
+      top: 50%; left: 50%; transform: translate(-50%, -50%);
+      width: 82%; height: 38%;
+      border: 2px solid rgba(255,255,255,.55);
+      border-radius: 12px;
       box-shadow: 0 0 0 9999px rgba(0,0,0,.35);
+      pointer-events: none;
     }
-    .reticle::before,
-    .reticle::after {
-      content: '';
-      position: absolute;
-      width: 34px; height: 34px;
-      border: 3px solid #3b82f6;
+
+    .scan-foot {
+      padding: 12px 14px 18px;
+      border-top: 1px solid var(--line);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+
+    .last {
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: rgba(255,255,255,.04);
+      margin-bottom: 10px;
+      font-size: 13px;
+      min-height: 40px;
+      display: flex; align-items: center;
+    }
+    .last.ok  { border-left: 3px solid var(--ok); }
+    .last.err { border-left: 3px solid var(--err); }
+
+    .manual { display: flex; gap: 8px; }
+    .manual input {
+      flex: 1; padding: 10px 12px; border-radius: 9px;
+      background: #131a24; color: #fff;
+      border: 1px solid var(--line);
+      font-size: 14px; font-family: inherit;
+    }
+    .manual input:focus { outline: 2px solid var(--primary); }
+
+    .scan-actions { display: flex; gap: 8px; margin-top: 8px; }
+    .scan-actions .btn { flex: 1; }
+
+    .hidden { display: none !important; }
+
+    /* ---- Modais ---- */
+    .scan-modal {
+      position: fixed; inset: 0; z-index: 30;
+      background: rgba(5,8,14,.72);
+      backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+      display: flex; align-items: flex-end; justify-content: center;
+      padding: 0;
+      opacity: 0; animation: smFade 180ms ease forwards;
+    }
+    @keyframes smFade { to { opacity: 1; } }
+    .scan-modal[hidden] { display: none; }
+
+    .scan-modal__card {
+      width: 100%; max-width: 520px;
+      max-height: 94dvh;
+      background: var(--surface); color: var(--text);
+      border-top-left-radius: 18px; border-top-right-radius: 18px;
+      border: 1px solid var(--line); border-bottom: 0;
+      display: flex; flex-direction: column;
+      animation: smSlide 220ms cubic-bezier(.2,.9,.3,1.1);
+    }
+    @keyframes smSlide {
+      from { transform: translateY(20px); opacity: .6; }
+      to   { transform: translateY(0);    opacity: 1; }
+    }
+
+    .scan-modal__head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--line);
+      flex-shrink: 0;
+    }
+    .scan-modal__head h2 {
+      margin: 0; font-size: 16px; font-weight: 600;
+    }
+    .scan-modal__close {
+      appearance: none; border: 0; background: transparent;
+      color: var(--muted); font-size: 24px; line-height: 1;
+      cursor: pointer; width: 32px; height: 32px;
       border-radius: 8px;
     }
-    .reticle::before { top: -3px; left: -3px; border-right: 0; border-bottom: 0; }
-    .reticle::after  { bottom: -3px; right: -3px; border-left: 0; border-top: 0; }
-    body.mode-products .reticle::before,
-    body.mode-products .reticle::after { border-color: #a855f7; }
+    .scan-modal__close:hover { background: rgba(255,255,255,.06); color: var(--text); }
 
-    .laser {
-      position: absolute; left: 8%; right: 8%; top: 50%;
-      height: 2px; border-radius: 2px;
-      background: linear-gradient(90deg, transparent, #3b82f6, transparent);
-      animation: scanline 2.2s ease-in-out infinite;
-      filter: drop-shadow(0 0 6px #3b82f6);
-    }
-    @keyframes scanline {
-      0%, 100% { transform: translateY(-42px); opacity: .55; }
-      50%      { transform: translateY(42px);  opacity: 1; }
-    }
-
-    footer {
-      flex-shrink: 0;
-      background: #0a0f16;
-      border-top: 1px solid rgba(255,255,255,.06);
-      padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
-    }
-    #scanner-status {
-      font-size: 13.5px;
-      color: #b7c0cf;
-      margin: 0 0 10px;
-      min-height: 20px;
-      text-align: center;
-      transition: color .15s ease;
-    }
-    #scanner-status[data-kind="ok"]  { color: #86efac; }
-    #scanner-status[data-kind="err"] { color: #fca5a5; }
-    #scanner-status[data-kind="info"]{ color: #93b6ff; }
-
-    #scanner-last {
-      font-size: 12.5px;
-      padding: 10px 12px;
-      border-radius: 9px;
-      background: rgba(255,255,255,.03);
-      border: 1px solid rgba(255,255,255,.06);
-      color: #b7c0cf;
-      margin: 0 0 12px;
-      min-height: 38px;
-      display: flex; align-items: center; justify-content: center;
-      text-align: center;
-      word-break: break-word;
-      transition: all .15s ease;
-    }
-    #scanner-last[data-kind="ok"]  {
-      background: rgba(34,197,94,.08);
-      border-color: rgba(34,197,94,.22);
-      color: #86efac;
-    }
-    #scanner-last[data-kind="err"] {
-      background: rgba(239,68,68,.08);
-      border-color: rgba(239,68,68,.22);
-      color: #fca5a5;
-    }
-
-    .controls {
-      display: flex; gap: 8px;
-    }
-    .controls button {
+    .scan-modal__body {
+      padding: 16px 18px;
+      overflow-y: auto;
       flex: 1;
-      appearance: none;
-      border: 1px solid rgba(255,255,255,.10);
-      background: rgba(255,255,255,.04);
-      color: #c7d0dd;
-      border-radius: 10px;
-      padding: 11px 8px;
-      font-size: 13px;
-      font-weight: 600;
-      font-family: inherit;
-      cursor: pointer;
-      transition: background .12s ease;
     }
-    .controls button:active { background: rgba(255,255,255,.08); }
-    .controls button[hidden] { display: none; }
+    .scan-modal__foot {
+      padding: 14px 18px 18px;
+      border-top: 1px solid var(--line);
+      display: flex; gap: 10px;
+      flex-shrink: 0;
+      background: var(--surface);
+    }
+    .scan-modal__foot .btn { flex: 1; }
 
-    /* Aviso de orientação (opcional) */
-    @media (orientation: landscape) and (max-height: 500px) {
-      header h1 { font-size: 13px; }
-      .reticle  { width: 55%; }
+    /* ---- Form ---- */
+    .sm-field { margin-bottom: 14px; }
+    .sm-field label {
+      display: block; font-size: 12.5px; font-weight: 600;
+      color: #c7d0dd; margin-bottom: 6px;
     }
+    .sm-field input,
+    .sm-field textarea {
+      width: 100%; padding: 11px 12px;
+      background: #131a24; color: #fff;
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 9px;
+      font-family: inherit; font-size: 14px;
+      transition: border-color 120ms ease, box-shadow 120ms ease;
+    }
+    .sm-field input:focus,
+    .sm-field textarea:focus {
+      outline: 0;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(59,130,246,.18);
+    }
+    .sm-field textarea { min-height: 60px; resize: vertical; }
+    .sm-field input:disabled { opacity: .6; }
+
+    .sm-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    .sm-hero {
+      display: flex; gap: 12px; padding: 12px;
+      border-radius: 10px;
+      background: rgba(122,162,255,.08);
+      border: 1px solid rgba(122,162,255,.20);
+      margin-bottom: 16px;
+      font-size: 13px;
+    }
+    .sm-hero__icon {
+      flex-shrink: 0;
+      width: 38px; height: 38px; border-radius: 9px;
+      background: rgba(122,162,255,.14); color: #7aa2ff;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .sm-hero__body { min-width: 0; flex: 1; }
+    .sm-hero__title { font-weight: 600; margin-bottom: 2px; }
+    .sm-hero__sub { color: var(--muted); font-size: 12px; line-height: 1.4; }
+
+    .sm-product {
+      padding: 12px; border-radius: 10px;
+      background: rgba(255,255,255,.03);
+      border: 1px solid var(--line);
+      margin-bottom: 16px;
+    }
+    .sm-product__name { font-weight: 600; margin-bottom: 4px; }
+    .sm-product__meta {
+      display: flex; flex-direction: column; gap: 3px;
+      font-size: 12px; color: var(--muted);
+    }
+    .sm-product__meta b { color: #c7d0dd; font-weight: 500; }
+
+    .sm-qty {
+      display: flex; align-items: stretch;
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 9px;
+      overflow: hidden;
+      background: #131a24;
+    }
+    .sm-qty button {
+      appearance: none; border: 0; background: transparent;
+      color: #c7d0dd; font-size: 20px; font-weight: 600;
+      cursor: pointer; width: 48px; flex-shrink: 0;
+    }
+    .sm-qty button:hover { background: rgba(255,255,255,.05); }
+    .sm-qty input {
+      flex: 1; min-width: 0; border: 0; background: transparent;
+      color: #fff; text-align: center;
+      font-size: 16px; font-weight: 600; font-family: inherit;
+      padding: 12px 8px;
+    }
+    .sm-qty input:focus { outline: 0; }
+
+    .sm-feedback {
+      padding: 10px 12px; border-radius: 9px;
+      background: rgba(239,68,68,.10); color: #fca5a5;
+      border: 1px solid rgba(239,68,68,.28);
+      font-size: 12.5px;
+      margin: 0 0 12px;
+    }
+    .sm-feedback:empty { display: none; }
+
+    .sm-busy {
+      display: inline-block;
+      width: 12px; height: 12px;
+      border: 2px solid rgba(255,255,255,.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: smSpin .7s linear infinite;
+      margin-right: 6px;
+      vertical-align: -2px;
+    }
+    @keyframes smSpin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
-
-  <header>
-    <h1>Scanner DEV HUB</h1>
-    <span class="badge" id="scanner-badge">vendas</span>
-  </header>
-
-  <div class="video-wrap">
-    <video id="scanner-video" playsinline muted autoplay></video>
-    <canvas id="scanner-canvas"></canvas>
-
-    <div class="overlay">
-      <div class="reticle">
-        <div class="laser"></div>
+  <div class="scan-wrap">
+    <header class="scan-head">
+      <div>
+        <h1 id="page-title">Scanner</h1>
+        <small id="sessao-info">Conectando…</small>
       </div>
+      <button type="button" class="btn btn--ghost" id="btn-sair">Sair</button>
+    </header>
+
+    <div id="reader"></div>
+
+    <footer class="scan-foot">
+      <div class="last" id="last-scan">Aguardando primeiro item…</div>
+
+      <div class="manual">
+        <input type="text" id="manual-input" inputmode="numeric"
+               placeholder="Digitar código de barras…" autocomplete="off">
+        <button type="button" class="btn btn--primary" id="manual-add">Add</button>
+      </div>
+
+      <div class="scan-actions">
+        <button type="button" class="btn btn--ghost"  id="btn-remove-last">Remover último</button>
+        <button type="button" class="btn btn--danger" id="btn-encerrar">Encerrar</button>
+      </div>
+    </footer>
+  </div>
+
+  <!-- =========================================================
+       MODAL: Novo produto (modo products)
+       ========================================================= -->
+  <div class="scan-modal" id="sm-new-product" hidden>
+    <div class="scan-modal__card" role="dialog" aria-modal="true">
+      <header class="scan-modal__head">
+        <h2>Novo produto</h2>
+        <button type="button" class="scan-modal__close" data-sm-close aria-label="Fechar">×</button>
+      </header>
+
+      <div class="scan-modal__body">
+        <div class="sm-hero">
+          <div class="sm-hero__icon">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none"
+                 stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                 stroke-linejoin="round">
+              <path d="M20 6 9 17l-5-5"/>
+            </svg>
+          </div>
+          <div class="sm-hero__body">
+            <div class="sm-hero__title">Produto não cadastrado</div>
+            <div class="sm-hero__sub">
+              Código <b id="sm-np-barcode-label">—</b> ainda não existe no catálogo.
+              Preencha os dados abaixo.
+            </div>
+          </div>
+        </div>
+
+        <div class="sm-field">
+          <label for="sm-np-name">Nome *</label>
+          <input type="text" id="sm-np-name" maxlength="150" autocomplete="off" required>
+        </div>
+
+        <div class="sm-grid">
+          <div class="sm-field">
+            <label for="sm-np-price">Preço (R$) *</label>
+            <input type="number" id="sm-np-price" step="0.01" min="0" inputmode="decimal"
+                   value="0" required>
+          </div>
+          <div class="sm-field">
+            <label for="sm-np-stock">Estoque inicial</label>
+            <input type="number" id="sm-np-stock" step="1" min="0" inputmode="numeric"
+                   value="0">
+          </div>
+        </div>
+
+        <div class="sm-field">
+          <label for="sm-np-code">Código interno</label>
+          <input type="text" id="sm-np-code" maxlength="60" autocomplete="off"
+                 placeholder="Opcional">
+        </div>
+
+        <div class="sm-field">
+          <label for="sm-np-barcode">Código de barras (EAN)</label>
+          <input type="text" id="sm-np-barcode" maxlength="40" inputmode="numeric" disabled>
+        </div>
+
+        <div class="sm-field">
+          <label for="sm-np-description">Descrição</label>
+          <textarea id="sm-np-description" maxlength="500"
+                    placeholder="Opcional"></textarea>
+        </div>
+
+        <p class="sm-feedback" id="sm-np-feedback"></p>
+      </div>
+
+      <footer class="scan-modal__foot">
+        <button type="button" class="btn btn--ghost" data-sm-close>Cancelar</button>
+        <button type="button" class="btn btn--primary" id="sm-np-save">Cadastrar</button>
+      </footer>
     </div>
   </div>
 
-  <footer>
-    <p id="scanner-status" data-kind="info">Inicializando…</p>
-    <p id="scanner-last">—</p>
+  <!-- =========================================================
+       MODAL: Adicionar estoque (modo products)
+       ========================================================= -->
+  <div class="scan-modal" id="sm-add-stock" hidden>
+    <div class="scan-modal__card" role="dialog" aria-modal="true">
+      <header class="scan-modal__head">
+        <h2>Adicionar estoque</h2>
+        <button type="button" class="scan-modal__close" data-sm-close aria-label="Fechar">×</button>
+      </header>
 
-    <div class="controls">
-      <button type="button" id="scanner-torch" hidden>🔦 Lanterna</button>
-      <button type="button" id="scanner-switch">🔄 Trocar</button>
-      <button type="button" id="scanner-stop">⏸ Pausar</button>
+      <div class="scan-modal__body">
+        <div class="sm-product">
+          <div class="sm-product__name" id="sm-as-name">—</div>
+          <div class="sm-product__meta">
+            <span>Cód. barras: <b id="sm-as-barcode">—</b></span>
+            <span>Cód. interno: <b id="sm-as-code">—</b></span>
+            <span>Estoque atual: <b id="sm-as-current">—</b></span>
+            <span>Preço: <b id="sm-as-price">—</b></span>
+          </div>
+        </div>
+
+        <div class="sm-field">
+          <label for="sm-as-qty">Quantidade a adicionar</label>
+          <div class="sm-qty">
+            <button type="button" data-sm-step="-1" aria-label="Diminuir">−</button>
+            <input type="number" id="sm-as-qty" min="1" step="1" value="1" inputmode="numeric">
+            <button type="button" data-sm-step="1" aria-label="Aumentar">+</button>
+          </div>
+        </div>
+
+        <p class="sm-feedback" id="sm-as-feedback"></p>
+      </div>
+
+      <footer class="scan-modal__foot">
+        <button type="button" class="btn btn--ghost" data-sm-close>Cancelar</button>
+        <button type="button" class="btn btn--primary" id="sm-as-save">Adicionar</button>
+      </footer>
     </div>
-  </footer>
+  </div>
 
-  <!-- Supabase SDK -->
+  <!-- Encerrada -->
+  <div class="hidden" id="tela-encerrada"
+       style="position:fixed;inset:0;z-index:40;background:var(--bg);
+              display:flex;flex-direction:column;align-items:center;
+              justify-content:center;padding:32px;text-align:center;">
+    <h2 style="font-size:20px;margin:0 0 8px;">Sessão encerrada</h2>
+    <p style="color:var(--muted);font-size:14px;margin:0 0 20px;">
+      O desktop finalizou ou encerrou esta sessão de scanner.
+    </p>
+    <button type="button" class="btn btn--primary" onclick="location.reload()">Voltar</button>
+  </div>
+
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <!-- Config + cliente Supabase (o mesmo padrão do seu projeto) -->
   <script src="js/supabase.js"></script>
-
-  <!-- Lógica do scanner -->
+  <script src="js/auth.js"></script>
   <script src="js/scanner.js"></script>
-
-  <script>
-    // Mostra o badge conforme o modo
-    (function () {
-      const params = new URLSearchParams(location.search);
-      const badge = document.getElementById('scanner-badge');
-      if (params.get('mode') === 'products') {
-        badge.textContent = 'produtos';
-      }
-    })();
-  </script>
 </body>
 </html>
