@@ -47,13 +47,57 @@
       if (className) cell.className = className;
       return cell;
     },
+
+    /* ---------- Vendas filtradas por status ---------- */
     getValidSales() {
+      const filter = state.statusFilter;
+
+      if (filter === 'canceled') {
+        return state.sales.filter(s => RH.utils.isCanceled(s.status));
+      }
+      if (filter === 'pending') {
+        return state.sales.filter(s => String(s.status || '').toLowerCase() === 'pending');
+      }
+      if (filter === '') {
+        return state.sales.slice(); // todas
+      }
+      // 'valid' (default) — não canceladas
       return state.sales.filter(s => !RH.utils.isCanceled(s.status));
     },
+
+    /* ---------- Vendas do período anterior (pro delta) ---------- */
+    getPreviousValidSales() {
+      const filter = state.statusFilter;
+
+      if (filter === 'canceled') {
+        return state.previousSales.filter(s => RH.utils.isCanceled(s.status));
+      }
+      if (filter === 'pending') {
+        return state.previousSales.filter(s => String(s.status || '').toLowerCase() === 'pending');
+      }
+      if (filter === '') {
+        return state.previousSales.slice();
+      }
+      return state.previousSales.filter(s => !RH.utils.isCanceled(s.status));
+    },
+
     isCanceled(status) {
       if (!status) return false;
       return RH.CANCELED_STATUS.indexOf(String(status).toLowerCase()) !== -1;
     },
+
+    /* ---------- Delta % ---------- */
+    computeDelta(current, previous) {
+      const c = Number(current) || 0;
+      const p = Number(previous) || 0;
+      if (p === 0 && c === 0) return { pct: 0, dir: 'neutral', label: '—' };
+      if (p === 0) return { pct: 100, dir: 'up', label: '+100%' };
+      const pct = ((c - p) / p) * 100;
+      const dir = pct > 0.5 ? 'up' : pct < -0.5 ? 'down' : 'neutral';
+      const label = (pct > 0 ? '+' : '') + pct.toFixed(1).replace('.', ',') + '%';
+      return { pct: pct, dir: dir, label: label };
+    },
+
     friendlyError(error) {
       if (!error) return 'Tente novamente.';
       const msg = String(error.message || '').toLowerCase();
@@ -75,7 +119,6 @@
       if (stock <= min) return RH.STOCK_STATUS.low;
       return RH.STOCK_STATUS.ok;
     },
-    /* CSV helpers */
     toCSVNumber(v) {
       const n = RH.utils.toNumber(v, 0);
       return n.toFixed(2).replace('.', ',');

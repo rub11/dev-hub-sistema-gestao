@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Relatórios · DEV HUB</title>
 
-  <!-- Tema ANTES da CSS (evita flash de tema) -->
   <script src="js/theme.js"></script>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -16,10 +15,8 @@
   <link rel="stylesheet" href="css/dashboard.css" />
   <link rel="stylesheet" href="css/clientes.css" />
   <link rel="stylesheet" href="css/theme.css" />
-  
   <link rel="stylesheet" href="css/relatorios.css" />
 
-  <!-- Anti-flash do topnav -->
   <script>
     (function () {
       try {
@@ -35,63 +32,31 @@
 
   <a class="skip-link" href="#main">Pular para o conteúdo principal</a>
 
-  <!-- ================= SIDEBAR (legado, ocultado pelo nav.js) ================= -->
-  <aside class="sidebar" id="sidebar" aria-label="Menu principal">
-    <div class="sidebar__brand">
-      <span class="brand__mark" aria-hidden="true">DH</span>
-      <span class="brand__name">DEV HUB</span>
-    </div>
-    <!-- ...conteúdo antigo do sidebar, mantido mas será ocultado pelo nav.js... -->
-  </aside>
-
+  <aside class="sidebar" id="sidebar" aria-label="Menu principal"></aside>
   <div class="sidebar-overlay" id="sidebar-overlay" hidden></div>
 
-  <!-- ================= ÁREA PRINCIPAL ================= -->
   <div class="app__body">
-
     <header class="topbar">
-      <button
-        type="button"
-        class="icon-btn menu-toggle"
-        id="menu-toggle"
-        aria-label="Abrir menu"
-        aria-expanded="false"
-        aria-controls="sidebar"
-      >
+      <button type="button" class="icon-btn menu-toggle" id="menu-toggle"
+              aria-label="Abrir menu" aria-expanded="false" aria-controls="sidebar">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
              stroke-linecap="round" aria-hidden="true">
           <path d="M3.5 6.5h17M3.5 12h17M3.5 17.5h17" />
         </svg>
       </button>
-
       <span class="topbar__brand">DEV HUB</span>
-
       <div class="topbar__actions">
-
-        <button
-          type="button"
-          class="icon-btn"
-          id="notifications-btn"
-          aria-label="Notificações (em breve)"
-          title="Em breve"
-          disabled
-        >
+        <button type="button" class="icon-btn" id="notifications-btn"
+                aria-label="Notificações (em breve)" title="Em breve" disabled>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M18 8.5a6 6 0 1 0-12 0c0 6.5-2.5 8.5-2.5 8.5h17S18 15 18 8.5" />
             <path d="M13.7 20.5a2 2 0 0 1-3.4 0" />
           </svg>
         </button>
-
         <div class="user-menu">
-          <button
-            type="button"
-            class="user-menu__trigger"
-            id="user-menu-trigger"
-            aria-haspopup="true"
-            aria-expanded="false"
-            aria-controls="user-menu-panel"
-          >
+          <button type="button" class="user-menu__trigger" id="user-menu-trigger"
+                  aria-haspopup="true" aria-expanded="false" aria-controls="user-menu-panel">
             <span class="avatar" id="user-avatar" aria-hidden="true">–</span>
             <span class="user-menu__meta">
               <span class="user-menu__name" id="user-name">Carregando…</span>
@@ -102,19 +67,14 @@
               <path d="m6 9 6 6 6-6" />
             </svg>
           </button>
-
-          <!-- ✅ Menu funcional (Perfil + Configurações apontando para páginas reais) -->
           <div class="user-menu__panel" id="user-menu-panel" role="menu" hidden>
-            <a class="menu-item" role="menuitem" href="configuracoes.html">
-              Configurações
-            </a>
+            <a class="menu-item" role="menuitem" href="configuracoes.html">Configurações</a>
             <div class="menu-item__sep" role="separator"></div>
             <button type="button" class="menu-item menu-item--danger" role="menuitem" data-action="logout">
               Sair
             </button>
           </div>
         </div>
-
       </div>
     </header>
 
@@ -134,25 +94,39 @@
         </div>
 
         <div class="page-head__actions">
+          <button type="button" class="btn btn--ghost" id="import-hub-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
+                 style="width:16px;height:16px">
+              <path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/>
+            </svg>
+            <span>Importar</span>
+          </button>
+          <button type="button" class="btn btn--ghost" id="export-pdf-btn" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
+                 style="width:16px;height:16px">
+              <path d="M14 2.5H7A2 2 0 0 0 5 4.5v15a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7.5z"/>
+              <path d="M14 2.5v5h5"/>
+              <path d="M9 13h6M9 17h4"/>
+            </svg>
+            <span>Exportar PDF</span>
+          </button>
           <button type="button" class="btn btn--ghost" id="export-sales-btn" disabled>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
                  style="width:16px;height:16px">
-              <path d="M12 3v12" />
-              <path d="m7 10 5 5 5-5" />
-              <path d="M5 21h14" />
+              <path d="M12 3v12" /><path d="m7 10 5 5 5-5" /><path d="M5 21h14" />
             </svg>
-            <span>Exportar vendas CSV</span>
+            <span>Vendas CSV</span>
           </button>
           <button type="button" class="btn btn--ghost" id="export-products-btn" disabled>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
                  style="width:16px;height:16px">
-              <path d="M12 3v12" />
-              <path d="m7 10 5 5 5-5" />
-              <path d="M5 21h14" />
+              <path d="M12 3v12" /><path d="m7 10 5 5 5-5" /><path d="M5 21h14" />
             </svg>
-            <span>Exportar produtos CSV</span>
+            <span>Produtos CSV</span>
           </button>
         </div>
       </div>
@@ -167,7 +141,6 @@
           <button type="button" class="segmented__btn" data-period="last_month">Mês anterior</button>
           <button type="button" class="segmented__btn" data-period="custom">Personalizado</button>
         </div>
-
         <div class="period-custom" id="period-custom" hidden>
           <div class="period-custom__field">
             <label for="period-start">De</label>
@@ -179,7 +152,6 @@
           </div>
           <button type="button" class="btn btn--primary" id="apply-custom-period">Aplicar</button>
         </div>
-
         <p class="period-range" id="period-range">—</p>
       </section>
 
@@ -192,7 +164,30 @@
       <!-- ===================== CONTEÚDO ===================== -->
       <div id="report-content" hidden>
 
-        <!-- ---------- Resumo de vendas ---------- -->
+        <!-- ===================== TOOLBAR DE VENDAS ===================== -->
+        <div class="sales-toolbar" role="region" aria-label="Filtros da seção de vendas">
+          <div class="sales-toolbar__info">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                 stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/>
+              <path d="M2.5 3.5h2.3l2.3 11.6a1.8 1.8 0 0 0 1.8 1.4h8.8a1.8 1.8 0 0 0 1.8-1.4L21 7.5H6"/>
+            </svg>
+            <span>Seção de vendas · <strong id="sales-toolbar-count">—</strong></span>
+          </div>
+          <div class="sales-toolbar__actions">
+            <div class="field field--inline">
+              <label for="status-filter" class="sr-only">Situação das vendas</label>
+              <select id="status-filter" class="control-select">
+                <option value="valid">Só válidas</option>
+                <option value="">Todas as vendas</option>
+                <option value="canceled">Só canceladas</option>
+                <option value="pending">Só pendentes</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- ---------- KPIs de vendas ---------- -->
         <section class="stats" aria-label="Resumo de vendas">
           <article class="stat">
             <div class="stat__top">
@@ -200,13 +195,13 @@
               <span class="stat__icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
                      stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="9" cy="20" r="1.4" />
-                  <circle cx="18" cy="20" r="1.4" />
+                  <circle cx="9" cy="20" r="1.4" /><circle cx="18" cy="20" r="1.4" />
                   <path d="M2.5 3.5h2.3l2.3 11.6a1.8 1.8 0 0 0 1.8 1.4h8.8a1.8 1.8 0 0 0 1.8-1.4L21 7.5H6" />
                 </svg>
               </span>
             </div>
             <p class="stat__value" id="kpi-sales-count">—</p>
+            <span class="stat__delta" id="delta-sales-count"></span>
           </article>
 
           <article class="stat">
@@ -220,6 +215,7 @@
               </span>
             </div>
             <p class="stat__value" id="kpi-revenue">—</p>
+            <span class="stat__delta" id="delta-revenue"></span>
           </article>
 
           <article class="stat">
@@ -234,6 +230,7 @@
               </span>
             </div>
             <p class="stat__value" id="kpi-ticket">—</p>
+            <span class="stat__delta" id="delta-ticket"></span>
           </article>
 
           <article class="stat">
@@ -248,6 +245,7 @@
               </span>
             </div>
             <p class="stat__value" id="kpi-discounts">—</p>
+            <span class="stat__delta" id="delta-discounts"></span>
           </article>
         </section>
 
@@ -259,7 +257,6 @@
               <p class="panel__sub">Quantidade e faturamento por dia no período selecionado.</p>
             </div>
           </div>
-
           <div class="chart-wrap" id="chart-wrap">
             <canvas id="chart-evolution" aria-label="Gráfico de evolução das vendas" role="img"></canvas>
             <div id="chart-empty" class="state-block" hidden>
@@ -268,7 +265,7 @@
           </div>
         </section>
 
-        <!-- ---------- Formas de pagamento ---------- -->
+        <!-- ---------- Formas de pagamento (cards + pizza lado a lado) ---------- -->
         <section class="panel" aria-labelledby="payments-title">
           <div class="panel__head">
             <div>
@@ -281,7 +278,15 @@
             <div id="payments-empty" class="state-block state-block--compact" hidden>
               <p>Nenhuma venda registrada no período.</p>
             </div>
-            <div class="payments-grid" id="payments-grid"></div>
+            <div class="payments-layout" id="payments-layout">
+              <div class="payments-grid" id="payments-grid"></div>
+              <div class="payments-chart-wrap">
+                <canvas id="chart-payments" aria-label="Gráfico de formas de pagamento" role="img"></canvas>
+                <div id="payments-chart-empty" class="state-block state-block--compact" hidden>
+                  <p>Sem dados.</p>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -294,11 +299,9 @@
                 <p class="panel__sub">Top 10 por quantidade vendida no período.</p>
               </div>
             </div>
-
             <div id="top-products-empty" class="state-block state-block--compact" hidden>
               <p>Nenhum produto vendido no período.</p>
             </div>
-
             <div class="table-wrap" id="top-products-wrap" hidden>
               <table>
                 <caption class="sr-only">Produtos mais vendidos</caption>
@@ -321,11 +324,9 @@
                 <p class="panel__sub">Top 10 por valor total no período.</p>
               </div>
             </div>
-
             <div id="top-customers-empty" class="state-block state-block--compact" hidden>
               <p>Nenhuma compra registrada no período.</p>
             </div>
-
             <div class="table-wrap" id="top-customers-wrap" hidden>
               <table>
                 <caption class="sr-only">Clientes que mais compraram</caption>
@@ -358,7 +359,6 @@
             </div>
             <p class="stat__value" id="kpi-total-customers">—</p>
           </article>
-
           <article class="stat">
             <div class="stat__top">
               <span class="stat__label">Compraram no período</span>
@@ -371,7 +371,6 @@
             </div>
             <p class="stat__value" id="kpi-buying-customers">—</p>
           </article>
-
           <article class="stat">
             <div class="stat__top">
               <span class="stat__label">Novos no período</span>
@@ -386,7 +385,7 @@
           </article>
         </section>
 
-        <!-- ---------- Estoque: resumo + tabela ---------- -->
+        <!-- ---------- Estoque ---------- -->
         <section class="stats" aria-label="Resumo de estoque">
           <article class="stat">
             <div class="stat__top">
@@ -402,7 +401,6 @@
             </div>
             <p class="stat__value" id="kpi-total-products">—</p>
           </article>
-
           <article class="stat">
             <div class="stat__top">
               <span class="stat__label">Com estoque</span>
@@ -415,7 +413,6 @@
             </div>
             <p class="stat__value" id="kpi-with-stock">—</p>
           </article>
-
           <article class="stat">
             <div class="stat__top">
               <span class="stat__label">Estoque baixo</span>
@@ -429,7 +426,6 @@
             </div>
             <p class="stat__value" id="kpi-low-stock">—</p>
           </article>
-
           <article class="stat">
             <div class="stat__top">
               <span class="stat__label">Sem estoque</span>
@@ -452,11 +448,9 @@
               <p class="panel__sub">Todos os produtos cadastrados.</p>
             </div>
           </div>
-
           <div id="stock-table-empty" class="state-block state-block--compact" hidden>
             <p>Nenhum produto cadastrado.</p>
           </div>
-
           <div class="table-wrap" id="stock-table-wrap" hidden>
             <table>
               <caption class="sr-only">Situação atual do estoque</caption>
@@ -481,7 +475,6 @@
               <h2 class="panel__title" id="movements-title">Movimentações de estoque</h2>
               <p class="panel__sub" id="movements-count">—</p>
             </div>
-
             <div class="toolbar__actions">
               <div class="field field--inline">
                 <label for="movement-type-filter" class="sr-only">Filtrar por tipo</label>
@@ -494,11 +487,9 @@
               </div>
             </div>
           </div>
-
           <div id="movements-empty" class="state-block state-block--compact" hidden>
             <p>Nenhuma movimentação registrada no período.</p>
           </div>
-
           <div class="table-wrap" id="movements-wrap" hidden>
             <table>
               <caption class="sr-only">Movimentações de estoque no período</caption>
@@ -519,18 +510,22 @@
         </section>
 
       </div>
-
     </main>
   </div>
 
-  <!-- ================= TOASTS ================= -->
   <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="false"></div>
 
- <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- =========================================================
+       Scripts
+       ========================================================= -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/supabase.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/permissions.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
 
 <script src="js/nav/config.js"></script>
 <script src="js/nav/state.js"></script>
@@ -561,6 +556,9 @@
 <script src="js/relatorios/stock-table.js"></script>
 <script src="js/relatorios/movements.js"></script>
 <script src="js/relatorios/export-csv.js"></script>
+<script src="js/relatorios/export-pdf.js"></script>
+<script src="js/relatorios/import-hub.js"></script>
+<script src="js/relatorios/import-sales.js"></script>   <!-- ⬅️ FALTAVA ESSE -->
 <script src="js/relatorios/main.js"></script>
 </body>
 </html>

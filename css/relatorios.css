@@ -315,3 +315,161 @@ main .report-grid + .panel {
 @media (max-width: 420px) {
   .payments-grid { grid-template-columns: 1fr; }
 }
+
+/* =========================================================
+   FASE 1 · Variação %, pizza, filtro de status, import hub
+   ========================================================= */
+
+/* ---------- Variação % nos KPIs ---------- */
+.stat__delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.stat__delta svg { width: 12px; height: 12px; flex-shrink: 0; }
+.stat__delta--up      { color: var(--success); }
+.stat__delta--down    { color: var(--danger); }
+.stat__delta--neutral { color: var(--text-muted); }
+.stat__delta small {
+  font-weight: 500;
+  color: var(--text-muted);
+  margin-left: 4px;
+  font-size: 11px;
+}
+
+/* ---------- Filtro de status (topo da seção de vendas) ---------- */
+.sales-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+.sales-toolbar__info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text-soft);
+}
+.sales-toolbar__info strong {
+  color: var(--text);
+  font-weight: 600;
+}
+.sales-toolbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sales-toolbar .control-select {
+  height: 36px;
+  min-width: 170px;
+  font-size: 13px;
+}
+
+/* ---------- Pizza de pagamentos AO LADO dos cards ---------- */
+.payments-layout {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 24px;
+  align-items: start;
+}
+.payments-chart-wrap {
+  position: relative;
+  height: 260px;
+}
+.payments-chart-wrap canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+.payments-chart-wrap .state-block {
+  position: absolute;
+  inset: 0;
+  padding: 16px;
+}
+@media (max-width: 900px) {
+  .payments-layout { grid-template-columns: 1fr; }
+  .payments-chart-wrap { height: 220px; }
+}
+
+/* ---------- Hub de importação ---------- */
+.dh-imp-hub { position: fixed; inset: 0; z-index: 9999; background: rgba(5,8,14,.78); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 20px; }
+.dh-imp-hub[hidden] { display: none !important; }
+.dh-imp-hub__card {
+  width: 100%; max-width: 620px;
+  background: linear-gradient(180deg,#0f1620 0%,#0d131c 100%);
+  color: #e6eaf2;
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 18px;
+  box-shadow: 0 24px 60px rgba(0,0,0,.70);
+  display: flex; flex-direction: column; max-height: 92vh; overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  animation: dhImpPop 220ms cubic-bezier(.2,.9,.3,1.15);
+}
+@keyframes dhImpPop { from { opacity: 0; transform: translateY(8px) scale(.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+.dh-imp-hub__head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  padding: 18px 20px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.dh-imp-hub__head h2 { margin: 0 0 2px; font-size: 16px; font-weight: 700; }
+.dh-imp-hub__head p { margin: 0; font-size: 12.5px; color: #8b95a7; }
+.dh-imp-hub__close {
+  appearance: none; border: 0; background: transparent; color: #8b95a7;
+  font-size: 22px; cursor: pointer; width: 32px; height: 32px; border-radius: 8px;
+}
+.dh-imp-hub__close:hover { background: rgba(255,255,255,.06); color: #e6eaf2; }
+.dh-imp-hub__body { padding: 18px 20px; overflow-y: auto; }
+.dh-imp-hub__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.dh-imp-hub__item {
+  appearance: none;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
+  padding: 16px;
+  border-radius: 12px;
+  background: rgba(255,255,255,.025);
+  border: 1.5px solid rgba(255,255,255,.08);
+  color: inherit; font: inherit;
+  cursor: pointer; text-align: left;
+  transition: border-color 140ms, background 140ms, transform 100ms;
+}
+.dh-imp-hub__item:hover { background: rgba(255,255,255,.045); border-color: rgba(255,255,255,.18); }
+.dh-imp-hub__item:active { transform: scale(.98); }
+.dh-imp-hub__item[disabled] { opacity: .5; cursor: not-allowed; }
+.dh-imp-hub__item[disabled]:hover { background: rgba(255,255,255,.025); border-color: rgba(255,255,255,.08); }
+.dh-imp-hub__icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 38px; height: 38px; border-radius: 10px;
+  background: rgba(59,130,246,.14); color: #60a5fa;
+}
+.dh-imp-hub__icon--ok { background: rgba(34,197,94,.14); color: #22c55e; }
+.dh-imp-hub__icon--warn { background: rgba(245,158,11,.14); color: #f59e0b; }
+.dh-imp-hub__icon--muted { background: rgba(255,255,255,.05); color: #8b95a7; }
+.dh-imp-hub__title { display: block; font-size: 14px; font-weight: 600; color: #e6eaf2; }
+.dh-imp-hub__desc { display: block; font-size: 11.5px; color: #8b95a7; line-height: 1.4; }
+.dh-imp-hub__badge {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 9.5px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase;
+  background: rgba(245,158,11,.14); color: #fbbf24;
+}
+@media (max-width: 540px) { .dh-imp-hub__grid { grid-template-columns: 1fr; } }
+
+/* ---------- Toast de carregamento em import ---------- */
+.dh-imp-spinner {
+  display: inline-block; width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,.35);
+  border-top-color: currentColor; border-radius: 50%;
+  animation: dhImpSpin .7s linear infinite;
+}
+@keyframes dhImpSpin { to { transform: rotate(360deg); } }

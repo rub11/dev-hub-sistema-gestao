@@ -21,6 +21,8 @@
    9. [NOVO] `loadProducts` filtra por status='approved' —
       produtos pendentes de aprovação NÃO aparecem aqui.
       Eles ficam na página Aprovações.
+   10. [NOVO] `init` roda mesmo se o DOMContentLoaded já
+       disparou (evita tela travada em "Carregando...")
    ========================================================= */
 
 (function () {
@@ -45,7 +47,15 @@
     photos: []
   };
 
-  document.addEventListener('DOMContentLoaded', init);
+  /* ---------------------------------------------------------
+     Boot: garante que init() rode mesmo se o DOMContentLoaded
+     já tiver disparado (script no fim do body).
+     --------------------------------------------------------- */
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 
   /* =========================================================
      Init

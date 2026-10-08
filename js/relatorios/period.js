@@ -71,6 +71,15 @@
     return { start, end };
   }
 
+  /* ---------- FASE 1: período anterior (pro delta) ---------- */
+  function getPreviousRange() {
+    const { start, end } = getRange();
+    const duration = end.getTime() - start.getTime();
+    const prevEnd = new Date(start.getTime() - 1);
+    const prevStart = new Date(prevEnd.getTime() - duration);
+    return { start: prevStart, end: prevEnd };
+  }
+
   function updateRangeLabel() {
     const { start, end } = getRange();
     let label = formatRange(start, end);
@@ -89,5 +98,5 @@
     return 'Período: ' + RH.FULL_DATE.format(start) + ' → ' + RH.FULL_DATE.format(end);
   }
 
-  RH.period = { setup, getRange, updateRangeLabel };
+  RH.period = { setup, getRange, getPreviousRange, updateRangeLabel };
 })();

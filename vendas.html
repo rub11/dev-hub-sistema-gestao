@@ -296,7 +296,6 @@
                 <div class="product-search" id="product-search-wrap">
                   <label for="product-search-input" class="field__label">Buscar produto</label>
 
-                  <!-- Wrapper: input de busca + botão scanner na mesma linha -->
                   <div style="display:flex; gap:8px; align-items:stretch;">
 
                     <div class="product-search__control" style="flex:1; min-width:0;">
@@ -325,7 +324,6 @@
                       </button>
                     </div>
 
-                    <!-- Botão scanner — mesmo ID que o scanner-modal.js procura -->
                     <button type="button" id="scanner-mode-btn" class="btn btn--ghost"
                             title="Escanear código de barras"
                             style="white-space:nowrap; display:inline-flex; align-items:center; gap:6px; padding:0 16px;">
@@ -780,9 +778,17 @@
   <script src="js/vendas/installments.js"></script>
   <script src="js/vendas/form.js"></script>
   <script src="js/vendas/draft.js"></script>
+  <script src="js/vendas/import-sales.js"></script>
+  <script src="js/vendas/import-sales-bootstrap.js"></script>
+
   <script src="js/vendas/main.js"></script>
 
   <script src="js/scanner-modal.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <!-- Auto-open do form de orçamento quando vier ?novo=orcamento -->
+  <script src="js/vendas/auto-open-quote.js"></script>
+
 </body>
 
 </html>

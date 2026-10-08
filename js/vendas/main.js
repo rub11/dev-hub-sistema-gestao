@@ -29,6 +29,11 @@
     if (DH.quotes)          DH.quotes.setup();
     if (DH.draft)           DH.draft.init();
 
+    /* Import de vendas históricas */
+    if (window.ImportSales && typeof window.ImportSales.setup === 'function') {
+      window.ImportSales.setup();
+    }
+
     /* Sessão */
     const session = await Auth.requireSession();
     if (!session) return;
@@ -97,89 +102,6 @@
     /* 5. Se restaurou rascunho, mostra form */
     if (restored) DH.form.showView('form');
   }
-})();
-
-/* =========================================================
-   Scanner · ponte com o carrinho
-   ---------------------------------------------------------
-   Adiciona o item recebido do scanner direto em DH.state.cart.
-   Se o produto já estiver no carrinho, incrementa a quantidade.
-   ========================================================= */
-(function setupScannerHook() {
-  function getCart() {
-    return (window.DH && window.DH.state && window.DH.state.cart) || null;
-  }
-
-  function getUtils() {
-    return (window.DH && window.DH.utils) || null;
-  }
-
-  // Sinaliza pro scanner-modal que queremos receber os itens
-  window.addEventListener('scanner:probe', (e) => {
-    e.preventDefault();
-  });
-
-  window.addEventListener('scanner:item', (e) => {
-    const detail = e.detail || {};
-    const action = detail.action || 'add';
-    const p = detail.product || {};
-    const q = Number(detail.quantity) || 1;
-
-    const cart = getCart();
-    const utils = getUtils();
-    if (!cart) {
-      console.warn('[scanner-hook] DH.state.cart indisponível');
-      return;
-    }
-
-    const productId = p.product_id || p.id;
-    if (!productId) {
-      console.warn('[scanner-hook] item sem product_id');
-      return;
-    }
-
-    const unitPrice = Number(p.unit_price != null ? p.unit_price : p.price) || 0;
-    const stockAvail = Number(p.stock_available) || 0;
-    const round2 = utils && utils.round2 ? utils.round2 : (n) => Math.round(n * 100) / 100;
-
-    const idx = cart.findIndex((it) => it.product_id === productId);
-    const isForce = action === 'force';
-
-    if (idx !== -1 && !isForce) {
-      // Já está no carrinho → incrementa
-      const item = cart[idx];
-      item.quantity += q;
-      item.subtotal = round2(item.quantity * item.unit_price);
-      if (item.stock_available == null) item.stock_available = stockAvail;
-    } else if (idx !== -1 && isForce) {
-      // force: reenvia do "Enviar tudo" → só sobrescreve se realmente
-      // quiser, então aqui apenas garante que stock está atualizado.
-      const item = cart[idx];
-      if (item.stock_available == null) item.stock_available = stockAvail;
-    } else {
-      // Item novo
-      cart.push({
-        product_id:      productId,
-        product_name:    p.product_name || p.name || '—',
-        unit_price:      unitPrice,
-        quantity:        q,
-        subtotal:        round2(unitPrice * q),
-        stock_available: stockAvail
-      });
-    }
-
-    // Re-renderiza e recalcula
-    if (window.DH && window.DH.cart) {
-      try {
-        window.DH.cart.render();
-        window.DH.cart.recalc();
-      } catch (err) {
-        console.error('[scanner-hook] render/recalc falhou:', err);
-      }
-    }
-  });
-
-  console.log('[scanner-hook] pronto');
 })();
 
 /* =========================================================

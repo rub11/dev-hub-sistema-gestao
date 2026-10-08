@@ -111,6 +111,7 @@
     permissoes:          'management.roles',
     dashboard:           'dashboard.view',
     vendas:              'sales.view',
+    'portal-vendas':     'sales.view',
     notas:               'notes.view',
     'notas-fiscal':      'invoices.view',
     parceiros:           'customers.view',
@@ -132,17 +133,11 @@
     'config-parcelamento': 'management.view'
   };
 
-  /* ---------- Estrutura do menu ----------
-     Gestão NÃO aparece no menu lateral — ela é acessada
-     via card dentro de administracao.html.
-     O mapeamento de URL continua, pra que a aba "Gestão"
-     apareça quando você abrir gestao.html.
-  ------------------------------------------ */
   NAV.TOPNAV = [
     { id: 'administracao', label: 'Administração', href: 'administracao.html', icon: 'lock', group: 'Administração', capability: 'management.view' },
 
     { id: 'dashboard', label: 'Dashboard', href: 'dashboard.html', icon: 'dashboard', group: null },
-    { id: 'vendas',        label: 'Vendas',        href: 'vendas.html',       icon: 'vendas',       group: 'Comercial' },
+    { id: 'vendas',        label: 'Vendas',        href: 'portal-vendas.html', icon: 'vendas',      group: 'Comercial' },
     { id: 'notas',         label: 'Notas',         href: 'notas.html',        icon: 'notas',        group: 'Comercial' },
     { id: 'parceiros',     label: 'Parceiros',     href: 'parceiros.html',    icon: 'clientes',     group: 'Comercial' },
     { id: 'produtos',      label: 'Produtos',      href: 'produtos.html',     icon: 'produtos',     group: 'Catálogo' },
@@ -168,7 +163,10 @@
     funcionarios: 'gestao',
     aprovacoes: 'aprovacoes',
     permissoes: 'permissoes',
-    dashboard: 'dashboard', vendas: 'vendas', notas: 'notas',
+    dashboard: 'dashboard',
+    vendas: 'vendas',
+    'portal-vendas': 'vendas',
+    notas: 'notas',
     'notas-fiscal': 'notas-fiscal', clientes: 'parceiros',
     parceiros: 'parceiros',
     produtos: 'produtos', estoque: 'estoque', relatorios: 'relatorios',

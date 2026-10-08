@@ -1,0 +1,234 @@
+/* =========================================================
+   DEV HUB · Portal de Vendas
+   Hub com cards premium para escolha do tipo de operação
+   ========================================================= */
+
+.portal-vendas__head {
+  margin-bottom: 28px;
+}
+
+/* =========================================================
+   GRID
+   ========================================================= */
+.portal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+/* =========================================================
+   CARD
+   ========================================================= */
+.portal-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 22px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #0e1420 0%, #0a0f18 100%);
+  border: 1px solid rgba(255, 255, 255, .08);
+  color: #e6eaf2;
+  text-decoration: none;
+  cursor: pointer;
+  overflow: hidden;
+  transition:
+    transform .18s cubic-bezier(.2,.9,.3,1),
+    border-color .18s ease,
+    box-shadow .18s ease;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, .03) inset,
+    0 8px 24px -12px rgba(0, 0, 0, .5);
+}
+
+.portal-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, .14);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, .05) inset,
+    0 14px 36px -12px rgba(0, 0, 0, .7),
+    0 0 40px -20px var(--portal-accent, rgba(59, 130, 246, .5));
+}
+
+.portal-card:active {
+  transform: translateY(0);
+}
+
+/* Glow de fundo por card */
+.portal-card__glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(
+    circle at 0% 0%,
+    var(--portal-accent, rgba(59, 130, 246, .18)),
+    transparent 55%
+  );
+  transition: opacity .25s ease;
+}
+
+.portal-card:hover .portal-card__glow {
+  opacity: 1;
+}
+
+/* Ícone */
+.portal-card__icon {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  flex: none;
+  border-radius: 12px;
+  background: linear-gradient(
+    135deg,
+    var(--portal-icon-bg, rgba(59, 130, 246, .15)),
+    rgba(255, 255, 255, .02)
+  );
+  border: 1px solid var(--portal-icon-border, rgba(59, 130, 246, .35));
+  color: var(--portal-accent-solid, #93b6ff);
+  box-shadow: 0 0 24px -10px var(--portal-accent-solid, rgba(59, 130, 246, .6));
+  transition: transform .2s ease;
+}
+
+.portal-card:hover .portal-card__icon {
+  transform: scale(1.05);
+}
+
+/* Corpo */
+.portal-card__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.portal-card__title {
+  margin: 0 0 3px;
+  font-size: 14.5px;
+  font-weight: 600;
+  letter-spacing: -.01em;
+  color: #f0f4fa;
+}
+
+.portal-card__desc {
+  margin: 0;
+  font-size: 12px;
+  color: #7a8698;
+  line-height: 1.35;
+}
+
+/* Badge de contagem */
+.portal-card__badge {
+  flex: none;
+  min-width: 32px;
+  height: 26px;
+  padding: 0 10px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--portal-badge-bg, rgba(59, 130, 246, .12));
+  border: 1px solid var(--portal-badge-border, rgba(59, 130, 246, .28));
+  color: var(--portal-accent-solid, #93b6ff);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  transition: background .18s ease, color .18s ease;
+}
+
+.portal-card:hover .portal-card__badge {
+  background: var(--portal-badge-bg-hover, rgba(59, 130, 246, .2));
+  color: #fff;
+}
+
+/* Seta */
+.portal-card__arrow {
+  flex: none;
+  display: grid;
+  place-items: center;
+  color: #5a6577;
+  transition: transform .2s ease, color .2s ease;
+}
+
+.portal-card:hover .portal-card__arrow {
+  color: var(--portal-accent-solid, #93b6ff);
+  transform: translateX(3px);
+}
+
+/* =========================================================
+   VARIANTES DE COR
+   ========================================================= */
+
+/* TODOS — azul */
+.portal-card--todos {
+  --portal-accent: rgba(59, 130, 246, .18);
+  --portal-icon-bg: rgba(59, 130, 246, .15);
+  --portal-icon-border: rgba(59, 130, 246, .35);
+  --portal-accent-solid: #60a5fa;
+  --portal-badge-bg: rgba(59, 130, 246, .12);
+  --portal-badge-border: rgba(59, 130, 246, .28);
+  --portal-badge-bg-hover: rgba(59, 130, 246, .22);
+}
+
+/* PEDIDO — índigo */
+.portal-card--pedido {
+  --portal-accent: rgba(99, 102, 241, .2);
+  --portal-icon-bg: rgba(99, 102, 241, .15);
+  --portal-icon-border: rgba(99, 102, 241, .35);
+  --portal-accent-solid: #a5b4fc;
+  --portal-badge-bg: rgba(99, 102, 241, .12);
+  --portal-badge-border: rgba(99, 102, 241, .28);
+  --portal-badge-bg-hover: rgba(99, 102, 241, .22);
+}
+
+/* NOTA — esmeralda */
+.portal-card--nota {
+  --portal-accent: rgba(16, 185, 129, .2);
+  --portal-icon-bg: rgba(16, 185, 129, .15);
+  --portal-icon-border: rgba(16, 185, 129, .35);
+  --portal-accent-solid: #6ee7b7;
+  --portal-badge-bg: rgba(16, 185, 129, .12);
+  --portal-badge-border: rgba(16, 185, 129, .28);
+  --portal-badge-bg-hover: rgba(16, 185, 129, .22);
+}
+
+/* DEVOLUÇÃO — âmbar */
+.portal-card--devolucao {
+  --portal-accent: rgba(245, 158, 11, .2);
+  --portal-icon-bg: rgba(245, 158, 11, .15);
+  --portal-icon-border: rgba(245, 158, 11, .35);
+  --portal-accent-solid: #fbbf24;
+  --portal-badge-bg: rgba(245, 158, 11, .12);
+  --portal-badge-border: rgba(245, 158, 11, .28);
+  --portal-badge-bg-hover: rgba(245, 158, 11, .22);
+}
+
+/* CANCELADAS — rosa/vermelho */
+.portal-card--canceladas {
+  --portal-accent: rgba(239, 68, 68, .2);
+  --portal-icon-bg: rgba(239, 68, 68, .15);
+  --portal-icon-border: rgba(239, 68, 68, .35);
+  --portal-accent-solid: #f87171;
+  --portal-badge-bg: rgba(239, 68, 68, .12);
+  --portal-badge-border: rgba(239, 68, 68, .28);
+  --portal-badge-bg-hover: rgba(239, 68, 68, .22);
+}
+
+/* =========================================================
+   RESPONSIVO
+   ========================================================= */
+@media (max-width: 640px) {
+  .portal-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .portal-card {
+    padding: 16px 18px;
+  }
+  .portal-card__icon {
+    width: 42px;
+    height: 42px;
+  }
+  .portal-card__title { font-size: 14px; }
+  .portal-card__desc  { font-size: 11.5px; }
+}

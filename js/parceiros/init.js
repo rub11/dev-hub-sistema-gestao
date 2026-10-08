@@ -57,9 +57,14 @@
       state.filterStatus = '';
       state.filterKind = '';
       state.kind = 'all';
+      state.search = '';
       const t = document.getElementById('filter-type');   if (t) t.value = '';
       const s = document.getElementById('filter-status'); if (s) s.value = '';
       const k = document.getElementById('filter-kind');   if (k) k.value = '';
+      const inp = document.getElementById('parn-search-input');
+      if (inp) inp.value = '';
+      const clr = document.getElementById('parn-search-clear');
+      if (clr) clr.hidden = true;
       document.querySelectorAll('.parn-chip').forEach((c) => {
         const on = c.dataset.kind === 'all';
         c.classList.toggle('is-active', on);
@@ -69,13 +74,60 @@
     });
   }
 
+  /* =========================================================
+     BUSCA (isolada — usa #parn-search-input)
+     ========================================================= */
   function setupSearch() {
-    const input = document.getElementById('search-input');
+    const input = document.getElementById('parn-search-input');
     if (!input) return;
-    input.addEventListener('input', () => {
+
+    /* Evita duplicar listener se init rodar 2x */
+    if (input.dataset.searchWired === '1') return;
+    input.dataset.searchWired = '1';
+
+    const clearBtn = document.getElementById('parn-search-clear');
+    let debounceTimer = null;
+
+    function updateClearBtn() {
+      if (clearBtn) clearBtn.hidden = input.value.trim().length === 0;
+    }
+
+    function applyNow() {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = null;
       state.search = input.value.trim().toLowerCase();
       window.Parn.applyFilter();
+    }
+
+    input.addEventListener('input', () => {
+      updateClearBtn();
+      /* Debounce 120ms — evita re-render a cada tecla */
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(applyNow, 120);
     });
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        applyNow();
+      } else if (e.key === 'Escape') {
+        input.value = '';
+        updateClearBtn();
+        applyNow();
+      }
+    });
+
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => {
+        input.value = '';
+        updateClearBtn();
+        applyNow();
+        input.focus();
+      });
+    }
+
+    /* Estado inicial */
+    updateClearBtn();
   }
 
   function setupKindChips() {
@@ -173,6 +225,7 @@
     window.Parn.setupConfirmModal();
     window.Parn.setupCtxMenu();
     window.Parn.setupExportButton();
+    window.Parn.setupImport();
     setupToolbar();
     setupSearch();
     setupTopbar();

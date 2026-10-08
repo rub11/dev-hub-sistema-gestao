@@ -7,8 +7,10 @@
     customStart: '',
     customEnd: '',
     movementTypeFilter: '',
+    statusFilter: 'valid',          /* valid | '' | canceled | pending */
     loading: false,
     sales: [],
+    previousSales: [],              /* vendas do período anterior (pro delta) */
     saleItems: [],
     products: [],
     movements: [],
@@ -16,7 +18,8 @@
     totalCustomers: 0,
     newCustomersInPeriod: 0,
     chart: null,
-    perms: { view: true, export: true },
+    paymentsChart: null,
+    perms: { view: true, export: true, import: true },
     priceMin: null,
     priceMax: null,
     focusSection: null

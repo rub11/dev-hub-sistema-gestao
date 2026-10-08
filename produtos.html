@@ -471,7 +471,7 @@
 
   <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="false"></div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+ <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/supabase.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/permissions.js"></script>
@@ -490,8 +490,21 @@
 <script src="js/nav/bar.js"></script>
 <script src="js/nav/main.js"></script>
 
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<!-- =====================================================
+     MÓDULOS DE PRODUTOS
+     Ordem importa: produtos.js primeiro (define window.Produtos),
+     depois scanner e import que dependem dele.
+     ===================================================== -->
 <script src="js/produtos.js"></script>
 <script src="js/produtos-scanner.js"></script>
+<script src="js/produtos-import.js"></script>
+
+  <!-- =====================================================
+       MÓDULO DE PRODUTOS (era js/parceiros/* antes)
+       ===================================================== -->
+  <script src="js/produtos.js"></script>
 
   <!-- ========================================================
        ENHANCEMENT · Autocomplete da busca de produtos
@@ -565,27 +578,23 @@
     }
 
     /* ---------------- Cache em memória ---------------- */
-    let cache = [];           // lista completa (todos os produtos visíveis na tabela)
-    let cached = false;       // já conseguimos capturar?
+    let cache = [];
+    let cached = false;
 
     function tryCapture() {
       const rows = tbody.querySelectorAll('tr');
       if (rows.length === 0) return false;
-      // Só consideramos "lista completa" quando o input está vazio.
       if (input.value.trim() !== '') return false;
       cache = Array.from(rows).map(parseRow).filter(Boolean);
       cached = cache.length > 0;
       return cached;
     }
 
-    // Observa o tbody: quando ele ganhar/atualizar linhas com o input vazio,
-    // recapturamos a lista completa.
     const mo = new MutationObserver(() => {
       if (input.value.trim() === '') tryCapture();
     });
     mo.observe(tbody, { childList: true, subtree: true });
 
-    // Fallback: em caso de cache inicial vazio, tenta algumas vezes.
     [0, 300, 800, 1500, 2500].forEach(ms => setTimeout(() => {
       if (!cached) tryCapture();
     }, ms));
@@ -694,8 +703,6 @@
       const p = items[i];
       if (!p) return;
 
-      // Preenche o input e dispara o evento 'input' para o produtos.js
-      // aplicar o filtro na tabela normalmente.
       input.value = p.name;
       if (clearBt) clearBt.hidden = false;
       input.dispatchEvent(new Event('input', { bubbles: true }));
@@ -703,7 +710,6 @@
       hide();
       input.blur();
 
-      // Destaque visual temporário na linha correspondente
       const row = p.id
         ? tbody.querySelector('tr[data-id="' + CSS.escape(p.id) + '"]')
         : Array.from(tbody.querySelectorAll('tr')).find(tr => {
@@ -737,8 +743,6 @@
 
     input.addEventListener('input', () => {
       if (clearBt) clearBt.hidden = input.value.length === 0;
-      // Se ainda não temos cache, tenta capturar ANTES do produtos.js
-      // re-renderizar a tabela (ele roda em microtask).
       if (!cached) tryCapture();
       render(input.value);
     });
@@ -764,7 +768,7 @@
     listEl.addEventListener('mousedown', (e) => {
       const li = e.target.closest('.search-suggestions__item');
       if (!li) return;
-      e.preventDefault(); // não perde o foco
+      e.preventDefault();
       choose(Number(li.dataset.idx));
     });
 

@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Orçamentos · DEV HUB</title>
+
+  <script src="js/theme.js"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/global.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/clientes.css" />
+  <link rel="stylesheet" href="css/theme.css" />
+  <link rel="stylesheet" href="css/orcamentos.css" />
+
+  <script>
+    (function () {
+      try {
+        if (!/[?&]blocked=1/.test(location.search)) {
+          document.documentElement.classList.add('layout-topnav');
+        }
+      } catch (e) {}
+    })();
+  </script>
+</head>
+
+<body class="layout-topnav" data-page="orcamentos">
+
+  <a class="skip-link" href="#main">Pular para o conteúdo principal</a>
+
+  <aside class="sidebar" id="sidebar" aria-label="Menu principal"></aside>
+  <div class="sidebar-overlay" id="sidebar-overlay" hidden></div>
+
+  <div class="app__body">
+
+    <header class="topbar">
+      <button type="button" class="icon-btn menu-toggle" id="menu-toggle"
+              aria-label="Abrir menu" aria-expanded="false" aria-controls="sidebar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+             stroke-linecap="round" aria-hidden="true"><path d="M3.5 6.5h17M3.5 12h17M3.5 17.5h17" /></svg>
+      </button>
+
+      <span class="topbar__brand">DEV HUB</span>
+
+      <div class="topbar__actions">
+        <button type="button" class="icon-btn" id="notifications-btn"
+                aria-label="Notificações" title="Em breve" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M18 8.5a6 6 0 1 0-12 0c0 6.5-2.5 8.5-2.5 8.5h17S18 15 18 8.5" />
+            <path d="M13.7 20.5a2 2 0 0 1-3.4 0" />
+          </svg>
+        </button>
+
+        <div class="user-menu">
+          <button type="button" class="user-menu__trigger" id="user-menu-trigger"
+                  aria-haspopup="true" aria-expanded="false" aria-controls="user-menu-panel">
+            <span class="avatar" id="user-avatar" aria-hidden="true">–</span>
+            <span class="user-menu__meta">
+              <span class="user-menu__name" id="user-name">Carregando…</span>
+              <span class="user-menu__role" id="user-role"></span>
+            </span>
+            <svg class="user-menu__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </button>
+
+          <div class="user-menu__panel" id="user-menu-panel" role="menu" hidden>
+            <button type="button" class="menu-item" role="menuitem" aria-disabled="true">
+              Perfil <span class="menu-item__tag">Em breve</span>
+            </button>
+            <a class="menu-item" role="menuitem" href="configuracoes.html">Configurações</a>
+            <div class="menu-item__sep" role="separator"></div>
+            <button type="button" class="menu-item menu-item--danger" role="menuitem" data-action="logout">
+              Sair
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="content" id="main">
+
+      <div id="global-alert" class="alert" role="alert" hidden></div>
+
+      <div class="page-head page-head--with-action">
+        <div>
+          <p class="page-head__eyebrow">
+            <span id="greeting-name">Olá</span>
+            <span class="role-badge" id="greeting-role" hidden></span>
+          </p>
+          <h1 class="page-head__title">Orçamentos</h1>
+          <p class="page-head__sub">Gerencie os orçamentos emitidos e acompanhe as aprovações.</p>
+        </div>
+
+        <div class="page-head__actions">
+          <a class="dh-portal-badge" href="portal-vendas.html">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none"
+                 stroke="currentColor" stroke-width="2.4" stroke-linecap="round"
+                 stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+            <span>Portal de Vendas</span>
+          </a>
+
+          <button type="button" class="btn btn--primary" id="new-quote-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
+                 style="width:16px;height:16px"><path d="M12 5v14M5 12h14"/></svg>
+            <span>Novo orçamento</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="orc-stats">
+        <div class="orc-stat">
+          <div class="orc-stat__label">Total</div>
+          <div class="orc-stat__value" id="stat-total">—</div>
+        </div>
+        <div class="orc-stat orc-stat--warn">
+          <div class="orc-stat__label">Pendentes</div>
+          <div class="orc-stat__value" id="stat-pendentes">—</div>
+        </div>
+        <div class="orc-stat orc-stat--ok">
+          <div class="orc-stat__label">Aprovados</div>
+          <div class="orc-stat__value" id="stat-aprovados">—</div>
+        </div>
+        <div class="orc-stat orc-stat--info">
+          <div class="orc-stat__label">Valor total</div>
+          <div class="orc-stat__value orc-stat__value--money" id="stat-valor">—</div>
+        </div>
+      </div>
+
+      <section class="panel">
+
+        <div class="panel__head toolbar">
+
+          <div class="toolbar__info">
+            <h2 class="panel__title">Lista de orçamentos</h2>
+            <p class="panel__sub" id="orc-count">Carregando…</p>
+          </div>
+
+          <div class="toolbar__actions">
+
+            <div class="search">
+              <span class="search__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" />
+                </svg>
+              </span>
+              <input type="search" id="orc-search" class="search__input"
+                     placeholder="Buscar orçamento..."
+                     aria-label="Buscar orçamentos" autocomplete="off" />
+            </div>
+
+            <select id="orc-filter-status" class="orc-select" aria-label="Filtrar por status">
+              <option value="todos">Todos os status</option>
+              <option value="pendentes">Pendentes</option>
+              <option value="aprovados">Aprovados</option>
+              <option value="cancelados">Cancelados</option>
+            </select>
+
+            <select id="orc-filter-periodo" class="orc-select" aria-label="Filtrar por período">
+              <option value="todos">Todo período</option>
+              <option value="hoje">Hoje</option>
+              <option value="7dias">Últimos 7 dias</option>
+              <option value="30dias">Últimos 30 dias</option>
+              <option value="mes">Este mês</option>
+            </select>
+
+          </div>
+        </div>
+
+        <div id="orc-loading" class="state-block">
+          <span class="spinner" aria-hidden="true"></span>
+          <p>Carregando orçamentos...</p>
+        </div>
+
+        <div id="orc-empty" class="state-block" hidden>
+          <div class="state-block__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2.5H7A2 2 0 0 0 5 4.5v15a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7.5z"/>
+              <path d="M14 2.5v5h5"/>
+              <path d="M9 13h6M9 17h4"/>
+            </svg>
+          </div>
+          <h3 id="orc-empty-title">Nenhum orçamento encontrado.</h3>
+          <p id="orc-empty-text">Ajuste os filtros ou crie um novo orçamento.</p>
+        </div>
+
+        <div class="table-wrap" id="orc-table-wrap" hidden>
+          <table>
+            <caption class="sr-only">Lista de orçamentos</caption>
+            <thead>
+              <tr>
+                <th scope="col">Nº</th>
+                <th scope="col">Cliente</th>
+                <th scope="col">Data</th>
+                <th scope="col">Válido até</th>
+                <th scope="col" class="cell--num">Total</th>
+                <th scope="col">Status</th>
+                <th scope="col">Criado por</th>
+                <th scope="col" class="cell--num">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="orc-body"></tbody>
+          </table>
+        </div>
+
+      </section>
+
+    </main>
+  </div>
+
+  <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="false"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/permissions.js"></script>
+
+  <script src="js/nav/config.js"></script>
+  <script src="js/nav/state.js"></script>
+  <script src="js/nav/roles.js"></script>
+  <script src="js/nav/styles.js"></script>
+  <script src="js/nav/permission-modal.js"></script>
+  <script src="js/nav/tabs.js"></script>
+  <script src="js/nav/module-menu.js"></script>
+  <script src="js/nav/notifications.js"></script>
+  <script src="js/nav/user-menu.js"></script>
+  <script src="js/nav/search.js"></script>
+  <script src="js/nav/org-switcher.js"></script>
+  <script src="js/nav/bar.js"></script>
+  <script src="js/nav/main.js"></script>
+
+  <script src="js/orcamentos.js"></script>
+
+</body>
+</html>

@@ -4,26 +4,19 @@
    Fase 1: KPIs, gráficos, rankings, alertas, estoque crítico
    Fase 2: Activity feed (timeline)
    ---------------------------------------------------------
-   - Todos os dados vêm do Supabase. Sem números fictícios.
-   - Empty states elegantes quando não há dados.
-   - Skeleton loading durante o fetch.
-   - Gráficos com Chart.js (reaproveitado, sem lib extra).
-   ---------------------------------------------------------
    CORREÇÕES APLICADAS:
-   1. Race condition em troca de período: token de geração
-      descarta respostas obsoletas. Antes, trocar de "30d"
-      pra "Hoje" durante o load era ignorado silenciosamente.
-   2. Tema escuro/claro: 'theme:changed' agora RE-RENDERIZA
-      os charts (não só update) para reaplicar as cores.
-   3. `animateNumber` cancela animação anterior por elemento
-      (WeakMap) — evita flicker e valor final inconsistente.
-   4. `resolveContext()` com fallback pra Auth.getProfile()
-      quando sessionStorage está vazio (nova aba).
-   5. `metadata` parseado defensivamente (string | object).
-   6. Removido `stockListCache` (código morto).
-   7. Quantidades de estoque formatadas com Intl.
-   8. `describeAction` trata `entity_name` vazio.
-   9. `getPeriodRange` valida datas antes de usar.
+   1. Race condition em troca de período.
+   2. Tema escuro/claro: re-renderiza charts.
+   3. animateNumber cancela animação anterior por elemento.
+   4. resolveContext() com fallback pra Auth.getProfile().
+   5. metadata parseado defensivamente.
+   6. Removido stockListCache.
+   7. Quantidades formatadas com Intl.
+   8. describeAction trata entity_name vazio.
+   9. getPeriodRange valida datas.
+   10. [NOVO] FILTRO POR ORGANIZAÇÃO — todas as queries
+       filtram por `.eq('organization_id', state.currentOrgId)`
+       pra não misturar dados entre empresas diferentes.
    ========================================================= */
 
 (function () {
@@ -54,14 +47,12 @@
     customEnd: '',
     user: null,
     isPlatformAdmin: false,
+    currentOrgId: null,       // ⬅️ NOVO: filtro global
     charts: { revenue: null, payments: null },
     loading: false,
-
-    /* CORREÇÃO #1: token de geração para descartar loads obsoletos */
     loadGeneration: 0
   };
 
-  /* CORREÇÃO #3: cancela animação anterior por elemento */
   const numberAnimations = new WeakMap();
 
   /* =========================================================
@@ -85,27 +76,24 @@
     const profile = await Auth.getProfile(session.user.id);
     renderUser(session.user, profile);
 
-    /* CORREÇÃO #4: contexto com fallback — antes, em nova aba,
-       getStoredUser() retornava null e o KPI "Empresas" nunca
-       aparecia para super-admin. */
     const ctx = await resolveContext(Auth, session);
     state.user = ctx;
     state.isPlatformAdmin = Boolean(ctx && ctx.is_platform_admin);
+
+    /* ⬇️ NOVO: resolve a organização ativa (fonte da verdade) */
+    state.currentOrgId = await getCurrentOrgId(Auth, session, profile);
 
     if (state.isPlatformAdmin) {
       const kpiOrgs = document.querySelector('[data-kpi="orgs"]');
       if (kpiOrgs) kpiOrgs.hidden = false;
     }
 
-    // Default datas do período personalizado
     const today = new Date();
     setInputValue('dash-start', toDateInput(new Date(today.getFullYear(), today.getMonth(), 1)));
     setInputValue('dash-end', toDateInput(today));
 
-    // Carrega tudo
     await loadDashboard();
 
-    // Reage a mudanças de auth
     if (window.db.auth && window.db.auth.onAuthStateChange) {
       window.db.auth.onAuthStateChange(function (event) {
         if (event === 'SIGNED_OUT' && Auth && !Auth.isSigningOut()) {
@@ -113,13 +101,50 @@
         }
       });
     }
+
+    /* ⬇️ Recarrega o dashboard quando o usuário trocar de empresa */
+    window.addEventListener('org:changed', function () {
+      getCurrentOrgId(Auth, session, null).then(function (orgId) {
+        state.currentOrgId = orgId;
+        loadDashboard();
+      });
+    });
   }
 
-  /**
-   * CORREÇÃO #4: resolve contexto em ordem de custo.
-   * 1) Auth.getStoredUser() — rápido
-   * 2) Auth.getProfile() — lento, mas sempre funciona
-   */
+  /* =========================================================
+     Helper: descobre a org ativa do usuário
+     ---------------------------------------------------------
+     Prioriza `profiles.organization_id` (fonte da verdade do
+     banco — mesma que a RLS usa). Fallback pro sessionStorage.
+     ========================================================= */
+  async function getCurrentOrgId(Auth, session, profileArg) {
+    // 1) profiles.organization_id (fonte da verdade)
+    try {
+      let profile = profileArg;
+      if (!profile && session && session.user) {
+        profile = await Auth.getProfile(session.user.id);
+      }
+      if (profile && profile.organization_id) return profile.organization_id;
+    } catch (e) { /* ignora */ }
+
+    // 2) sessionStorage (fallback)
+    try {
+      const raw = sessionStorage.getItem('devhub_user');
+      if (raw) {
+        const ctx = JSON.parse(raw);
+        if (ctx && ctx.organization_id) return ctx.organization_id;
+      }
+    } catch (e) { /* ignora */ }
+
+    // 3) RPC (última tentativa)
+    try {
+      const { data } = await window.db.rpc('get_user_organization_id');
+      if (data) return data;
+    } catch (e) { /* ignora */ }
+
+    return null;
+  }
+
   async function resolveContext(Auth, session) {
     try {
       if (typeof Auth.getStoredUser === 'function') {
@@ -233,7 +258,6 @@
     }
   }
 
-  /* CORREÇÃO #9: valida as datas custom antes de usar */
   function getPeriodRange() {
     const now = new Date();
     let start, end;
@@ -280,7 +304,6 @@
           : now;
 
         if (start > end) {
-          // Segurança: inverte ou usa default
           start = new Date(now.getFullYear(), now.getMonth(), 1);
           end = now;
         }
@@ -288,7 +311,6 @@
       }
     }
 
-    // Última barreira: nunca retornar datas inválidas
     if (isNaN(start.getTime()) || isNaN(end.getTime())) {
       start = new Date(now.getFullYear(), now.getMonth(), 1);
       end = now;
@@ -310,14 +332,14 @@
      Carga principal
      ========================================================= */
   async function loadDashboard() {
-    /* CORREÇÃO #1: NÃO bloqueia mais com `if (state.loading) return`.
-       Em vez disso, incrementa a geração e deixa a resposta antiga
-       ser descartada quando chegar. Assim, trocar de período durante
-       um load ativo funciona: a UI sempre reflete o último período
-       selecionado. */
     state.loadGeneration += 1;
     const myGen = state.loadGeneration;
     state.loading = true;
+
+    /* Se por acaso a org ainda não foi resolvida, tenta agora */
+    if (!state.currentOrgId) {
+      state.currentOrgId = await getCurrentOrgId(window.Auth, null, null);
+    }
 
     updateRangeLabel();
     clearAllKpis();
@@ -326,7 +348,6 @@
     const startISO = start.toISOString();
     const endISO = end.toISOString();
 
-    // Roda em paralelo — cada uma isolada para não derrubar tudo
     await Promise.allSettled([
       loadCustomerKpis(startISO, endISO, myGen),
       loadSalesAndRevenue(startISO, endISO, myGen),
@@ -339,7 +360,6 @@
       loadActivityFeed(myGen)
     ]);
 
-    /* Só libera `loading` se ainda formos a geração mais recente */
     if (myGen === state.loadGeneration) {
       state.loading = false;
     }
@@ -353,19 +373,24 @@
     document.querySelectorAll('.kpi__hint').forEach(function (el) { el.innerHTML = '&nbsp;'; });
   }
 
-  /* Helper: descarta se a geração mudou */
   function isStale(myGen) {
     return myGen !== undefined && myGen !== state.loadGeneration;
   }
 
   /* =========================================================
-     KPIs
+     KPIs (com filtro de organização)
      ========================================================= */
   async function loadCustomerKpis(startISO, endISO, myGen) {
     try {
+      if (!state.currentOrgId) throw new Error('no-org');
+
       const [totalRes, newRes] = await Promise.all([
-        window.db.from('customers').select('id', { count: 'exact', head: true }),
-        window.db.from('customers').select('id', { count: 'exact', head: true })
+        window.db.from('customers')
+          .select('id', { count: 'exact', head: true })
+          .eq('organization_id', state.currentOrgId),                       // ⬅️ FILTRO
+        window.db.from('customers')
+          .select('id', { count: 'exact', head: true })
+          .eq('organization_id', state.currentOrgId)                        // ⬅️ FILTRO
           .gte('created_at', startISO).lte('created_at', endISO)
       ]);
 
@@ -385,8 +410,11 @@
 
   async function loadSalesAndRevenue(startISO, endISO, myGen) {
     try {
+      if (!state.currentOrgId) throw new Error('no-org');
+
       const res = await window.db.from('sales')
         .select('id, total, status, payment_method, created_at')
+        .eq('organization_id', state.currentOrgId)                          // ⬅️ FILTRO
         .gte('created_at', startISO).lte('created_at', endISO);
 
       if (res.error) throw res.error;
@@ -421,7 +449,12 @@
 
   async function loadProductKpis(myGen) {
     try {
-      const res = await window.db.from('products').select('id, stock, minimum_stock, active');
+      if (!state.currentOrgId) throw new Error('no-org');
+
+      const res = await window.db.from('products')
+        .select('id, stock, minimum_stock, active')
+        .eq('organization_id', state.currentOrgId);                         // ⬅️ FILTRO
+
       if (res.error) throw res.error;
       if (isStale(myGen)) return;
 
@@ -446,9 +479,15 @@
 
   async function loadUserKpis(myGen) {
     try {
+      if (!state.currentOrgId) throw new Error('no-org');
+
       const [totalRes, activeRes] = await Promise.all([
-        window.db.from('organization_members').select('id', { count: 'exact', head: true }),
-        window.db.from('organization_members').select('id', { count: 'exact', head: true })
+        window.db.from('organization_members')
+          .select('id', { count: 'exact', head: true })
+          .eq('organization_id', state.currentOrgId),                       // ⬅️ FILTRO
+        window.db.from('organization_members')
+          .select('id', { count: 'exact', head: true })
+          .eq('organization_id', state.currentOrgId)                        // ⬅️ FILTRO
           .eq('active', true)
       ]);
 
@@ -466,6 +505,7 @@
     }
   }
 
+  /* Org KPIs — só pra platform admin, então NÃO filtra (vê tudo) */
   async function loadOrgKpis(myGen) {
     try {
       const [totalRes, activeRes] = await Promise.all([
@@ -488,7 +528,7 @@
   }
 
   /* =========================================================
-     Gráficos
+     Gráficos (não precisam filtrar — recebem dados já filtrados)
      ========================================================= */
   function renderRevenueChart(validSales, startISO, endISO) {
     const canvas = document.getElementById('chart-revenue');
@@ -504,7 +544,6 @@
       return;
     }
 
-    // Buckets por dia
     const start = new Date(startISO);
     const end = new Date(endISO);
     const buckets = new Map();
@@ -682,13 +721,9 @@
     };
   }
 
-  /* CORREÇÃO #2: 'theme:changed' re-renderiza o chart em vez de
-     só chamar update('none'). Sem isso, as cores dos eixos,
-     tooltips e legendas ficam travadas no tema original. */
   document.addEventListener('theme:changed', function () {
     if (!state.charts.revenue && !state.charts.payments) return;
 
-    // Guarda as configs atuais e redesenha
     try {
       if (state.charts.revenue) {
         const cfg = state.charts.revenue.config;
@@ -735,15 +770,20 @@
   });
 
   /* =========================================================
-     Rankings
+     Rankings (com filtro de organização)
      ========================================================= */
   async function loadTopProducts(startISO, endISO, myGen) {
     const wrap = document.getElementById('dash-top-products');
     if (!wrap) return;
 
     try {
-      const salesRes = await window.db.from('sales').select('id, status')
+      if (!state.currentOrgId) throw new Error('no-org');
+
+      const salesRes = await window.db.from('sales')
+        .select('id, status')
+        .eq('organization_id', state.currentOrgId)                          // ⬅️ FILTRO
         .gte('created_at', startISO).lte('created_at', endISO);
+
       if (salesRes.error) throw salesRes.error;
       if (isStale(myGen)) return;
 
@@ -753,8 +793,11 @@
 
       if (ids.length === 0) return renderEmptyRank(wrap, 'Nenhuma venda no período.');
 
+      /* sale_items não tem organization_id — filtra pela sale_id
+         (que já foi filtrada por org acima) */
       const itemsRes = await window.db.from('sale_items')
-        .select('product_id, product_name, quantity, subtotal').in('sale_id', ids);
+        .select('product_id, product_name, quantity, subtotal')
+        .in('sale_id', ids);
       if (itemsRes.error) throw itemsRes.error;
       if (isStale(myGen)) return;
 
@@ -800,9 +843,13 @@
     if (!wrap) return;
 
     try {
+      if (!state.currentOrgId) throw new Error('no-org');
+
       const salesRes = await window.db.from('sales')
         .select('customer_id, total, status')
+        .eq('organization_id', state.currentOrgId)                          // ⬅️ FILTRO
         .gte('created_at', startISO).lte('created_at', endISO);
+
       if (salesRes.error) throw salesRes.error;
       if (isStale(myGen)) return;
 
@@ -824,9 +871,11 @@
         .sort(function (a, b) { return b.total - a.total; })
         .slice(0, 5);
 
-      // Busca nomes
       const ids = rows.map(function (r) { return r.id; });
-      const namesRes = await window.db.from('customers').select('id, name').in('id', ids);
+      const namesRes = await window.db.from('customers')
+        .select('id, name')
+        .eq('organization_id', state.currentOrgId)                          // ⬅️ FILTRO
+        .in('id', ids);
       if (isStale(myGen)) return;
 
       const names = {};
@@ -862,15 +911,18 @@
   }
 
   /* =========================================================
-     Estoque + Alertas
+     Estoque + Alertas (com filtro)
      ========================================================= */
   async function loadStockAlerts(myGen) {
     const alertsWrap = document.getElementById('dash-alerts');
     const stockWrap = document.getElementById('dash-stock-list');
 
     try {
+      if (!state.currentOrgId) throw new Error('no-org');
+
       const res = await window.db.from('products')
         .select('id, name, stock, minimum_stock, active')
+        .eq('organization_id', state.currentOrgId)                          // ⬅️ FILTRO
         .order('stock', { ascending: true });
 
       if (res.error) throw res.error;
@@ -935,7 +987,6 @@
     }).join('');
   }
 
-  /* CORREÇÃO #7: formata quantity com Intl em vez de String(n). */
   function renderStockList(wrap, data) {
     if (!wrap) return;
 
@@ -960,16 +1011,22 @@
   }
 
   /* =========================================================
-     Activity feed (timeline)
+     Activity feed (com filtro)
      ========================================================= */
   async function loadActivityFeed(myGen) {
     const wrap = document.getElementById('dash-feed');
     if (!wrap) return;
 
     try {
+      if (!state.currentOrgId) throw new Error('no-org');
+
+      /* activity_log pode não ter organization_id —
+         se der erro na coluna, cai no catch e mostra "vazio".
+         Quando você adicionar a coluna, isso já funciona. */
       const res = await window.db
         .from('activity_log')
         .select('id, actor_name, action, entity_type, entity_name, metadata, created_at')
+        .eq('organization_id', state.currentOrgId)                          // ⬅️ FILTRO
         .order('created_at', { ascending: false })
         .limit(12);
 
@@ -1061,8 +1118,6 @@
       '<circle cx="12" cy="12" r="9"/><path d="M12 8v5"/><path d="M12 16h.01"/></svg>'
   };
 
-  /* CORREÇÃO #5: parse defensivo de metadata + CORREÇÃO #8:
-     trata entity_name vazio. */
   function describeAction(row) {
     const rawName = row.entity_name;
     const entity = (rawName && String(rawName).trim())
@@ -1072,7 +1127,6 @@
     const action = row.action;
     const type = row.entity_type;
 
-    /* metadata pode vir como objeto (jsonb) ou string (text) */
     let meta = row.metadata || {};
     if (typeof meta === 'string') {
       try { meta = JSON.parse(meta) || {}; }
@@ -1157,8 +1211,6 @@
     if (hintEl) hintEl.textContent = 'Indisponível agora';
   }
 
-  /* CORREÇÃO #3: cancela animação anterior do MESMO elemento
-     (evita duas animações competindo pelo mesmo textContent). */
   function animateNumber(el, target, format) {
     const prev = numberAnimations.get(el);
     if (prev && typeof prev.cancel === 'function') prev.cancel();

@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Portal de Vendas · DEV HUB</title>
+
+  <script src="js/theme.js"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/global.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/clientes.css" />
+  <link rel="stylesheet" href="css/theme.css" />
+  <link rel="stylesheet" href="css/portal-vendas.css" />
+
+  <script>
+    (function () {
+      try {
+        if (!/[?&]blocked=1/.test(location.search)) {
+          document.documentElement.classList.add('layout-topnav');
+        }
+      } catch (e) {}
+    })();
+  </script>
+</head>
+
+<body class="layout-topnav" data-page="portal-vendas">
+
+  <a class="skip-link" href="#main">Pular para o conteúdo principal</a>
+
+  <aside class="sidebar" id="sidebar" aria-label="Menu principal"></aside>
+  <div class="sidebar-overlay" id="sidebar-overlay" hidden></div>
+
+  <div class="app__body">
+
+    <header class="topbar">
+      <button type="button" class="icon-btn menu-toggle" id="menu-toggle"
+              aria-label="Abrir menu" aria-expanded="false" aria-controls="sidebar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+             stroke-linecap="round" aria-hidden="true"><path d="M3.5 6.5h17M3.5 12h17M3.5 17.5h17" /></svg>
+      </button>
+
+      <span class="topbar__brand">DEV HUB</span>
+
+      <div class="topbar__actions">
+        <button type="button" class="icon-btn" id="notifications-btn"
+                aria-label="Notificações" title="Em breve" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M18 8.5a6 6 0 1 0-12 0c0 6.5-2.5 8.5-2.5 8.5h17S18 15 18 8.5" />
+            <path d="M13.7 20.5a2 2 0 0 1-3.4 0" />
+          </svg>
+        </button>
+
+        <div class="user-menu">
+          <button type="button" class="user-menu__trigger" id="user-menu-trigger"
+                  aria-haspopup="true" aria-expanded="false" aria-controls="user-menu-panel">
+            <span class="avatar" id="user-avatar" aria-hidden="true">–</span>
+            <span class="user-menu__meta">
+              <span class="user-menu__name" id="user-name">Carregando…</span>
+              <span class="user-menu__role" id="user-role"></span>
+            </span>
+            <svg class="user-menu__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </button>
+
+          <div class="user-menu__panel" id="user-menu-panel" role="menu" hidden>
+            <button type="button" class="menu-item" role="menuitem" aria-disabled="true">
+              Perfil <span class="menu-item__tag">Em breve</span>
+            </button>
+            <a class="menu-item" role="menuitem" href="configuracoes.html">Configurações</a>
+            <div class="menu-item__sep" role="separator"></div>
+            <button type="button" class="menu-item menu-item--danger" role="menuitem" data-action="logout">
+              Sair
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="content" id="main">
+
+      <div id="global-alert" class="alert" role="alert" hidden></div>
+
+      <div class="page-head portal-vendas__head">
+        <p class="page-head__eyebrow">
+          <span id="greeting-name">Olá</span>
+          <span class="role-badge" id="greeting-role" hidden></span>
+        </p>
+        <h1 class="page-head__title">Portal de Vendas</h1>
+        <p class="page-head__sub">Escolha o que deseja visualizar.</p>
+      </div>
+
+      <div class="portal-grid" role="list">
+
+        <!-- 1. VENDAS -->
+        <a class="portal-card portal-card--vendas" href="vendas.html?filtro=vendas" role="listitem">
+          <div class="portal-card__glow" aria-hidden="true"></div>
+          <div class="portal-card__icon">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none"
+                 stroke="currentColor" stroke-width="1.7" stroke-linecap="round"
+                 stroke-linejoin="round" aria-hidden="true">
+              <circle cx="9" cy="20" r="1.4"/>
+              <circle cx="18" cy="20" r="1.4"/>
+              <path d="M2.5 3.5h2.3l2.3 11.6a1.8 1.8 0 0 0 1.8 1.4h8.8a1.8 1.8 0 0 0 1.8-1.4L21 7.5H6"/>
+            </svg>
+          </div>
+          <div class="portal-card__body">
+            <h3 class="portal-card__title">Vendas</h3>
+            <p class="portal-card__desc">Todas as vendas ativas, sem canceladas</p>
+          </div>
+          <div class="portal-card__badge" id="count-vendas">—</div>
+          <div class="portal-card__arrow" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                 stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+          </div>
+        </a>
+
+        <!-- 2. ORÇAMENTOS PENDENTES -->
+        <a class="portal-card portal-card--orc-pendentes" href="orcamentos.html?status=pendentes" role="listitem">
+          <div class="portal-card__glow" aria-hidden="true"></div>
+          <div class="portal-card__icon">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none"
+                 stroke="currentColor" stroke-width="1.7" stroke-linecap="round"
+                 stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="9"/>
+              <path d="M12 7v5l3 2"/>
+            </svg>
+          </div>
+          <div class="portal-card__body">
+            <h3 class="portal-card__title">Orçamentos pendentes</h3>
+            <p class="portal-card__desc">Aguardando aprovação do cliente ou gestor</p>
+          </div>
+          <div class="portal-card__badge" id="count-orc-pendentes">—</div>
+          <div class="portal-card__arrow" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                 stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+          </div>
+        </a>
+
+        <!-- 3. A RECEBER -->
+        <a class="portal-card portal-card--receber" href="vendas.html?filtro=a_receber" role="listitem">
+          <div class="portal-card__glow" aria-hidden="true"></div>
+          <div class="portal-card__icon">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none"
+                 stroke="currentColor" stroke-width="1.7" stroke-linecap="round"
+                 stroke-linejoin="round" aria-hidden="true">
+              <rect x="2.5" y="6" width="19" height="12" rx="2"/>
+              <path d="M2.5 10h19"/>
+              <circle cx="17" cy="14" r="1"/>
+            </svg>
+          </div>
+          <div class="portal-card__body">
+            <h3 class="portal-card__title">A receber</h3>
+            <p class="portal-card__desc">Vendas com saldo pendente</p>
+          </div>
+          <div class="portal-card__badge" id="count-receber">—</div>
+          <div class="portal-card__arrow" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                 stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+          </div>
+        </a>
+
+        <!-- 4. VENDAS DO MÊS -->
+        <a class="portal-card portal-card--mes" href="vendas.html?filtro=mes" role="listitem">
+          <div class="portal-card__glow" aria-hidden="true"></div>
+          <div class="portal-card__icon">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none"
+                 stroke="currentColor" stroke-width="1.7" stroke-linecap="round"
+                 stroke-linejoin="round" aria-hidden="true">
+              <rect x="3" y="4.5" width="18" height="16" rx="2"/>
+              <path d="M3 9.5h18"/>
+              <path d="M8 2.5v4M16 2.5v4"/>
+            </svg>
+          </div>
+          <div class="portal-card__body">
+            <h3 class="portal-card__title">Vendas do mês</h3>
+            <p class="portal-card__desc">Faturamento do mês atual</p>
+          </div>
+          <div class="portal-card__badge" id="count-mes">—</div>
+          <div class="portal-card__arrow" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                 stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+          </div>
+        </a>
+
+        <!-- 5. CANCELADAS -->
+        <a class="portal-card portal-card--canceladas" href="vendas.html?filtro=canceladas" role="listitem">
+          <div class="portal-card__glow" aria-hidden="true"></div>
+          <div class="portal-card__icon">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none"
+                 stroke="currentColor" stroke-width="1.7" stroke-linecap="round"
+                 stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="9"/>
+              <path d="m15 9-6 6M9 9l6 6"/>
+            </svg>
+          </div>
+          <div class="portal-card__body">
+            <h3 class="portal-card__title">Canceladas</h3>
+            <p class="portal-card__desc">Desistência ou outros motivos</p>
+          </div>
+          <div class="portal-card__badge" id="count-canceladas">—</div>
+          <div class="portal-card__arrow" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                 stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+          </div>
+        </a>
+
+      </div>
+
+    </main>
+  </div>
+
+  <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="false"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/permissions.js"></script>
+
+  <script src="js/nav/config.js"></script>
+  <script src="js/nav/state.js"></script>
+  <script src="js/nav/roles.js"></script>
+  <script src="js/nav/styles.js"></script>
+  <script src="js/nav/permission-modal.js"></script>
+  <script src="js/nav/tabs.js"></script>
+  <script src="js/nav/module-menu.js"></script>
+  <script src="js/nav/notifications.js"></script>
+  <script src="js/nav/user-menu.js"></script>
+  <script src="js/nav/search.js"></script>
+  <script src="js/nav/org-switcher.js"></script>
+  <script src="js/nav/bar.js"></script>
+  <script src="js/nav/main.js"></script>
+
+  <!-- Contadores dos cards do portal -->
+  <script src="js/vendas/portal-vendas.js"></script>
+
+</body>
+</html>

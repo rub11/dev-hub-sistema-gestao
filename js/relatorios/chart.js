@@ -1,7 +1,3 @@
-/* =========================================================
-   DEV HUB · Relatórios · chart.js
-   Gráfico de evolução das vendas (Chart.js).
-   ========================================================= */
 (function () {
   'use strict';
   const RH = window.RH;
