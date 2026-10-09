@@ -1,6 +1,9 @@
 /* =========================================================
    DEV HUB · Vendas · cart.js
    Carrinho com avisos de estoque + valor pago + evento de recalc.
+   ---------------------------------------------------------
+   [NOVO] Dispara DH.payments.recalc() a cada mudança pra
+   atualizar o resumo de pagamentos múltiplos.
    ========================================================= */
 (function () {
   'use strict';
@@ -10,7 +13,7 @@
   function el(name) { return DH.form.els()[name]; }
 
   function isQuoteMode() {
-    return state.formMode === 'quote';
+    return state.formMode === 'quote' || state.formMode === 'quote_edit';
   }
 
   function createCell(text, className) {
@@ -202,7 +205,10 @@
     /* Atualiza botão finalizar */
     if (DH.form && DH.form.refreshSubmitEnabled) DH.form.refreshSubmitEnabled();
 
-    /* ⬇️ Dispara evento pra installments.js recalcular as opções */
+    /* ⬇️ Atualiza resumo de pagamentos múltiplos */
+    if (DH.payments) DH.payments.recalc();
+
+    /* ⬇️ Dispara evento pra outros módulos (installments antigo, etc.) */
     document.dispatchEvent(new CustomEvent('sale:recalc'));
   }
 
@@ -210,11 +216,11 @@
     const form = el('form');
     if (!form) return;
     form.reset();
-    el('customer').value = '';
-    el('discount').value = '0';
+
+    if (el('customer')) el('customer').value = '';
+    if (el('discount')) el('discount').value = '0';
     if (el('discountPct')) el('discountPct').value = '0';
-    el('payment').value = '';
-    el('notes').value = '';
+    if (el('notes')) el('notes').value = '';
 
     const depositEl = document.getElementById('sale-deposit');
     if (depositEl) depositEl.value = '0';
@@ -228,14 +234,13 @@
     const noStockEl = document.getElementById('sale-no-stock');
     if (noStockEl) noStockEl.checked = false;
 
-    const payEl = document.getElementById('sale-payment');
-    if (payEl) payEl.classList.remove('is-invalid');
     const warn = document.getElementById('payment-warn');
     if (warn) warn.hidden = true;
 
     clearFeedback();
     if (DH.productSearch && DH.productSearch.clear) DH.productSearch.clear();
     if (DH.installments) DH.installments.reset();
+    if (DH.payments) DH.payments.reset();
 
     render();
     recalc();

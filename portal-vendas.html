@@ -97,13 +97,13 @@
         <p class="page-head__sub">Escolha o que deseja visualizar.</p>
       </div>
 
-      <div class="portal-grid" role="list">
+      <div class="portal-grid portal-grid--lg" role="list">
 
-        <!-- 1. VENDAS -->
-        <a class="portal-card portal-card--vendas" href="vendas.html?filtro=vendas" role="listitem">
+        <!-- VENDAS -->
+        <a class="portal-card portal-card--vendas portal-card--lg" href="vendas.html" role="listitem">
           <div class="portal-card__glow" aria-hidden="true"></div>
-          <div class="portal-card__icon">
-            <svg viewBox="0 0 24 24" width="24" height="24" fill="none"
+          <div class="portal-card__icon portal-card__icon--lg">
+            <svg viewBox="0 0 24 24" width="32" height="32" fill="none"
                  stroke="currentColor" stroke-width="1.7" stroke-linecap="round"
                  stroke-linejoin="round" aria-hidden="true">
               <circle cx="9" cy="20" r="1.4"/>
@@ -112,106 +112,36 @@
             </svg>
           </div>
           <div class="portal-card__body">
-            <h3 class="portal-card__title">Vendas</h3>
-            <p class="portal-card__desc">Todas as vendas ativas, sem canceladas</p>
+            <h3 class="portal-card__title portal-card__title--lg">Vendas</h3>
+            <p class="portal-card__desc">Acompanhe as vendas ativas, filtre por período, cliente e forma de pagamento.</p>
           </div>
-          <div class="portal-card__badge" id="count-vendas">—</div>
+          <div class="portal-card__badge portal-card__badge--lg" id="count-vendas">—</div>
           <div class="portal-card__arrow" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none"
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none"
                  stroke="currentColor" stroke-width="2" stroke-linecap="round"
                  stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
           </div>
         </a>
 
-        <!-- 2. ORÇAMENTOS PENDENTES -->
-        <a class="portal-card portal-card--orc-pendentes" href="orcamentos.html?status=pendentes" role="listitem">
+        <!-- ORÇAMENTOS -->
+        <a class="portal-card portal-card--orcamentos portal-card--lg" href="orcamentos.html" role="listitem">
           <div class="portal-card__glow" aria-hidden="true"></div>
-          <div class="portal-card__icon">
-            <svg viewBox="0 0 24 24" width="24" height="24" fill="none"
+          <div class="portal-card__icon portal-card__icon--lg">
+            <svg viewBox="0 0 24 24" width="32" height="32" fill="none"
                  stroke="currentColor" stroke-width="1.7" stroke-linecap="round"
                  stroke-linejoin="round" aria-hidden="true">
-              <circle cx="12" cy="12" r="9"/>
-              <path d="M12 7v5l3 2"/>
+              <path d="M14 2.5H7A2 2 0 0 0 5 4.5v15a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7.5z"/>
+              <path d="M14 2.5v5h5"/>
+              <path d="M9 13h6M9 17h4"/>
             </svg>
           </div>
           <div class="portal-card__body">
-            <h3 class="portal-card__title">Orçamentos pendentes</h3>
-            <p class="portal-card__desc">Aguardando aprovação do cliente ou gestor</p>
+            <h3 class="portal-card__title portal-card__title--lg">Orçamentos</h3>
+            <p class="portal-card__desc">Gerencie orçamentos emitidos, acompanhe pendentes e aprove propostas.</p>
           </div>
-          <div class="portal-card__badge" id="count-orc-pendentes">—</div>
+          <div class="portal-card__badge portal-card__badge--lg" id="count-orcamentos">—</div>
           <div class="portal-card__arrow" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none"
-                 stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                 stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-          </div>
-        </a>
-
-        <!-- 3. A RECEBER -->
-        <a class="portal-card portal-card--receber" href="vendas.html?filtro=a_receber" role="listitem">
-          <div class="portal-card__glow" aria-hidden="true"></div>
-          <div class="portal-card__icon">
-            <svg viewBox="0 0 24 24" width="24" height="24" fill="none"
-                 stroke="currentColor" stroke-width="1.7" stroke-linecap="round"
-                 stroke-linejoin="round" aria-hidden="true">
-              <rect x="2.5" y="6" width="19" height="12" rx="2"/>
-              <path d="M2.5 10h19"/>
-              <circle cx="17" cy="14" r="1"/>
-            </svg>
-          </div>
-          <div class="portal-card__body">
-            <h3 class="portal-card__title">A receber</h3>
-            <p class="portal-card__desc">Vendas com saldo pendente</p>
-          </div>
-          <div class="portal-card__badge" id="count-receber">—</div>
-          <div class="portal-card__arrow" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none"
-                 stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                 stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-          </div>
-        </a>
-
-        <!-- 4. VENDAS DO MÊS -->
-        <a class="portal-card portal-card--mes" href="vendas.html?filtro=mes" role="listitem">
-          <div class="portal-card__glow" aria-hidden="true"></div>
-          <div class="portal-card__icon">
-            <svg viewBox="0 0 24 24" width="24" height="24" fill="none"
-                 stroke="currentColor" stroke-width="1.7" stroke-linecap="round"
-                 stroke-linejoin="round" aria-hidden="true">
-              <rect x="3" y="4.5" width="18" height="16" rx="2"/>
-              <path d="M3 9.5h18"/>
-              <path d="M8 2.5v4M16 2.5v4"/>
-            </svg>
-          </div>
-          <div class="portal-card__body">
-            <h3 class="portal-card__title">Vendas do mês</h3>
-            <p class="portal-card__desc">Faturamento do mês atual</p>
-          </div>
-          <div class="portal-card__badge" id="count-mes">—</div>
-          <div class="portal-card__arrow" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none"
-                 stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                 stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-          </div>
-        </a>
-
-        <!-- 5. CANCELADAS -->
-        <a class="portal-card portal-card--canceladas" href="vendas.html?filtro=canceladas" role="listitem">
-          <div class="portal-card__glow" aria-hidden="true"></div>
-          <div class="portal-card__icon">
-            <svg viewBox="0 0 24 24" width="24" height="24" fill="none"
-                 stroke="currentColor" stroke-width="1.7" stroke-linecap="round"
-                 stroke-linejoin="round" aria-hidden="true">
-              <circle cx="12" cy="12" r="9"/>
-              <path d="m15 9-6 6M9 9l6 6"/>
-            </svg>
-          </div>
-          <div class="portal-card__body">
-            <h3 class="portal-card__title">Canceladas</h3>
-            <p class="portal-card__desc">Desistência ou outros motivos</p>
-          </div>
-          <div class="portal-card__badge" id="count-canceladas">—</div>
-          <div class="portal-card__arrow" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none"
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none"
                  stroke="currentColor" stroke-width="2" stroke-linecap="round"
                  stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
           </div>
@@ -241,9 +171,9 @@
   <script src="js/nav/search.js"></script>
   <script src="js/nav/org-switcher.js"></script>
   <script src="js/nav/bar.js"></script>
+<script src="js/nav/favorites.js"></script>
   <script src="js/nav/main.js"></script>
 
-  <!-- Contadores dos cards do portal -->
   <script src="js/vendas/portal-vendas.js"></script>
 
 </body>

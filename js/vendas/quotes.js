@@ -1,6 +1,7 @@
 /* =========================================================
    DEV HUB · Vendas · quotes.js
-   Módulo de Orçamentos: listar, criar, imprimir, converter em venda.
+   Módulo de Orçamentos: listar, criar, imprimir, converter em venda,
+   EDITAR existente.
    ========================================================= */
 (function () {
   'use strict';
@@ -277,6 +278,7 @@
     state.correctingSaleId = null;
     state.correctingSale = null;
     state.convertingFromQuote = null;
+    state.editingQuoteId = null;
     state.noStock = false;
 
     if (DH.cart && DH.cart.reset) DH.cart.reset();
@@ -298,10 +300,150 @@
     if (!state.formDataLoaded) await DH.form.loadFormData();
   }
 
+  /* =========================================================
+     EDITAR ORÇAMENTO EXISTENTE
+     ========================================================= */
+  async function openEditQuote(quoteId) {
+    if (!state.perms.create) {
+      DH.toast('Você não tem permissão para editar orçamentos.', 'error');
+      return;
+    }
+
+    /* Busca o orçamento */
+    const { data: q, error } = await window.db
+      .from('quotes')
+      .select('*')
+      .eq('id', quoteId)
+      .maybeSingle();
+
+    if (error || !q) {
+      console.error('[DEV HUB] openEditQuote:', error);
+      DH.toast('Orçamento não encontrado.', 'error');
+      return;
+    }
+
+    if (q.status === 'converted' || q.status === 'cancelled') {
+      DH.toast('Este orçamento não pode mais ser editado.', 'info');
+      return;
+    }
+
+    /* Busca itens */
+    const { data: items } = await window.db
+      .from('quote_items')
+      .select('*')
+      .eq('quote_id', quoteId)
+      .order('created_at');
+
+    /* Limpa estado */
+    state.editingSaleId = null;
+    state.editingSale = null;
+    state.correctingSaleId = null;
+    state.correctingSale = null;
+    state.convertingFromQuote = null;
+    state.editingQuoteId = quoteId;
+    state.noStock = false;
+
+    if (DH.cart && DH.cart.reset) DH.cart.reset();
+
+    /* Carrega produtos/clientes */
+    if (!state.formDataLoaded) await DH.form.loadFormData();
+
+    /* Popula carrinho */
+    state.cart = (items || []).map(it => {
+      const p = utils.findProduct(it.product_id);
+      return {
+        product_id: it.product_id,
+        product_name: it.product_name,
+        unit_price: utils.toNumber(it.unit_price, 0),
+        quantity: utils.toInteger(it.quantity, 0),
+        subtotal: utils.toNumber(it.subtotal, 0),
+        stock_available: p ? utils.toInteger(p.stock, 0) : 0
+      };
+    });
+
+    /* Modo e view */
+    DH.form.setFormMode('quote_edit', q);
+    DH.form.showView('form');
+
+    /* Campos */
+    const validField = document.getElementById('quote-valid-field');
+    if (validField) validField.hidden = false;
+    const noStockField = document.getElementById('no-stock-field');
+    if (noStockField) noStockField.hidden = true;
+
+    const f = DH.form.els();
+    if (f.customer) f.customer.value = q.customer_id || '';
+    if (f.discount) f.discount.value = String(utils.toNumber(q.discount, 0));
+    if (f.payment)  f.payment.value  = q.payment_method || '';
+    if (f.notes)    f.notes.value    = q.notes || '';
+    if (f.discountPct) {
+      const sub = utils.toNumber(q.subtotal, 0);
+      f.discountPct.value = sub > 0
+        ? String(utils.round2(utils.toNumber(q.discount, 0) / sub * 100))
+        : '0';
+    }
+    state.lastDiscountEdit = 'brl';
+
+    const validInput = document.getElementById('sale-valid-until');
+    if (validInput && q.valid_until) validInput.value = q.valid_until;
+
+    const depositEl = document.getElementById('sale-deposit');
+    if (depositEl) depositEl.value = String(utils.toNumber(q.deposit_amount, 0));
+
+    DH.cart.render();
+    DH.cart.recalc();
+
+    DH.toast('Orçamento carregado para edição.', 'info');
+  }
+
+  /* =========================================================
+     SALVAR (criar ou editar)
+     ========================================================= */
   async function saveQuote(payload) {
     const validInput = document.getElementById('sale-valid-until');
     const validUntil = validInput ? validInput.value || null : null;
 
+    /* Se tem editingQuoteId, é update */
+    if (state.editingQuoteId) {
+      const { data, error } = await window.db
+        .from('quotes')
+        .update({
+          customer_id:      payload.customer_id,
+          subtotal:         payload.subtotal,
+          discount:         payload.discount,
+          total:            payload.total,
+          payment_method:   payload.payment_method,
+          notes:            payload.notes,
+          valid_until:      validUntil,
+          deposit_amount:   payload.deposit_amount || 0
+        })
+        .eq('id', state.editingQuoteId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      /* Deleta itens antigos e insere os novos */
+      await window.db.from('quote_items').delete().eq('quote_id', state.editingQuoteId);
+
+      if (payload.items && payload.items.length > 0) {
+        const items = payload.items.map(it => ({
+          quote_id:      state.editingQuoteId,
+          product_id:    it.product_id,
+          product_name:  it.product_name,
+          quantity:      it.quantity,
+          unit_price:    it.unit_price,
+          subtotal:      it.subtotal
+        }));
+        const { error: itemsErr } = await window.db.from('quote_items').insert(items);
+        if (itemsErr) throw itemsErr;
+      }
+
+      state.editingQuoteId = null;
+      return data;
+    }
+
+    /* Senão, é criação */
     const { data, error } = await window.db.rpc('create_quote', {
       p_customer_id:    payload.customer_id,
       p_subtotal:       payload.subtotal,
@@ -319,7 +461,7 @@
   }
 
   /* =========================================================
-     CANCELAR
+     CANCELAR / CONVERTER
      ========================================================= */
   function cancelQuote(q) {
     const reason = window.prompt('Motivo do cancelamento (opcional):', '');
@@ -343,9 +485,6 @@
     }
   }
 
-  /* =========================================================
-     CONVERTER EM VENDA
-     ========================================================= */
   async function convertQuoteToSale(q) {
     if (q.status === 'converted' || q.status === 'cancelled') {
       DH.toast('Este orçamento não pode mais ser convertido.', 'info');
@@ -393,7 +532,6 @@
     const noStockEl = document.getElementById('sale-no-stock');
     if (noStockEl) noStockEl.checked = temSemEstoque;
 
-    /* Preenche campos */
     const f = DH.form.els();
     if (f.customer) f.customer.value = q.customer_id || '';
     if (f.discount) f.discount.value = String(utils.toNumber(q.discount, 0));
@@ -407,7 +545,6 @@
     }
     state.lastDiscountEdit = 'brl';
 
-    /* ⬇️ Sinal do orçamento */
     const depositEl = document.getElementById('sale-deposit');
     if (depositEl) depositEl.value = String(utils.toNumber(q.deposit_amount, 0));
 
@@ -516,6 +653,7 @@
     setup,
     loadQuotes,
     openNewQuote,
+    openEditQuote,
     saveQuote,
     convertQuoteToSale,
     markQuoteConverted,

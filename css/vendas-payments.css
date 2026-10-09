@@ -1,0 +1,237 @@
+/* =========================================================
+   DEV HUB · Vendas · Pagamentos múltiplos
+   ========================================================= */
+
+#payments-field {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ---------- Lista de pagamentos ---------- */
+.payments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.payment-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 130px auto;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, .02);
+  border: 1px solid rgba(255, 255, 255, .06);
+  border-radius: 10px;
+  transition: border-color .15s ease, background .15s ease;
+}
+
+.payment-row:hover {
+  background: rgba(255, 255, 255, .03);
+  border-color: rgba(255, 255, 255, .1);
+}
+
+.payment-row__select {
+  width: 100%;
+  height: 38px;
+  padding: 0 34px 0 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, .08);
+  background-color: rgba(0, 0, 0, .2);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13.5px;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 14px;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.payment-row__select:hover {
+  border-color: rgba(255, 255, 255, .15);
+}
+
+.payment-row__select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+
+.payment-row__amount {
+  position: relative;
+}
+
+.payment-row__amount::before {
+  content: 'R$';
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.payment-row__amount input {
+  width: 100%;
+  height: 38px;
+  padding: 0 12px 0 32px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, .08);
+  background: rgba(0, 0, 0, .2);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13.5px;
+  font-variant-numeric: tabular-nums;
+  outline: none;
+  text-align: right;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.payment-row__amount input:hover {
+  border-color: rgba(255, 255, 255, .15);
+}
+
+.payment-row__amount input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+
+.payment-row__amount input.is-invalid {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, .15);
+}
+
+/* Botão remover */
+.payment-row__remove {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background .12s ease, color .12s ease;
+}
+
+.payment-row__remove:hover:not(:disabled) {
+  background: rgba(239, 68, 68, .12);
+  color: #f87171;
+}
+
+.payment-row__remove:disabled {
+  opacity: .3;
+  cursor: not-allowed;
+}
+
+.payment-row__remove svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Parcelamento (embaixo, ocupando linha toda) */
+.payment-row__installments {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 4px 0;
+  border-top: 1px dashed rgba(255, 255, 255, .06);
+  margin-top: 4px;
+}
+
+.payment-row__installments label {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.payment-row__installments select {
+  flex: 1;
+  height: 34px;
+  padding: 0 30px 0 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, .08);
+  background-color: rgba(0, 0, 0, .2);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 12.5px;
+  outline: none;
+  appearance: none;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 12px;
+}
+
+.payment-row__installments-hint {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  min-width: 100px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Resumo ---------- */
+.payments-summary {
+  margin-top: 4px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, .05), rgba(59, 130, 246, .03));
+  border: 1px solid rgba(99, 102, 241, .15);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.payments-summary__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: var(--text-soft);
+}
+
+.payments-summary__row strong {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 13px;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.payments-summary__row--status {
+  padding-top: 8px;
+  margin-top: 4px;
+  border-top: 1px solid rgba(99, 102, 241, .15);
+  font-weight: 600;
+}
+
+.payments-summary__row--ok strong   { color: #4ade80; }
+.payments-summary__row--warn strong { color: #fbbf24; }
+.payments-summary__row--err strong  { color: #f87171; }
+
+/* Mobile */
+@media (max-width: 640px) {
+  .payment-row {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "select remove"
+      "amount amount"
+      "install install";
+    gap: 8px;
+  }
+  .payment-row__select      { grid-area: select; }
+  .payment-row__amount      { grid-area: amount; }
+  .payment-row__remove      { grid-area: remove; }
+  .payment-row__installments { grid-area: install; }
+}

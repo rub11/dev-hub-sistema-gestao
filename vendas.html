@@ -8,6 +8,33 @@
 
   <script src="js/theme.js"></script>
 
+  <!-- Anti-flash: esconde a lista quando vem de ?novo=orcamento ou ?editar_orcamento -->
+  <script>
+    (function () {
+      try {
+        const p = new URLSearchParams(location.search);
+        if (
+          p.get('novo') === 'orcamento' ||
+          p.get('modo') === 'orcamento' ||
+          p.get('editar_orcamento')
+        ) {
+          document.documentElement.classList.add('dh-form-mode');
+        }
+      } catch (e) {}
+    })();
+  </script>
+
+  <style>
+    html.dh-form-mode #view-list,
+    html.dh-form-mode .sales-tabs,
+    html.dh-form-mode .page-head:not(.page-head--with-back) {
+      display: none !important;
+    }
+    html.dh-form-mode #view-form {
+      display: block !important;
+    }
+  </style>
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -17,6 +44,8 @@
   <link rel="stylesheet" href="css/clientes.css" />
   <link rel="stylesheet" href="css/theme.css" />
   <link rel="stylesheet" href="css/vendas.css" />
+  <link rel="stylesheet" href="css/vendas-filtros.css" />
+  <link rel="stylesheet" href="css/vendas-payments.css" />
 
   <script>
     (function () {
@@ -90,37 +119,69 @@
       <div id="global-alert" class="alert" role="alert" hidden></div>
 
       <!-- =====================================================
-           VIEW: LISTA (Vendas + Orçamentos)
+           VIEW: LISTA DE VENDAS
            ===================================================== -->
       <div id="view-list">
 
-        <div class="page-head">
-          <p class="page-head__eyebrow">
-            <span id="greeting-name">Olá</span>
-            <span class="role-badge" id="greeting-role" hidden></span>
-          </p>
-          <h1 class="page-head__title">Vendas</h1>
-          <p class="page-head__sub">Acompanhe vendas, orçamentos e aprovações.</p>
+        <div class="page-head page-head--with-action">
+          <div>
+            <p class="page-head__eyebrow">
+              <span id="greeting-name">Olá</span>
+              <span class="role-badge" id="greeting-role" hidden></span>
+            </p>
+            <h1 class="page-head__title">Vendas</h1>
+            <p class="page-head__sub">Acompanhe as vendas realizadas e o faturamento.</p>
+          </div>
+
+          <div class="page-head__actions">
+            <a class="dh-portal-badge" href="portal-vendas.html">
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none"
+                   stroke="currentColor" stroke-width="2.4" stroke-linecap="round"
+                   stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+              <span>Portal de Vendas</span>
+            </a>
+
+            <button type="button" id="new-quote-btn" style="display:none;" aria-hidden="true" tabindex="-1">
+              <span>Novo orçamento</span>
+            </button>
+
+            <button type="button" class="btn btn--primary" id="new-sale-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
+                   style="width:16px;height:16px"><path d="M12 5v14M5 12h14" /></svg>
+              <span>Nova venda</span>
+            </button>
+          </div>
         </div>
 
-        <div class="sales-tabs" role="tablist">
-          <button type="button" class="sales-tab is-active" data-tab="sales" role="tab" aria-selected="true">
-            Vendas
-          </button>
-          <button type="button" class="sales-tab" data-tab="quotes" role="tab" aria-selected="false">
-            Orçamentos
-            <span class="sales-tab__count" id="quotes-tab-count" hidden>0</span>
-          </button>
+        <div class="sale-stats">
+          <div class="sale-stat">
+            <div class="sale-stat__label">Total do período</div>
+            <div class="sale-stat__value" id="stat-count">—</div>
+          </div>
+          <div class="sale-stat sale-stat--info">
+            <div class="sale-stat__label">Faturamento</div>
+            <div class="sale-stat__value sale-stat__value--money" id="stat-faturamento">—</div>
+          </div>
+          <div class="sale-stat sale-stat--warn">
+            <div class="sale-stat__label">A receber</div>
+            <div class="sale-stat__value sale-stat__value--money" id="stat-receber">—</div>
+          </div>
+          <div class="sale-stat sale-stat--ok">
+            <div class="sale-stat__label">Ticket médio</div>
+            <div class="sale-stat__value sale-stat__value--money" id="stat-ticket">—</div>
+          </div>
         </div>
 
         <section class="panel" aria-labelledby="sales-title">
           <div class="panel__head toolbar">
             <div class="toolbar__info">
-              <h2 class="panel__title" id="sales-title">Todas as vendas</h2>
+              <h2 class="panel__title" id="sales-title">Lista de vendas</h2>
               <p class="panel__sub" id="sales-count">Carregando…</p>
             </div>
 
             <div class="toolbar__actions">
+
               <div class="search">
                 <span class="search__icon" aria-hidden="true">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
@@ -129,9 +190,34 @@
                   </svg>
                 </span>
                 <input type="search" id="search-input" class="search__input"
-                       placeholder="Buscar vendas..."
+                       placeholder="Buscar venda..."
                        aria-label="Buscar vendas" autocomplete="off" />
               </div>
+
+              <select id="filter-status" class="vf-select" aria-label="Filtrar por status">
+                <option value="todos">Todos os status</option>
+                <option value="ativas">Ativas</option>
+                <option value="pendentes">Pendentes</option>
+                <option value="canceladas">Canceladas</option>
+              </select>
+
+              <select id="filter-periodo" class="vf-select" aria-label="Filtrar por período">
+                <option value="todos">Todo período</option>
+                <option value="hoje">Hoje</option>
+                <option value="7dias">Últimos 7 dias</option>
+                <option value="30dias">Últimos 30 dias</option>
+                <option value="mes">Este mês</option>
+              </select>
+
+              <select id="filter-pagamento" class="vf-select" aria-label="Filtrar por forma de pagamento">
+                <option value="todos">Todas formas</option>
+                <option value="pix">Pix</option>
+                <option value="cash">Dinheiro</option>
+                <option value="debit_card">Débito</option>
+                <option value="credit_card">Crédito</option>
+                <option value="boleto">Boleto</option>
+                <option value="other">Outro</option>
+              </select>
 
               <button type="button" class="btn btn--ghost" id="approvals-btn" hidden>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
@@ -144,23 +230,6 @@
                 <span class="badge badge--warning" id="approvals-count" hidden>0</span>
               </button>
 
-              <button type="button" class="btn btn--ghost" id="new-quote-btn" hidden>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
-                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
-                     style="width:16px;height:16px">
-                  <path d="M14 2.5H7A2 2 0 0 0 5 4.5v15a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7.5z"/>
-                  <path d="M14 2.5v5h5"/>
-                  <path d="M9 13h6M9 17h4"/>
-                </svg>
-                <span>Novo orçamento</span>
-              </button>
-
-              <button type="button" class="btn btn--primary" id="new-sale-btn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
-                     style="width:16px;height:16px"><path d="M12 5v14M5 12h14" /></svg>
-                <span>Nova venda</span>
-              </button>
             </div>
           </div>
 
@@ -199,40 +268,6 @@
                 </tr>
               </thead>
               <tbody id="sales-body"></tbody>
-            </table>
-          </div>
-
-          <div id="quotes-empty" class="state-block" hidden>
-            <div class="state-block__icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
-                   stroke-linecap="round" stroke-linejoin="round">
-                <path d="M14 2.5H7A2 2 0 0 0 5 4.5v15a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7.5z"/>
-                <path d="M14 2.5v5h5"/>
-                <path d="M9 13h6M9 17h4"/>
-              </svg>
-            </div>
-            <h3>Nenhum orçamento criado ainda.</h3>
-            <p>Comece criando um orçamento para um cliente.</p>
-            <button type="button" class="btn btn--primary" id="empty-new-quote-btn">Criar primeiro orçamento</button>
-          </div>
-
-          <div class="table-wrap" id="quotes-table-wrap" hidden>
-            <table>
-              <caption class="sr-only">Lista de orçamentos</caption>
-              <thead>
-                <tr>
-                  <th scope="col">Nº</th>
-                  <th scope="col">Cliente</th>
-                  <th scope="col">Data</th>
-                  <th scope="col">Válido até</th>
-                  <th scope="col" class="cell--num">Total</th>
-                  <th scope="col" class="cell--num">Sinal</th>
-                  <th scope="col">Status</th>
-                  <th scope="col">Criado por</th>
-                  <th scope="col" class="cell--num">Ações</th>
-                </tr>
-              </thead>
-              <tbody id="quotes-body"></tbody>
             </table>
           </div>
         </section>
@@ -294,35 +329,19 @@
               <div class="card__body">
 
                 <div class="product-search" id="product-search-wrap">
-                  <label for="product-search-input" class="field__label">Buscar produto</label>
+                  <label for="open-product-picker" class="field__label">Buscar produto</label>
 
                   <div style="display:flex; gap:8px; align-items:stretch;">
 
-                    <div class="product-search__control" style="flex:1; min-width:0;">
-                      <button type="button" class="product-search__btn" id="product-search-btn"
-                              aria-label="Buscar produto" title="Buscar">
-                        <svg viewBox="0 0 24 24" fill="none"
-                             stroke="currentColor" stroke-width="1.9" stroke-linecap="round"
-                             stroke-linejoin="round" aria-hidden="true">
-                          <circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" />
-                        </svg>
-                      </button>
-
-                      <input type="text" id="product-search-input"
-                             placeholder="Nome, código ou código de barras…"
-                             autocomplete="off" spellcheck="false"
-                             aria-autocomplete="list"
-                             aria-controls="product-suggestions"
-                             aria-expanded="false" />
-
-                      <button type="button" class="product-search__clear" id="product-search-clear"
-                              aria-label="Limpar busca" hidden>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                             stroke-linecap="round" aria-hidden="true">
-                          <path d="M6 6l12 12M18 6L6 18" />
-                        </svg>
-                      </button>
-                    </div>
+                    <button type="button" id="open-product-picker" class="product-picker-btn">
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none"
+                           stroke="currentColor" stroke-width="1.9" stroke-linecap="round"
+                           stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="11" cy="11" r="7" />
+                        <path d="m20 20-3.5-3.5" />
+                      </svg>
+                      <span>Buscar por nome, código ou código de barras…</span>
+                    </button>
 
                     <button type="button" id="scanner-mode-btn" class="btn btn--ghost"
                             title="Escanear código de barras"
@@ -342,8 +361,22 @@
                   </div>
 
                   <p class="field__hint">
-                    Digite para ver sugestões. Clique em um produto para pré-visualizar.
+                    Clique em buscar para ver os produtos disponíveis.
                   </p>
+
+                  <input type="text" id="product-search-input" hidden
+                         autocomplete="off" spellcheck="false"
+                         aria-autocomplete="list"
+                         aria-controls="product-suggestions"
+                         aria-expanded="false" />
+
+                  <button type="button" class="product-search__clear" id="product-search-clear"
+                          aria-label="Limpar busca" hidden>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" aria-hidden="true">
+                      <path d="M6 6l12 12M18 6L6 18" />
+                    </svg>
+                  </button>
 
                   <ul class="product-suggestions" id="product-suggestions"
                       role="listbox" hidden></ul>
@@ -481,25 +514,41 @@
                   </div>
                 </div>
 
-                <!-- Forma de pagamento (options populadas via JS) -->
-                <div class="field">
-                  <label for="sale-payment">
-                    Forma de pagamento <span class="required-star">*</span>
-                  </label>
-                  <select id="sale-payment" required>
-                    <option value="">Selecione…</option>
-                  </select>
+                <!-- ═══════════ PAGAMENTOS MÚLTIPLOS ═══════════ -->
+                <div class="field" id="payments-field">
+                  <div class="field__label-row">
+                    <label>Formas de pagamento <span class="required-star">*</span></label>
+                    <button type="button" class="btn btn--ghost btn--xs" id="add-payment-btn">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M12 5v14M5 12h14"/>
+                      </svg>
+                      <span>Adicionar forma</span>
+                    </button>
+                  </div>
+
+                  <div class="payments-list" id="payments-list"></div>
+
+                  <div class="payments-summary" id="payments-summary">
+                    <div class="payments-summary__row">
+                      <span>Total da venda</span>
+                      <strong id="payments-total">R$ 0,00</strong>
+                    </div>
+                    <div class="payments-summary__row">
+                      <span>Já alocado</span>
+                      <strong id="payments-allocated">R$ 0,00</strong>
+                    </div>
+                    <div class="payments-summary__row payments-summary__row--status" id="payments-balance-row">
+                      <span id="payments-balance-label">Falta alocar</span>
+                      <strong id="payments-balance">R$ 0,00</strong>
+                    </div>
+                  </div>
+
                   <p class="field__hint" id="payment-warn" hidden>
-                    Escolha a forma de pagamento para finalizar.
+                    Aloque o valor total entre as formas de pagamento.
                   </p>
                 </div>
-
-                <!-- Parcelamento (aparece só em cartão de crédito) -->
-                <div class="field" id="installment-field" hidden>
-                  <label for="sale-installments">Parcelamento</label>
-                  <select id="sale-installments"></select>
-                  <p class="field__hint" id="installment-hint"></p>
-                </div>
+                <!-- ═══════════ /PAGAMENTOS MÚLTIPLOS ═══════════ -->
 
                 <div class="field">
                   <label for="sale-notes">Observações</label>
@@ -554,7 +603,7 @@
 
       <form id="customer-form" class="modal__body" novalidate>
         <p class="prm-hint" style="margin:0;">
-          O parceiro será salvo no cadastro de clientes e já ficará selecionado nesta venda/orçamento.
+          O parceiro será salvo no cadastro de clientes e já ficará selecionado nesta venda.
         </p>
 
         <div class="field">
@@ -756,6 +805,7 @@
   <script src="js/nav/search.js"></script>
   <script src="js/nav/org-switcher.js"></script>
   <script src="js/nav/bar.js"></script>
+  <script src="js/nav/favorites.js"></script>
   <script src="js/nav/main.js"></script>
 
   <script src="js/vendas/config.js"></script>
@@ -766,6 +816,7 @@
   <script src="js/vendas/session.js"></script>
   <script src="js/vendas/list.js"></script>
   <script src="js/vendas/product-search.js"></script>
+  <script src="js/vendas/product-picker.js"></script>
   <script src="js/vendas/stepper.js"></script>
   <script src="js/vendas/cart.js"></script>
   <script src="js/vendas/modal-password.js"></script>
@@ -776,6 +827,7 @@
   <script src="js/vendas/quotes-print.js"></script>
   <script src="js/vendas/quotes.js"></script>
   <script src="js/vendas/installments.js"></script>
+  <script src="js/vendas/payments.js"></script>
   <script src="js/vendas/form.js"></script>
   <script src="js/vendas/draft.js"></script>
   <script src="js/vendas/import-sales.js"></script>
@@ -786,7 +838,8 @@
   <script src="js/scanner-modal.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
-  <!-- Auto-open do form de orçamento quando vier ?novo=orcamento -->
+  <script src="js/vendas/filtros.js"></script>
+
   <script src="js/vendas/auto-open-quote.js"></script>
 
 </body>

@@ -28,7 +28,6 @@
     formEls.deposit     = document.getElementById('sale-deposit');
     formEls.totalSub    = document.getElementById('total-subtotal');
     formEls.totalTotal  = document.getElementById('total-total');
-    formEls.payment     = document.getElementById('sale-payment');
     formEls.notes       = document.getElementById('sale-notes');
     formEls.noStock     = document.getElementById('sale-no-stock');
     formEls.validUntil  = document.getElementById('sale-valid-until');
@@ -40,7 +39,7 @@
     if (formEls.discount) {
       formEls.discount.addEventListener('input', () => {
         state.lastDiscountEdit = 'brl';
-        state.appliedMethodDiscount = null;  // desconto manual cancela o do método
+        state.appliedMethodDiscount = null;
         DH.cart.recalc();
       });
     }
@@ -64,12 +63,8 @@
       });
     }
 
-    if (formEls.payment) {
-      formEls.payment.addEventListener('change', () => {
-        applyMethodDiscount();
-        refreshSubmitEnabled();
-      });
-    }
+    /* Pagamentos múltiplos (substitui o select único antigo) */
+    if (DH.payments) DH.payments.setup();
 
     const newCustomerBtn = document.getElementById('new-customer-btn');
     if (newCustomerBtn) {
@@ -93,84 +88,40 @@
      FORMAS DE PAGAMENTO
      ========================================================= */
   async function loadPaymentMethods() {
+    const FALLBACK = [
+      { code:'cash',          label:'Dinheiro',                 category:'cash',     active:true, discount_type:'none' },
+      { code:'pix',           label:'Pix',                      category:'pix',      active:true, discount_type:'none' },
+      { code:'debit_card',    label:'Cartão de Débito',         category:'debit',    active:true, discount_type:'none' },
+      { code:'credit_card',   label:'Cartão de Crédito',        category:'credit',   active:true, discount_type:'none' },
+      { code:'check',         label:'Cheque',                   category:'check',    active:true, discount_type:'none' },
+      { code:'meal_voucher',  label:'Vale Alimentação (VA)',    category:'voucher',  active:true, discount_type:'none' },
+      { code:'food_voucher',  label:'Vale Refeição (VR)',       category:'voucher',  active:true, discount_type:'none' },
+      { code:'boleto',        label:'Boleto',                   category:'other',    active:true, discount_type:'none' },
+      { code:'transfer',      label:'Transferência',            category:'transfer', active:true, discount_type:'none' },
+      { code:'other',         label:'Outro',                    category:'other',    active:true, discount_type:'none' }
+    ];
+
     try {
       const { data, error } = await window.db
         .from('payment_methods')
         .select('*')
         .eq('active', true)
         .order('sort_order', { ascending: true });
+
       if (error) throw error;
-      state.paymentMethods = data || [];
+
+      state.paymentMethods = (data && data.length > 0) ? data : FALLBACK;
+      console.log('[DEV HUB] payment methods:', state.paymentMethods.length,
+                  data && data.length > 0 ? '(banco)' : '(fallback)');
     } catch (e) {
-      console.warn('[DEV HUB] loadPaymentMethods:', e);
-      state.paymentMethods = [
-        { code:'cash', label:'Dinheiro', category:'cash', active:true, discount_type:'none' },
-        { code:'pix',  label:'Pix',      category:'pix',  active:true, discount_type:'none' },
-        { code:'debit_card', label:'Cartão de Débito',  category:'debit',  active:true, discount_type:'none' },
-        { code:'credit_card',label:'Cartão de Crédito', category:'credit', active:true, discount_type:'none' },
-        { code:'check',label:'Cheque',   category:'check',active:true, discount_type:'none' },
-        { code:'meal_voucher',label:'Vale Alimentação (VA)',category:'voucher',active:true,discount_type:'none' },
-        { code:'food_voucher',label:'Vale Refeição (VR)',   category:'voucher',active:true,discount_type:'none' },
-        { code:'boleto',label:'Boleto',  category:'other',active:true, discount_type:'none' },
-        { code:'transfer',label:'Transferência',category:'transfer',active:true,discount_type:'none' },
-        { code:'other',label:'Outro',    category:'other',active:true, discount_type:'none' }
-      ];
+      console.warn('[DEV HUB] loadPaymentMethods falhou, usando fallback:', e);
+      state.paymentMethods = FALLBACK;
     }
-    populatePaymentSelect();
-  }
-
-  function populatePaymentSelect() {
-    const select = document.getElementById('sale-payment');
-    if (!select) return;
-    const cur = select.value;
-    const methods = (state.paymentMethods || []).filter(m => m.active);
-
-    select.innerHTML = '<option value="">Selecione…</option>' + methods.map(m =>
-      '<option value="' + m.code + '">' + m.label + '</option>'
-    ).join('');
-
-    if (cur) select.value = cur;
   }
 
   function applyMethodDiscount() {
-    if (!formEls.payment) return;
-    const code = formEls.payment.value;
-    const method = (state.paymentMethods || []).find(m => m.code === code);
-
-    if (!method || method.discount_type === 'none' || !method.discount_amount) {
-      if (state.appliedMethodDiscount) {
-        state.appliedMethodDiscount = null;
-      }
-      return;
-    }
-
-    const subtotal = state.cart.reduce((s, it) => s + (Number(it.subtotal) || 0), 0);
-    if (subtotal <= 0) return;
-
-    if (method.discount_type === 'percent') {
-      const pct = Number(method.discount_amount) || 0;
-      if (formEls.discountPct) formEls.discountPct.value = String(pct);
-      state.lastDiscountEdit = 'pct';
-    } else {
-      const val = Number(method.discount_amount) || 0;
-      if (formEls.discount) formEls.discount.value = String(val);
-      state.lastDiscountEdit = 'brl';
-    }
-
-    state.appliedMethodDiscount = {
-      type: method.discount_type,
-      value: method.discount_amount
-    };
-
-    DH.cart.recalc();
-
-    DH.toast(
-      'Desconto de ' + (method.discount_type === 'percent'
-        ? method.discount_amount + '%'
-        : DH.utils.formatMoney(method.discount_amount)) +
-      ' aplicado por ' + method.label + '.',
-      'info'
-    );
+    /* Não usado mais com múltiplos pagamentos — mantido por segurança */
+    return;
   }
 
   /* =========================================================
@@ -180,7 +131,9 @@
     if (!formEls.submitBtn) return;
     if (state.submitting) return;
 
-    const hasPayment = !!(formEls.payment && formEls.payment.value);
+    const hasPayment = DH.payments
+      ? DH.payments.hasPayment()
+      : true;
     const hasItems   = Array.isArray(state.cart) && state.cart.length > 0;
 
     formEls.submitBtn.disabled = !(hasPayment && hasItems);
@@ -210,6 +163,7 @@
     state.correctingSaleId = null;
     state.correctingSale = null;
     state.convertingFromQuote = null;
+    state.editingQuoteId = null;
     state.noStock = false;
     state.appliedMethodDiscount = null;
 
@@ -222,6 +176,7 @@
     document.getElementById('no-stock-field').hidden = false;
 
     if (DH.installments) DH.installments.reset();
+    if (DH.payments) DH.payments.reset();
 
     if (!state.formDataLoaded) await loadFormData();
     refreshSubmitEnabled();
@@ -240,6 +195,7 @@
     state.correctingSaleId = null;
     state.correctingSale = null;
     state.convertingFromQuote = null;
+    state.editingQuoteId = null;
     state.noStock = false;
     state.appliedMethodDiscount = null;
     if (formEls.noStock) formEls.noStock.checked = false;
@@ -273,8 +229,9 @@
     }
     state.lastDiscountEdit = 'brl';
 
-    formEls.payment.value = sale.payment_method || '';
     formEls.notes.value = sale.notes || '';
+
+    if (DH.payments) DH.payments.loadFromSale(sale);
 
     setFormMode('edit', sale);
     DH.cart.render();
@@ -299,6 +256,7 @@
     state.editingSaleId = null;
     state.editingSale = null;
     state.convertingFromQuote = null;
+    state.editingQuoteId = null;
     state.noStock = false;
     state.appliedMethodDiscount = null;
     if (formEls.noStock) formEls.noStock.checked = false;
@@ -332,8 +290,9 @@
     }
     state.lastDiscountEdit = 'brl';
 
-    formEls.payment.value = sale.payment_method || '';
     formEls.notes.value = sale.notes || '';
+
+    if (DH.payments) DH.payments.loadFromSale(sale);
 
     setFormMode('correct', sale);
     DH.cart.render();
@@ -368,6 +327,15 @@
       if (submitLabel) submitLabel.textContent = 'Salvar orçamento';
       return;
     }
+    if (mode === 'quote_edit') {
+      const num = sale && sale.quote_number != null
+        ? 'ORC-' + String(sale.quote_number).padStart(6, '0')
+        : '';
+      if (title) title.textContent = 'Editar orçamento ' + num;
+      if (sub) sub.textContent = 'Alterações serão salvas no orçamento.';
+      if (submitLabel) submitLabel.textContent = 'Salvar alterações';
+      return;
+    }
     if (mode === 'from_quote') {
       if (title) title.textContent = 'Converter orçamento ' + (DH.quotes ? DH.quotes.fmtQuoteNumber(sale) : '');
       if (sub) sub.textContent = 'Confira os itens e finalize a venda. O orçamento será marcado como convertido.';
@@ -387,11 +355,13 @@
     state.correctingSaleId = null;
     state.correctingSale = null;
     state.convertingFromQuote = null;
+    state.editingQuoteId = null;
     state.noStock = false;
     state.formMode = null;
     state.appliedMethodDiscount = null;
 
     if (DH.installments) DH.installments.reset();
+    if (DH.payments) DH.payments.reset();
 
     document.getElementById('quote-valid-field').hidden = true;
     document.getElementById('no-stock-field').hidden = false;
@@ -420,7 +390,6 @@
     state.products = productsRes.data || [];
     populateCustomerSelect();
 
-    /* Carrega métodos de pagamento */
     await loadPaymentMethods();
 
     state.formDataLoaded = true;
@@ -461,17 +430,14 @@
     DH.cart.clearFeedback();
 
     const mode = state.formMode;
+    const warnEl = document.getElementById('payment-warn');
 
-    if (!formEls.payment.value) {
-      formEls.payment.classList.add('is-invalid');
-      const warn = document.getElementById('payment-warn');
-      if (warn) warn.hidden = false;
-      DH.cart.showFeedback('Selecione a forma de pagamento.');
-      formEls.payment.focus();
+    /* Valida pagamentos */
+    if (!DH.payments.hasPayment()) {
+      if (warnEl) warnEl.hidden = false;
+      DH.cart.showFeedback('Aloque o valor total entre as formas de pagamento.');
       return;
     }
-    formEls.payment.classList.remove('is-invalid');
-    const warnEl = document.getElementById('payment-warn');
     if (warnEl) warnEl.hidden = true;
 
     if (mode === 'correct') {
@@ -497,7 +463,7 @@
 
     const temSemEstoque = state.cart.some(it => it.quantity > it.stock_available);
 
-    if (mode !== 'quote') {
+    if (mode !== 'quote' && mode !== 'quote_edit') {
       const allowNoStock = !!state.noStock;
       if (temSemEstoque && !allowNoStock) {
         if (mode === 'from_quote') {
@@ -527,10 +493,10 @@
     if (!Number.isFinite(depositAmount) || depositAmount < 0) depositAmount = 0;
     if (depositAmount > total) depositAmount = total;
 
-    const installment = DH.installments ? DH.installments.getSelection() : { count: null, value: null };
-
-    /* Método exige aprovação? */
-    const method = (state.paymentMethods || []).find(m => m.code === formEls.payment.value);
+    /* Pega pagamentos múltiplos */
+    const paymentsList = DH.payments.getPayments();
+    const primary      = DH.payments.getPrimary();
+    const method       = (state.paymentMethods || []).find(m => m.code === (primary && primary.payment_method));
     const methodRequiresApproval = !!(method && method.requires_approval);
 
     const payload = {
@@ -539,12 +505,13 @@
       discount: utils.round2(discount),
       total,
       deposit_amount: utils.round2(depositAmount),
-      payment_method: formEls.payment.value || '',
+      payment_method: primary ? primary.payment_method : '',
+      payments: paymentsList,
       notes: formEls.notes.value.trim() || '',
       allow_no_stock: !!state.noStock,
       method_requires_approval: methodRequiresApproval,
-      installment_count: installment.count,
-      installment_value: installment.value,
+      installment_count: primary ? primary.installment_count : null,
+      installment_value: primary ? primary.installment_value : null,
       items: state.cart.map(item => ({
         product_id: item.product_id,
         product_name: item.product_name,
@@ -554,7 +521,7 @@
       }))
     };
 
-    if (mode === 'quote') { await submitQuote(payload); return; }
+    if (mode === 'quote' || mode === 'quote_edit') { await submitQuote(payload); return; }
 
     if (mode === 'correct') {
       const saleLabel = state.correctingSale ? utils.formatSaleNumber(state.correctingSale) : '#—';
@@ -595,7 +562,8 @@
         p_deposit_amount: payload.deposit_amount,
         p_installment_count: payload.installment_count,
         p_installment_value: payload.installment_value,
-        p_method_requires_appr: payload.method_requires_approval
+        p_method_requires_appr: payload.method_requires_approval,
+        p_payments: payload.payments || null
       });
       if (error) throw error;
 
@@ -617,6 +585,7 @@
       state.formDataLoaded = false;
 
       if (DH.installments) DH.installments.reset();
+      if (DH.payments) DH.payments.reset();
       document.getElementById('quote-valid-field').hidden = true;
       document.getElementById('no-stock-field').hidden = false;
 
@@ -664,6 +633,7 @@
       showView('list');
       state.formDataLoaded = false;
       if (DH.installments) DH.installments.reset();
+      if (DH.payments) DH.payments.reset();
       await DH.list.loadSales();
       DH.toast('Venda atualizada com sucesso.', 'success');
     } catch (error) {
@@ -704,6 +674,7 @@
       showView('list');
       state.formDataLoaded = false;
       if (DH.installments) DH.installments.reset();
+      if (DH.payments) DH.payments.reset();
       await DH.list.loadSales();
       if (state.perms.approve && DH.modalApprovals) {
         try { await DH.modalApprovals.refreshCount(); } catch (e) {}
@@ -726,23 +697,37 @@
   async function submitQuote(payload) {
     setSubmitting(true);
     try {
+      const isEdit = !!state.editingQuoteId;
+
       const result = await DH.quotes.saveQuote(payload);
       const num = result && result.quote_number;
 
       DH.cart.reset();
       state.formMode = null;
       state.appliedMethodDiscount = null;
-      showView('list');
       state.formDataLoaded = false;
-
+      state.editingQuoteId = null;
       if (DH.installments) DH.installments.reset();
+      if (DH.payments) DH.payments.reset();
+
       document.getElementById('quote-valid-field').hidden = true;
       document.getElementById('no-stock-field').hidden = false;
 
-      await DH.quotes.loadQuotes();
-      DH.quotes.switchTab('quotes');
+      DH.toast(
+        isEdit
+          ? 'Orçamento atualizado com sucesso.'
+          : (num ? 'Orçamento ORC-' + utils.padNumber(num) + ' salvo.' : 'Orçamento salvo.'),
+        'success'
+      );
 
-      DH.toast(num ? 'Orçamento ORC-' + utils.padNumber(num) + ' salvo.' : 'Orçamento salvo.', 'success');
+      let voltarPara = null;
+      try { voltarPara = sessionStorage.getItem('dh_return_to'); } catch (e) {}
+
+      const destino = voltarPara || 'orcamentos.html';
+      try { sessionStorage.removeItem('dh_return_to'); } catch (e) {}
+
+      setTimeout(() => { window.location.href = destino; }, 800);
+
     } catch (e) {
       console.error('[DEV HUB] submitQuote:', e);
       DH.cart.showFeedback(DH.mapSaleError(e));
@@ -768,11 +753,13 @@
           label.textContent = mode === 'correct' ? 'Corrigindo...'
                             : mode === 'edit'    ? 'Salvando...'
                             : mode === 'quote'   ? 'Salvando orçamento...'
+                            : mode === 'quote_edit' ? 'Salvando alterações...'
                             : 'Finalizando...';
         } else {
           label.textContent = mode === 'correct' ? 'Salvar correção'
                             : mode === 'edit'    ? 'Salvar alterações'
                             : mode === 'quote'   ? 'Salvar orçamento'
+                            : mode === 'quote_edit' ? 'Salvar alterações'
                             : 'Finalizar venda';
         }
       }
@@ -799,7 +786,6 @@
     addCustomerToSelect,
     refreshSubmitEnabled,
     loadPaymentMethods,
-    populatePaymentSelect,
     applyMethodDiscount
   };
 })();

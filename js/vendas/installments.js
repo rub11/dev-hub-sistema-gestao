@@ -2,6 +2,7 @@
    DEV HUB · Vendas · installments.js
    Parcelamento no cartão de crédito.
    v4: usa state.paymentMethods pra saber se é crédito.
+   v5: expõe getRules() pro payments.js + pré-carrega regras
    ========================================================= */
 (function () {
   'use strict';
@@ -30,7 +31,14 @@
     els.payment = document.getElementById('sale-payment');
 
     log('setup', { field: !!els.field, select: !!els.select, payment: !!els.payment });
-    if (!els.payment || !els.field || !els.select) return;
+
+    /* Se o select antigo não existe mais (múltiplos pagamentos),
+       não trava — só pré-carrega as regras e finaliza. */
+    if (!els.payment || !els.field || !els.select) {
+      log('select antigo não encontrado — modo múltiplos pagamentos');
+      ready = true;
+      return;
+    }
 
     els.payment.addEventListener('change', onPaymentChange);
     els.payment.addEventListener('input', onPaymentChange);
@@ -56,19 +64,18 @@
 
   /* Verifica se o método atual é da categoria "credit" */
   function isCreditSelected() {
-    const code = els.payment.value;
+    const code = els.payment ? els.payment.value : '';
     if (!code) return false;
     const methods = DH.state.paymentMethods;
     if (Array.isArray(methods)) {
       const m = methods.find(x => x.code === code);
       if (m) return m.category === 'credit';
     }
-    /* Fallback se ainda não carregou */
     return code === 'credit_card';
   }
 
   function onPaymentChange() {
-    const code = els.payment.value;
+    const code = els.payment ? els.payment.value : '';
     log('payment mudou para:', code, '· crédito?', isCreditSelected());
     if (isCreditSelected()) {
       loadRules().then(() => buildOptions());
@@ -208,11 +215,24 @@
     return { count: n, value: DH.utils.round2(v) };
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', setup);
-  } else {
-    setup();
+  /* Pré-carrega as regras quando o módulo carrega */
+  function preload() {
+    loadRules().catch(function () {});
   }
 
-  DH.installments = { setup, reset, getSelection, buildOptions, hideField, loadRules };
+  /* [NOVO] Expõe as regras pro payments.js */
+  DH.installments = {
+    setup, reset, getSelection, buildOptions, hideField, loadRules,
+    getRules: function () { return rules; }
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () {
+      setup();
+      preload();
+    });
+  } else {
+    setup();
+    preload();
+  }
 })();

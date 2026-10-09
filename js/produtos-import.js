@@ -16,6 +16,11 @@
    - Animações sutis de entrada
    - Glassmorphism no backdrop
    - Erros com hover e scroll customizado
+   ---------------------------------------------------------
+   CORREÇÕES:
+   - anti-flash: click no botão faz stopPropagation + guard 250ms
+   - z-index máximo (2147483647) vence o FloTo Widget (2147483647)
+   - esconde FloTo Widget enquanto o modal está aberto
    ========================================================= */
 
 (function () {
@@ -53,7 +58,8 @@
     stage: 'idle',
     importing: false,
     modal: null,
-    results: { success: 0, fail: 0 }
+    results: { success: 0, fail: 0 },
+    openedAt: 0
   };
 
   document.addEventListener('DOMContentLoaded', boot);
@@ -84,7 +90,11 @@
       const btn = encontrarOuInjetarBotao();
       if (btn && !btn.dataset.importWired) {
         btn.dataset.importWired = '1';
-        btn.addEventListener('click', abrir);
+        btn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          e.preventDefault();
+          abrir();
+        });
       }
       tentativas += 1;
       if (tentativas < 25 && (!btn || !btn.dataset.importWired)) {
@@ -130,10 +140,13 @@
     renderStage();
     state.modal.hidden = false;
     document.body.classList.add('dh-scan-open');
+    state.openedAt = Date.now();
   }
 
   function fechar() {
     if (state.importing) return;
+    if (state.openedAt && (Date.now() - state.openedAt) < 250) return;
+
     if (state.modal) state.modal.hidden = true;
     document.body.classList.remove('dh-scan-open');
   }
@@ -936,9 +949,11 @@
     style.textContent = `
       /* =====================================================
          BACKDROP · Glassmorphism
+         z-index MAX (vence o FloTo Widget)
          ===================================================== */
       .dh-scan-backdrop{
-        position:fixed;inset:0;z-index:9998;
+        position:fixed;inset:0;
+        z-index:2147483647;
         background:rgba(3,6,12,.72);
         backdrop-filter:blur(8px) saturate(140%);
         -webkit-backdrop-filter:blur(8px) saturate(140%);
@@ -947,6 +962,15 @@
       }
       .dh-scan-backdrop[hidden]{display:none;}
       @keyframes dhImpFade{ from{opacity:0;} to{opacity:1;} }
+
+      /* Esconde o FloTo Widget enquanto o modal está aberto */
+      body.dh-scan-open .floto-widget-root,
+      body.dh-scan-open [id^="floto-"],
+      body.dh-scan-open [class*="floto-"] {
+        display: none !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+      }
 
       /* =====================================================
          CARD

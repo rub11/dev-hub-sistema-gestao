@@ -798,3 +798,91 @@ body[data-page="dashboard"] .content {
   .feed-item__body { grid-area: body; }
   .feed-item__time { grid-area: time; padding: 0; }
 }
+
+
+/* =========================================================
+   [NOVO] Cards clicáveis
+   ========================================================= */
+.is-clickable {
+  cursor: pointer;
+  position: relative;
+  transition:
+    transform .18s cubic-bezier(.2,.9,.3,1),
+    box-shadow .18s ease,
+    border-color .18s ease;
+}
+
+.is-clickable:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: inherit;
+}
+
+/* KPIs clicáveis — elevação e glow */
+.kpi.is-clickable:hover {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--kpi-accent, var(--accent)) 65%, var(--border));
+  box-shadow:
+    0 8px 20px -6px rgba(16, 24, 40, 0.12),
+    0 20px 40px -12px color-mix(in srgb, var(--kpi-accent, var(--accent)) 40%, transparent);
+}
+
+.kpi.is-clickable:active {
+  transform: translateY(-1px);
+}
+
+/* Cards do dashboard clicáveis */
+.dash-card.is-clickable:hover {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  box-shadow:
+    0 4px 12px -2px rgba(16, 24, 40, 0.06),
+    0 12px 28px -8px color-mix(in srgb, var(--accent) 30%, transparent);
+  transform: translateY(-2px);
+}
+
+.dash-card.is-clickable:active {
+  transform: translateY(0);
+}
+
+/* Indicador visual: seta sutil no canto superior direito ao passar o mouse */
+.is-clickable::after {
+  content: '';
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: transparent;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238b95a7' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m9 18 6-6-6-6'/></svg>");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 14px;
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity .2s ease, transform .2s ease, background-color .2s ease;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.is-clickable:hover::after {
+  opacity: 1;
+  transform: translateX(0);
+  background-color: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+/* Nos KPIs o ícone já é grande — não precisa da seta */
+.kpi.is-clickable::after {
+  display: none;
+}
+
+/* Reduz a animação se o user preferir */
+@media (prefers-reduced-motion: reduce) {
+  .is-clickable,
+  .is-clickable::after,
+  .kpi.is-clickable:hover,
+  .dash-card.is-clickable:hover {
+    transition: none;
+    transform: none;
+  }
+}

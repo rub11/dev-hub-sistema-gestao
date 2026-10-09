@@ -3,20 +3,8 @@
    ---------------------------------------------------------
    Fase 1: KPIs, gráficos, rankings, alertas, estoque crítico
    Fase 2: Activity feed (timeline)
-   ---------------------------------------------------------
-   CORREÇÕES APLICADAS:
-   1. Race condition em troca de período.
-   2. Tema escuro/claro: re-renderiza charts.
-   3. animateNumber cancela animação anterior por elemento.
-   4. resolveContext() com fallback pra Auth.getProfile().
-   5. metadata parseado defensivamente.
-   6. Removido stockListCache.
-   7. Quantidades formatadas com Intl.
-   8. describeAction trata entity_name vazio.
-   9. getPeriodRange valida datas.
-   10. [NOVO] FILTRO POR ORGANIZAÇÃO — todas as queries
-       filtram por `.eq('organization_id', state.currentOrgId)`
-       pra não misturar dados entre empresas diferentes.
+   Fase 3: [NOVO] Cards clicáveis — KPIs, gráficos e rankings
+           navegam para a tela correspondente.
    ========================================================= */
 
 (function () {
@@ -47,7 +35,7 @@
     customEnd: '',
     user: null,
     isPlatformAdmin: false,
-    currentOrgId: null,       // ⬅️ NOVO: filtro global
+    currentOrgId: null,
     charts: { revenue: null, payments: null },
     loading: false,
     loadGeneration: 0
@@ -80,7 +68,6 @@
     state.user = ctx;
     state.isPlatformAdmin = Boolean(ctx && ctx.is_platform_admin);
 
-    /* ⬇️ NOVO: resolve a organização ativa (fonte da verdade) */
     state.currentOrgId = await getCurrentOrgId(Auth, session, profile);
 
     if (state.isPlatformAdmin) {
@@ -92,6 +79,9 @@
     setInputValue('dash-start', toDateInput(new Date(today.getFullYear(), today.getMonth(), 1)));
     setInputValue('dash-end', toDateInput(today));
 
+    /* [NOVO] Liga os cliques ANTES de carregar (a UI já existe) */
+    bindDashboardClicks();
+
     await loadDashboard();
 
     if (window.db.auth && window.db.auth.onAuthStateChange) {
@@ -102,7 +92,6 @@
       });
     }
 
-    /* ⬇️ Recarrega o dashboard quando o usuário trocar de empresa */
     window.addEventListener('org:changed', function () {
       getCurrentOrgId(Auth, session, null).then(function (orgId) {
         state.currentOrgId = orgId;
@@ -112,13 +101,81 @@
   }
 
   /* =========================================================
+     [NOVO] Navegação por clique
+     ========================================================= */
+  function goToPage(pageId, fallbackHref) {
+    /* Tenta abrir como aba (respeita permissões) */
+    if (window.NAV &&
+        typeof NAV.findItemById === 'function' &&
+        NAV.tabs && typeof NAV.tabs.open === 'function') {
+      const item = NAV.findItemById(pageId);
+      if (item) {
+        NAV.tabs.open(item);
+        return;
+      }
+    }
+    /* Fallback: navega direto */
+    window.location.href = fallbackHref || (pageId + '.html');
+  }
+
+  function bindClickable(el, pageId, fallbackHref) {
+    if (!el) return;
+    if (el.dataset.clickBound === '1') return;
+    el.dataset.clickBound = '1';
+
+    el.classList.add('is-clickable');
+    el.setAttribute('role', 'link');
+    el.setAttribute('tabindex', '0');
+
+    el.addEventListener('click', function (e) {
+      /* Ignora cliques em elementos interativos internos */
+      if (e.target.closest('a, button, select, input, textarea, label, [role="button"]')) return;
+      goToPage(pageId, fallbackHref);
+    });
+
+    el.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        if (e.target.closest('a, button, select, input, textarea, label')) return;
+        e.preventDefault();
+        goToPage(pageId, fallbackHref);
+      }
+    });
+  }
+
+  function bindDashboardClicks() {
+    /* ---------- KPIs ---------- */
+    bindClickable(document.querySelector('[data-kpi="customers"]'), 'parceiros', 'parceiros.html');
+    bindClickable(document.querySelector('[data-kpi="sales"]'),     'vendas',    'vendas.html');
+    bindClickable(document.querySelector('[data-kpi="revenue"]'),   'vendas',    'vendas.html');
+    bindClickable(document.querySelector('[data-kpi="products"]'),  'produtos',  'produtos.html');
+    bindClickable(document.querySelector('[data-kpi="users"]'),     'gestao',    'gestao.html');
+    bindClickable(document.querySelector('[data-kpi="orgs"]'),      'empresas',  'plataforma.html#empresas');
+
+    /* ---------- Gráficos ---------- */
+    const chartsGrid = document.querySelector('.dash-grid--charts');
+    if (chartsGrid) {
+      const cards = chartsGrid.querySelectorAll('.dash-card');
+      if (cards[0]) bindClickable(cards[0], 'vendas', 'vendas.html');
+      if (cards[1]) bindClickable(cards[1], 'vendas', 'vendas.html');
+    }
+
+    /* ---------- Rankings ---------- */
+    const topProducts = document.getElementById('dash-top-products');
+    if (topProducts) {
+      const card = topProducts.closest('.dash-card');
+      if (card) bindClickable(card, 'produtos', 'produtos.html');
+    }
+    const topCustomers = document.getElementById('dash-top-customers');
+    if (topCustomers) {
+      const card = topCustomers.closest('.dash-card');
+      if (card) bindClickable(card, 'parceiros', 'parceiros.html');
+    }
+  }
+
+  /* =========================================================
      Helper: descobre a org ativa do usuário
-     ---------------------------------------------------------
-     Prioriza `profiles.organization_id` (fonte da verdade do
-     banco — mesma que a RLS usa). Fallback pro sessionStorage.
      ========================================================= */
   async function getCurrentOrgId(Auth, session, profileArg) {
-    // 1) profiles.organization_id (fonte da verdade)
     try {
       let profile = profileArg;
       if (!profile && session && session.user) {
@@ -127,7 +184,6 @@
       if (profile && profile.organization_id) return profile.organization_id;
     } catch (e) { /* ignora */ }
 
-    // 2) sessionStorage (fallback)
     try {
       const raw = sessionStorage.getItem('devhub_user');
       if (raw) {
@@ -136,7 +192,6 @@
       }
     } catch (e) { /* ignora */ }
 
-    // 3) RPC (última tentativa)
     try {
       const { data } = await window.db.rpc('get_user_organization_id');
       if (data) return data;
@@ -336,7 +391,6 @@
     const myGen = state.loadGeneration;
     state.loading = true;
 
-    /* Se por acaso a org ainda não foi resolvida, tenta agora */
     if (!state.currentOrgId) {
       state.currentOrgId = await getCurrentOrgId(window.Auth, null, null);
     }
@@ -378,7 +432,7 @@
   }
 
   /* =========================================================
-     KPIs (com filtro de organização)
+     KPIs
      ========================================================= */
   async function loadCustomerKpis(startISO, endISO, myGen) {
     try {
@@ -387,10 +441,10 @@
       const [totalRes, newRes] = await Promise.all([
         window.db.from('customers')
           .select('id', { count: 'exact', head: true })
-          .eq('organization_id', state.currentOrgId),                       // ⬅️ FILTRO
+          .eq('organization_id', state.currentOrgId),
         window.db.from('customers')
           .select('id', { count: 'exact', head: true })
-          .eq('organization_id', state.currentOrgId)                        // ⬅️ FILTRO
+          .eq('organization_id', state.currentOrgId)
           .gte('created_at', startISO).lte('created_at', endISO)
       ]);
 
@@ -414,7 +468,7 @@
 
       const res = await window.db.from('sales')
         .select('id, total, status, payment_method, created_at')
-        .eq('organization_id', state.currentOrgId)                          // ⬅️ FILTRO
+        .eq('organization_id', state.currentOrgId)
         .gte('created_at', startISO).lte('created_at', endISO);
 
       if (res.error) throw res.error;
@@ -453,7 +507,7 @@
 
       const res = await window.db.from('products')
         .select('id, stock, minimum_stock, active')
-        .eq('organization_id', state.currentOrgId);                         // ⬅️ FILTRO
+        .eq('organization_id', state.currentOrgId);
 
       if (res.error) throw res.error;
       if (isStale(myGen)) return;
@@ -484,10 +538,10 @@
       const [totalRes, activeRes] = await Promise.all([
         window.db.from('organization_members')
           .select('id', { count: 'exact', head: true })
-          .eq('organization_id', state.currentOrgId),                       // ⬅️ FILTRO
+          .eq('organization_id', state.currentOrgId),
         window.db.from('organization_members')
           .select('id', { count: 'exact', head: true })
-          .eq('organization_id', state.currentOrgId)                        // ⬅️ FILTRO
+          .eq('organization_id', state.currentOrgId)
           .eq('active', true)
       ]);
 
@@ -505,7 +559,6 @@
     }
   }
 
-  /* Org KPIs — só pra platform admin, então NÃO filtra (vê tudo) */
   async function loadOrgKpis(myGen) {
     try {
       const [totalRes, activeRes] = await Promise.all([
@@ -528,7 +581,7 @@
   }
 
   /* =========================================================
-     Gráficos (não precisam filtrar — recebem dados já filtrados)
+     Gráficos
      ========================================================= */
   function renderRevenueChart(validSales, startISO, endISO) {
     const canvas = document.getElementById('chart-revenue');
@@ -770,7 +823,7 @@
   });
 
   /* =========================================================
-     Rankings (com filtro de organização)
+     Rankings
      ========================================================= */
   async function loadTopProducts(startISO, endISO, myGen) {
     const wrap = document.getElementById('dash-top-products');
@@ -781,7 +834,7 @@
 
       const salesRes = await window.db.from('sales')
         .select('id, status')
-        .eq('organization_id', state.currentOrgId)                          // ⬅️ FILTRO
+        .eq('organization_id', state.currentOrgId)
         .gte('created_at', startISO).lte('created_at', endISO);
 
       if (salesRes.error) throw salesRes.error;
@@ -793,8 +846,6 @@
 
       if (ids.length === 0) return renderEmptyRank(wrap, 'Nenhuma venda no período.');
 
-      /* sale_items não tem organization_id — filtra pela sale_id
-         (que já foi filtrada por org acima) */
       const itemsRes = await window.db.from('sale_items')
         .select('product_id, product_name, quantity, subtotal')
         .in('sale_id', ids);
@@ -847,7 +898,7 @@
 
       const salesRes = await window.db.from('sales')
         .select('customer_id, total, status')
-        .eq('organization_id', state.currentOrgId)                          // ⬅️ FILTRO
+        .eq('organization_id', state.currentOrgId)
         .gte('created_at', startISO).lte('created_at', endISO);
 
       if (salesRes.error) throw salesRes.error;
@@ -874,7 +925,7 @@
       const ids = rows.map(function (r) { return r.id; });
       const namesRes = await window.db.from('customers')
         .select('id, name')
-        .eq('organization_id', state.currentOrgId)                          // ⬅️ FILTRO
+        .eq('organization_id', state.currentOrgId)
         .in('id', ids);
       if (isStale(myGen)) return;
 
@@ -911,7 +962,7 @@
   }
 
   /* =========================================================
-     Estoque + Alertas (com filtro)
+     Estoque + Alertas
      ========================================================= */
   async function loadStockAlerts(myGen) {
     const alertsWrap = document.getElementById('dash-alerts');
@@ -922,7 +973,7 @@
 
       const res = await window.db.from('products')
         .select('id, name, stock, minimum_stock, active')
-        .eq('organization_id', state.currentOrgId)                          // ⬅️ FILTRO
+        .eq('organization_id', state.currentOrgId)
         .order('stock', { ascending: true });
 
       if (res.error) throw res.error;
@@ -1011,7 +1062,7 @@
   }
 
   /* =========================================================
-     Activity feed (com filtro)
+     Activity feed
      ========================================================= */
   async function loadActivityFeed(myGen) {
     const wrap = document.getElementById('dash-feed');
@@ -1020,13 +1071,10 @@
     try {
       if (!state.currentOrgId) throw new Error('no-org');
 
-      /* activity_log pode não ter organization_id —
-         se der erro na coluna, cai no catch e mostra "vazio".
-         Quando você adicionar a coluna, isso já funciona. */
       const res = await window.db
         .from('activity_log')
         .select('id, actor_name, action, entity_type, entity_name, metadata, created_at')
-        .eq('organization_id', state.currentOrgId)                          // ⬅️ FILTRO
+        .eq('organization_id', state.currentOrgId)
         .order('created_at', { ascending: false })
         .limit(12);
 

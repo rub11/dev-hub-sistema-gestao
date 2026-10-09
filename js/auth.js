@@ -11,23 +11,29 @@
              • 1 → aplica
              • N → pede para escolher (completeSignIn)
      3. Valida status efetivo (banned/suspended/inactive/vacation)
-     4. Aplica contexto (org, role, role_slug, is_platform_admin, avatar_url)
+     4. Aplica contexto (org, role, is_platform_admin, avatar_url)
    Guards: requireSession() checa status a cada troca de página.
    ---------------------------------------------------------
    CORREÇÕES APLICADAS:
    1. `requireSession` retorna null quando o guard de status
-      bloqueia — antes, retornava a session (truthy) e o
-      caller continuava carregando mesmo durante o redirect.
-   2. Novo helper `_purgeLocalContext()` limpa `devhub_user`
-      em todos os caminhos de signOut por status.
-   3. `getProfile` preenche `organization_name` consultando
-      a tabela `organizations`.
-   4. `_applyMembership` faz 1 única query a `profiles`.
-   5. `signIn` limpa `devhub_user` nos caminhos de erro.
+      bloqueia.
+   2. Novo helper `_purgeLocalContext()` limpa `devhub_user`.
+   3. `getProfile` preenche `organization_name`.
+   4. `_applyMembership` faz 1 query a `profiles`.
+   5. `signIn` limpa `devhub_user` nos erros.
+   6. `getProfile` lê PRIMARIAMENTE de `profiles` e usa
+      `organization_members` como fallback.
+   7. `_applyMembership` invalida o cache antes de persistir.
+   8. `getProfile` NÃO pede `role_slug` de `profiles`.
+   9. [NOVO] Redirect pós-login agora vai pra `welcome.html`
+      em vez de `dashboard.html`.
    ========================================================= */
 
 (function () {
   'use strict';
+
+  /* URL inicial pós-login */
+  const HOME_URL = 'welcome.html';
 
   const Auth = {
 
@@ -50,7 +56,7 @@
     },
 
     /* =====================================================
-       HELPERS INTERNOS DE CONTEXTO (CORREÇÃO #2)
+       HELPERS INTERNOS DE CONTEXTO
        ===================================================== */
     _purgeLocalContext() {
       try {
@@ -121,14 +127,14 @@
         if (companyError) {
           console.error('[DEV HUB] Erro ao validar empresa:', companyError);
           await supabase.auth.signOut();
-          this._purgeLocalContext();           // CORREÇÃO #5
+          this._purgeLocalContext();
           throw new Error('Não foi possível validar a empresa.');
         }
 
         const membership = Array.isArray(companyData) ? companyData[0] : companyData;
         if (!membership) {
           await supabase.auth.signOut();
-          this._purgeLocalContext();           // CORREÇÃO #5
+          this._purgeLocalContext();
           throw new Error('O código da empresa não corresponde ao seu acesso.');
         }
 
@@ -142,7 +148,7 @@
       if (listError) {
         console.error('[DEV HUB] Erro ao listar empresas:', listError);
         await supabase.auth.signOut();
-        this._purgeLocalContext();             // CORREÇÃO #5
+        this._purgeLocalContext();
         throw new Error('Não foi possível identificar suas empresas.');
       }
 
@@ -150,7 +156,7 @@
 
       if (memberships.length === 0) {
         await supabase.auth.signOut();
-        this._purgeLocalContext();             // CORREÇÃO #5
+        this._purgeLocalContext();
         throw new Error(
           'Sua conta não está vinculada a nenhuma empresa. Contate o administrador.'
         );
@@ -185,10 +191,9 @@
     async _applyMembership(supabase, user, membership) {
       if (!membership) throw new Error('Empresa inválida.');
 
-      /* Helper: desloga e limpa contexto antes de lançar erro */
       const failAndOut = async (msg) => {
         await supabase.auth.signOut();
-        this._purgeLocalContext();              // CORREÇÃO #2
+        this._purgeLocalContext();
         throw new Error(msg);
       };
 
@@ -245,7 +250,7 @@
         return failAndOut('Não foi possível validar seu acesso.');
       }
 
-      /* ----- Busca avatar_url + is_platform_admin (CORREÇÃO #4) ----- */
+      /* ----- Busca avatar_url + is_platform_admin ----- */
       let avatarUrl = null;
       let isPlatformAdmin = Boolean(membership.is_platform_admin);
       let profileRead = false;
@@ -258,7 +263,7 @@
           .maybeSingle();
 
         if (!profileErr && profileRow) {
-          profileRead = true;                    // CORREÇÃO #4
+          profileRead = true;
           avatarUrl = profileRow.avatar_url || null;
           if (!isPlatformAdmin) {
             isPlatformAdmin = profileRow.is_platform_admin === true;
@@ -268,7 +273,6 @@
         console.warn('[DEV HUB] Não foi possível ler perfil no login:', e);
       }
 
-      /* Só faz a segunda query se a primeira não retornou nada útil */
       if (!isPlatformAdmin && !profileRead) {
         isPlatformAdmin = await this._fetchPlatformAdminFlag(supabase, user.id);
       }
@@ -291,6 +295,8 @@
         avatar_url: avatarUrl
       };
 
+      /* Invalida cache antigo antes de gravar o novo */
+      this._purgeLocalContext();
       this._persistLocalContext(sessionUser);
 
       return sessionUser;
@@ -369,22 +375,12 @@
         return null;
       }
 
-      /* CORREÇÃO #1: o guard retorna `true` quando bloqueia
-         (e dispara o redirect). Aqui propagamos como null para
-         o caller parar de executar. */
       const blocked = await this._checkStatusGuard(session);
       if (blocked) return null;
 
       return session;
     },
 
-    /**
-     * Chama a RPC check_my_status e, se o usuário estiver bloqueado,
-     * expulsa imediatamente e volta pra tela de login com a mensagem.
-     *
-     * @returns {boolean} true se bloqueou (redirect disparado),
-     *                    false se está tudo ok.
-     */
     async _checkStatusGuard(session) {
       const supabase = this.getClient();
       if (!supabase || !session || !session.user) return false;
@@ -392,7 +388,6 @@
       try {
         const { data, error } = await supabase.rpc('check_my_status');
         if (error) {
-          // Se a RPC ainda não existe, não bloqueia o app
           console.warn('[DEV HUB] Guard de status indisponível:', error.message);
           return false;
         }
@@ -403,7 +398,6 @@
         const status = String(row.status_effective || 'active').toLowerCase();
         if (status === 'active') return false;
 
-        // Bloqueado. Registra a intenção de logout e expulsa.
         try { sessionStorage.setItem('devhub_signing_out', '1'); } catch (e) { /* ignora */ }
         this._purgeLocalContext();
 
@@ -437,10 +431,11 @@
       }
     },
 
+    /* ⚠️ AQUI: redirect pós-login agora vai pra welcome.html */
     async redirectIfAuthenticated() {
       const session = await this.getSession();
       if (session) {
-        window.location.href = 'dashboard.html';
+        window.location.href = HOME_URL;
         return true;
       }
       return false;
@@ -460,47 +455,74 @@
       }
     },
 
+    /* =====================================================
+       GET PROFILE
+       ===================================================== */
     async getProfile(userId) {
-      const stored = this.getStoredUser();
-      if (stored && (!userId || stored.user_id === userId)) {
-        return stored;
-      }
-
       const session = await this.getSession();
-      if (!session?.user) return null;
+      if (!session?.user) {
+        this._purgeLocalContext();
+        return null;
+      }
 
       const supabase = this.getClient();
       const uid = session.user.id;
 
-      let membership = null;
-      try {
-        const { data, error } = await supabase
-          .from('organization_members')
-          .select('organization_id, role, role_slug, active, name, email')
-          .eq('user_id', uid)
-          .limit(1);
-
-        if (!error && data && data[0]) membership = data[0];
-        else if (error) {
-          console.warn('[DEV HUB] getProfile: falha em organization_members.', error);
-        }
-      } catch (e) {
-        console.warn('[DEV HUB] getProfile: erro em organization_members.', e);
+      const stored = this.getStoredUser();
+      if (stored && stored.user_id === uid && stored.organization_id && !userId) {
+        return stored;
       }
 
-      /* CORREÇÃO #3: busca o nome da organização separadamente. */
+      let profileRow = null;
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('organization_id, role, name, email, avatar_url, is_platform_admin')
+          .eq('id', uid)
+          .maybeSingle();
+
+        if (!error && data) profileRow = data;
+        else if (error) {
+          console.warn('[DEV HUB] getProfile: falha em profiles.', error);
+        }
+      } catch (e) {
+        console.warn('[DEV HUB] getProfile: erro em profiles.', e);
+      }
+
+      if (!profileRow || !profileRow.organization_id) {
+        try {
+          const { data, error } = await supabase
+            .from('organization_members')
+            .select('organization_id, role, role_slug, name, email')
+            .eq('user_id', uid)
+            .eq('active', true)
+            .order('created_at', { ascending: false })
+            .limit(1);
+
+          if (!error && data && data[0]) {
+            profileRow = profileRow || {};
+            profileRow.organization_id = profileRow.organization_id || data[0].organization_id;
+            profileRow.role = profileRow.role || data[0].role;
+            profileRow.role_slug = profileRow.role_slug || data[0].role_slug;
+            profileRow.name = profileRow.name || data[0].name;
+            profileRow.email = profileRow.email || data[0].email;
+          }
+        } catch (e) {
+          console.warn('[DEV HUB] getProfile: erro em organization_members.', e);
+        }
+      }
+
       let organizationName = '';
-      if (membership && membership.organization_id) {
+      const orgId = profileRow?.organization_id;
+      if (orgId) {
         try {
           const { data: orgRow, error: orgErr } = await supabase
             .from('organizations')
             .select('name')
-            .eq('id', membership.organization_id)
+            .eq('id', orgId)
             .maybeSingle();
 
-          if (!orgErr && orgRow) {
-            organizationName = orgRow.name || '';
-          }
+          if (!orgErr && orgRow) organizationName = orgRow.name || '';
         } catch (e) {
           console.warn('[DEV HUB] getProfile: falha ao ler organizations.', e);
         }
@@ -508,31 +530,15 @@
 
       const context = {
         user_id: uid,
-        organization_id: membership?.organization_id || null,
-        organization_name: organizationName,           // CORREÇÃO #3
-        role: String(membership?.role || 'user').toLowerCase(),
-        role_slug: String(membership?.role_slug || '').toLowerCase(),
-        name: membership?.name || session.user.user_metadata?.name || '',
-        email: membership?.email || session.user.email || '',
-        is_platform_admin: false,
-        avatar_url: null
+        organization_id: orgId || null,
+        organization_name: organizationName,
+        role: String(profileRow?.role || 'user').toLowerCase(),
+        role_slug: String(profileRow?.role_slug || '').toLowerCase(),
+        name: profileRow?.name || session.user.user_metadata?.name || '',
+        email: profileRow?.email || session.user.email || '',
+        is_platform_admin: profileRow?.is_platform_admin === true,
+        avatar_url: profileRow?.avatar_url || null
       };
-
-      try {
-        const { data: profileRow } = await supabase
-          .from('profiles')
-          .select('avatar_url, is_platform_admin')
-          .eq('id', uid)
-          .maybeSingle();
-
-        if (profileRow) {
-          context.avatar_url = profileRow.avatar_url || null;
-          context.is_platform_admin = profileRow.is_platform_admin === true;
-        }
-      } catch (e) {
-        console.warn('[DEV HUB] getProfile: falha ao ler profiles.', e);
-        context.is_platform_admin = await this._fetchPlatformAdminFlag(supabase, uid);
-      }
 
       this._persistLocalContext(context);
 
@@ -577,7 +583,7 @@
       }
 
       if (!context || !this.hasRole(roles)) {
-        window.location.replace('dashboard.html');
+        window.location.replace(HOME_URL);
         return null;
       }
 
@@ -611,7 +617,7 @@
 
       const stored = this.getStoredUser();
       if (!stored || stored.is_platform_admin !== true) {
-        window.location.replace('dashboard.html');
+        window.location.replace(HOME_URL);
         return null;
       }
 
@@ -794,7 +800,8 @@
         try {
           await Auth.completeSignIn(membership);
           try { sessionStorage.removeItem('devhub_signing_out'); } catch (e) { /* ignora */ }
-          window.location.href = 'dashboard.html';
+          /* ⚠️ Redirect pós-login → welcome.html */
+          window.location.href = HOME_URL;
         } catch (error) {
           console.error('[DEV HUB] Falha ao entrar na empresa:', error);
           showFeedback(error?.message || 'Não foi possível entrar nesta empresa.');
@@ -842,7 +849,8 @@
         }
 
         try { sessionStorage.removeItem('devhub_signing_out'); } catch (e) { /* ignora */ }
-        window.location.href = 'dashboard.html';
+        /* ⚠️ Redirect pós-login → welcome.html */
+        window.location.href = HOME_URL;
 
       } catch (error) {
         console.error('[DEV HUB] Falha no login:', error);
@@ -884,7 +892,6 @@
         fb.hidden = false;
       }
 
-      // Limpa a URL pra não reaparecer ao recarregar
       try {
         const clean = window.location.pathname + window.location.hash;
         window.history.replaceState({}, '', clean);
