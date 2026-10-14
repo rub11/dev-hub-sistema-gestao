@@ -1,23 +1,12 @@
 /* =========================================================
    DEV HUB · Estilos globais (tokens, reset e componentes)
    ---------------------------------------------------------
-   CORREÇÕES APLICADAS:
-   1. Removida a duplicação de `.avatar` e `.avatar img`
-      (o arquivo tinha o mesmo par de regras 2×).
-   2. `.field input:hover` sem `#b9bfc9` hardcoded — usa
-      `color-mix()` que funciona nos dois temas.
-   3. `.badge` e `.feedback--info` usam variáveis em vez de
-      cores hardcoded.
-   4. Adicionado `color-scheme` em `:root` — controles nativos
-      (date picker, scrollbar, selects) respeitam o tema sem
-      precisar repetir em cada arquivo.
-   5. Adicionado autofill hack em `.field input` — evita o
-      fundo amarelo do Chrome que quebra o dark mode.
-   6. `.field select` e `.field textarea` também herdam o
-      estado disabled/readonly.
-   7. Reset de `appearance` em `input[type="search"]`.
+   Suporta light (default) + dark ([data-theme="dark"])
    ========================================================= */
 
+/* =========================================================
+   TOKENS · Tema claro (padrão)
+   ========================================================= */
 :root {
   /* Superfícies */
   --bg: #f5f6f8;
@@ -48,9 +37,7 @@
 
   --success: #067647;
   --success-soft: #ecfdf3;
-  /* OBSERVAÇÃO: falta --success-border, simetria com danger/warning.
-     Adicione quando necessário:
-     --success-border: #abefc6; */
+  --success-border: #abefc6;
 
   /* Formas */
   --radius-sm: 6px;
@@ -61,7 +48,7 @@
   --shadow-md: 0 6px 20px -6px rgba(16, 24, 40, 0.14),
                0 2px 6px -2px rgba(16, 24, 40, 0.06);
 
-  /* Sidebar */
+  /* Sidebar (sempre escura — identidade) */
   --sidebar-bg: #0e1116;
   --sidebar-text: #9aa4b2;
   --sidebar-border: rgba(255, 255, 255, 0.08);
@@ -71,11 +58,45 @@
           Helvetica, Arial, sans-serif;
   --transition: 160ms cubic-bezier(0.4, 0, 0.2, 1);
 
-  /* CORREÇÃO #4: color-scheme global. Faz com que controles
-     nativos (date picker, time picker, scrollbar, select
-     dropdown) se renderizem no tema correto. Tema escuro
-     sobrescreve para `dark` em theme.css. */
   color-scheme: light;
+}
+
+/* =========================================================
+   TOKENS · Tema escuro
+   ========================================================= */
+[data-theme="dark"] {
+  --bg: #0b0f17;
+  --surface: #0f172a;
+  --surface-2: #1e293b;
+  --border: #1f2937;
+  --border-strong: #334155;
+
+  --text: #f1f5f9;
+  --text-soft: #cbd5e1;
+  --text-muted: #64748b;
+
+  --accent: #6366f1;
+  --accent-hover: #818cf8;
+  --accent-soft: rgba(99, 102, 241, 0.12);
+  --accent-ring: rgba(99, 102, 241, 0.28);
+
+  --danger: #f87171;
+  --danger-soft: rgba(248, 113, 113, 0.10);
+  --danger-border: rgba(248, 113, 113, 0.28);
+
+  --warning: #fbbf24;
+  --warning-soft: rgba(245, 158, 11, 0.12);
+  --warning-border: rgba(251, 191, 36, 0.28);
+
+  --success: #34d399;
+  --success-soft: rgba(52, 211, 153, 0.10);
+  --success-border: rgba(52, 211, 153, 0.28);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 6px 20px -6px rgba(0, 0, 0, 0.5),
+               0 2px 6px -2px rgba(0, 0, 0, 0.3);
+
+  color-scheme: dark;
 }
 
 /* ---------- Reset ---------- */
@@ -95,6 +116,7 @@ body {
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 200ms ease, color 200ms ease;
 }
 
 h1, h2, h3, h4, p, figure { margin: 0; }
@@ -109,19 +131,8 @@ button, input, select, textarea {
 
 a { color: inherit; text-decoration: none; }
 
-/* =========================================================
-   Atributo `hidden` com garantia global
-   ---------------------------------------------------------
-   Sem esta regra, classes que definem `display` (ex.:
-   `.state-block { display: flex }`, `.modal { display: flex }`)
-   sobrescrevem a regra padrão do navegador para `[hidden]`,
-   fazendo o elemento continuar visível mesmo com o atributo
-   aplicado via JavaScript. Isso causava o "loading infinito"
-   em vários módulos do DEV HUB.
-   ========================================================= */
-[hidden] {
-  display: none !important;
-}
+/* ---------- `hidden` garantido ---------- */
+[hidden] { display: none !important; }
 
 /* ---------- Foco visível ---------- */
 :focus-visible {
@@ -146,7 +157,7 @@ a { color: inherit; text-decoration: none; }
 
 .skip-link {
   position: absolute;
-  top: -200px;                    /* valor folgado (antes: -100px) */
+  top: -200px;
   left: 16px;
   z-index: 200;
   padding: 10px 16px;
@@ -227,9 +238,6 @@ a { color: inherit; text-decoration: none; }
   cursor: not-allowed;
 }
 
-/* NOTA: o spinner usa branco com alpha, assumindo fundo escuro
-   (botão primário). Se um dia for reutilizado em `.btn--ghost`
-   ou `.btn--secondary`, o spinner precisa de cor contextual. */
 .btn__spinner {
   display: none;
   width: 16px;
@@ -242,9 +250,7 @@ a { color: inherit; text-decoration: none; }
 .btn.is-loading .btn__spinner { display: block; }
 .btn.is-loading .btn__label { opacity: 0.9; }
 
-@keyframes dh-spin {
-  to { transform: rotate(360deg); }
-}
+@keyframes dh-spin { to { transform: rotate(360deg); } }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -278,16 +284,13 @@ a { color: inherit; text-decoration: none; }
   background: var(--surface);
   font-size: 15px;
   color: var(--text);
-  transition: border-color var(--transition), box-shadow var(--transition);
+  transition: border-color var(--transition), box-shadow var(--transition),
+              background-color var(--transition), color var(--transition);
 
-  /* CORREÇÃO #7: neutraliza o X nativo do Chrome em
-     `input[type="search"]` e o arredondamento do Safari.
-     Sem isso, o visual do campo varia entre browsers. */
   -webkit-appearance: none;
   appearance: none;
 }
 
-/* Chrome adiciona X nativo em type=search — escondemos */
 .field input[type="search"]::-webkit-search-cancel-button,
 .field input[type="search"]::-webkit-search-decoration {
   -webkit-appearance: none;
@@ -296,9 +299,6 @@ a { color: inherit; text-decoration: none; }
 
 .field input::placeholder { color: var(--text-muted); }
 
-/* CORREÇÃO #2: hover sem `#b9bfc9` hardcoded. Usa color-mix()
-   para derivar um tom ~30% mais escuro que --border-strong,
-   funcionando nos dois temas. */
 .field input:hover:not(:focus) {
   border-color: color-mix(in srgb, var(--border-strong) 70%, var(--text) 30%);
 }
@@ -309,7 +309,6 @@ a { color: inherit; text-decoration: none; }
   box-shadow: 0 0 0 4px var(--accent-ring);
 }
 
-/* CORREÇÃO #6: cobre select e textarea também */
 .field input:disabled,
 .field input[readonly],
 .field select:disabled,
@@ -320,15 +319,7 @@ a { color: inherit; text-decoration: none; }
   cursor: not-allowed;
 }
 
-/* =========================================================
-   CORREÇÃO #5: Autofill do Chrome / Edge / Safari
-   ---------------------------------------------------------
-   Quando o navegador preenche automaticamente um campo, ele
-   força `background-color` próprio (amarelo claro no Chrome)
-   que IGNORA o `background: var(--surface)`. Em dark mode o
-   resultado é ilegível.
-   O hack do `box-shadow inset 1000px` cobre o fundo nativo.
-   ========================================================= */
+/* Autofill */
 .field input:-webkit-autofill,
 .field input:-webkit-autofill:hover,
 .field input:-webkit-autofill:focus,
@@ -396,8 +387,13 @@ a { color: inherit; text-decoration: none; }
   color: var(--warning);
 }
 
-/* CORREÇÃO #3: usa color-mix() em vez de `#c7d2fe` hardcoded.
-   Mesmo azul translúcido em ambos os temas. */
+.feedback--success,
+.alert--success {
+  border-color: var(--success-border);
+  background: var(--success-soft);
+  color: var(--success);
+}
+
 .feedback--info,
 .alert--info {
   border-color: color-mix(in srgb, var(--accent) 28%, transparent);
@@ -413,9 +409,6 @@ a { color: inherit; text-decoration: none; }
   align-items: center;
   padding: 3px 10px;
   border-radius: 999px;
-
-  /* CORREÇÃO #3: era #f2f4f7 hardcoded. Agora usa --surface-2,
-     que é o mesmo valor no light e o tom correto no dark. */
   background: var(--surface-2);
   color: var(--text-soft);
   font-size: 12px;
@@ -428,11 +421,7 @@ a { color: inherit; text-decoration: none; }
 .badge--danger  { background: var(--danger-soft);  color: var(--danger); }
 
 /* =========================================================
-   Avatar (CORREÇÃO #1: consolidação)
-   ---------------------------------------------------------
-   Antes, `.avatar` e `.avatar img` apareciam 2× cada — o
-   arquivo tinha um "resto" de merge. Aqui há uma única
-   definição por seletor.
+   Avatar
    ========================================================= */
 .avatar {
   display: grid;
@@ -446,7 +435,7 @@ a { color: inherit; text-decoration: none; }
   font-size: 13px;
   font-weight: 600;
   text-transform: uppercase;
-  overflow: hidden;              /* garante o crop redondo */
+  overflow: hidden;
 }
 
 .avatar img {
@@ -458,9 +447,7 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* =========================================================
-   Layout topnav — esconde a sidebar legada
-   ---------------------------------------------------------
-   Aplicado no <html> e no <body> por retrocompatibilidade.
+   Layout topnav
    ========================================================= */
 html.layout-topnav .sidebar,
 html.layout-topnav .sidebar-overlay,
@@ -474,25 +461,18 @@ html.layout-topnav .app__body,
 body.layout-topnav .app__body {
   margin-left: 0 !important;
 }
-/* Esconde scrollbar em todo o sistema (opcional) */
+
+/* ---------- Scrollbar ---------- */
 * {
-  scrollbar-width: thin;              /* Firefox: fina em vez de escondida */
+  scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;
 }
-*::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-*::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 4px;
-}
-*::-webkit-scrollbar-track {
-  background: transparent;
-}
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+*::-webkit-scrollbar-track { background: transparent; }
 
 /* =========================================================
-   CHECKBOX GLOBAL — evita SVG gigante
+   CHECKBOX
    ========================================================= */
 .checkbox {
   display: flex;
@@ -530,7 +510,6 @@ body.layout-topnav .app__body {
   transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
 }
 
-/* ⬇️ ESSA É A REGRA QUE FALTAVA */
 .checkbox__box svg,
 .checkbox__box svg * {
   width: 12px !important;
@@ -565,7 +544,6 @@ body.layout-topnav .app__body {
 .checkbox__text strong { font-weight: 600; }
 .checkbox__text small { color: var(--text-muted); font-size: 12px; }
 
-/* Variante alerta */
 .checkbox--alert .checkbox__box { border-color: rgba(245,158,11,0.45); }
 .checkbox--alert input:checked + .checkbox__box {
   background: #f59e0b; border-color: #f59e0b; color: #fff;
@@ -575,68 +553,6 @@ body.layout-topnav .app__body {
 /* =========================================================
    ABAS · scroll horizontal
    ========================================================= */
-
-/* Container de scroll */
-.app-tabs__scroll {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  flex: 1 1 auto;
-  min-width: 0;
-  height: 100%;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scroll-behavior: smooth;
-  scrollbar-width: none;              /* Firefox */
-  -ms-overflow-style: none;            /* IE/Edge */
-  padding: 0 4px;
-}
-.app-tabs__scroll::-webkit-scrollbar {
-  display: none;                       /* Chrome/Safari */
-}
-
-/* Cada aba: nunca encolhe, largura mínima consistente */
-.app-tabs__scroll > * {
-  flex: 0 0 auto !important;
-  min-width: 120px;
-  max-width: 220px;
-}
-
-/* Rótulo não quebra */
-.app-tabs__scroll .app-tabs__tab-label,
-.app-tabs__scroll .app-tabs__tab {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Sombra suave nas bordas quando tiver scroll */
-.app-tabs__scroll.is-scrollable {
-  mask-image: linear-gradient(to right,
-    transparent 0,
-    black 12px,
-    black calc(100% - 12px),
-    transparent 100%);
-  -webkit-mask-image: linear-gradient(to right,
-    transparent 0,
-    black 12px,
-    black calc(100% - 12px),
-    transparent 100%);
-}
-
-/* Botões fixos (marca, +, sino, busca, user) não podem encolher */
-.app-tabs__brand,
-.app-tabs__new,
-.app-tabs__bell,
-.app-tabs__search,
-.app-tabs__user {
-  flex: 0 0 auto !important;
-}
-/* =========================================================
-   ABAS · scroll horizontal com setas
-   ========================================================= */
-
-/* Wrapper que agrupa setas + scroll */
 .app-tabs__scroll-wrap {
   position: relative;
   display: flex;
@@ -646,7 +562,6 @@ body.layout-topnav .app__body {
   height: 100%;
 }
 
-/* Container de scroll */
 .app-tabs__scroll {
   display: flex;
   align-items: center;
@@ -663,12 +578,12 @@ body.layout-topnav .app__body {
 }
 .app-tabs__scroll::-webkit-scrollbar { display: none; }
 
-/* Cada aba */
 .app-tabs__scroll > * {
   flex: 0 0 auto !important;
   min-width: 120px;
   max-width: 220px;
 }
+
 .app-tabs__scroll .app-tabs__tab-label,
 .app-tabs__scroll .app-tabs__tab {
   white-space: nowrap;
@@ -676,7 +591,6 @@ body.layout-topnav .app__body {
   text-overflow: ellipsis;
 }
 
-/* Setas */
 .app-tabs__arrow {
   flex: 0 0 auto;
   display: grid;
@@ -699,22 +613,14 @@ body.layout-topnav .app__body {
   border-color: var(--border-strong);
   color: var(--text);
 }
-.app-tabs__arrow:disabled {
-  opacity: 0.25;
-  cursor: not-allowed;
-}
-.app-tabs__arrow svg {
-  width: 14px;
-  height: 14px;
-}
+.app-tabs__arrow:disabled { opacity: 0.25; cursor: not-allowed; }
+.app-tabs__arrow svg { width: 14px; height: 14px; }
 
-/* Só aparecem quando tem overflow */
 .app-tabs__scroll-wrap.has-overflow .app-tabs__arrow {
   opacity: 1;
   pointer-events: auto;
 }
 
-/* Botões fixos (marca, +, sino, busca, user) não encolhem */
 .app-tabs__brand,
 .app-tabs__new,
 .app-tabs__bell,
@@ -723,54 +629,24 @@ body.layout-topnav .app__body {
   flex: 0 0 auto !important;
 }
 
-/* Spacer e slot do seletor — transparentes */
 .app-tabs__spacer,
-.app-tabs__org {
-  background: transparent !important;
-}
+.app-tabs__org { background: transparent !important; }
 
-.app-tabs__org:empty {
-  display: none !important;
-}
-
-.app-tabs__org {
-  display: inline-flex;
-  align-items: center;
-  flex: 0 0 auto;
-  margin-left: 8px;
-}
-
-/* =========================================================
-   TOPBAR · slot do seletor de empresa
-   ========================================================= */
-
-/* Transparente por padrão */
-.app-tabs__spacer,
-.app-tabs__org {
-  background: transparent !important;
-}
-
-/* Spacer apenas espaça */
 .app-tabs__spacer {
   flex: 1 1 auto;
   min-width: 8px;
 }
 
-/* Slot do seletor — centraliza o botão */
 .app-tabs__org {
   display: inline-flex;
   align-items: center;
   flex: 0 0 auto;
   margin-left: 8px;
 }
-
-/* Se o JS não injetou o botão ainda, esconde o slot */
-.app-tabs__org:empty {
-  display: none !important;
-}
+.app-tabs__org:empty { display: none !important; }
 
 /* =========================================================
-   ORG SWITCHER · botão + dropdown
+   ORG SWITCHER
    ========================================================= */
 .org-switcher {
   display: inline-flex;
@@ -822,16 +698,13 @@ body.layout-topnav .app__body {
   transition: transform 140ms ease;
 }
 .org-switcher__chevron svg { width: 12px; height: 12px; }
-.org-switcher[aria-expanded="true"] .org-switcher__chevron {
-  transform: rotate(180deg);
-}
+.org-switcher[aria-expanded="true"] .org-switcher__chevron { transform: rotate(180deg); }
 
 @media (max-width: 720px) {
   .org-switcher { max-width: 140px; }
   .org-switcher__name { max-width: 90px; }
 }
 
-/* Dropdown */
 .org-switcher__menu {
   position: fixed;
   z-index: 9999;
@@ -941,20 +814,10 @@ body.layout-topnav .app__body {
   font-size: 12.5px;
   color: var(--text-muted);
 }
+
 /* =========================================================
-   SELECTS · tema dark global (corrige dropdowns brancos)
+   SELECTS
    ========================================================= */
-
-/* Avisa o navegador pra renderizar dropdowns em dark */
-:root,
-[data-theme="dark"] {
-  color-scheme: dark;
-}
-[data-theme="light"] {
-  color-scheme: light;
-}
-
-/* ---------- Selects em modais ---------- */
 .modal__body select,
 .modal select,
 .control-select {
@@ -974,13 +837,18 @@ body.layout-topnav .app__body {
   -moz-appearance: none;
   appearance: none;
 
-  /* Chevron custom (dark) */
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a8b0ba' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
   background-repeat: no-repeat;
   background-position: right 12px center;
   background-size: 16px 16px;
 
   transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+}
+
+[data-theme="dark"] .modal__body select,
+[data-theme="dark"] .modal select,
+[data-theme="dark"] .control-select {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a8b0ba' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
 }
 
 .modal__body select:hover,
@@ -996,14 +864,12 @@ body.layout-topnav .app__body {
   box-shadow: 0 0 0 4px var(--accent-ring);
 }
 
-/* ---------- Dropdown (opções) ---------- */
 .modal select option,
 .control-select option {
   background-color: var(--surface);
   color: var(--text);
 }
 
-/* Optgroups (títulos tipo "— Tipos personalizados —") */
 .modal select optgroup,
 .control-select optgroup {
   background-color: var(--surface);
@@ -1014,4 +880,116 @@ body.layout-topnav .app__body {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   padding: 6px 0;
+}
+
+/* =========================================================
+   BOTÃO DE TEMA
+   ========================================================= */
+.theme-toggle {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9998;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text-soft);
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: background-color 200ms ease, border-color 200ms ease,
+              color 200ms ease, transform 200ms ease;
+}
+.theme-toggle:hover {
+  background: var(--surface-2);
+  border-color: var(--border-strong);
+  color: var(--text);
+  transform: translateY(-1px);
+}
+.theme-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.theme-toggle svg {
+  width: 18px;
+  height: 18px;
+  grid-area: 1 / 1;
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+
+/* Estado: dark → mostra sol (clicar vai pra light) */
+[data-theme="dark"] .theme-toggle__sun  { opacity: 1; transform: rotate(0); }
+[data-theme="dark"] .theme-toggle__moon { opacity: 0; transform: rotate(45deg); }
+
+/* Estado: light → mostra lua (clicar vai pra dark) */
+[data-theme="light"] .theme-toggle__sun  { opacity: 0; transform: rotate(-45deg); }
+[data-theme="light"] .theme-toggle__moon { opacity: 1; transform: rotate(0); }
+
+/* =========================================================
+   BOTÃO DE TEMA
+   ========================================================= */
+.theme-toggle {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--text-soft);
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: background-color 180ms ease, border-color 180ms ease,
+              color 180ms ease, transform 180ms ease;
+  flex: none;
+}
+.theme-toggle:hover {
+  background: var(--surface-2);
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+.theme-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.theme-toggle svg {
+  width: 17px;
+  height: 17px;
+  grid-area: 1 / 1;
+  transition: opacity 220ms ease, transform 220ms ease;
+  pointer-events: none;
+}
+
+/* Variante: dentro da topbar (compacta) */
+.theme-toggle--inline {
+  width: 34px;
+  height: 34px;
+  margin-right: 6px;   /* respiro do próximo botão */
+}
+
+/* Variante: flutuante (fallback login / páginas sem topbar) */
+.theme-toggle--floating {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 9998;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  box-shadow: var(--shadow-md);
+}
+
+/* Estado: dark → mostra sol */
+[data-theme="dark"] .theme-toggle__sun  { opacity: 1; transform: rotate(0); }
+[data-theme="dark"] .theme-toggle__moon { opacity: 0; transform: rotate(45deg); }
+
+/* Estado: light → mostra lua */
+[data-theme="light"] .theme-toggle__sun  { opacity: 0; transform: rotate(-45deg); }
+[data-theme="light"] .theme-toggle__moon { opacity: 1; transform: rotate(0); }
+.theme-toggle--inline {
+  width: 36px;
+  height: 36px;
 }

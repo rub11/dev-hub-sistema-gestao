@@ -26,7 +26,78 @@
         }
       } catch (e) {}
     })();
+
+
+    /* =========================================================
+   DEV HUB · Botão de trocar tema
+   ---------------------------------------------------------
+   Injeta um botão flutuante no canto superior direito.
+   Clique alterna light ↔ dark. Long-press (ou duplo clique)
+   volta para 'auto'.
+   ========================================================= */
+
+(function () {
+  'use strict';
+
+  function buildButton() {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'theme-toggle';
+    btn.setAttribute('aria-label', 'Alternar tema');
+    btn.innerHTML = `
+      <svg class="theme-toggle__sun" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"
+           aria-hidden="true">
+        <circle cx="12" cy="12" r="4"/>
+        <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+      </svg>
+      <svg class="theme-toggle__moon" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"
+           aria-hidden="true">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+      </svg>
+    `;
+
+    let pressTimer = null;
+    let longPressed = false;
+
+    btn.addEventListener('pointerdown', function () {
+      longPressed = false;
+      pressTimer = setTimeout(function () {
+        longPressed = true;
+        window.Theme.set('auto');
+        btn.setAttribute('title', 'Seguindo o sistema');
+      }, 700);
+    });
+
+    ['pointerup', 'pointerleave', 'pointercancel'].forEach(function (ev) {
+      btn.addEventListener(ev, function () {
+        if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+      });
+    });
+
+    btn.addEventListener('click', function () {
+      if (longPressed) return;
+      window.Theme.toggle();
+    });
+
+    return btn;
+  }
+
+  function init() {
+    if (!window.Theme) return;
+    if (document.querySelector('.theme-toggle')) return;
+    document.body.appendChild(buildButton());
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
   </script>
+  
 </head>
 
 <body class="layout-topnav" data-page="welcome">
