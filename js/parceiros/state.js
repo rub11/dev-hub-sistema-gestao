@@ -106,48 +106,19 @@
     return parts.length ? parts.join(', ') : (x.city || '—');
   }
 
-  /* ---------- Toast ---------- */
-  const TOAST_ICONS = {
-    success: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
-    error:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5"/><path d="M12 16h.01"/></svg>',
-    info:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 16v-5"/><path d="M12 8h.01"/></svg>'
-  };
-
+  /* ---------- Toast (delega para o módulo global) ---------- */
   function showToast(message, type) {
-    const region = document.getElementById('toast-region');
-    if (!region) return;
-    const kind = type === 'success' || type === 'error' || type === 'info' ? type : 'info';
-    const toast = document.createElement('div');
-    toast.className = 'toast toast--' + kind;
-    toast.setAttribute('role', kind === 'error' ? 'alert' : 'status');
-
-    const icon = document.createElement('span');
-    icon.className = 'toast__icon';
-    icon.innerHTML = TOAST_ICONS[kind];
-
-    const text = document.createElement('span');
-    text.className = 'toast__message';
-    text.textContent = message;
-
-    const close = document.createElement('button');
-    close.type = 'button';
-    close.className = 'toast__close';
-    close.setAttribute('aria-label', 'Fechar');
-    close.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
-    close.addEventListener('click', () => dismissToast(toast));
-
-    toast.appendChild(icon); toast.appendChild(text); toast.appendChild(close);
-    region.appendChild(toast);
-    const t = setTimeout(() => dismissToast(toast), 4200);
-    toast.addEventListener('mouseenter', () => clearTimeout(t));
+    if (window.Toast && typeof window.Toast.show === 'function') {
+      return window.Toast.show(message, type);
+    }
+    console.warn('[parceiros] Toast global indisponível:', message);
   }
 
   function dismissToast(t) {
-    if (!t || t.classList.contains('is-leaving')) return;
-    t.classList.add('is-leaving');
-    t.addEventListener('animationend', () => {
-      if (t.parentNode) t.parentNode.removeChild(t);
-    });
+    if (window.Toast && typeof window.Toast.dismiss === 'function') {
+      return window.Toast.dismiss(t);
+    }
+    if (t && t.parentNode) t.parentNode.removeChild(t);
   }
 
   /* ---------- State ---------- */

@@ -2,6 +2,12 @@
    DEV HUB · Parceiros · init
    ---------------------------------------------------------
    Bootstrap.
+   ---------------------------------------------------------
+   CORREÇÕES APLICADAS:
+   1. `hasPerm` respeita o fallback se Perms ainda não carregou.
+   2. Não redireciona quando permissão é desconhecida (só se
+      explicitamente negada).
+   3. Boot loga erro se Auth não estiver configurado.
    ========================================================= */
 
 (function () {
@@ -75,13 +81,12 @@
   }
 
   /* =========================================================
-     BUSCA (isolada — usa #parn-search-input)
+     BUSCA
      ========================================================= */
   function setupSearch() {
     const input = document.getElementById('parn-search-input');
     if (!input) return;
 
-    /* Evita duplicar listener se init rodar 2x */
     if (input.dataset.searchWired === '1') return;
     input.dataset.searchWired = '1';
 
@@ -101,7 +106,6 @@
 
     input.addEventListener('input', () => {
       updateClearBtn();
-      /* Debounce 120ms — evita re-render a cada tecla */
       if (debounceTimer) clearTimeout(debounceTimer);
       debounceTimer = setTimeout(applyNow, 120);
     });
@@ -126,7 +130,6 @@
       });
     }
 
-    /* Estado inicial */
     updateClearBtn();
   }
 
@@ -182,9 +185,23 @@
   /* =========================================================
      PERMISSÕES
      ========================================================= */
+  /**
+   * FIX #1: respeita o fallback quando Perms ainda não carregou.
+   * Só bloqueia se Perms carregou E retornou explicitamente false.
+   */
   function hasPerm(cap, fallback) {
-    if (window.Perms && typeof window.Perms.has === 'function') return window.Perms.has(cap);
-    return fallback !== false;
+    const fallbackValue = fallback !== false;
+
+    if (
+      window.Perms &&
+      typeof window.Perms.has === 'function' &&
+      typeof window.Perms.isLoaded === 'function' &&
+      window.Perms.isLoaded()
+    ) {
+      return window.Perms.has(cap);
+    }
+
+    return fallbackValue;
   }
 
   function applyPermissions() {
@@ -202,6 +219,7 @@
   async function boot() {
     const Auth = window.Auth;
     if (!Auth || !Auth.isConfigured() || !window.db) {
+      console.error('[parceiros] Auth ou Supabase não configurado.');
       window.Parn.showGlobalAlert('Não foi possível conectar ao Supabase.', 'error');
       return;
     }
@@ -210,12 +228,20 @@
     if (window.Perms && typeof window.Perms.load === 'function') {
       try { await window.Perms.load(); } catch (e) { /* fallback */ }
     }
+
     state.perms.view   = hasPerm('customers.view',   true);
     state.perms.create = hasPerm('customers.create', true);
     state.perms.edit   = hasPerm('customers.edit',   true);
     state.perms.remove = hasPerm('customers.delete', true);
 
-    if (!state.perms.view) {
+    /* FIX #2: só redireciona se Perms foi carregado E negou explicitamente */
+    if (
+      !state.perms.view &&
+      window.Perms &&
+      typeof window.Perms.isLoaded === 'function' &&
+      window.Perms.isLoaded()
+    ) {
+      console.warn('[parceiros] Sem permissão customers.view — redirecionando.');
       window.location.replace('dashboard.html');
       return;
     }
@@ -232,7 +258,6 @@
     setupFilters();
     setupKindChips();
 
-    /* ?kind= na URL (link direto com filtro) */
     const urlKind = new URLSearchParams(location.search).get('kind');
     if (urlKind && ['all','customer','supplier','carrier'].includes(urlKind)) {
       state.kind = urlKind;

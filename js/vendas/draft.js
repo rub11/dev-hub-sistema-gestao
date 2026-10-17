@@ -2,6 +2,11 @@
    DEV HUB · Vendas · draft.js
    Salva rascunho da venda em sessionStorage.
    v3: inclui deposit, installments, formMode, convertingFromQuote.
+
+   CORREÇÃO:
+   - tryRestore agora aguarda (await) a reconstrução das parcelas
+     antes de liberar o flag `restoring`, evitando que um autosave
+     intermediário sobrescreva o rascunho restaurado.
    ========================================================= */
 (function () {
   'use strict';
@@ -20,7 +25,7 @@
   let restoring = false;
 
   function S() { return DH.state; }
-  function U() { return DH.utils; }
+  function U() { return DH.utils || {}; }
 
   function log() {
     if (!DEBUG) return;
@@ -88,11 +93,12 @@
 
   function isMeaningful(d) {
     if (!d) return false;
+    const ut = U();
     if (d.cart && d.cart.length > 0) return true;
     if (d.customerId) return true;
     if (d.notes && String(d.notes).trim()) return true;
-    if (U().toNumber(d.discount, 0) > 0) return true;
-    if (U().toNumber(d.depositAmount, 0) > 0) return true;
+    if (ut.toNumber ? ut.toNumber(d.discount, 0) > 0 : Number(d.discount) > 0) return true;
+    if (ut.toNumber ? ut.toNumber(d.depositAmount, 0) > 0 : Number(d.depositAmount) > 0) return true;
     if (d.payment) return true;
     if (d.noStock) return true;
     if (d.editingSaleId || d.correctingSaleId || d.convertingFromQuote) return true;
@@ -223,31 +229,29 @@
       st.cart = (data.cart || []).map(it => ({
         product_id: it.product_id,
         product_name: it.product_name || '',
-        unit_price: ut.toNumber(it.unit_price, 0),
-        quantity: ut.toInteger(it.quantity, 1),
-        subtotal: ut.toNumber(it.subtotal, 0),
-        stock_available: ut.toInteger(it.stock_available, 0)
+        unit_price: ut.toNumber ? ut.toNumber(it.unit_price, 0) : Number(it.unit_price) || 0,
+        quantity: ut.toInteger ? ut.toInteger(it.quantity, 1) : Number(it.quantity) || 1,
+        subtotal: ut.toNumber ? ut.toNumber(it.subtotal, 0) : Number(it.subtotal) || 0,
+        stock_available: ut.toInteger ? ut.toInteger(it.stock_available, 0) : Number(it.stock_available) || 0
       }));
 
       DH.cart.render();
       DH.cart.recalc();
 
-      /* ⬇️ Rebuild installments com GUARDAS */
+      /* Rebuild installments aguardando a conclusão antes de liberar
+         o autosave (evita race com saveNow). */
       try {
         if (data.payment === 'credit_card' &&
             DH.installments &&
             typeof DH.installments.ensureLoaded === 'function' &&
             typeof DH.installments.buildOptions === 'function') {
-          Promise.resolve(DH.installments.ensureLoaded())
-            .then(() => {
-              DH.installments.buildOptions();
-              const instEl = document.getElementById('sale-installments');
-              if (instEl && data.installmentCount) {
-                instEl.value = String(data.installmentCount);
-                instEl.dispatchEvent(new Event('change', { bubbles: true }));
-              }
-            })
-            .catch(() => {});
+          await DH.installments.ensureLoaded();
+          DH.installments.buildOptions();
+          const instEl = document.getElementById('sale-installments');
+          if (instEl && data.installmentCount) {
+            instEl.value = String(data.installmentCount);
+            instEl.dispatchEvent(new Event('change', { bubbles: true }));
+          }
         }
       } catch (e) {
         console.warn('[DEV HUB] rebuild installments:', e);
@@ -259,7 +263,7 @@
       console.error('[DEV HUB] draft.tryRestore falhou:', e);
       return false;
     } finally {
-      setTimeout(() => { restoring = false; }, 0);
+      restoring = false;
     }
   }
 

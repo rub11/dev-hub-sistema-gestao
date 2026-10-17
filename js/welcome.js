@@ -9,6 +9,12 @@
    Sincroniza capabilities direto de window.NAV (nav/config.js)
    em vez de duplicar. Uma capability nova adicionada no
    nav/config.js já reflete no welcome sem tocar aqui.
+   ---------------------------------------------------------
+   CORREÇÕES APLICADAS:
+   1. readContext() lê localStorage E sessionStorage (fallback).
+   2. Auth.getProfile() chamado sem argumento (usa cache).
+   3. Aviso no console se window.NAV não carregar.
+   4. Guard adicional: se buildIndex() ficar vazio, avisa no console.
    ========================================================= */
 
 (function () {
@@ -25,19 +31,25 @@
      ========================================================= */
   function getNavConfig() {
     const NAV = window.NAV;
-    if (!NAV) return { CAPABILITIES: {}, BASE_CAPS: {} };
+    if (!NAV) {
+      console.warn('[welcome] window.NAV não carregado — verifique js/nav/config.js.');
+      return { CAPABILITIES: {}, BASE_CAPS: {} };
+    }
     return {
       CAPABILITIES: NAV.CAPABILITIES || {},
       BASE_CAPS:    NAV.BASE_CAPS    || {}
     };
   }
 
-  /* ---------- Contexto do usuário (sessionStorage) ---------- */
+  /* ---------- Contexto do usuário (localStorage + sessionStorage) ---------- */
   function readContext() {
     let role = '';
     let isPlatform = false;
     try {
-      const raw = sessionStorage.getItem('devhub_user');
+      /* FIX: lê de localStorage primeiro; cai para sessionStorage */
+      const raw =
+        localStorage.getItem('devhub_user') ||
+        sessionStorage.getItem('devhub_user');
       if (raw) {
         const data = JSON.parse(raw);
         role = String(data.role || '').toLowerCase();
@@ -124,7 +136,15 @@
 
     /* Nome no hero */
     try {
-      const profile = await Auth.getProfile(session.user.id);
+      /* FIX: chamada sem argumento → usa cache se existir,
+         evita re-query e possível purge de contexto. */
+      let profile = null;
+      try {
+        profile = await Auth.getProfile();
+      } catch (e) {
+        console.warn('[welcome] getProfile falhou:', e);
+      }
+
       const meta = session.user.user_metadata || {};
       const fullName =
         (profile && profile.name) ||
@@ -132,7 +152,7 @@
         (session.user.email ? session.user.email.split('@')[0] : '') || '';
 
       const first = String(fullName).trim().split(/\s+/)[0] || '';
-      const nameEl = els.title.querySelector('.welcome__name');
+      const nameEl = els.title ? els.title.querySelector('.welcome__name') : null;
       if (nameEl) nameEl.textContent = first ? ' ' + first : '';
     } catch (e) { /* silencioso */ }
 
@@ -141,6 +161,13 @@
     }
 
     buildIndex();
+
+    if (index.length === 0) {
+      console.warn(
+        '[welcome] Nenhum módulo liberado. Verifique window.DHModules e as capabilities.'
+      );
+    }
+
     renderGrid(index);
 
     els.search.addEventListener('input', onSearchInput);
@@ -201,10 +228,10 @@
     els.grid.innerHTML = '';
 
     if (items.length === 0) {
-      els.empty.hidden = false;
+      if (els.empty) els.empty.hidden = false;
       return;
     }
-    els.empty.hidden = true;
+    if (els.empty) els.empty.hidden = true;
 
     const order = ['Comercial', 'Catálogo', 'Suprimentos', 'Financeiro',
                    'Análise', 'Administração', 'Plataforma'];

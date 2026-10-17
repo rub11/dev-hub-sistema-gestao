@@ -9,40 +9,45 @@
      Perms.gateAll('products.create')      // aplica em [data-perm]
    ---------------------------------------------------------
    CORREÇÕES APLICADAS:
-   1. `load()` não marca mais `loaded = true` quando não há
-      contexto (sessionStorage vazio). Antes, abrir em nova
-      aba deixava o usuário sem permissão para sempre.
-   2. `perms:ready` agora é disparado ao final de `load()`,
-      como o nav.js espera.
-   3. `gateAll(root)` inclui o próprio root se ele tiver
-      `data-perm`.
+   1. `load()` não marca `loaded = true` quando não há contexto.
+   2. `perms:ready` disparado ao final de `load()`.
+   3. `gateAll(root)` inclui o próprio root.
    4. `gate()` remove `data-perm-hidden` ao reexibir.
-   5. Lock para evitar cargas paralelas (duas chamadas de
-      `load()` não disparam duas RPCs).
+   5. Lock para evitar cargas paralelas.
    6. `Perms.reset()` e `Perms.isLoaded()` expostos.
+   7. [NOVO] `readCtx()` lê localStorage E sessionStorage.
+   8. [NOVO] Capabilities canônicas expandidas (purchases/finance/stock).
    ========================================================= */
 
 (function () {
   'use strict';
 
-  /* Lista canônica de capabilities */
+  /* Lista canônica de capabilities — expandida para casar com nav/config.js */
   const CAPABILITIES = [
     'dashboard.view',
 
     'sales.view', 'sales.create', 'sales.edit', 'sales.delete',
-    'notes.view', 'notes.print',
-
+    'notes.view', 'notes.create', 'notes.print',
     'invoices.view', 'invoices.create', 'invoices.cancel', 'invoices.delete',
 
     'customers.view', 'customers.create', 'customers.edit', 'customers.delete',
 
     'products.view', 'products.create', 'products.edit', 'products.delete',
 
-    'stock.view', 'stock.movement', 'stock.audit', 'stock.report',
+    'stock.view', 'stock.receive', 'stock.movement', 'stock.movements',
+    'stock.audit', 'stock.report',
+
+    'purchases.view', 'purchases.create', 'purchases.approve', 'purchases.cancel',
+    'purchases.receive', 'purchases.dispute', 'purchases.return', 'purchases.reject',
+
+    'finance.view', 'finance.create', 'finance.pay', 'finance.edit',
+    'finance.settle', 'finance.reverse', 'finance.transfer', 'finance.reconcile', 'finance.cancel',
 
     'reports.view', 'reports.export',
 
-    'management.view', 'management.roles', 'management.users'
+    'management.view', 'management.roles', 'management.users',
+
+    'platform'
   ];
 
   /* Permissões padrão por base_role (fallback quando não configurado) */
@@ -55,16 +60,23 @@
       'customers.view', 'customers.create', 'customers.edit',
       'products.view',
       'stock.view',
+      'purchases.view',
+      'finance.view',
       'reports.view'
     ],
     gestor: [
       'dashboard.view',
       'sales.view', 'sales.create', 'sales.edit', 'sales.delete',
-      'notes.view', 'notes.print',
+      'notes.view', 'notes.print', 'notes.create',
       'invoices.view', 'invoices.create', 'invoices.cancel', 'invoices.delete',
       'customers.view', 'customers.create', 'customers.edit', 'customers.delete',
       'products.view', 'products.create', 'products.edit',
-      'stock.view', 'stock.movement', 'stock.audit', 'stock.report',
+      'stock.view', 'stock.receive', 'stock.movement', 'stock.movements',
+      'stock.audit', 'stock.report',
+      'purchases.view', 'purchases.create', 'purchases.approve',
+      'purchases.receive', 'purchases.dispute', 'purchases.return',
+      'finance.view', 'finance.create', 'finance.pay', 'finance.edit',
+      'finance.settle', 'finance.reverse', 'finance.transfer',
       'reports.view', 'reports.export',
       'management.view', 'management.roles', 'management.users'
     ],
@@ -77,22 +89,23 @@
     roleSlug: ''
   };
 
-  /* Lock contra chamadas paralelas de load() */
   let loadPromise = null;
 
+  /* FIX #7: lê localStorage E sessionStorage */
   function readCtx() {
     try {
-      const raw = sessionStorage.getItem('devhub_user');
+      const raw =
+        localStorage.getItem('devhub_user') ||
+        sessionStorage.getItem('devhub_user');
       return raw ? JSON.parse(raw) : null;
     } catch (e) { return null; }
   }
 
   /* =========================================================
-     Resolve o contexto do usuário por 3 caminhos, em ordem:
-       1. sessionStorage (rápido)
-       2. Auth.getStoredUser() (que já faz o mesmo parse)
-       3. Auth.getSession() + Auth.getProfile() (lento, mas
-          garante que funciona em nova aba sem sessionStorage)
+     Resolve o contexto por 3 caminhos, em ordem:
+       1. storage (rápido)
+       2. Auth.getStoredUser() (já lê ambos)
+       3. Auth.getSession() + Auth.getProfile()
      ========================================================= */
   async function resolveContext() {
     let ctx = readCtx();
@@ -120,9 +133,6 @@
     return ctx || null;
   }
 
-  /* =========================================================
-     load() — protegido contra chamadas paralelas
-     ========================================================= */
   function load() {
     if (state.loaded) return Promise.resolve();
     if (loadPromise) return loadPromise;
@@ -134,9 +144,6 @@
     const ctx = await resolveContext();
 
     if (!ctx) {
-      /* CORREÇÃO #1: não marca como loaded. Assim, se o
-         contexto ainda não chegou (sessão em resolução,
-         nova aba), uma chamada futura pode tentar de novo. */
       loadPromise = null;
       console.warn('[DEV HUB] Perms.load: contexto ainda indisponível — não marcado como carregado.');
       return;
@@ -146,14 +153,13 @@
     const slug = String(ctx.role_slug || '').toLowerCase();
     state.roleSlug = slug;
 
-    /* 1) Começa com defaults do base */
     const next = {};
     const baseDefaults = DEFAULTS[base] || DEFAULTS.user;
     baseDefaults.forEach(function (cap) {
       next[cap] = true;
     });
 
-    /* 2) Overlay do banco (role_permissions) */
+    /* Overlay do banco (role_permissions) */
     try {
       if (window.db && typeof window.db.rpc === 'function') {
         const { data, error } = await window.db.rpc('my_capabilities');
@@ -172,8 +178,6 @@
     state.capabilities = next;
     state.loaded = true;
 
-    /* CORREÇÃO #2: dispara perms:ready — nav.js e quem
-       mais escutar recebe as capacidades já resolvidas. */
     try {
       document.dispatchEvent(new CustomEvent('perms:ready', {
         detail: {
@@ -181,15 +185,9 @@
           roleSlug: slug
         }
       }));
-    } catch (e) {
-      /* CustomEvent indisponível — ignora */
-    }
+    } catch (e) { /* ignora */ }
   }
 
-  /* =========================================================
-     reset() — limpa o estado para recarregar do zero
-     Útil em logout ou troca de organização.
-     ========================================================= */
   function reset() {
     state.loaded = false;
     state.capabilities = {};
@@ -197,9 +195,6 @@
     loadPromise = null;
   }
 
-  /* =========================================================
-     Consultas
-     ========================================================= */
   function has(cap) {
     if (!cap) return false;
     return state.capabilities[cap] === true;
@@ -215,15 +210,10 @@
     return caps.every(function (c) { return has(c); });
   }
 
-  /* =========================================================
-     Gate
-     ========================================================= */
-  /** Esconde um elemento se o usuário não tem a capability. */
   function gate(el, cap) {
     if (!el) return;
     const ok = has(cap);
     el.hidden = !ok;
-    /* CORREÇÃO #4: remove o resíduo ao reexibir */
     if (ok) {
       el.removeAttribute('data-perm-hidden');
     } else {
@@ -231,11 +221,9 @@
     }
   }
 
-  /** Aplica em todos os elementos com data-perm="<cap>" */
   function gateAll(root) {
     const scope = root || document;
 
-    /* CORREÇÃO #3: inclui o próprio root se ele tiver o atributo */
     if (
       scope.nodeType === 1 &&
       typeof scope.hasAttribute === 'function' &&
@@ -250,9 +238,6 @@
     });
   }
 
-  /* =========================================================
-     API pública
-     ========================================================= */
   function expose() {
     window.Perms = {
       CAPABILITIES: CAPABILITIES,

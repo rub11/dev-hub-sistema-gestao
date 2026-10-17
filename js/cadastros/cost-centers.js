@@ -3,7 +3,12 @@
    ========================================================= */
 (function () {
   'use strict';
+
   const CAD = window.CAD;
+  if (!CAD) {
+    console.error('[cadastros] window.CAD não encontrado. Verifique a ordem dos scripts.');
+    return;
+  }
   const state = CAD.state;
   const CC = state.costCenters;
 
@@ -196,14 +201,32 @@
     return cell;
   }
 
+  /* Retorna o conjunto de TODOS os descendentes de um centro (não só
+     filhos diretos), para impedir ciclos na hierarquia. */
+  function collectDescendantIds(rootId) {
+    const out = new Set();
+    const stack = [rootId];
+    while (stack.length) {
+      const cur = stack.pop();
+      CC.all.forEach((c) => {
+        if (c.parent_id === cur && !out.has(c.id)) {
+          out.add(c.id);
+          stack.push(c.id);
+        }
+      });
+    }
+    return out;
+  }
+
   /* -------------------- Form -------------------- */
   function openForm(record) {
     const isEdit = !!record;
+    const descendants = isEdit ? collectDescendantIds(record.id) : new Set();
 
     const parentOptions = [{ value: '', label: '— Nenhum (raiz) —' }];
     CC.all.forEach(c => {
-      if (isEdit && c.id === record.id) return;
-      if (c.parent_id && isEdit && c.parent_id === record.id) return;
+      /* Não pode ser pai de si mesmo nem de um descendente seu */
+      if (isEdit && (c.id === record.id || descendants.has(c.id))) return;
       parentOptions.push({
         value: c.id,
         label: (c.code ? c.code + ' · ' : '') + c.name

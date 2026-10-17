@@ -8,7 +8,7 @@
   const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
   const escapeHTML = (s) =>
-    String(s || '').replace(/[&<>"']/g, (ch) => ({
+    String(s == null ? '' : s).replace(/[&<>"']/g, (ch) => ({
       '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
     }[ch]));
 
@@ -17,7 +17,7 @@
       style: 'currency', currency: 'BRL'
     });
 
-  /* ⬇️ NOVO: formata valor em REAIS (vendas usam reais, não centavos) */
+  /* Formata valor em REAIS (vendas usam reais, não centavos) */
   const fmtBRLFromReais = (reais) =>
     (Number(reais) || 0).toLocaleString('pt-BR', {
       style: 'currency', currency: 'BRL'
@@ -57,27 +57,18 @@
     throw new Error('Supabase client não encontrado.');
   };
 
+  /* Toast — delega para o módulo global (js/core/toast.js) */
   const toast = (msg, kind) => {
     if (window.Toast && typeof window.Toast.show === 'function') {
       return window.Toast.show(msg, kind);
     }
-    const el = document.createElement('div');
-    el.className = kind === 'error' ? 'appr-err' : '';
-    el.style.cssText =
-      'position:fixed;top:80px;right:20px;z-index:200;max-width:360px;' +
-      'padding:12px 16px;border-radius:10px;background:' +
-      (kind === 'error' ? 'var(--danger-soft)' : 'var(--accent-soft)') +
-      ';color:' + (kind === 'error' ? 'var(--danger)' : 'var(--accent-hover)') +
-      ';box-shadow:0 12px 32px -8px rgba(16,24,40,.24);font-size:13.5px';
-    el.textContent = msg;
-    document.body.appendChild(el);
-    setTimeout(() => el.remove(), 4000);
+    console.warn('[aprovacoes] Toast global indisponível:', msg);
   };
 
   const state = {
     /* Compras */
     all: [],
-    /* ⬇️ NOVO: vendas */
+    /* Vendas */
     sales: [],
     currentUser: null,
     isPlatformAdmin: false

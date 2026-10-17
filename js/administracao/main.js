@@ -3,13 +3,22 @@
    ========================================================= */
 (function () {
   'use strict';
+
   const NAV = window.NAV;
+  if (!NAV) {
+    console.error('[administracao] window.NAV não encontrado. Verifique a ordem dos scripts.');
+    return;
+  }
   const DH = window.DH = window.DH || {};
 
   document.addEventListener('DOMContentLoaded', init);
 
   async function init() {
     if (document.body.dataset.page !== 'administracao') return;
+    if (!NAV.ICONS) {
+      console.error('[administracao] NAV.ICONS não encontrado.');
+      return;
+    }
 
     /* Ícones */
     const ICONS = {
@@ -65,10 +74,10 @@
         cap: 'purchases.approve'
       },
       {
-        id: 'config-empresa',                                  /* ⬅️ ALTERADO */
+        id: 'config-empresa',
         title: 'Configurações da empresa',
         desc: 'Dados cadastrais, endereço, dados fiscais e informações da empresa.',
-        href: 'configuracoes-empresa.html',                    /* ⬅️ ALTERADO */
+        href: 'configuracoes-empresa.html',
         icon: ICONS.configuracoes,
         cap: 'management.view'
       }

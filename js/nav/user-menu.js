@@ -1,10 +1,19 @@
 /* =========================================================
    DEV HUB · Navegação · user menu + avatar + logout
-   v4: applyTopbarAvatar sempre busca do banco (sem travar)
+   ---------------------------------------------------------
+   CORREÇÕES:
+   - applyTopbarAvatar busca o avatar no banco UMA vez por
+     carregamento de página (antes eram até 5 queries por
+     causa do scheduleAvatarRefresh).
+   - O refresh reagendado agora apenas re-renderiza do cache.
    ========================================================= */
 (function () {
   'use strict';
   const NAV = window.NAV;
+  if (!NAV) {
+    console.error('[nav] window.NAV não encontrado. Verifique a ordem dos scripts.');
+    return;
+  }
   const state = NAV.state;
 
   /* =========================================================
@@ -234,28 +243,30 @@
     }
   }
 
+  /* Busca no banco no máximo uma vez por carregamento de página. */
+  let avatarFetchPromise = null;
+  function fetchAvatarOnce() {
+    if (!avatarFetchPromise) avatarFetchPromise = fetchAvatarFromDb();
+    return avatarFetchPromise;
+  }
+
   /* =========================================================
      Avatar — aplicação no topbar
      ---------------------------------------------------------
-     CORREÇÃO: não trava mais com promise cacheada.
-     Fluxo:
-       1. Aplica cache imediatamente (evita flash)
-       2. SEMPRE busca do banco
-       3. Se diferente, atualiza + reescreve cache
+     1. Aplica cache imediatamente (evita flash)
+     2. Busca do banco (uma única vez por página)
+     3. Se diferente, atualiza + reescreve cache
      ========================================================= */
   async function applyTopbarAvatar() {
     const el = document.getElementById('user-avatar');
     if (!el) return;
 
-    // 1) Cache imediato
     const cached = readCachedAvatar();
     if (cached) renderTopbarAvatar(cached);
 
-    // 2) Busca do banco sempre
-    const url = await fetchAvatarFromDb();
+    const url = await fetchAvatarOnce();
 
-    // 3) Aplica se for diferente
-    if (url !== cached) {
+    if (url !== readCachedAvatar()) {
       renderTopbarAvatar(url);
       writeCachedAvatar(url);
     }
@@ -334,7 +345,7 @@
   }
 
   function scheduleAvatarRefresh() {
-    [0, 100, 300, 800, 1500].forEach(function (ms) {
+    [0, 300, 1200].forEach(function (ms) {
       setTimeout(function () {
         applyTopbarAvatar();
         applyBarAvatar();

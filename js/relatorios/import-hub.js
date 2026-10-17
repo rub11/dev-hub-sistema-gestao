@@ -2,24 +2,47 @@
    DEV HUB · Relatórios · import-hub.js
    Hub de importação: Produtos, Parceiros, Vendas históricas.
    ---------------------------------------------------------
-   CORREÇÃO APLICADA:
-   - setup() sempre anexa o listener (antes bloqueava se a
-     permissão não tava setada ainda, e o clique morria).
-   - abrir() faz a checagem de permissão e loga debug no
-     console pra facilitar rastreio.
-   - abrir() reconstrói o modal se o card interno sumiu
-     (evita div vazio fantasma).
+   CORREÇÕES:
+   - Checagem de permissão explícita (não libera por padrão).
+   - Guarda de window.RH (evita TypeError de ordem de scripts).
+   - Listener de ESC anexado uma única vez.
+   - Ícones SVG no lugar dos emojis.
+   - Removidos logs de debug de produção.
    ========================================================= */
 (function () {
   'use strict';
 
   const RH = window.RH;
+  if (!RH) {
+    console.error('[relatorios] window.RH não encontrado. Verifique a ordem dos scripts.');
+    return;
+  }
   const state = RH.state;
+
+  const ICONS = {
+    produtos:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" ' +
+      'stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5Z"/>' +
+      '<path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>',
+    parceiros:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" ' +
+      'stroke-linecap="round" stroke-linejoin="round"><path d="M16 20v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20"/>' +
+      '<circle cx="9" cy="7.5" r="3.5"/><path d="M22 20v-1.5a4 4 0 0 0-3-3.87"/>' +
+      '<path d="M16.5 4.13a4 4 0 0 1 0 7.75"/></svg>',
+    vendas:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" ' +
+      'stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.5"/>' +
+      '<circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.4 11.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.6L21 7H6"/></svg>',
+    financeiro:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" ' +
+      'stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="13" rx="2"/>' +
+      '<path d="M2.5 10h19"/><circle cx="17" cy="14.5" r="1.2"/></svg>'
+  };
 
   const MODULES = [
     {
       id: 'produtos',
-      icon: '📦',
+      icon: ICONS.produtos,
       title: 'Produtos',
       desc: 'Importar catálogo via .xlsx ou .csv',
       action: 'redirect',
@@ -28,7 +51,7 @@
     },
     {
       id: 'parceiros',
-      icon: '👥',
+      icon: ICONS.parceiros,
       title: 'Parceiros',
       desc: 'Clientes, fornecedores e transportadoras',
       action: 'redirect',
@@ -37,7 +60,7 @@
     },
     {
       id: 'vendas',
-      icon: '🛒',
+      icon: ICONS.vendas,
       title: 'Vendas históricas',
       desc: 'Importar vendas antigas via .xlsx',
       action: 'sales-import',
@@ -45,7 +68,7 @@
     },
     {
       id: 'financeiro',
-      icon: '💰',
+      icon: ICONS.financeiro,
       title: 'Financeiro',
       desc: 'Lançamentos contábeis e fluxo de caixa',
       action: 'soon',
@@ -54,6 +77,7 @@
   ];
 
   let hubEl = null;
+  let escBound = false;
 
   /* =========================================================
      SETUP — sempre anexa o listener
@@ -65,32 +89,25 @@
       return;
     }
 
-    /* Evita duplicar listener se init rodar 2x */
     if (btn.dataset.hubWired === '1') return;
     btn.dataset.hubWired = '1';
 
-    /* Listener SEMPRE é anexado. A checagem de permissão
-       vai pra dentro de abrir(). */
+    /* A checagem de permissão acontece dentro de abrir() */
     btn.addEventListener('click', abrir);
-
-    console.log('[import-hub] Listener anexado ao botão.');
   }
 
   /* =========================================================
      ABRIR — valida permissão + reconstrói se precisar
      ========================================================= */
   function abrir() {
-    console.log('[import-hub] abrir() chamado.');
-
-    /* Checagem de permissão com fallback */
-    const podeImportar = state.perms.import !== false || state.perms.export === true;
+    /* Permissão explícita: só passa com a flag realmente concedida. */
+    const podeImportar = state.perms.import === true || state.perms.export === true;
     if (!podeImportar) {
       console.warn('[import-hub] Sem permissão. state.perms:', state.perms);
       RH.toast('Você não tem permissão para importar.', 'error');
       return;
     }
 
-    /* Reconstrói se o card interno sumiu (div vazio fantasma) */
     if (!hubEl || !hubEl.querySelector('.dh-imp-hub__card')) {
       document.querySelectorAll('#dh-imp-hub').forEach(el => el.remove());
       hubEl = build();
@@ -98,8 +115,6 @@
 
     if (!hubEl.parentNode) document.body.appendChild(hubEl);
     hubEl.hidden = false;
-
-    console.log('[import-hub] Modal aberto.');
   }
 
   /* =========================================================
@@ -133,22 +148,22 @@
       </div>
     `;
 
-    /* Botões de fechar */
     el.querySelectorAll('[data-close]').forEach(b => {
       b.addEventListener('click', fechar);
     });
 
-    /* Clique no backdrop fecha */
     el.addEventListener('click', (e) => {
       if (e.target === el) fechar();
     });
 
-    /* Esc fecha */
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && el && !el.hidden) fechar();
-    });
+    /* ESC anexado uma única vez em toda a vida da página */
+    if (!escBound) {
+      escBound = true;
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && hubEl && !hubEl.hidden) fechar();
+      });
+    }
 
-    /* Popula grid com os módulos */
     const grid = el.querySelector('#dh-imp-hub-grid');
 
     MODULES.forEach(m => {
@@ -164,7 +179,7 @@
         : 'dh-imp-hub__icon--muted';
 
       btn.innerHTML = `
-        <span class="dh-imp-hub__icon ${iconClass}">${m.icon}</span>
+        <span class="dh-imp-hub__icon ${iconClass}" aria-hidden="true">${m.icon}</span>
         <span class="dh-imp-hub__title">
           ${m.title}
           ${!m.enabled ? '<span class="dh-imp-hub__badge">Em breve</span>' : ''}

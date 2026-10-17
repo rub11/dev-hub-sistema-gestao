@@ -4,12 +4,33 @@
    Modal de cadastro de fornecedor inline.
    Usado por nova.js (botão "+ Novo" ao lado do select) e
    fornecedores.js (botão "Novo fornecedor").
+
+   CORREÇÕES:
+   - Não destrutura window.Cmp no topo (evita TypeError de
+     ordem de scripts); acessa Cmp.API / Cmp.toast em runtime.
+   - O nome do fornecedor retornado pela consulta de CNPJ não
+     é mais injetado via innerHTML (evita XSS).
    ========================================================= */
 
 (function () {
   'use strict';
 
-  const { toast, API } = window.Cmp;
+  const Cmp = window.Cmp;
+  if (!Cmp) {
+    console.error('[compras] window.Cmp não encontrado. Verifique a ordem dos scripts.');
+    return;
+  }
+
+  function toast(message, kind) {
+    if (typeof Cmp.toast === 'function') return Cmp.toast(message, kind);
+    if (window.Toast && typeof window.Toast.show === 'function') {
+      return window.Toast.show(message, kind);
+    }
+  }
+  function api() {
+    if (!Cmp.API) throw new Error('API de compras indisponível.');
+    return Cmp.API;
+  }
 
   /* =========================================================
      Helpers de UI
@@ -60,11 +81,11 @@
         if (e.key === 'Escape' && !modal.hidden) close();
       });
 
-      $sup.cnpj  && $sup.cnpj.addEventListener('input', (e) => { e.target.value = API.maskCNPJ(e.target.value); });
+      $sup.cnpj  && $sup.cnpj.addEventListener('input', (e) => { e.target.value = api().maskCNPJ(e.target.value); });
       $sup.cnpj  && $sup.cnpj.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') { e.preventDefault(); doSearch(); }
       });
-      $sup.phone && $sup.phone.addEventListener('input', (e) => { e.target.value = API.maskPhone(e.target.value); });
+      $sup.phone && $sup.phone.addEventListener('input', (e) => { e.target.value = api().maskPhone(e.target.value); });
       $sup.search && $sup.search.addEventListener('click', doSearch);
       $sup.save   && $sup.save.addEventListener('click', doSave);
 
@@ -76,27 +97,30 @@
       if (!$sup || !$sup.cnpj) return;
       const raw = $sup.cnpj.value;
       hideError();
-      if ($sup.hint) $sup.hint.innerHTML = 'Consultando Receita Federal...';
+      setHint(['Consultando Receita Federal...']);
       if (!raw.replace(/\D/g, '').length) {
         showError('Digite um CNPJ para buscar.');
-        if ($sup.hint) $sup.hint.innerHTML = 'Digite o CNPJ e clique em <strong>Buscar dados</strong>.';
+        setHint(['Digite o CNPJ e clique em ', strongText('Buscar dados'), '.']);
         return;
       }
       setLoading($sup.search, true);
       try {
-        const info = await API.lookupCNPJ(raw);
+        const info = await api().lookupCNPJ(raw);
         if (info.name    && $sup.name)    $sup.name.value    = info.name;
         if (info.fantasy && $sup.fantasy) $sup.fantasy.value = info.fantasy;
         if (info.email   && $sup.email)   $sup.email.value   = info.email;
-        if (info.phone   && $sup.phone)   $sup.phone.value   = API.maskPhone(info.phone);
+        if (info.phone   && $sup.phone)   $sup.phone.value   = api().maskPhone(info.phone);
         if (info.address && $sup.address) $sup.address.value = info.address;
         [$sup.name, $sup.fantasy, $sup.email, $sup.phone, $sup.address].forEach(flashFilled);
-        if ($sup.hint) $sup.hint.innerHTML =
-          `Dados preenchidos via <strong>${info.fantasy || info.name}</strong>.`;
+        setHint([
+          'Dados preenchidos via ',
+          strongText(info.fantasy || info.name || ''),
+          '.'
+        ]);
       } catch (e) {
         console.warn(e);
         showError(e.message);
-        if ($sup.hint) $sup.hint.innerHTML = 'Se a busca falhar, preencha manualmente.';
+        setHint(['Se a busca falhar, preencha manualmente.']);
       } finally {
         setLoading($sup.search, false);
       }
@@ -110,7 +134,7 @@
 
       setLoading($sup.save, true);
       try {
-        const created = await API.createSupplier({
+        const created = await api().createSupplier({
           name,
           doc:     ($sup.cnpj    && $sup.cnpj.value    || '').replace(/\D/g, '') || null,
           email:   ($sup.email   && $sup.email.value   || '').trim() || null,
@@ -121,7 +145,7 @@
         });
         if (typeof onSaved === 'function') onSaved(created);
         close(); reset();
-        toast('Fornecedor cadastrado com sucesso.');
+        toast('Fornecedor cadastrado com sucesso.', 'success');
       } catch (e) {
         console.error(e);
         showError('Erro ao salvar fornecedor: ' + e.message);
@@ -150,8 +174,7 @@
         if (el && 'value' in el) el.value = '';
       });
       hideError();
-      if ($sup.hint) $sup.hint.innerHTML =
-        'Digite o CNPJ e clique em <strong>Buscar dados</strong>.';
+      setHint(['Digite o CNPJ e clique em ', strongText('Buscar dados'), '.']);
     }
     function showError(msg) {
       if (!$sup || !$sup.error) return;
@@ -164,6 +187,22 @@
       $sup.error.textContent = '';
     }
 
+    /* Escreve no hint sem innerHTML cru para dados dinâmicos */
+    function strongText(value) {
+      const b = document.createElement('strong');
+      b.textContent = value == null ? '' : String(value);
+      return b;
+    }
+    function setHint(parts) {
+      if (!$sup || !$sup.hint) return;
+      $sup.hint.textContent = '';
+      parts.forEach((part) => {
+        $sup.hint.appendChild(
+          typeof part === 'string' ? document.createTextNode(part) : part
+        );
+      });
+    }
+
     return { init, open, close, reset };
   })();
 
@@ -174,6 +213,11 @@
     if (!selectEl) return;
     const newBtn = document.getElementById('cmp-new-supplier');
     if (!newBtn) return;
+
+    /* Evita duplicar o listener se a função for chamada mais de uma vez */
+    if (newBtn.dataset.supplierInlineBound === '1') return;
+    newBtn.dataset.supplierInlineBound = '1';
+
     newBtn.addEventListener('click', () => {
       const ok = SupplierModal.open((created) => {
         const opt = document.createElement('option');
@@ -191,9 +235,9 @@
   /* =========================================================
      Publica
      ========================================================= */
-  window.Cmp.SupplierModal    = SupplierModal;
-  window.Cmp.initSupplierInline = initSupplierInline;
-  window.Cmp.setLoading        = setLoading;
-  window.Cmp.flashFilled       = flashFilled;
+  Cmp.SupplierModal       = SupplierModal;
+  Cmp.initSupplierInline  = initSupplierInline;
+  Cmp.setLoading          = setLoading;
+  Cmp.flashFilled         = flashFilled;
 
 })();

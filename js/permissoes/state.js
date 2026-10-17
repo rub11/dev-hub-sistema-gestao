@@ -7,6 +7,10 @@
   'use strict';
 
   const PRM = window.PRM;
+  if (!PRM) {
+    console.error('[permissoes] window.PRM não encontrado. Verifique a ordem dos scripts.');
+    return;
+  }
 
   /* ---------- DOM ---------- */
   PRM.$ = (sel, root = document) => root.querySelector(sel);
@@ -30,42 +34,12 @@
     throw new Error('Supabase não configurado.');
   };
 
-  /* ---------- Toast ---------- */
+  /* ---------- Toast (delega para o módulo global) ---------- */
   PRM.toast = function (message, kind = 'info') {
-    const region = document.getElementById('toast-region');
-    if (!region) return;
-
-    const k = (kind === 'success' || kind === 'error' || kind === 'info') ? kind : 'info';
-    const el = document.createElement('div');
-    el.className = `toast toast--${k}`;
-    el.setAttribute('role', k === 'error' ? 'alert' : 'status');
-
-    const iconMap = {
-      success: PRM.ICONS.toastOk,
-      error:   PRM.ICONS.toastErr,
-      info:    PRM.ICONS.toastInfo,
-    };
-
-    el.innerHTML = `
-      <span class="toast__icon" aria-hidden="true">${iconMap[k]}</span>
-      <span class="toast__message"></span>
-      <button type="button" class="toast__close" aria-label="Fechar">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
-      </button>
-    `;
-    el.querySelector('.toast__message').textContent = message;
-
-    const dismiss = () => {
-      if (el.classList.contains('is-leaving')) return;
-      el.classList.add('is-leaving');
-      el.addEventListener('animationend', () => el.remove(), { once: true });
-    };
-
-    el.querySelector('.toast__close').addEventListener('click', dismiss);
-    region.appendChild(el);
-
-    const timer = setTimeout(dismiss, 4200);
-    el.addEventListener('mouseenter', () => clearTimeout(timer), { once: true });
+    if (window.Toast && typeof window.Toast.show === 'function') {
+      return window.Toast.show(message, kind);
+    }
+    console.warn('[permissoes] Toast global indisponível:', message);
   };
 
   /* ---------- Estado compartilhado ---------- */
