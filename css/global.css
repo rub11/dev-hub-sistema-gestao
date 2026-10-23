@@ -1081,3 +1081,12 @@ body.layout-topnav .app__body {
 [data-theme="dark"]  .theme-toggle__moon { opacity: 0; transform: rotate(45deg); }
 [data-theme="light"] .theme-toggle__sun  { opacity: 0; transform: rotate(-45deg); }
 [data-theme="light"] .theme-toggle__moon { opacity: 1; transform: rotate(0); }
+
+
+/* =========================================================
+   GUARD GLOBAL - Esconde a tela enquanto valida a sessão
+   ========================================================= */
+html.auth-checking {
+  visibility: hidden !important;
+  opacity: 0 !important;
+}

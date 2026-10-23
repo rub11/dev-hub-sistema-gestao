@@ -29,12 +29,7 @@
 
       <div class="login__aside-inner">
 
-        <a class="brand" href="welcome.html" aria-label="DEV HUB — página inicial">
-          <span class="brand__mark">
-            <img src="img/logo.png" alt="" />
-          </span>
-          <span class="brand__name">DEV HUB</span>
-        </a>
+        <!-- A logo do topo foi removida conforme solicitado -->
 
         <div class="login__aside-text">
           <h2>Gestão inteligente para empresas que querem evoluir.</h2>
@@ -104,13 +99,8 @@
               <span style="--h: 96%"></span>
             </div>
           </div>
-
-          <svg class="viz__lines" viewBox="0 0 400 400" preserveAspectRatio="none" aria-hidden="true">
-            <path d="M80 110 Q 180 90 200 200" />
-            <path d="M80 110 Q 40 200 90 280" />
-            <path d="M90 280 Q 200 320 320 260" />
-            <path d="M200 200 Q 260 200 320 260" />
-          </svg>
+          
+          <!-- SVG de linhas foi removido, pois foi desativado no CSS -->
         </div>
 
       </div>
@@ -134,9 +124,9 @@
           <p class="login__subtitle">Acesse sua conta para continuar.</p>
         </header>
 
-        <form id="login-form" class="login__form" novalidate>
+        <!-- autocomplete="off" para tentar barrar o navegador -->
+        <form id="login-form" class="login__form" novalidate autocomplete="off">
 
-          <!-- ========== CAMPOS NORMAIS ========== -->
           <div id="login-fields">
 
             <!-- Código da empresa -->
@@ -153,7 +143,7 @@
                   type="text"
                   id="company-code"
                   name="company_code"
-                  autocomplete="organization"
+                  autocomplete="off"
                   placeholder="Ex.: EMP-0001"
                   spellcheck="false"
                   maxlength="50"
@@ -175,7 +165,7 @@
                   type="email"
                   id="email"
                   name="email"
-                  autocomplete="username"
+                  autocomplete="off"
                   placeholder="voce@empresa.com"
                   spellcheck="false"
                   required
@@ -200,7 +190,7 @@
                   type="password"
                   id="password"
                   name="password"
-                  autocomplete="current-password"
+                  autocomplete="new-password"
                   placeholder="Digite sua senha"
                   required
                 />
@@ -230,7 +220,7 @@
 
           </div>
 
-          <!-- ========== PICKER DE EMPRESA (multi-tenant) ========== -->
+          <!-- ========== PICKER DE EMPRESA ========== -->
           <div id="company-picker" hidden>
 
             <div class="field">
@@ -288,12 +278,31 @@
 
   </main>
 
+  <!-- SCRIPTS GLOBAIS -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/global-utils.js"></script>
   <script src="js/supabase.js"></script>
   <script src="js/auth.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/global-utils.js"></script> <!-- NOVO -->
-  <script src="js/supabase.js"></script>
-  <script src="js/auth.js"></script>
+
+  <!-- TRUQUE ANTI-AUTOFILL DO CHROME -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const inputs = document.querySelectorAll('#company-code, #email, #password');
+      
+      inputs.forEach(input => {
+        input.setAttribute('readonly', true);
+        
+        const removeReadonly = () => input.removeAttribute('readonly');
+        input.addEventListener('focus', removeReadonly);
+        input.addEventListener('click', removeReadonly);
+        
+        setTimeout(() => {
+          if (input.hasAttribute('readonly')) {
+            input.value = '';
+          }
+        }, 200);
+      });
+    });
+  </script>
 </body>
 </html>

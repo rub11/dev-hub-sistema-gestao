@@ -1,18 +1,26 @@
 /* =========================================================
-   DEV HUB · Navegação · sino + realtime
+   DEV HUB · Navegação · sino + realtime (CORRIGIDO)
    ========================================================= */
 (function () {
   'use strict';
   const NAV = window.NAV;
+
+  // Estado global persistente (sobrevive ao bar.innerHTML = ...)
+  if (!NAV.notifState) {
+    NAV.notifState = {
+      menu: null,
+      unread: 0,
+      readColumn: null,
+      channel: null
+    };
+  }
 
   function setupNotifications() {
     const btn   = document.getElementById('app-tabs-bell');
     const badge = document.getElementById('app-tabs-bell-badge');
     if (!btn) return;
 
-    let menu = null;
-    let unread = 0;
-    let readColumn = null;
+    const state = NAV.notifState;
 
     function navToast(msg, kind) {
       try {
@@ -37,16 +45,16 @@
 
     function renderBadge() {
       if (!badge) return;
-      if (unread > 0) {
+      if (state.unread > 0) {
         badge.hidden = false;
-        badge.textContent = unread > 99 ? '99+' : String(unread);
+        badge.textContent = state.unread > 99 ? '99+' : String(state.unread);
       } else {
         badge.hidden = true;
       }
     }
 
     async function detectReadColumn() {
-      if (readColumn) return readColumn;
+      if (state.readColumn) return state.readColumn;
 
       const candidates = ['read_at', 'is_read', 'lida', 'read', 'readed'];
       for (const col of candidates) {
@@ -56,16 +64,16 @@
             .select('id, ' + col)
             .limit(1);
           if (!error) {
-            readColumn = col;
+            state.readColumn = col;
             console.log('[nav] Coluna de status detectada:', col);
             return col;
           }
         } catch (_) { /* tenta próximo */ }
       }
 
-      readColumn = 'read_at';
+      state.readColumn = 'read_at';
       console.warn('[nav] Nenhuma coluna de status reconhecida. Usando "read_at" como padrão.');
-      return readColumn;
+      return state.readColumn;
     }
 
     async function loadCount() {
@@ -74,7 +82,7 @@
       try {
         const { data, error } = await window.db.rpc('get_unread_notification_count');
         if (!error && typeof data === 'number') {
-          unread = data;
+          state.unread = data;
           renderBadge();
           return;
         }
@@ -93,7 +101,7 @@
           : await query.is(col, null);
 
         if (!error) {
-          unread = count || 0;
+          state.unread = count || 0;
           renderBadge();
         }
       } catch (e) {
@@ -218,7 +226,11 @@
     }
 
     function buildMenu() {
-      const el = document.createElement('div');
+      // Se já existe no DOM, reaproveita
+      let el = document.querySelector('.tnav-notif');
+      if (el) return el;
+
+      el = document.createElement('div');
       el.className = 'tnav-notif';
       el.setAttribute('role', 'menu');
       el.hidden = true;
@@ -240,16 +252,6 @@
         </footer>
       `;
 
-      document.addEventListener('click', function (e) {
-        if (el.hidden) return;
-        if (el.contains(e.target) || btn.contains(e.target)) return;
-        closeMenu();
-      });
-
-      document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape' && !el.hidden) closeMenu();
-      });
-
       el.addEventListener('click', async function (e) {
         const markAll = e.target.closest('[data-action="mark-all"]');
         if (!markAll) return;
@@ -262,7 +264,7 @@
 
         try {
           const result = await markAllAsRead();
-          unread = 0;
+          state.unread = 0;
           renderBadge();
 
           const rows = await loadLatest();
@@ -288,6 +290,7 @@
         }
       });
 
+      document.body.appendChild(el);
       return el;
     }
 
@@ -365,7 +368,7 @@
               }
 
               item.classList.remove('is-unread');
-              unread = Math.max(0, unread - 1);
+              state.unread = Math.max(0, state.unread - 1);
               renderBadge();
             } catch (err) {
               console.warn('[nav] mark-notif:', err);
@@ -383,48 +386,75 @@
     }
 
     async function openMenu() {
-      if (!menu) {
-        menu = buildMenu();
-        document.body.appendChild(menu);
+      if (!state.menu) {
+        state.menu = buildMenu();
       }
-      menu.hidden = false;
+      state.menu.hidden = false;
       btn.setAttribute('aria-expanded', 'true');
-      positionNotifMenu(menu, btn);
+      positionNotifMenu(state.menu, btn);
 
       const rows = await loadLatest();
-      renderList(menu, rows);
-      positionNotifMenu(menu, btn);
+      renderList(state.menu, rows);
+      positionNotifMenu(state.menu, btn);
     }
 
     function closeMenu() {
-      if (menu) menu.hidden = true;
+      if (state.menu) state.menu.hidden = true;
       btn.setAttribute('aria-expanded', 'false');
     }
 
-    btn.addEventListener('click', function (e) {
+    // Remove listener antigo se existir (embora btn seja recriado, é bom garantir)
+    if (btn._notifClickHandler) {
+      btn.removeEventListener('click', btn._notifClickHandler);
+    }
+    btn._notifClickHandler = function (e) {
       e.stopPropagation();
-      menu && !menu.hidden ? closeMenu() : openMenu();
-    });
+      state.menu && !state.menu.hidden ? closeMenu() : openMenu();
+    };
+    btn.addEventListener('click', btn._notifClickHandler);
 
-    window.addEventListener('resize', function () {
-      if (menu && !menu.hidden) positionNotifMenu(menu, btn);
-    });
-    window.addEventListener('scroll', function () {
-      if (menu && !menu.hidden) positionNotifMenu(menu, btn);
-    }, true);
+    // Listeners globais - usar flag para evitar duplicar
+    if (!NAV._notifGlobalWired) {
+      NAV._notifGlobalWired = true;
+
+      document.addEventListener('click', function (e) {
+        if (!state.menu || state.menu.hidden) return;
+        if (state.menu.contains(e.target) || btn.contains(e.target)) return;
+        closeMenu();
+      });
+
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && state.menu && !state.menu.hidden) closeMenu();
+      });
+
+      window.addEventListener('resize', function () {
+        if (state.menu && !state.menu.hidden) positionNotifMenu(state.menu, btn);
+      });
+      window.addEventListener('scroll', function () {
+        if (state.menu && !state.menu.hidden) positionNotifMenu(state.menu, btn);
+      }, true);
+    }
 
     loadCount();
 
+    // CORREÇÃO DO ERRO DE REALTIME
     try {
       if (window.db && window.db.channel) {
-        window.db
-          .channel('notifications-nav')
+        if (state.channel) {
+          window.db.removeChannel(state.channel);
+          state.channel = null;
+        }
+        
+        // Nome único para evitar conflito de 'subscribe()' prévio
+        const channelName = 'notifications-nav-' + Date.now();
+        state.channel = window.db
+          .channel(channelName)
           .on('postgres_changes',
               { event: 'INSERT', schema: 'public', table: 'notifications' },
               function () {
                 loadCount();
-                if (menu && !menu.hidden) {
-                  loadLatest().then(function (rows) { renderList(menu, rows); });
+                if (state.menu && !state.menu.hidden) {
+                  loadLatest().then(function (rows) { renderList(state.menu, rows); });
                 }
               })
           .on('postgres_changes',
