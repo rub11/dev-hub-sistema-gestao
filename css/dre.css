@@ -1,5 +1,5 @@
 /* =========================================================
-   DEV HUB · DRE · estilos
+   DEV HUB · DRE · estilos (Padronizado Laranja)
    ========================================================= */
 
 .dre-panel { margin-top: 20px; }
@@ -139,6 +139,7 @@
 }
 .dre-row--subtotal .dre-row__value { font-weight: 600; }
 
+/* Linha final (Fundo Laranja via var(--accent)) */
 .dre-row--final {
   background: var(--accent);
   color: #fff;
@@ -215,8 +216,10 @@
 
   .dre-table thead th { background: #fff !important; color: #000 !important; }
   .dre-row--subtotal { background: #f3f4f6 !important; }
+  
+  /* Impressão da linha final em Laranja */
   .dre-row--final {
-    background: #111827 !important;
+    background: var(--accent) !important;
     color: #fff !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;

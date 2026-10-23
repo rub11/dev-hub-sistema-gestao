@@ -6,17 +6,22 @@
    clientes.css. Aqui apenas o específico de vendas.
    ---------------------------------------------------------
    CORREÇÕES APLICADAS:
-   1. Removida a duplicação do bloco "Busca de produto" —
-      havia duas cópias quase idênticas com valores divergentes
-      (padding-left 40px vs 46px; z-index 30 vs 500). A versão
+   1. Removida duplicação do bloco "Busca de produto" — versão
       final usa os valores do 2º bloco (button lupa, z-index 500).
-   2. Removida a regra `.product-search__icon` (CSS morto —
-      vendas.html usa `<button class="product-search__btn">`
-      no lugar do ícone estático).
-   3. Unificados os dois `@media (max-width: 720px)` num só
-      (evita cascata confusa em futuras edições).
-   4. Padronizado `padding-left/right` do input (46/44)
-      consistentes com a largura do botão (34px) + margens.
+   2. Removida a regra `.product-search__icon` (CSS morto).
+   3. Unificados os dois `@media (max-width: 720px)`.
+   4. Padronizado `padding-left/right` do input (46/44).
+   5. ** NOVO ** Removidas duplicações massivas: `.sales-tabs`
+      (3×→1), `.badge--draft/sent/...` (2×→1), `.badge--success`
+      (2×→1), `.cart-badge*` + `.is-out-of-stock` + `.warn--info`
+      (2×→1), `.checkbox*` (2×→1, mantida versão com fix),
+      `.field-row` (3×→1), `.badge--warning/muted` (2×→1).
+   6. ** NOVO ** `.badge--sent` migrado de indigo
+      (`rgba(99,102,241,.14)`) para laranja da marca.
+   7. ** NOVO ** Hovers `#b9bfc9` hardcoded (3×) migrados para
+      `color-mix()` (funciona nos dois temas).
+   8. ** NOVO ** `.sale-form select option` reset para evitar
+      fundo azul nativo do browser.
    ========================================================= */
 
 /* ---------- Número da venda ---------- */
@@ -126,6 +131,11 @@
   padding-right: 36px;
 }
 
+.sale-form select option {
+  background: var(--surface);
+  color: var(--text);
+}
+
 .sale-form textarea {
   height: auto;
   min-height: 84px;
@@ -137,7 +147,7 @@
 
 .sale-form select:hover:not(:focus),
 .sale-form textarea:hover:not(:focus) {
-  border-color: #b9bfc9;
+  border-color: color-mix(in srgb, var(--border-strong) 60%, var(--text) 40%);
 }
 
 .sale-form select:focus,
@@ -383,11 +393,6 @@
 
 /* =========================================================
    Busca de produto + preview  (FONTE ÚNICA — CORREÇÃO #1)
-   =========================================================
-   Usa `<button class="product-search__btn">` no lugar do
-   antigo `<span class="product-search__icon">`. Esse button
-   é clicável e dispara a busca, enquanto o input continua
-   funcionando por digitação.
    ========================================================= */
 .product-search {
   width: 100%;
@@ -406,7 +411,7 @@
   max-width: 100%;
 }
 
-/* Lupa clicável (substituiu .product-search__icon) */
+/* Lupa clicável */
 .product-search__btn {
   position: absolute;
   left: 6px;
@@ -444,8 +449,8 @@
   transform: translateY(-50%) scale(0.94);
 }
 
-/* CORREÇÃO #4: padding-left 46 = 6 (left) + 34 (btn) + 6 (gap)
-                  padding-right 44 = 8 (right) + 32 (clear) + 4 (gap) */
+/* CORREÇÃO #4: padding-left 46 = 6 + 34 + 6
+                  padding-right 44 = 8 + 32 + 4 */
 .product-search__control input {
   width: 100%;
   min-width: 0;
@@ -460,7 +465,9 @@
   transition: border-color var(--transition), box-shadow var(--transition);
 }
 
-.product-search__control input:hover:not(:focus) { border-color: #b9bfc9; }
+.product-search__control input:hover:not(:focus) {
+  border-color: color-mix(in srgb, var(--border-strong) 60%, var(--text) 40%);
+}
 
 .product-search__control input:focus {
   outline: none;
@@ -491,7 +498,7 @@
   top: calc(100% + 6px);
   left: 0;
   right: 0;
-  z-index: 500;              /* CORREÇÃO #1: 30 → 500 (acima do topnav, que é 30) */
+  z-index: 500;
   max-height: 320px;
   overflow-y: auto;
   padding: 6px;
@@ -698,7 +705,7 @@
 }
 
 /* =========================================================
-   Responsivo  (CORREÇÃO #3: media queries unificadas)
+   Responsivo
    ========================================================= */
 @media (max-width: 1180px) {
   .sale-form { grid-template-columns: minmax(0, 1fr); }
@@ -706,14 +713,12 @@
 }
 
 @media (max-width: 720px) {
-  /* Layout geral */
   .page-head--with-back { flex-direction: column; gap: 10px; }
   .add-grid { grid-template-columns: 1fr 1fr; }
   .add-grid .field--action { grid-column: 1 / -1; }
   .detail-grid { grid-template-columns: 1fr; }
   .cart-table { min-width: 480px; }
 
-  /* Busca de produto */
   .product-search { min-width: 0; }
 
   .product-suggestions {
@@ -738,7 +743,6 @@
 
   .product-suggestions__name { line-height: 1.3; }
 
-  /* Evita "quebra" horizontal no card do formulário */
   .card__body {
     min-width: 0;
     overflow-wrap: anywhere;
@@ -762,36 +766,26 @@
 
 /* =========================================================
    FIX · Dropdown de sugestões sendo cortado pelo .card
-   ---------------------------------------------------------
-   O .card tem `overflow: hidden` (pra cortar os cantos
-   arredondados dos filhos). Mas isso também corta o dropdown
-   de sugestões, que é `position: absolute`.
-   Solução: libera o overflow no card que contém a busca.
    ========================================================= */
-
 .card:has(.product-search) {
   overflow: visible;
 }
 
-/* Fallback pra navegadores antigos (sem :has) */
 .card.card--search-open {
   overflow: visible;
 }
 
-/* Como liberamos o overflow, garante que o border-radius
-   continue visualmente limpo quando os filhos têm background */
 .card:has(.product-search) .card__head {
   border-top-left-radius: var(--radius-lg);
   border-top-right-radius: var(--radius-lg);
 }
+
 /* =========================================================
    FIX · Botão de busca do produto
    ---------------------------------------------------------
-   O browser está aplicando o estilo nativo do <button>
-   (fundo branco, borda padrão). Este bloco força o visual
-   correto com alta especificidade.
+   Browser aplica estilo nativo do <button>. !important
+   necessário para override do agente de usuário.
    ========================================================= */
-
 .product-search .product-search__btn,
 .product-search__control .product-search__btn,
 #product-search-btn {
@@ -836,7 +830,6 @@
   outline-offset: 2px;
 }
 
-/* Garante que o SVG interno se comporte */
 .product-search .product-search__btn svg,
 .product-search__control .product-search__btn svg,
 #product-search-btn svg {
@@ -847,19 +840,14 @@
   fill: none !important;
 }
 
-/* Dark mode */
 [data-theme="dark"] .product-search .product-search__btn,
 [data-theme="dark"] #product-search-btn {
   color: var(--text-muted);
 }
-/* =========================================================
-   FIX · Spinner do input number
-   ---------------------------------------------------------
-   Remove o spinner nativo feio do Chrome/Edge/Safari e dá
-   visual limpo ao campo de quantidade.
-   ========================================================= */
 
-/* Chrome, Safari, Edge, Opera */
+/* =========================================================
+   FIX · Spinner do input number + stepper
+   ========================================================= */
 #product-pick-qty::-webkit-outer-spin-button,
 #product-pick-qty::-webkit-inner-spin-button,
 .qty-input::-webkit-outer-spin-button,
@@ -873,7 +861,6 @@
   margin: 0;
 }
 
-/* Firefox */
 #product-pick-qty,
 .qty-input,
 #sale-discount,
@@ -882,7 +869,6 @@
   appearance: textfield;
 }
 
-/* Ajuste fino no campo de quantidade do pick */
 #product-pick-qty {
   width: 100%;
   height: 46px;
@@ -899,7 +885,7 @@
 }
 
 #product-pick-qty:hover:not(:focus) {
-  border-color: #b9bfc9;
+  border-color: color-mix(in srgb, var(--border-strong) 60%, var(--text) 40%);
 }
 
 #product-pick-qty:focus {
@@ -907,6 +893,7 @@
   border-color: var(--accent);
   box-shadow: 0 0 0 4px var(--accent-ring);
 }
+
 .qty-stepper {
   display: flex;
   align-items: stretch;
@@ -970,17 +957,22 @@
   background: color-mix(in srgb, var(--accent) 20%, var(--surface-2));
 }
 
-.badge--warning { background: rgba(245,158,11,0.14); color: #f59e0b; }
-.badge--muted   { background: var(--surface-2); color: var(--text-muted); }
-
 /* =========================================================
-   NOVOS status + sem estoque + aprovações
+   Badges de status (consolidado)
    ========================================================= */
-.badge--warning { background: rgba(245,158,11,0.14); color: #f59e0b; }
-.badge--muted   { background: var(--surface-2); color: var(--text-muted); }
-.badge--danger  { background: rgba(220,80,60,0.14); color: #f97066; }
+.badge--warning   { background: rgba(245,158,11,0.14); color: #f59e0b; }
+.badge--muted     { background: var(--surface-2);       color: var(--text-muted); }
+.badge--danger    { background: rgba(220,80,60,0.14);   color: #f97066; }
+.badge--success   { background: rgba(16,185,129,0.14);  color: #10b981; }
 
-/* Botão "Aprovações" no toolbar */
+/* Status de orçamento */
+.badge--draft     { background: var(--surface-2);        color: var(--text-muted); }
+.badge--sent      { background: rgba(249,115,22,.14);    color: var(--accent-hover); }
+.badge--converted { background: rgba(16,185,129,.14);    color: #10b981; }
+.badge--expired   { background: rgba(245,158,11,.14);    color: #f59e0b; }
+.badge--cancelled { background: rgba(220,80,60,.14);     color: #f97066; }
+
+/* ---------- Botão "Aprovações" no toolbar ---------- */
 #approvals-btn {
   display: inline-flex;
   align-items: center;
@@ -1007,63 +999,16 @@
 }
 .product-pick__warn strong { color: #fbbf24; }
 
-/* Checkbox "Vender sem estoque" */
-.checkbox {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  cursor: pointer;
-  user-select: none;
+/* Aviso informativo (mesma paleta de alerta) */
+.product-pick__warn--info {
+  background: rgba(245,158,11,0.10);
+  border-color: rgba(245,158,11,0.35);
+  color: #f59e0b;
 }
-.checkbox input {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
-}
-.checkbox__box {
-  flex: none;
-  display: grid;
-  place-items: center;
-  width: 20px;
-  height: 20px;
-  border: 1.5px solid var(--border-strong);
-  border-radius: 6px;
-  background: var(--surface);
-  color: transparent;
-  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
-}
-.checkbox__box svg { width: 12px; height: 12px; }
-.checkbox input:checked + .checkbox__box {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
-}
-.checkbox input:focus-visible + .checkbox__box {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-.checkbox__text {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-  font-size: 13.5px;
-  color: var(--text);
-}
-.checkbox__text strong { font-weight: 600; }
-.checkbox__text small { color: var(--text-muted); font-size: 12px; }
 
-.checkbox--alert .checkbox__box {
-  border-color: rgba(245,158,11,0.45);
-}
-.checkbox--alert input:checked + .checkbox__box {
-  background: #f59e0b;
-  border-color: #f59e0b;
-  color: #fff;
-}
-.checkbox--alert .checkbox__text strong { color: #f59e0b; }
-
-/* Modal de aprovações */
+/* =========================================================
+   Modal de aprovações
+   ========================================================= */
 .approvals-list {
   display: flex;
   flex-direction: column;
@@ -1112,7 +1057,7 @@
 .btn--sm { height: 34px; padding: 0 12px; font-size: 12.5px; }
 
 /* =========================================================
-   Abas Vendas / Orçamentos
+   Abas Vendas / Orçamentos (consolidado)
    ========================================================= */
 .sales-tabs {
   display: inline-flex;
@@ -1147,60 +1092,7 @@
 }
 
 /* =========================================================
-   Status de orçamento
-   ========================================================= */
-.badge--draft     { background: var(--surface-2); color: var(--text-muted); }
-.badge--sent      { background: rgba(99,102,241,.14); color: var(--accent); }
-.badge--converted { background: rgba(16,185,129,.14); color: #10b981; }
-.badge--expired   { background: rgba(245,158,11,.14); color: #f59e0b; }
-.badge--cancelled { background: rgba(220,80,60,.14);  color: #f97066; }
-
-/* =========================================================
-   Abas Vendas / Orçamentos
-   ========================================================= */
-.sales-tabs {
-  display: inline-flex;
-  gap: 4px;
-  padding: 4px;
-  margin-bottom: 16px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-}
-.sales-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border: 0; border-radius: 8px;
-  background: transparent;
-  color: var(--text-soft);
-  font-family: inherit; font-size: 13.5px; font-weight: 600;
-  cursor: pointer;
-  transition: background-color 140ms ease, color 140ms ease;
-}
-.sales-tab:hover { color: var(--text); }
-.sales-tab.is-active {
-  background: var(--surface); color: var(--text);
-  box-shadow: 0 1px 3px rgba(16,24,40,.08);
-}
-.sales-tab__count {
-  padding: 1px 7px; border-radius: 999px;
-  background: var(--accent-soft); color: var(--accent-hover);
-  font-size: 11px; font-weight: 700;
-}
-
-/* =========================================================
-   Status de orçamento
-   ========================================================= */
-.badge--draft     { background: var(--surface-2); color: var(--text-muted); }
-.badge--sent      { background: rgba(99,102,241,.14); color: var(--accent); }
-.badge--converted { background: rgba(16,185,129,.14); color: #10b981; }
-.badge--expired   { background: rgba(245,158,11,.14); color: #f59e0b; }
-.badge--cancelled { background: rgba(220,80,60,.14);  color: #f97066; }
-
-/* =========================================================
-   Badges "sem estoque" no carrinho
+   Badges "sem estoque" no carrinho + sugestões out-of-stock
    ========================================================= */
 .cart-badge {
   display: inline-block;
@@ -1223,7 +1115,6 @@
   color: #f97066;
 }
 
-/* Item da lista de sugestões sem estoque */
 .product-suggestions__item.is-out-of-stock .product-suggestions__name {
   color: var(--text-soft);
 }
@@ -1233,108 +1124,8 @@
   font-weight: 600;
 }
 
-/* Aviso laranja (informativo) no preview */
-.product-pick__warn--info {
-  background: rgba(245,158,11,0.10);
-  border-color: rgba(245,158,11,0.35);
-  color: #f59e0b;
-}
-
 /* =========================================================
-   Abas Vendas / Orçamentos
-   ========================================================= */
-.sales-tabs {
-  display: inline-flex;
-  gap: 4px;
-  padding: 4px;
-  margin-bottom: 16px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-}
-.sales-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border: 0; border-radius: 8px;
-  background: transparent;
-  color: var(--text-soft);
-  font-family: inherit; font-size: 13.5px; font-weight: 600;
-  cursor: pointer;
-  transition: background-color 140ms ease, color 140ms ease;
-}
-.sales-tab:hover { color: var(--text); }
-.sales-tab.is-active {
-  background: var(--surface); color: var(--text);
-  box-shadow: 0 1px 3px rgba(16,24,40,.08);
-}
-.sales-tab__count {
-  padding: 1px 7px; border-radius: 999px;
-  background: var(--accent-soft); color: var(--accent-hover);
-  font-size: 11px; font-weight: 700;
-}
-
-/* =========================================================
-   Status de orçamento
-   ========================================================= */
-.badge--draft     { background: var(--surface-2); color: var(--text-muted); }
-.badge--sent      { background: rgba(99,102,241,.14); color: var(--accent); }
-.badge--converted { background: rgba(16,185,129,.14); color: #10b981; }
-.badge--expired   { background: rgba(245,158,11,.14); color: #f59e0b; }
-.badge--cancelled { background: rgba(220,80,60,.14);  color: #f97066; }
-
-/* =========================================================
-   Badge de pagamento (success)
-   ========================================================= */
-.badge--success {
-  background: rgba(16,185,129,0.14);
-  color: #10b981;
-}
-
-/* =========================================================
-   Badges "sem estoque" no carrinho
-   ========================================================= */
-.cart-badge {
-  display: inline-block;
-  margin-left: 8px;
-  padding: 1px 8px;
-  border-radius: 999px;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  vertical-align: middle;
-}
-.cart-badge--warn {
-  background: rgba(245,158,11,0.16);
-  color: #f59e0b;
-}
-.cart-badge--danger {
-  background: rgba(220,80,60,0.16);
-  color: #f97066;
-}
-
-/* Item da lista de sugestões sem estoque */
-.product-suggestions__item.is-out-of-stock .product-suggestions__name {
-  color: var(--text-soft);
-}
-.product-suggestions__item.is-out-of-stock .product-suggestions__meta::after {
-  content: ' · em falta';
-  color: #f59e0b;
-  font-weight: 600;
-}
-
-/* Aviso laranja (informativo) no preview */
-.product-pick__warn--info {
-  background: rgba(245,158,11,0.10);
-  border-color: rgba(245,158,11,0.35);
-  color: #f59e0b;
-}
-
-/* =========================================================
-   Linha de saldo a receber (verde/azul)
+   Linha de saldo a receber
    ========================================================= */
 .totals__row--balance {
   padding-top: 10px;
@@ -1365,7 +1156,6 @@
   color: var(--text-soft);
 }
 
-/* Botão extra pequeno */
 .btn--xs {
   display: inline-flex;
   align-items: center;
@@ -1384,7 +1174,6 @@
   flex: none;
 }
 
-/* Garante tamanho correto dentro do label-row */
 .field__label-row .btn--xs {
   flex: 0 0 auto;
 }
@@ -1401,10 +1190,20 @@
 }
 
 /* =========================================================
+   Grid 2 colunas (compartilhado entre modais)
+   ========================================================= */
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 560px) {
+  .field-row { grid-template-columns: 1fr; }
+}
+
+/* =========================================================
    MODAL · NOVO PARCEIRO
    ========================================================= */
-
-/* Inputs, selects e textarea */
 #customer-modal input[type="text"],
 #customer-modal input[type="email"],
 #customer-modal input[type="tel"],
@@ -1427,7 +1226,6 @@
   appearance: none;
 }
 
-/* Textarea */
 #customer-modal textarea {
   min-height: 72px;
   padding: 10px 14px;
@@ -1435,7 +1233,6 @@
   resize: vertical;
 }
 
-/* Select com chevron customizado */
 #customer-modal select {
   padding-right: 40px;
   cursor: pointer;
@@ -1448,20 +1245,17 @@
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a8b0ba' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
 }
 
-/* Options no dark mode */
 #customer-modal select option {
   background-color: var(--surface);
   color: var(--text);
 }
 
-/* Hover */
 #customer-modal input:hover,
 #customer-modal select:hover,
 #customer-modal textarea:hover {
   border-color: color-mix(in srgb, var(--border-strong) 70%, var(--text) 30%);
 }
 
-/* Focus */
 #customer-modal input:focus,
 #customer-modal select:focus,
 #customer-modal textarea:focus {
@@ -1469,20 +1263,6 @@
   box-shadow: 0 0 0 4px var(--accent-ring);
 }
 
-/* Grid 2 colunas (Tipo + CPF, Telefone + Email) */
-.field-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-@media (max-width: 560px) {
-  .field-row {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* Labels */
 #customer-modal .field > label {
   display: block;
   margin-bottom: 6px;
@@ -1491,7 +1271,6 @@
   color: var(--text-soft);
 }
 
-/* Ajuste do texto do hint */
 #customer-modal .prm-hint {
   margin: 0;
   padding: 12px 14px;
@@ -1503,11 +1282,7 @@
   line-height: 1.5;
 }
 
-/* =========================================================
-   MODAL · NOVO PARCEIRO — espaçamento correto entre campos
-   ========================================================= */
-
-/* Cada campo como coluna, com respiro entre label/input */
+/* --- Espaçamento correto entre campos --- */
 #customer-modal .field {
   display: flex !important;
   flex-direction: column !important;
@@ -1515,7 +1290,6 @@
   margin-bottom: 14px !important;
 }
 
-/* Label sempre em cima, separado */
 #customer-modal .field > label {
   display: block !important;
   margin: 0 !important;
@@ -1526,7 +1300,6 @@
   line-height: 1.3 !important;
 }
 
-/* O form em si empilha os campos verticalmente */
 #customer-modal .modal__body {
   display: flex !important;
   flex-direction: column !important;
@@ -1534,12 +1307,10 @@
   padding: 20px !important;
 }
 
-/* Remove o margin-bottom do último (não fica buraco antes do footer) */
 #customer-modal .field:last-child {
   margin-bottom: 0 !important;
 }
 
-/* Grid de 2 colunas: não deixa o gap vertical esmagar */
 #customer-modal .field-row {
   display: grid !important;
   grid-template-columns: 1fr 1fr !important;
@@ -1547,22 +1318,18 @@
   margin-bottom: 14px !important;
 }
 
-/* Os fields dentro do field-row não precisam de margin extra */
 #customer-modal .field-row .field {
   margin-bottom: 0 !important;
 }
 
-/* Hint com espaçamento adequado */
 #customer-modal .prm-hint {
   margin: 0 0 16px 0 !important;
 }
 
-/* Feedback */
 #customer-modal .feedback {
   margin: 0 !important;
 }
 
-/* Footer do modal */
 #customer-modal .modal__foot {
   padding: 14px 20px !important;
 }
@@ -1573,13 +1340,9 @@
   }
 }
 
-.field-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-@media (max-width: 560px) { .field-row { grid-template-columns: 1fr; } }
-
+/* =========================================================
+   MODAL · NOVO MÉTODO DE PAGAMENTO
+   ========================================================= */
 #method-modal input[type="text"],
 #method-modal input[type="number"],
 #method-modal select,
@@ -1602,6 +1365,10 @@
   line-height: 1.5;
   resize: vertical;
 }
+#method-modal select option {
+  background-color: var(--surface);
+  color: var(--text);
+}
 #method-modal input:focus,
 #method-modal select:focus,
 #method-modal textarea:focus {
@@ -1610,10 +1377,8 @@
 }
 
 /* =========================================================
-   CHECKBOX · corrige tamanho do SVG interno
+   CHECKBOX (consolidado — versão com fix de SVG)
    ========================================================= */
-
-/* Estrutura geral do checkbox */
 .checkbox {
   display: flex;
   align-items: flex-start;
@@ -1627,7 +1392,6 @@
   pointer-events: none;
 }
 
-/* Caixa visível do checkbox */
 .checkbox__box {
   flex: 0 0 auto;
   display: grid !important;
@@ -1646,7 +1410,6 @@
   transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
 }
 
-/* ⬇️ A REGRA QUE FALTAVA — limita o SVG do check */
 .checkbox__box svg {
   width: 12px !important;
   height: 12px !important;
@@ -1681,7 +1444,7 @@
 .checkbox__text strong { font-weight: 600; }
 .checkbox__text small { color: var(--text-muted); font-size: 12px; }
 
-/* Variante "alerta" (usada em vender sem estoque) */
+/* Variante "alerta" (vender sem estoque) */
 .checkbox--alert .checkbox__box {
   border-color: rgba(245,158,11,0.45);
 }

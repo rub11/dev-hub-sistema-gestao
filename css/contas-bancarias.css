@@ -1,5 +1,5 @@
 /* =========================================================
-   DEV HUB · Contas Bancárias
+   DEV HUB · Contas Bancárias (Padronizado Laranja)
    ========================================================= */
 
 body[data-page="contas-bancarias"] .fin-content {
@@ -48,9 +48,14 @@ body[data-page="contas-bancarias"] select {
   border-radius: 12px;
 }
 .cb-kpi--balance   { border-left-color: #10b981; }
-.cb-kpi--active    { border-left-color: #6366f1; }
+
+/* KPI Ativas: Trocado de Roxo para Laranja Principal */
+.cb-kpi--active    { border-left-color: var(--accent); }
+
 .cb-kpi--top       { border-left-color: #f59e0b; }
-.cb-kpi--movements { border-left-color: #8b5cf6; }
+
+/* KPI Movimentações: Trocado de Roxo para Laranja Escuro */
+.cb-kpi--movements { border-left-color: var(--accent-hover); }
 
 .cb-kpi__label {
   font-size: 11px; font-weight: 600; letter-spacing: 0.05em;
@@ -111,9 +116,12 @@ body[data-page="contas-bancarias"] select {
   border-radius: 10px;
   font-size: 12px; font-weight: 800;
   color: #fff; letter-spacing: 0.02em;
-  background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
+  /* Gradiente padrão alterado para Laranja */
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
   text-transform: uppercase;
 }
+
+/* Cores específicas de bancos (mantidas para reconhecimento visual) */
 .cb-acc__logo--nubank   { background: linear-gradient(135deg, #820ad1 0%, #5b0495 100%); }
 .cb-acc__logo--itau     { background: linear-gradient(135deg, #ec7000 0%, #c85a00 100%); }
 .cb-acc__logo--bb       { background: linear-gradient(135deg, #fbe300 0%, #e0c400 100%); color: #003a8c; }
@@ -123,6 +131,7 @@ body[data-page="contas-bancarias"] select {
 .cb-acc__logo--inter    { background: linear-gradient(135deg, #ff7a00 0%, #e65c00 100%); }
 .cb-acc__logo--c6       { background: linear-gradient(135deg, #3d3d3d 0%, #1a1a1a 100%); }
 .cb-acc__logo--dinheiro { background: linear-gradient(135deg, #10b981 0%, #047857 100%); }
+
 .cb-acc__info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .cb-acc__name {
   font-size: 13.5px; font-weight: 600; color: var(--text);

@@ -1,13 +1,9 @@
 /* =========================================================
-   DEV HUB · Financeiro · Hub
+   DEV HUB · Financeiro · Hub (Padronizado Laranja)
    ========================================================= */
 
 /* =========================================================
    CONTAINER
-   ---------------------------------------------------------
-   Precisa de `body[data-page="financeiro"]` na frente pra
-   vencer a regra `body[data-page="financeiro"] .fin-content`
-   do financeiro.css (que também mira `.fin-content`).
    ========================================================= */
 body[data-page="financeiro"] .fin-content.fin-hub {
   display: flex;
@@ -75,7 +71,7 @@ body[data-page="financeiro"] .fin-content.fin-hub {
 }
 
 /* =========================================================
-   TOOLBAR (refresh centralizado + período à direita)
+   TOOLBAR
    ========================================================= */
 .fin-hub__toolbar {
   display: grid;
@@ -95,23 +91,24 @@ body[data-page="financeiro"] .fin-content.fin-hub {
   padding: 0 20px;
   border: 0;
   border-radius: 999px;
-  background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
+  /* Botão Atualizar agora em Laranja */
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
   color: #ffffff;
   font-family: inherit;
   font-size: 13.5px;
   font-weight: 600;
   cursor: pointer;
   box-shadow:
-    0 2px 6px -1px rgba(79, 70, 229, 0.35),
-    0 8px 20px -6px rgba(79, 70, 229, 0.45);
+    0 2px 6px -1px rgba(249, 115, 22, 0.35),
+    0 8px 20px -6px rgba(249, 115, 22, 0.45);
   transition: transform 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
 }
 .fin-hub__refresh svg { width: 15px; height: 15px; }
 .fin-hub__refresh:hover:not(:disabled) {
   transform: translateY(-1px);
   box-shadow:
-    0 4px 10px -2px rgba(79, 70, 229, 0.45),
-    0 12px 24px -6px rgba(79, 70, 229, 0.55);
+    0 4px 10px -2px rgba(249, 115, 22, 0.45),
+    0 12px 24px -6px rgba(249, 115, 22, 0.55);
 }
 .fin-hub__refresh:active:not(:disabled) { transform: translateY(0); }
 .fin-hub__refresh:disabled { opacity: 0.65; cursor: progress; }
@@ -305,14 +302,14 @@ body[data-page="financeiro"] .fin-content.fin-hub {
 }
 .fin-kpi--pago .fin-kpi__icon { background: rgba(16, 185, 129, 0.18); color: #34d399; }
 
-/* Azul — Boletos */
+/* Laranja — Boletos (Trocado de Azul para Laranja) */
 .fin-kpi--boletos {
-  border-color: rgba(59, 130, 246, 0.35);
+  border-color: rgba(249, 115, 22, 0.35);
   background:
-    radial-gradient(circle at 100% 0%, rgba(59, 130, 246, 0.14) 0%, transparent 55%),
+    radial-gradient(circle at 100% 0%, rgba(249, 115, 22, 0.14) 0%, transparent 55%),
     var(--surface);
 }
-.fin-kpi--boletos .fin-kpi__icon { background: rgba(59, 130, 246, 0.18); color: #60a5fa; }
+.fin-kpi--boletos .fin-kpi__icon { background: rgba(249, 115, 22, 0.18); color: #fb923c; }
 
 /* =========================================================
    SHORTCUTS · Acessos rápidos
@@ -363,7 +360,7 @@ body[data-page="financeiro"] .fin-content.fin-hub {
   transform: translateY(-3px);
   box-shadow:
     0 4px 12px -2px rgba(0, 0, 0, 0.25),
-    0 12px 28px -10px rgba(79, 70, 229, 0.35);
+    0 12px 28px -10px rgba(249, 115, 22, 0.35);
 }
 
 .fin-shortcut--soon {
@@ -391,9 +388,11 @@ body[data-page="financeiro"] .fin-content.fin-hub {
 /* Cores por atalho */
 .fin-shortcut__icon--pagar   { color: #f87171; background: rgba(239, 68, 68, 0.14); }
 .fin-shortcut__icon--receber { color: #34d399; background: rgba(16, 185, 129, 0.14); }
-.fin-shortcut__icon--todos   { color: #a5b4fc; background: rgba(99, 102, 241, 0.16); }
-.fin-shortcut__icon--mov     { color: #c4b5fd; background: rgba(139, 92, 246, 0.16); }
-.fin-shortcut__icon--transf  { color: #67e8f9; background: rgba(6, 182, 212, 0.14); }
+
+/* Atalhos neutros agora em Laranja/Âmbar */
+.fin-shortcut__icon--todos   { color: #fb923c; background: rgba(249, 115, 22, 0.16); }
+.fin-shortcut__icon--mov     { color: #fdba74; background: rgba(251, 146, 60, 0.16); }
+.fin-shortcut__icon--transf  { color: #fcd34d; background: rgba(245, 158, 11, 0.14); }
 .fin-shortcut__icon--contas  { color: #fcd34d; background: rgba(245, 158, 11, 0.14); }
 .fin-shortcut__icon--conc    { color: #cbd5e1; background: rgba(148, 163, 184, 0.16); }
 
@@ -427,8 +426,8 @@ body[data-page="financeiro"] .fin-content.fin-hub {
    ========================================================= */
 [data-theme="dark"] .fin-hub__refresh {
   box-shadow:
-    0 2px 6px -1px rgba(99, 102, 241, 0.5),
-    0 8px 24px -6px rgba(99, 102, 241, 0.55);
+    0 2px 6px -1px rgba(249, 115, 22, 0.5),
+    0 8px 24px -6px rgba(249, 115, 22, 0.55);
 }
 
 [data-theme="dark"] .fin-shortcut {
@@ -439,7 +438,7 @@ body[data-page="financeiro"] .fin-content.fin-hub {
   background: color-mix(in srgb, #12151a 88%, var(--accent) 12%);
   box-shadow:
     0 4px 12px -2px rgba(0, 0, 0, 0.5),
-    0 12px 28px -10px rgba(99, 102, 241, 0.5);
+    0 12px 28px -10px rgba(249, 115, 22, 0.5);
 }
 
 [data-theme="dark"] .fin-kpi {
@@ -470,7 +469,7 @@ body[data-page="financeiro"] .fin-content.fin-hub {
 }
 [data-theme="dark"] .fin-kpi--boletos {
   background:
-    radial-gradient(circle at 100% 0%, rgba(59, 130, 246, 0.16) 0%, transparent 55%),
+    radial-gradient(circle at 100% 0%, rgba(249, 115, 22, 0.16) 0%, transparent 55%),
     #12151a;
 }
 
@@ -758,10 +757,11 @@ body[data-page="financeiro"] .fin-content.fin-hub {
   background: #1a1e23;
 }
 
-.fin-shortcut__icon--config { background: rgba(99,102,241,0.14); color: #6366f1; }
+/* Atalhos extra */
+.fin-shortcut__icon--config { background: rgba(249,115,22,0.14); color: var(--accent); }
 .fin-shortcut__icon--fluxo  { background: rgba(20,184,166,0.14); color: #14b8a6; }
 .fin-shortcut__icon--inad   { background: rgba(239,68,68,0.14);  color: #ef4444; }
 
-[data-theme="dark"] .fin-shortcut__icon--config { background: rgba(99,102,241,0.20); color: #818cf8; }
+[data-theme="dark"] .fin-shortcut__icon--config { background: rgba(249,115,22,0.20); color: #fb923c; }
 [data-theme="dark"] .fin-shortcut__icon--fluxo  { background: rgba(20,184,166,0.20); color: #2dd4bf; }
 [data-theme="dark"] .fin-shortcut__icon--inad   { background: rgba(239,68,68,0.20);  color: #f87171; }

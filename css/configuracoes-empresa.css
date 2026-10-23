@@ -1,5 +1,5 @@
 /* =========================================================
-   DEV HUB · Configurações da empresa
+   DEV HUB · Configurações da empresa (Padronizado Laranja)
    ========================================================= */
 
 /* ---------- Card base ---------- */
@@ -61,6 +61,7 @@
   padding: 20px;
   margin-bottom: 16px;
   border-radius: var(--radius-lg);
+  /* O degradê abaixo vai puxar o Laranja automaticamente */
   background: linear-gradient(135deg,
     color-mix(in srgb, var(--accent) 6%, var(--surface)) 0%,
     var(--surface) 60%);
@@ -150,7 +151,8 @@
 #cmp-form select {
   padding-right: 40px;
   cursor: pointer;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+  /* Chevron padronizado */
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
   background-repeat: no-repeat;
   background-position: right 12px center;
   background-size: 16px 16px;
@@ -171,7 +173,7 @@
 #cmp-form input:focus,
 #cmp-form select:focus,
 #cmp-form textarea:focus {
-  border-color: var(--accent);
+  border-color: var(--accent); /* Borda Laranja no foco */
   box-shadow: 0 0 0 4px var(--accent-ring);
 }
 

@@ -1,5 +1,5 @@
 /* =========================================================
-   DEV HUB · Nova Compra · CSS dedicado (auto-contido)
+   DEV HUB · Nova Compra · CSS dedicado (Padronizado Laranja)
    ---------------------------------------------------------
    - Força centralização com alta especificidade
    - Corrige chevron dos selects
@@ -7,11 +7,8 @@
    - NÃO depende de compras.css
    ========================================================= */
 
-
 /* =========================================================
    1) RESET E CONTAINER FORÇADO
-   ---------------------------------------------------------
-   Neutraliza o .content global e define nossa própria coluna.
    ========================================================= */
 body[data-page="compras-nova"] .content,
 body[data-page="compras-nova"] main.content,
@@ -57,7 +54,6 @@ body[data-page="compras-nova"] .cmp-form {
   max-width: 100%;
 }
 
-
 /* =========================================================
    2) FIX DO CHEVRON — selects com um único ícone à direita
    ========================================================= */
@@ -77,7 +73,6 @@ body[data-page="compras-nova"] select {
 [data-theme="dark"] body[data-page="compras-nova"] select {
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a8b0ba' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>") !important;
 }
-
 
 /* =========================================================
    3) HEADER DA PÁGINA
@@ -125,7 +120,6 @@ body[data-page="compras-nova"] .cmp-page-head__sub {
   line-height: 1.55;
   color: var(--text-soft);
 }
-
 
 /* =========================================================
    4) BOTÕES (usados no form)
@@ -180,7 +174,6 @@ body[data-page="compras-nova"] .cmp-btn--primary:hover {
   border-color: var(--accent-hover);
 }
 
-
 /* =========================================================
    5) SEÇÕES (.cmp-section)
    ========================================================= */
@@ -213,7 +206,6 @@ body[data-page="compras-nova"] .cmp-section__title {
     margin-bottom: 20px;
   }
 }
-
 
 /* =========================================================
    6) GRIDS
@@ -251,7 +243,6 @@ body[data-page="compras-nova"] .cmp-grid .field {
     grid-template-columns: 1fr;
   }
 }
-
 
 /* =========================================================
    7) CAMPOS
@@ -319,7 +310,6 @@ body[data-page="compras-nova"] .field input[readonly] {
   color: var(--text-soft);
   cursor: not-allowed;
 }
-
 
 /* =========================================================
    8) ITENS DA COMPRA
@@ -487,7 +477,6 @@ body[data-page="compras-nova"] .cmp-items__add {
   }
 }
 
-
 /* =========================================================
    9) TOTAIS
    ========================================================= */
@@ -538,7 +527,6 @@ body[data-page="compras-nova"] .cmp-totals__grand dd {
   letter-spacing: -0.015em;
 }
 
-
 /* =========================================================
    10) AÇÕES DO FORMULÁRIO
    ========================================================= */
@@ -566,7 +554,6 @@ body[data-page="compras-nova"] .cmp-form__actions .control-select {
     width: 100%;
   }
 }
-
 
 /* =========================================================
    11) FEEDBACK / LOADING
@@ -598,7 +585,6 @@ body[data-page="compras-nova"] .cmp-info {
   line-height: 1.5;
 }
 
-
 /* =========================================================
    12) REDUCED MOTION
    ========================================================= */
@@ -610,12 +596,7 @@ body[data-page="compras-nova"] .cmp-info {
 
 /* =========================================================
    13) FALLBACK · botões com .btn ou .btn--primary
-   ---------------------------------------------------------
-   Cobre o HTML legado que ainda usa classes do global.css.
-   Assim o botão "+ Adicionar item" ganha estilo correto.
    ========================================================= */
-
-/* Botão base */
 body[data-page="compras-nova"] .btn,
 body[data-page="compras-nova"] .cmp-btn {
   display: inline-flex;
@@ -658,7 +639,6 @@ body[data-page="compras-nova"] .cmp-btn:focus-visible {
   box-shadow: 0 0 0 4px var(--accent-ring);
 }
 
-/* Botão primário (Salvar compra) */
 body[data-page="compras-nova"] .btn--primary,
 body[data-page="compras-nova"] .cmp-btn--primary {
   background: var(--accent);
@@ -672,7 +652,6 @@ body[data-page="compras-nova"] .cmp-btn--primary:hover {
   border-color: var(--accent-hover);
 }
 
-/* Botão ghost */
 body[data-page="compras-nova"] .btn--ghost,
 body[data-page="compras-nova"] .cmp-btn--ghost {
   background: var(--surface);
@@ -687,12 +666,12 @@ body[data-page="compras-nova"] .cmp-btn--ghost:hover {
   color: var(--text);
 }
 
-/* Bloqueia width 100% para botões de formulário, exceto block */
 body[data-page="compras-nova"] .btn--block {
   width: 100%;
 }
+
 /* =========================================================
-   13) FORNECEDOR · linha com select + botão Novo
+   13.1) FORNECEDOR · linha com select + botão Novo
    ========================================================= */
 body[data-page="compras-nova"] .cmp-supplier-row {
   display: flex;
@@ -706,7 +685,6 @@ body[data-page="compras-nova"] .cmp-supplier-row select {
   min-width: 0;
 }
 
-/* Botão pequeno (ao lado do select) */
 body[data-page="compras-nova"] .cmp-btn--sm {
   height: 44px;
   padding: 0 14px;
@@ -747,7 +725,6 @@ body[data-page="compras-nova"] .cmp-cnpj__hint strong {
   color: var(--text-soft);
 }
 
-/* Spinner de loading do botão "Buscar dados" */
 body[data-page="compras-nova"] .cmp-cnpj__spinner {
   display: none;
   width: 14px;
@@ -770,7 +747,6 @@ body[data-page="compras-nova"] #sup-save.is-loading {
   opacity: 0.9;
 }
 
-/* Destaque pulsante quando dados são auto-preenchidos */
 @keyframes cmp-field-filled {
   from { background-color: var(--accent-soft); }
   to   { background-color: var(--surface); }
@@ -779,7 +755,6 @@ body[data-page="compras-nova"] input.is-autofilled {
   animation: cmp-field-filled 1200ms ease-out;
 }
 
-/* Mobile: empilha botão embaixo da busca CNPJ */
 @media (max-width: 560px) {
   body[data-page="compras-nova"] .cmp-cnpj {
     flex-direction: column;
@@ -797,6 +772,7 @@ body[data-page="compras-nova"] input.is-autofilled {
     justify-content: center;
   }
 }
+
 /* =========================================================
    15) MODAL (usado pelo cadastro de fornecedor inline)
    ========================================================= */
@@ -931,7 +907,6 @@ body[data-page="compras-nova"] .cmp-cnpj__hint strong {
   color: var(--text-soft);
 }
 
-/* Spinner do botão Buscar dados */
 body[data-page="compras-nova"] .cmp-cnpj__spinner {
   display: none;
   width: 14px;
@@ -949,7 +924,6 @@ body[data-page="compras-nova"] .cmp-cnpj__btn.is-loading .cmp-cnpj__icon-search 
   display: none;
 }
 
-/* Destaque pulsante quando dado é auto-preenchido */
 @keyframes cmp-field-filled {
   from { background-color: var(--accent-soft); }
   to   { background-color: var(--surface); }
@@ -958,7 +932,6 @@ body[data-page="compras-nova"] input.is-autofilled {
   animation: cmp-field-filled 1200ms ease-out;
 }
 
-/* Mobile */
 @media (max-width: 640px) {
   body[data-page="compras-nova"] .cmp-modal { padding: 16px; }
   body[data-page="compras-nova"] .cmp-modal__head { padding: 18px 18px 14px; }
@@ -980,8 +953,9 @@ body[data-page="compras-nova"] input.is-autofilled {
     justify-content: center;
   }
 }
+
 /* =========================================================
-   BARRA DE AÇÕES DO FORMULÁRIO
+   16) BARRA DE AÇÕES DO FORMULÁRIO
    ========================================================= */
 .cmp-action-bar {
   display: flex;
@@ -996,7 +970,6 @@ body[data-page="compras-nova"] input.is-autofilled {
   box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
 }
 
-/* ---------- Modo de salvamento (segmented) ---------- */
 .cmp-save-mode {
   display: flex;
   align-items: center;
@@ -1068,7 +1041,6 @@ body[data-page="compras-nova"] input.is-autofilled {
   outline-offset: 2px;
 }
 
-/* ---------- Botões ---------- */
 .cmp-action-bar__buttons {
   display: flex;
   align-items: center;
@@ -1088,7 +1060,6 @@ body[data-page="compras-nova"] input.is-autofilled {
   height: 16px;
 }
 
-/* ---------- Responsivo ---------- */
 @media (max-width: 720px) {
   .cmp-action-bar {
     flex-direction: column;
@@ -1119,19 +1090,13 @@ body[data-page="compras-nova"] input.is-autofilled {
   }
 }
 
-/* ---------- Dark mode ---------- */
 [data-theme="dark"] .cmp-save-option input:checked + .cmp-save-option__box {
   background: color-mix(in srgb, var(--surface) 90%, #ffffff 10%);
 }
-/* =========================================================
-   MODAL · FORNECEDOR (cadastro inline)
-   ---------------------------------------------------------
-   Usado em:
-     • compras-nova.html (botão "+ Novo" ao lado do select)
-     • fornecedores.html (botão "Novo fornecedor")
-   ========================================================= */
 
-/* ---------- Linha CNPJ: input + botão lado a lado ---------- */
+/* =========================================================
+   17) MODAL · FORNECEDOR (cadastro inline)
+   ========================================================= */
 .cmp-cnpj {
   display: flex !important;
   align-items: flex-end;
@@ -1194,7 +1159,6 @@ body[data-page="compras-nova"] input.is-autofilled {
 .cmp-cnpj__btn:disabled { opacity: 0.65; cursor: progress; }
 .cmp-cnpj__btn svg { width: 15px; height: 15px; flex: none; }
 
-/* ---------- Hint abaixo da linha CNPJ ---------- */
 .cmp-cnpj__hint {
   margin: 10px 0 0 !important;
   font-size: 12.5px;
@@ -1203,26 +1167,22 @@ body[data-page="compras-nova"] input.is-autofilled {
 }
 .cmp-cnpj__hint strong { color: var(--text-soft); font-weight: 600; }
 
-/* ---------- Corpo do modal: espaçamento uniforme ---------- */
 .cmp-modal__body {
   display: flex;
   flex-direction: column;
   gap: 18px;
 }
 
-/* ---------- Grid do modal (2 colunas) ---------- */
 .cmp-modal__body .cmp-grid--2 {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
 }
 
-/* Campo que ocupa a linha toda */
 .cmp-modal__body .field[style*="grid-column"] {
   grid-column: 1 / -1;
 }
 
-/* ---------- Campos dentro do modal ---------- */
 .cmp-modal__body .field {
   display: flex;
   flex-direction: column;
@@ -1261,7 +1221,6 @@ body[data-page="compras-nova"] input.is-autofilled {
   box-shadow: 0 0 0 4px var(--accent-ring);
 }
 
-/* ---------- Erro inline ---------- */
 .cmp-modal__body .cmp-error {
   margin: 0;
   padding: 12px 16px;
@@ -1273,7 +1232,6 @@ body[data-page="compras-nova"] input.is-autofilled {
   line-height: 1.5;
 }
 
-/* ---------- Spinner do botão (loading) ---------- */
 .cmp-cnpj__spinner {
   display: none;
   width: 14px;
@@ -1293,7 +1251,6 @@ body[data-page="compras-nova"] input.is-autofilled {
 }
 @keyframes cmp-spin { to { transform: rotate(360deg); } }
 
-/* ---------- Destaque quando campo é autopreenchido ---------- */
 @keyframes cmp-field-filled {
   from { background-color: var(--accent-soft); }
   to   { background-color: var(--surface); }
@@ -1302,7 +1259,6 @@ body[data-page="compras-nova"] input.is-autofilled {
   animation: cmp-field-filled 1200ms ease-out;
 }
 
-/* ---------- Responsivo: empilha em telas pequenas ---------- */
 @media (max-width: 560px) {
   .cmp-cnpj {
     flex-direction: column;
@@ -1319,8 +1275,8 @@ body[data-page="compras-nova"] input.is-autofilled {
   }
 }
 
-/* ---------- Dark mode: ajustes finos ---------- */
 [data-theme="dark"] .cmp-cnpj__field > input:focus,
 [data-theme="dark"] .cmp-modal__body .field > input:focus {
-  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.28);
+  /* Corrigido de roxo para a variável do laranja */
+  box-shadow: 0 0 0 4px var(--accent-ring); 
 }

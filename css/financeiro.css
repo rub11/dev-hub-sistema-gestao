@@ -1,8 +1,5 @@
 /* =========================================================
-   DEV HUB · Financeiro
-   ========================================================= */
-   /* =========================================================
-   DEV HUB · Financeiro
+   DEV HUB · Financeiro (Padronizado Laranja)
    ========================================================= */
 
 body[data-page="financeiro"] {
@@ -406,7 +403,7 @@ body[data-page="financeiro"] select {
 .fin-badge--despesa   { background: rgba(220,38,38,.10);  color: #b91c1c; }
 .fin-badge--pendente  { background: rgba(245,158,11,.12); color: #b45309; }
 .fin-badge--baixado   { background: rgba(16,185,129,.14); color: #047857; }
-.fin-badge--provisao  { background: rgba(99,102,241,.12); color: #4338ca; }
+.fin-badge--provisao  { background: rgba(249, 115, 22, .12); color: #c2410c; }
 .fin-badge--estornado { background: var(--surface-2);     color: var(--text-muted); text-decoration: line-through; }
 .fin-badge--cancelado { background: var(--surface-2);     color: var(--text-muted); }
 
@@ -414,7 +411,7 @@ body[data-page="financeiro"] select {
 [data-theme="dark"] .fin-badge--despesa  { background: rgba(249,112,102,.16); color: #f97066; }
 [data-theme="dark"] .fin-badge--pendente { background: rgba(253,176,34,.16);  color: #fdb022; }
 [data-theme="dark"] .fin-badge--baixado  { background: rgba(74,222,128,.14);  color: #4ade80; }
-[data-theme="dark"] .fin-badge--provisao { background: rgba(129,140,248,.16); color: #a5b4fc; }
+[data-theme="dark"] .fin-badge--provisao { background: rgba(249, 115, 22, .16); color: #fdba74; }
 
 /* =========================================================
    TOTAIS
@@ -988,7 +985,7 @@ body[data-page="financeiro"] select {
   box-shadow: 0 1px 2px rgba(0,0,0,.2);
   transition: transform 160ms ease;
 }
-.fin-side__switch input:checked + .fin-side__switch-track { background: #10b981; }
+.fin-side__switch input:checked + .fin-side__switch-track { background: var(--accent); }
 .fin-side__switch input:checked + .fin-side__switch-track::after { transform: translateX(14px); }
 .fin-side__switch-label { font-size: 12.5px; font-weight: 600; color: var(--text); }
 
@@ -1464,7 +1461,7 @@ body[data-page="financeiro"] select {
   transition: transform 160ms ease;
 }
 .fin-cond__toggle input:checked + .fin-cond__toggle-track {
-  background: #10b981;
+  background: var(--accent);
 }
 .fin-cond__toggle input:checked + .fin-cond__toggle-track::after {
   transform: translateX(12px);
@@ -1508,9 +1505,11 @@ body[data-page="financeiro"] select {
   background: #1e293b;
 }
 .fin-cond__badge[data-type="text"]   { background: #1e293b; }
-.fin-cond__badge[data-type="enum"]   { background: #7c3aed; }
+
+/* Enum e Date: Trocados de Roxo/Azul para Laranja/Âmbar */
+.fin-cond__badge[data-type="enum"]   { background: #ea580c; }
 .fin-cond__badge[data-type="money"]  { background: #10b981; }
-.fin-cond__badge[data-type="date"]   { background: #0ea5e9; }
+.fin-cond__badge[data-type="date"]   { background: #d97706; }
 
 /* Selects e inputs */
 .fin-cond__field,
@@ -1657,7 +1656,7 @@ body[data-page="financeiro"] select {
   transition: transform 160ms ease;
 }
 .fin-saved__toggle input:checked + .fin-saved__toggle-track {
-  background: #10b981;
+  background: var(--accent);
 }
 .fin-saved__toggle input:checked + .fin-saved__toggle-track::after {
   transform: translateX(14px);
@@ -1857,7 +1856,7 @@ body[data-page="financeiro"] select {
   box-shadow: 0 1px 2px rgba(0,0,0,.2);
   transition: transform 160ms ease;
 }
-.fin-cond__toggle input:checked + .fin-cond__toggle-track { background: #10b981; }
+.fin-cond__toggle input:checked + .fin-cond__toggle-track { background: var(--accent); }
 .fin-cond__toggle input:checked + .fin-cond__toggle-track::after { transform: translateX(12px); }
 
 .fin-cond__content {

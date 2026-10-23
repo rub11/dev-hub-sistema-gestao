@@ -13,6 +13,8 @@
       removida inteira.
    4. Cores hardcoded (`#b9bfc9`) migradas para color-mix.
       Os chevrons SVG seguem cobertos por `theme.css`.
+   5. Reset de `<option>` adicionado aos selects para
+      eliminar o fundo azul nativo em browsers Windows/Edge.
    ========================================================= */
 
 /* ---------- Stat icons coloridos ---------- */
@@ -65,6 +67,11 @@
   background-position: right 12px center;
   background-size: 16px;
   transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+#org-modal select option {
+  background: var(--surface);
+  color: var(--text);
 }
 
 /* CORREÇÃO #2: hover sem cor hardcoded */
@@ -174,6 +181,11 @@
   background-position: right 8px center;
   background-size: 14px;
   transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.org-manage__row select option {
+  background: var(--surface);
+  color: var(--text);
 }
 
 /* CORREÇÃO #1: hover consistente com #org-modal select */

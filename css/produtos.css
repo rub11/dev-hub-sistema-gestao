@@ -13,9 +13,9 @@
       reestruturar com um `<div>` wrapper (mudança de HTML).
    3. Consolidação de seletores duplicados (`.switch` e
       `.cell-product` apareciam 2× cada).
-   4. Cores hardcoded (`#d0d5dd`, `#ffffff`) mantidas por
-      compatibilidade — já cobertas por `theme.css` no dark.
-      Migração para variáveis sugerida como próximo passo.
+   4. Regra de Ouro: `#d0d5dd` do `.switch__track` migrado
+      para `var(--border-strong)` (com fallback). Restantes
+      cores neutras (`#fff`, `rgba(0,0,0,…)`) são semânticas.
    ========================================================= */
 
 /* ---------- Célula principal (nome + thumb) ---------- */
@@ -132,7 +132,7 @@
   width: 38px;
   height: 22px;
   border-radius: 999px;
-  background: #d0d5dd;   /* sobrescrito por theme.css no dark */
+  background: var(--border-strong, #d0d5dd);
   transition: background-color var(--transition);
   flex: none;
 }
@@ -144,7 +144,7 @@
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: #ffffff;   /* sobrescrito por theme.css no dark */
+  background: #fff;
   box-shadow: 0 1px 2px rgba(16, 24, 40, 0.22);
   transition: transform var(--transition);
 }

@@ -1,5 +1,5 @@
 /* =========================================================
-   DEV HUB · Central de Administração
+   DEV HUB · Central de Administração (Padronizado Laranja)
    ========================================================= */
 
 .adm-grid {
@@ -31,12 +31,13 @@
   overflow: hidden;
 }
 
+/* Linha superior que acende no hover (Usa a cor de destaque global) */
 .adm-card::before {
   content: '';
   position: absolute;
   inset: 0 0 auto 0;
   height: 3px;
-  background: var(--accent);
+  background: var(--accent); 
   opacity: 0;
   transition: opacity 160ms ease;
 }
@@ -57,16 +58,19 @@
   width: 44px;
   height: 44px;
   border-radius: 12px;
-  background: var(--accent-soft);
-  color: var(--accent);
+  background: var(--accent-soft); /* Fundo laranja clarinho */
+  color: var(--accent); /* Ícone laranja */
   transition: background-color 160ms ease, color 160ms ease;
 }
+
 .adm-card__icon svg {
   width: 20px;
   height: 20px;
 }
+
+/* Hover do ícone: fica laranja escuro para dar contraste */
 .adm-card:hover .adm-card__icon {
-  background: var(--accent);
+  background: var(--accent-hover);
   color: #fff;
 }
 
@@ -126,10 +130,12 @@
   align-self: center;
   transition: transform 160ms ease, color 160ms ease;
 }
+
 .adm-card__arrow svg {
   width: 16px;
   height: 16px;
 }
+
 .adm-card:hover .adm-card__arrow {
   transform: translateX(3px);
   color: var(--accent);

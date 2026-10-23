@@ -20,6 +20,15 @@
       (fundo nativo do Chrome) porque faltava `background-color`
       e `color-scheme`. Agora ficam escuros e o dropdown nativo
       também renderiza em dark.
+   ---------------------------------------------------------
+   ATUALIZAÇÃO DE MARCA:
+   • Tokens --accent* migrados para o Laranja da raposa
+     (#F97316 / #EA580C / rgba(251,146,60,.12)).
+   • Radial-gradient do body sem resquício roxo (#8b5cf6).
+   • Tags PF/PJ e badge de férias realinhadas à paleta
+     Laranja (distinção PF/PJ preservada por tom).
+   • Selects rules consolidadas e `<option>` resetado para
+     evitar fundo azul nativo em Windows/Edge.
    ========================================================= */
 
 /* =========================================================
@@ -38,7 +47,7 @@ body {
     ),
     radial-gradient(
       ellipse 40% 80% at 80% 0%,
-      color-mix(in srgb, #8b5cf6 10%, transparent) 0%,
+      color-mix(in srgb, #EA580C 10%, transparent) 0%,
       transparent 60%
     ),
     var(--bg);
@@ -60,11 +69,11 @@ body {
   --text-soft: #a8b0ba;
   --text-muted: #6f7780;
 
-  /* Marca */
-  --accent: #6366f1;
-  --accent-hover: #7d7ff2;
-  --accent-soft: rgba(99, 102, 241, 0.14);
-  --accent-ring: rgba(99, 102, 241, 0.3);
+  /* Marca — Laranja da raposa */
+  --accent: #F97316;
+  --accent-hover: #EA580C;
+  --accent-soft: rgba(251, 146, 60, 0.12);
+  --accent-ring: rgba(249, 115, 22, 0.3);
 
   /* Semânticas */
   --danger: #f97066;
@@ -126,17 +135,20 @@ body {
 
 /* =========================================================
    CORREÇÃO #2 — Tags PF/PJ (clientes.css)
+   ---------------------------------------------------------
+   Distinção PF vs PJ preservada via tons laranja:
+   PF = accent claro / PJ = accent profundo (hover).
    ========================================================= */
 [data-theme="dark"] .tag-pf {
-  background: rgba(59, 130, 246, 0.16);
-  color: #93c5fd;
-  border-color: rgba(59, 130, 246, 0.32);
+  background: rgba(249, 115, 22, 0.16);
+  color: #fdba74;
+  border-color: rgba(249, 115, 22, 0.32);
 }
 
 [data-theme="dark"] .tag-pj {
-  background: rgba(236, 72, 153, 0.16);
-  color: #f9a8d4;
-  border-color: rgba(236, 72, 153, 0.32);
+  background: rgba(234, 88, 12, 0.16);
+  color: #fb923c;
+  border-color: rgba(234, 88, 12, 0.32);
 }
 
 /* =========================================================
@@ -192,8 +204,8 @@ body {
 }
 
 [data-theme="dark"] .status-badge--vacation {
-  background: rgba(59, 130, 246, 0.16);
-  color: #93c5fd;
+  background: var(--accent-soft);
+  color: var(--accent-hover);
 }
 
 [data-theme="dark"] .status-badge--banned {
@@ -235,16 +247,13 @@ body {
             (cinza claro sobre branco) e o dropdown nativo sem
             dark mode.
 
-   Solução:
-     • Bloco BASE (fora do dark) fixa:
-         - aparência (appearance: none)
-         - cor de fundo/texto via variáveis (--surface/--text)
-         - color-scheme para o popup nativo seguir o tema
-         - background-repeat/position/size do chevron
-     • Bloco DARK só troca a cor do chevron (stroke mais claro).
+   Solução consolidada (2 blocos em vez de 3):
+     • Bloco BASE — aparência, fundo/texto, color-scheme,
+       chevron light default (cinza neutro), no-repeat.
+     • Bloco DARK — apenas troca o chevron por stroke claro.
    ========================================================= */
 
-/* --- Base: aparência + chevron no-repeat + color-scheme --- */
+/* --- Base: aparência + color-scheme + chevron light --- */
 .control-select,
 .sale-form select,
 .repeatable-row select,
@@ -265,7 +274,8 @@ body {
   /* Faz o dropdown nativo respeitar o tema */
   color-scheme: light dark;
 
-  /* Chevron único, alinhado à direita */
+  /* Chevron único, alinhado à direita — light default */
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
   background-repeat: no-repeat;
   background-position: right 12px center;
   background-size: 16px 16px;
@@ -285,6 +295,16 @@ body {
   box-shadow: 0 0 0 4px var(--accent-ring);
 }
 
+/* Reset do <option> nativo — evita fundo azul do SO */
+.control-select option,
+.sale-form select option,
+.repeatable-row select option,
+#org-modal select option,
+.org-manage__row select option {
+  background: var(--surface);
+  color: var(--text);
+}
+
 /* --- Dark: apenas troca a cor do chevron (stroke claro) --- */
 [data-theme="dark"] .control-select,
 [data-theme="dark"] .sale-form select,
@@ -292,15 +312,6 @@ body {
 [data-theme="dark"] #org-modal select,
 [data-theme="dark"] .org-manage__row select {
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a8b0ba' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
-}
-
-/* --- Light: chevron em cinza neutro --- */
-.control-select,
-.sale-form select,
-.repeatable-row select,
-#org-modal select,
-.org-manage__row select {
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
 }
 
 /* =========================================================

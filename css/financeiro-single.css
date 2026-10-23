@@ -9,7 +9,7 @@
 body.fin-single-tab .fin-head { display: none !important; }
 
 /* ----------------------------------------- */
-/* Bloco do header estilo hub                */
+/* Layout Principal                          */
 /* ----------------------------------------- */
 .fin-single {
   display: flex;
@@ -32,6 +32,7 @@ body.fin-single-tab .fin-head { display: none !important; }
   align-items: center;
   padding: 5px 14px;
   border-radius: 999px;
+  /* Usa a cor de destaque global (Laranja) com transparência */
   background: color-mix(in srgb, var(--accent) 14%, transparent);
   color: var(--accent);
   font-size: 10.5px;

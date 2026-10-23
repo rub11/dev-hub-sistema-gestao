@@ -1,22 +1,7 @@
 /* =========================================================
-   DEV HUB · Módulo de Notas
+   DEV HUB · Módulo de Notas (Padronizado Laranja)
    Reaproveita global.css, dashboard.css e clientes.css.
    Aqui só o específico: layout do documento e impressão.
-   ---------------------------------------------------------
-   CORREÇÕES APLICADAS:
-   1. IMPRESSÃO NO DARK MODE — adicionado reset completo de
-      cores de TEXTO no @media print. Antes, elementos como
-      `.nota-doc__meta-line`, `.nota-doc__info-value` e
-      `.nota-doc__total-row` mantinham `color: var(--text)`
-      (branco no dark) e ficavam invisíveis no papel.
-   2. `input[type="date"]` ganha `color-scheme` — ícone nativo
-      do calendário renderiza no tema correto.
-   3. `.control-select:hover` usa `color-mix()` em vez de
-      `#b9bfc9` (funciona nos dois temas).
-   4. Nota sobre `.btn--sm` divergente entre módulos — cada
-      página carrega o seu, então não colide em runtime.
-   5. `@media print` também reseta `.nota-doc__section-title`
-      (que herdava `var(--text-muted)`).
    ========================================================= */
 
 /* ---------- Modal mais largo para o documento ---------- */
@@ -57,10 +42,6 @@
   font-size: 13.5px;
   color: var(--text);
   transition: border-color var(--transition), box-shadow var(--transition);
-
-  /* CORREÇÃO #2: ícone nativo do calendário respeita o tema.
-     Sem isso, o ícone fica preto (invisível no dark) e o popup
-     abre em modo claro. */
   color-scheme: light;
 }
 
@@ -74,8 +55,6 @@
   box-shadow: 0 0 0 4px var(--accent-ring);
 }
 
-/* .btn--sm aqui tem 36px (não colide com dashboard 32px nem
-   com notas-fiscal 34px, porque cada página carrega só um CSS). */
 .btn--sm {
   height: 36px;
   padding: 0 14px;
@@ -107,7 +86,6 @@
   transition: border-color var(--transition), box-shadow var(--transition);
 }
 
-/* CORREÇÃO #3: hover sem cor hardcoded */
 .control-select:hover:not(:focus) {
   border-color: color-mix(in srgb, var(--border-strong) 60%, var(--text) 40%);
 }
@@ -146,13 +124,14 @@
   gap: 10px;
 }
 
+/* Logotipo do documento: Agora com gradiente Laranja */
 .nota-doc__brand-mark {
   display: grid;
   place-items: center;
   width: 38px;
   height: 38px;
   border-radius: 9px;
-  background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
   color: #fff;
   font-size: 13px;
   font-weight: 700;
@@ -321,11 +300,6 @@
 
 /* =========================================================
    Impressão
-   =========================================================
-   CORREÇÃO #1: reset completo de cor de TEXTO. Antes, só fundo
-   e alguns labels eram ajustados; elementos como meta-line,
-   info-value e total-row ficavam com `var(--text)` (branco no
-   dark) → invisíveis no papel.
    ========================================================= */
 @media print {
   /* ---------- Esconde tudo do app ---------- */
@@ -369,8 +343,6 @@
   }
 
   /* ---------- Reset de COR (texto) ---------- */
-  /* Aplica #000 em todo o texto do documento e depois refina
-     os elementos que devem ficar em cinza. */
   body.printing-nota .nota-doc,
   body.printing-nota .nota-doc * {
     color: #000 !important;
@@ -381,7 +353,6 @@
     gap: 16px;
   }
 
-  /* Labels e rodapé em cinza escuro (legível, hierarquia) */
   body.printing-nota .nota-doc__info-label,
   body.printing-nota .nota-doc__doc-type,
   body.printing-nota .nota-doc__footer,
@@ -394,6 +365,7 @@
     border-bottom-color: #000;
   }
 
+  /* Impressão: o logo da nota fica preto para economizar tinta */
   body.printing-nota .nota-doc__brand-mark {
     background: #000 !important;
     color: #fff !important;

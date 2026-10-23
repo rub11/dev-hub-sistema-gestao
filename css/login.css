@@ -1,19 +1,19 @@
 /* =========================================================
-   DEV HUB · TELA DE LOGIN (CORRIGIDA E RESPONSIVA)
+   DEV HUB · TELA DE LOGIN (SPLIT-SCREEN COM IDENTIDADE LARANJA)
    ========================================================= */
 
-/* Trava a tela inteira, impedindo a barra de rolagem geral */
 html, body.login-page {
   height: 100vh;
   height: 100dvh; 
   margin: 0;
   padding: 0;
   overflow: hidden; 
+  background: #ffffff;
 }
 
 .login-page {
-  background-color: var(--bg, #f5f6f8);
   display: flex;
+  font-family: 'Inter', sans-serif;
 }
 
 .login {
@@ -21,189 +21,17 @@ html, body.login-page {
   width: 100%;
   height: 100vh;
   height: 100dvh;
-  overflow: hidden;
 }
 
 /* =========================================================
-   LADO ESQUERDO (VISUAL)
-   ========================================================= */
-.login__aside {
-  flex: 1.2;
-  position: relative;
-  background: #0b0f17;
-  display: flex;
-  flex-direction: column;
-  padding: 60px;
-  /* A MÁGICA: Permite rolar o lado esquerdo se a tela for pequena, 
-     sem quebrar o layout */
-  overflow-y: auto; 
-  color: #fff;
-}
-
-/* O conteúdo fica no topo e empurra o rodapé para baixo */
-.login__aside-inner {
-  position: relative;
-  z-index: 2;
-  max-width: 480px;
-  margin-bottom: 60px;
-}
-
-.login__aside-bg {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at 30% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 60%),
-              radial-gradient(circle at 80% 80%, rgba(99, 102, 241, 0.08) 0%, transparent 50%);
-  z-index: 1;
-  pointer-events: none;
-}
-
-.login__aside-grid {
-  position: absolute;
-  inset: 0;
-  background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-                    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-  background-size: 40px 40px;
-  z-index: 1;
-  pointer-events: none;
-}
-
-.login__aside-text h2 {
-  font-size: 38px;
-  font-weight: 700;
-  line-height: 1.15;
-  letter-spacing: -0.02em;
-  margin-bottom: 16px;
-}
-
-.login__aside-text p {
-  font-size: 16px;
-  color: #9ca3af;
-  margin-bottom: 32px;
-  line-height: 1.6;
-}
-
-/* Lista de Benefícios */
-.login__benefits {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  margin-bottom: 40px;
-}
-
-.login__benefits li {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 15px;
-  font-weight: 500;
-  color: #d1d5db;
-}
-
-.login__benefits svg {
-  width: 20px;
-  height: 20px;
-  color: var(--accent, #6366f1);
-  background: rgba(99, 102, 241, 0.1);
-  border-radius: 50%;
-  padding: 4px;
-}
-
-/* =========================================================
-   CARDS VISUAIS (SEM CASCATA E SEM ESTOURAR A TELA)
-   ========================================================= */
-.viz {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  position: relative;
-  z-index: 2;
-  max-width: 340px;
-}
-
-.viz__card {
-  position: relative;
-  width: 100%; /* Ocupa 100% do container (340px) */
-  padding: 20px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(10px);
-}
-
-/* REMOVIDO O MARGIN-LEFT QUE ESTAVA QUEBRANDO O LAYOUT */
-/* Agora os cards ficam perfeitamente empilhados um sobre o outro */
-
-.viz__card-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.viz__dot { width: 8px; height: 8px; border-radius: 50%; }
-.viz__dot--green { background: #10b981; }
-.viz__dot--blue { background: #3b82f6; }
-.viz__dot--orange { background: #f59e0b; }
-
-.viz__card-title {
-  font-size: 13px;
-  font-weight: 600;
-  color: #9ca3af;
-}
-
-.viz__value {
-  font-size: 24px;
-  font-weight: 700;
-  color: #fff;
-  display: block;
-}
-
-.viz__trend {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 13px;
-  font-weight: 600;
-  margin-top: 6px;
-}
-.viz__trend--up { color: #10b981; }
-.viz__trend svg { width: 14px; height: 14px; }
-
-.viz__lines { display: none; }
-
-.viz__bars {
-  display: flex;
-  align-items: flex-end;
-  gap: 4px;
-  height: 28px;
-  margin-top: 12px;
-}
-.viz__bars span {
-  flex: 1;
-  background: rgba(99, 102, 241, 0.3);
-  border-radius: 2px;
-  height: var(--h);
-}
-
-/* Rodapé na parte de baixo */
-.login__aside-foot {
-  margin-top: auto; /* Empurra o rodapé para o final, sem ser absoluto */
-  padding-top: 20px;
-  font-size: 13px;
-  color: #4b5563;
-  z-index: 2;
-}
-
-/* =========================================================
-   LADO DIREITO (FORMULÁRIO)
+   LADO ESQUERDO: FORMULÁRIO
    ========================================================= */
 .login__panel {
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--surface, #ffffff);
+  background: #ffffff;
   padding: 40px;
   overflow-y: auto; 
 }
@@ -211,52 +39,55 @@ html, body.login-page {
 .login__panel-inner {
   width: 100%;
   max-width: 380px;
-  margin: auto; /* Centraliza o form verticalmente */
-}
-
-.login__brand-mobile {
-  display: none;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 24px;
 }
 
 .login__header {
-  margin-bottom: 32px;
+  margin-bottom: 40px;
+  text-align: center;
 }
 
 .login__title {
   font-size: 28px;
-  font-weight: 700;
-  color: var(--text, #111827);
+  font-weight: 800;
+  color: #111827;
   margin-bottom: 8px;
-  letter-spacing: -0.02em;
+  letter-spacing: 0.05em;
 }
 
 .login__subtitle {
-  font-size: 15px;
-  color: var(--text-muted, #6b7280);
+  font-size: 14px;
+  color: #6b7280;
 }
 
 /* =========================================================
-   INPUTS DELICADOS (LINHA EMBAIXO)
+   INPUTS (APENAS LINHA INFERIOR)
    ========================================================= */
 .login__form {
   display: flex;
   flex-direction: column;
   gap: 24px;
-  margin-bottom: 24px;
+}
+
+.login-page .field label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #6b7280;
+  margin-bottom: 6px;
+  display: block;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .login-page .field__control {
   position: relative;
-  border-bottom: 1.5px solid var(--border-strong, #d1d5db);
+  border-bottom: 1px solid #d1d5db;
   transition: border-color 200ms ease;
   padding-bottom: 8px;
 }
 
+/* LINHA DE FOCO LARANJA */
 .login-page .field__control:focus-within {
-  border-bottom-color: var(--accent, #6366f1);
+  border-bottom: 2px solid #F97316; 
 }
 
 .login-page .field input,
@@ -265,103 +96,137 @@ html, body.login-page {
   border: none !important;
   border-radius: 0 !important;
   box-shadow: none !important;
-  padding: 0 0 0 32px !important;
+  padding: 4px 0 !important;
   height: 32px !important;
   font-size: 15px !important;
-  color: var(--text, #111827) !important;
+  color: #111827 !important;
   width: 100%;
+  font-family: inherit;
+}
+
+.login-page .field input::placeholder {
+  color: #9ca3af;
 }
 
 .login-page .field input:focus { outline: none; }
 
-.login-page .field__icon {
-  position: absolute;
-  left: 0;
-  top: 4px;
-  color: var(--text-muted, #9ca3af);
-  transition: color 200ms ease;
-}
-.login-page .field__icon svg { width: 20px; height: 20px; }
-
-.login-page .field__control:focus-within .field__icon {
-  color: var(--accent, #6366f1);
-}
-
+/* Botão de olho (Mostrar Senha) */
 .login-page .pw-toggle {
   position: absolute;
   right: 0;
-  top: 0;
+  top: 4px;
   background: transparent;
   border: none;
-  color: var(--text-muted, #9ca3af);
+  color: #9ca3af;
   cursor: pointer;
-  padding: 4px;
+  padding: 0;
 }
-.login-page .pw-toggle:hover { color: var(--text, #111827); }
+.login-page .pw-toggle:hover { color: #F97316; }
+.login-page .pw-toggle svg { width: 20px; height: 20px; }
+.login-page .pw-toggle__icon--hide { display: none; }
+.login-page .pw-toggle[aria-pressed="true"] .pw-toggle__icon--show { display: none; }
+.login-page .pw-toggle[aria-pressed="true"] .pw-toggle__icon--hide { display: block; }
 
-.login-page .field label {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-soft, #4b5563);
-  margin-bottom: 4px;
-  display: block;
-}
-
-.login-page .login__select {
-  background: transparent;
+/* Botão Entrar (Laranja da Logo) */
+.login-page .btn--primary {
+  background: #F97316; 
+  color: #ffffff;
+  height: 48px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  margin-top: 10px;
+  transition: background 200ms ease, transform 200ms ease, box-shadow 200ms ease;
   border: none;
-  padding-left: 32px;
-  height: 32px;
-  width: 100%;
-  font-size: 15px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3); 
+}
+.login-page .btn--primary:hover {
+  background: #EA580C; 
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(249, 115, 22, 0.4);
 }
 
-/* =========================================================
-   RODAPÉ DO FORMULÁRIO
-   ========================================================= */
-.login__security {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px;
-  background: var(--surface-2, #f9fafb);
-  border: 1px solid var(--border, #e5e7eb);
-  border-radius: 12px;
-  margin-bottom: 24px;
-}
-
-.login__security svg {
-  width: 24px;
-  height: 24px;
-  color: #10b981;
-  flex: none;
-}
-
-.login__security span {
-  font-size: 12.5px;
-  color: var(--text-muted, #6b7280);
-  line-height: 1.4;
-}
-
+/* Rodapé */
 .login__footer {
+  margin-top: 40px;
   text-align: center;
+}
+.login__footer p {
   font-size: 13px;
-  color: var(--text-muted, #9ca3af);
+  color: #6b7280;
+}
+.login__footer a {
+  color: #F97316; 
+  font-weight: 600;
+  text-decoration: none;
+}
+.login__footer a:hover {
+  text-decoration: underline;
+  color: #EA580C;
 }
 
 /* =========================================================
-   RESPONSIVIDADE
+   LADO DIREITO: IMAGEM E DECORAÇÃO
+   ========================================================= */
+.login__aside {
+  flex: 1.2; 
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  padding: 60px;
+  background-color: #050505; 
+}
+
+.login__aside-img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 1;
+}
+
+/* Filtro escuro por cima da imagem para destacar o texto */
+.login__aside-overlay {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, transparent 100%);
+  padding: 40px;
+  border-radius: 16px;
+  margin: -20px; 
+}
+
+.login__aside-content {
+  max-width: 400px;
+}
+
+.login__aside-content h2 {
+  font-size: 32px;
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 12px;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.login__aside-content p {
+  font-size: 15px;
+  color: #d1d5db;
+  line-height: 1.6;
+}
+
+/* =========================================================
+   RESPONSIVIDADE (MOBILE)
    ========================================================= */
 @media (max-width: 900px) {
   .login__aside {
-    display: none; /* Esconde lado esquerdo no celular */
+    display: none; 
   }
-  
-  .login {
-    background-color: var(--surface, #ffffff);
-  }
-
-  .login__brand-mobile {
-    display: flex;
+  .login__panel {
+    padding: 24px;
   }
 }

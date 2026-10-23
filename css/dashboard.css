@@ -1,18 +1,10 @@
 /* =========================================================
-   DEV HUB · Dashboard
+   DEV HUB · Dashboard (Padronizado Laranja)
    ---------------------------------------------------------
    CORREÇÕES APLICADAS:
-   1. `.quick-card__icon--*` ganhou override em dark mode.
-      Antes, cada variante tinha cor pastel fixa que ficava
-      "piscando" no escuro se usada.
-   2. `.quick-*` e `.price-*` marcados como LEGADO — a
-      dashboard.html atual usa `.dash-*`. Remova as seções
-      se confirmar que não há referências.
-   3. Nota em `.avatar` — duplicado de `global.css`.
-   4. `tr[hidden]` removido — `[hidden]` global já cobre.
-   5. `.menu-item__tag` usa `var(--surface-2)` em vez de
-      `#f2f4f7` hardcoded.
-   6. Comentários sobre tokens `--sidebar-*` disponíveis.
+   1. Cores roxas/azuis removidas do Menu Lateral, Avatar e Quick Cards.
+   2. Bloco de "hacks" removido e estilos integrados.
+   3. Tokens de sidebar integrados.
    ========================================================= */
 
 :root {
@@ -46,10 +38,7 @@
   padding: 4px 10px 24px;
 }
 
-/* Sidebar é sempre escura (design intencional), então as
-   cores hardcoded aqui são seguras nos dois temas. */
 .sidebar__brand .brand__name { color: #ffffff; }
-
 .sidebar__spacer { flex: 1 1 auto; min-height: 24px; }
 
 /* =========================================================
@@ -105,11 +94,15 @@
   color: #ffffff;
 }
 
+/* Item ativo agora tem fundo Laranja translúcido */
 .nav__item.is-active {
-  background: rgba(99, 102, 241, 0.16);
+  background: rgba(249, 115, 22, 0.16);
   color: #ffffff;
 }
-.nav__item.is-active .nav__icon { color: #a5b4fc; opacity: 1; }
+.nav__item.is-active .nav__icon { 
+  color: var(--accent); 
+  opacity: 1; 
+}
 
 .nav__item[aria-disabled="true"] {
   opacity: 0.42;
@@ -154,7 +147,7 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  min-height: 100dvh;               /* iOS Safari: barra dinâmica */
+  min-height: 100dvh;
   margin-left: var(--sidebar-w);
 }
 
@@ -170,7 +163,6 @@
   gap: 14px;
   height: var(--topbar-h);
   padding: 0 24px;
-  /* Cor clara translúcida — theme.css sobrescreve no dark */
   background: rgba(255, 255, 255, 0.86);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -238,11 +230,7 @@
   border-color: var(--border);
 }
 
-/* NOTA: `.avatar` também está definido em `global.css`.
-   Aqui foi mantido por retrocompatibilidade, mas o ideal é
-   consolidar numa única fonte de verdade (global.css).
-   A regra de `global.css` já tem `overflow: hidden` e
-   `.avatar img` para o crop redondo. */
+/* Avatar padronizado com o Laranja */
 .avatar {
   display: grid;
   place-items: center;
@@ -250,7 +238,7 @@
   height: 32px;
   flex: none;
   border-radius: 50%;
-  background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
   color: #ffffff;
   font-size: 13px;
   font-weight: 600;
@@ -339,8 +327,6 @@
 .menu-item--danger { color: var(--danger); }
 .menu-item--danger:hover { background: var(--danger-soft); }
 
-/* CORREÇÃO #5: usa var(--surface-2) em vez de #f2f4f7.
-   Mesmo tom no light, correto no dark automaticamente. */
 .menu-item__tag {
   padding: 1px 7px;
   border-radius: 999px;
@@ -363,6 +349,7 @@
   flex: 1 1 auto;
   width: 100%;
   max-width: 1320px;
+  margin: 0 auto; /* Centralizado */
   padding: 28px 24px 48px;
 }
 
@@ -538,9 +525,6 @@ th.cell--num { text-align: right; }
 
 .cell--muted { color: var(--text-muted); }
 
-/* `tr[hidden] { display: none }` era redundante com
-   `[hidden] { display: none !important }` em global.css. */
-
 .table-empty td {
   padding: 44px 20px;
   text-align: center;
@@ -589,14 +573,9 @@ th.cell--num { text-align: right; }
 }
 
 /* =========================================================
-   ⚠️ QUICK ANALYSES (cards do dashboard)
+   ⚠️ QUICK ANALYSES (LEGADO)
    ---------------------------------------------------------
-   LEGADO — não há referências a `.quick-*` nos HTMLs atuais.
-   A dashboard.html usa `.dash-*` (de `dashboard-pro.css`).
-   Se confirmar via `grep -rn "quick-" *.html js/*.js` que
-   não é usado, pode deletar todo este bloco (~100 linhas).
-   ---------------------------------------------------------
-   Mantido aqui com CORREÇÃO #1 aplicada nos ícones:
+   Se você não usa essas classes, pode deletar este bloco.
    ========================================================= */
 .quick-grid {
   display: grid;
@@ -638,10 +617,10 @@ th.cell--num { text-align: right; }
 }
 .quick-card__icon svg { width: 16px; height: 16px; }
 
-/* CORREÇÃO #1: variantes com dark mode override */
+/* Cores padronizadas para Laranja/Âmbar */
 .quick-card__icon--sales {
-  background: rgba(99, 102, 241, 0.14);
-  color: #4f46e5;
+  background: rgba(249, 115, 22, 0.14);
+  color: var(--accent);
 }
 .quick-card__icon--customers {
   background: rgba(6, 118, 71, 0.12);
@@ -652,14 +631,14 @@ th.cell--num { text-align: right; }
   color: #b54708;
 }
 .quick-card__icon--products {
-  background: rgba(53, 56, 205, 0.14);
-  color: #3538cd;
+  background: rgba(245, 158, 11, 0.14);
+  color: #d97706;
 }
 
-[data-theme="dark"] .quick-card__icon--sales     { background: #1e1b4b; color: #a5b4fc; }
+[data-theme="dark"] .quick-card__icon--sales     { background: #431407; color: #fdba74; }
 [data-theme="dark"] .quick-card__icon--customers { background: #052e16; color: #6ee7b7; }
 [data-theme="dark"] .quick-card__icon--finance   { background: #431407; color: #fdba74; }
-[data-theme="dark"] .quick-card__icon--products  { background: #1e1b4b; color: #c7d2fe; }
+[data-theme="dark"] .quick-card__icon--products  { background: #451a03; color: #fcd34d; }
 
 .quick-card__title {
   margin: 0 0 2px;
@@ -739,8 +718,6 @@ th.cell--num { text-align: right; }
   text-align: right;
 }
 
-/* .btn--sm aqui tem 32px (não colide com notas 36px nem
-   com notas-fiscal 34px — cada página carrega só um CSS). */
 .btn--sm {
   height: 32px;
   padding: 0 12px;
@@ -748,11 +725,7 @@ th.cell--num { text-align: right; }
 }
 
 /* =========================================================
-   ⚠️ PRODUTOS POR FAIXA DE PREÇO
-   ---------------------------------------------------------
-   LEGADO — nenhuma referência a `.price-filter` ou
-   `.price-result` nos HTMLs atuais. Mesma situação do bloco
-   anterior: verificar e deletar se não for usado.
+   PRODUTOS POR FAIXA DE PREÇO (LEGADO)
    ========================================================= */
 .price-filter { margin-bottom: 14px; }
 
@@ -789,11 +762,4 @@ th.cell--num { text-align: right; }
 .price-result__actions {
   margin-top: 14px;
   text-align: right;
-}
-.content {
-  flex: 1 1 auto;
-  width: 100%;
-  max-width: 1320px;
-  margin: 0 auto;              /* ⬅️ ADICIONAR ESTA LINHA */
-  padding: 28px 24px 48px;
 }

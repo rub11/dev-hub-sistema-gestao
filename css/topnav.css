@@ -7,6 +7,11 @@
      --surface, --surface-2, --border, --text, --text-soft,
      --text-muted, --accent, --accent-hover, --accent-soft,
      --accent-ring, --danger, --danger-soft, --transition
+   ---------------------------------------------------------
+   ATUALIZAÇÃO DE MARCA:
+   • Brand mark e avatar do usuário migrados do gradiente
+     indigo (#6366f1 → #4338ca) para o Laranja da raposa
+     (#FB923C → #EA580C).
    ========================================================= */
 
 /* =====================================================
@@ -63,7 +68,7 @@ body.layout-topnav .app__body {
   width: 32px;
   height: 32px;
   border-radius: 9px;
-  background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
+  background: linear-gradient(135deg, #FB923C 0%, #EA580C 100%);
   color: #ffffff;
   font-size: 11px;
   font-weight: 800;
@@ -368,7 +373,7 @@ body.layout-topnav .app__body {
   height: 32px;
   flex: none;
   border-radius: 50%;
-  background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
+  background: linear-gradient(135deg, #FB923C 0%, #EA580C 100%);
   color: #ffffff;
   font-size: 12px;
   font-weight: 700;

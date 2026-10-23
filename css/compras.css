@@ -1,5 +1,5 @@
 /* =========================================================
-   DEV HUB · Módulo Compras · v6 (arquivo único)
+   DEV HUB · Módulo Compras · v6 (Padronizado Laranja)
    ---------------------------------------------------------
    ÍNDICE:
      0) Fix global de selects (chevron)
@@ -29,9 +29,6 @@
 
 /* =========================================================
    0) FIX GLOBAL · CHEVRON DOS SELECTS
-   ---------------------------------------------------------
-   Garante 1 único chevron alinhado à direita, sobrepondo
-   qualquer regra conflitante do theme.css / global.css.
    ========================================================= */
 body[data-page="compras"] select,
 body[data-page="compras-nova"] select,
@@ -68,9 +65,6 @@ body[data-page="fornecedores"] select,
 
 /* =========================================================
    1) CONTAINER CENTRALIZADO
-   ---------------------------------------------------------
-   Força o conteúdo das páginas do módulo numa coluna de
-   até 1280px, com padding lateral real.
    ========================================================= */
 body[data-page="compras"] .cmp-content,
 body[data-page="compras-nova"] .cmp-content,
@@ -428,7 +422,7 @@ body[data-page="fornecedores"] .cmp-content {
 
 
 /* =========================================================
-   8) STATUS BADGES
+   8) STATUS BADGES (Padronizado Laranja)
    ========================================================= */
 .cmp-status {
   display: inline-flex;
@@ -452,17 +446,28 @@ body[data-page="fornecedores"] .cmp-content {
 
 .cmp-status--rascunho              { background: var(--surface-2); color: var(--text-soft); }
 .cmp-status--aguardando_aprovacao  { background: rgba(181,71,8,.12); color: #b54708; }
-.cmp-status--pendente_recebimento  { background: rgba(23,92,211,.12); color: #175cd3; }
+
+/* Pendente Recebimento: era Azul, agora Laranja */
+.cmp-status--pendente_recebimento  { background: rgba(249, 115, 22, 0.12); color: #c2410c; }
+
 .cmp-status--recebida_parcial      { background: rgba(247,144,9,.15); color: #b54708; }
 .cmp-status--recebida              { background: rgba(6,118,71,.12); color: #067647; }
-.cmp-status--paga                  { background: rgba(79,70,229,.12); color: #4f46e5; }
+
+/* Paga: era Roxo, agora Laranja Escuro para indicar conclusão */
+.cmp-status--paga                  { background: rgba(234, 88, 12, 0.12); color: #ea580c; }
+
 .cmp-status--cancelada             { background: var(--surface-2); color: var(--text-muted); text-decoration: line-through; }
 
 [data-theme="dark"] .cmp-status--aguardando_aprovacao { background: rgba(253,176,34,.16); color: #fdb022; }
-[data-theme="dark"] .cmp-status--pendente_recebimento { background: rgba(99,102,241,.18);  color: #a5b4fc; }
+
+/* Pendente Recebimento (Dark): era Azul/Roxo, agora Laranja */
+[data-theme="dark"] .cmp-status--pendente_recebimento { background: rgba(249, 115, 22, 0.18); color: #fb923c; }
+
 [data-theme="dark"] .cmp-status--recebida_parcial     { background: rgba(247,144,9,.18);   color: #fdb022; }
 [data-theme="dark"] .cmp-status--recebida             { background: rgba(74,222,128,.14);  color: #4ade80; }
-[data-theme="dark"] .cmp-status--paga                 { background: rgba(129,140,248,.16); color: #a5b4fc; }
+
+/* Paga (Dark): era Roxo, agora Laranja Claro */
+[data-theme="dark"] .cmp-status--paga                 { background: rgba(234, 88, 12, 0.18); color: #fb923c; }
 
 
 /* =========================================================
@@ -686,7 +691,7 @@ body[data-page="fornecedores"] .cmp-content {
   padding: 0 14px;
   border: 1px solid var(--border);
   border-radius: var(--cmp-radius);
-  background-color: var(--surface);   /* ← background-color, não background */
+  background-color: var(--surface);
   color: var(--text);
   font-family: inherit;
   font-size: 14.5px;
@@ -714,7 +719,6 @@ body[data-page="fornecedores"] .cmp-content {
   line-height: 1.55;
 }
 
-/* Select dentro de .field — padding pra não colidir com o chevron */
 .field select {
   padding-right: 42px;
 }
@@ -814,14 +818,12 @@ body[data-page="fornecedores"] .cmp-content {
   margin-top: 14px;
 }
 
-/* Scroll horizontal antes de quebrar em tablet */
 @media (max-width: 1100px) {
   .cmp-items { overflow-x: auto; }
   .cmp-items__head,
   .cmp-items__row { min-width: 860px; }
 }
 
-/* Mobile: card vertical */
 @media (max-width: 720px) {
   .cmp-items {
     border: 0;
@@ -1117,10 +1119,6 @@ body[data-page="fornecedores"] .cmp-content {
 }
 /* =========================================================
    MODAL · FORNECEDOR (cadastro inline)
-   ---------------------------------------------------------
-   Usado em:
-     • compras-nova.html (botão "+ Novo" ao lado do select)
-     • fornecedores.html (botão "Novo fornecedor")
    ========================================================= */
 
 /* ---------- Linha CNPJ: input + botão lado a lado ---------- */
@@ -1314,5 +1312,6 @@ body[data-page="fornecedores"] .cmp-content {
 /* ---------- Dark mode: ajustes finos ---------- */
 [data-theme="dark"] .cmp-cnpj__field > input:focus,
 [data-theme="dark"] .cmp-modal__body .field > input:focus {
-  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.28);
+  /* Corrigido de roxo para laranja */
+  box-shadow: 0 0 0 4px var(--accent-ring);
 }

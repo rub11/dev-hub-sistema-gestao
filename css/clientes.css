@@ -1,30 +1,11 @@
 /* =========================================================
-   DEV HUB · Módulo de Clientes
+   DEV HUB · Módulo de Clientes (Padronizado Laranja)
    (reaproveita global.css + dashboard.css)
    ---------------------------------------------------------
    Este é o CSS-base compartilhado por quase todos os módulos.
    Componentes genéricos (toolbar, search, modal, toast,
    state-block, row-actions) são definidos aqui e reusados
    pelos demais arquivos.
-   ---------------------------------------------------------
-   CORREÇÕES APLICADAS:
-   1. `100vh` → `100dvh` em `.modal__dialog` — evita o corte
-      no iOS Safari (barra de endereço dinâmica).
-   2. Removidas redefinições `#customer-save-btn .btn__spinner`
-      e `#confirm-delete-btn .btn__spinner` — `global.css` já
-      define o spinner de forma canônica.
-   3. Removida `.customer-type-PJ .tab-btn.pj-only-tab` — o
-      JS alterna o `hidden` do botão, não a classe.
-   4. `.toast--success` / `.toast--info` usam tons translúcidos
-      em vez de cores pastel fixas.
-   5. `.tag-pf` / `.tag-pj` idem.
-   6. `#b9bfc9` → `color-mix()` nos 3 hovers.
-   7. `.btn--danger:hover` usa `color-mix()` em vez de `#961e14`.
-   8. `.toast__close:hover` usa `var(--surface-2)` em vez de
-      `rgba(0, 0, 0, 0.06)` (funciona no dark).
-   9. `.modal[hidden]` e `.modal__dialog--customer { width: 100% }`
-      removidos (redundância).
-   10. `.cell-customer__meta` ganha `overflow-wrap: anywhere`.
    ========================================================= */
 
 /* =========================================================
@@ -72,7 +53,6 @@
 }
 .search__input::placeholder { color: var(--text-muted); }
 
-/* CORREÇÃO #6: hover sem `#b9bfc9` hardcoded */
 .search__input:hover:not(:focus) {
   border-color: color-mix(in srgb, var(--border-strong) 70%, var(--text) 30%);
 }
@@ -168,7 +148,6 @@
   justify-content: center;
   padding: 20px;
 }
-/* `[hidden]` global já cobre `.modal[hidden]` — não repete. */
 
 .modal__backdrop {
   position: absolute;
@@ -186,7 +165,6 @@
   flex-direction: column;
   width: 100%;
   max-width: 560px;
-  /* CORREÇÃO #1: 100dvh para o iOS Safari não cortar o modal */
   max-height: calc(100vh - 40px);
   max-height: calc(100dvh - 40px);
   border-radius: var(--radius-lg);
@@ -242,7 +220,6 @@
   transition: border-color var(--transition), box-shadow var(--transition);
 }
 
-/* CORREÇÃO #6: hover sem `#b9bfc9` hardcoded */
 .modal__body textarea:hover:not(:focus) {
   border-color: color-mix(in srgb, var(--border-strong) 70%, var(--text) 30%);
 }
@@ -279,7 +256,6 @@
   background: var(--danger);
   color: #fff;
 }
-/* CORREÇÃO #7: usa color-mix para o hover em vez de #961e14 */
 .btn--danger:hover:not(:disabled) {
   background: color-mix(in srgb, var(--danger) 80%, black 20%);
 }
@@ -289,11 +265,6 @@
   color: var(--text-soft);
   line-height: 1.55;
 }
-
-/* CORREÇÃO #2: removidas redefinições por ID do `.btn__spinner`
-   — `global.css` já define para todos os `.btn.is-loading`.
-   Se um dia precisar de spinner com cor diferente para botões
-   ghost, o lugar correto é em `global.css`. */
 
 /* =========================================================
    3. TOASTS
@@ -325,7 +296,6 @@
   animation: dh-toast-in 200ms ease-out;
 }
 
-/* CORREÇÃO #4: cores translúcidas que funcionam nos dois temas */
 .toast--success {
   border-color: color-mix(in srgb, var(--success) 35%, transparent);
   background: var(--success-soft);
@@ -366,7 +336,6 @@
   cursor: pointer;
   transition: opacity var(--transition), background-color var(--transition);
 }
-/* CORREÇÃO #8: usa variável (mesmo tom no light, correto no dark) */
 .toast__close:hover {
   opacity: 1;
   background: var(--surface-2);
@@ -388,7 +357,6 @@
    ========================================================= */
 
 /* ---------- Modal grande ---------- */
-/* CORREÇÃO #10: removido `width: 100%` redundante com a base */
 .modal__dialog--customer {
   max-width: 880px;
 }
@@ -478,10 +446,6 @@
   gap: 14px;
 }
 
-/* CORREÇÃO #3: removida `.customer-type-PJ .tab-btn.pj-only-tab
-   { display: inline-flex }` — o JS usa `contactTab.hidden = !isPJ`
-   e nunca aplica a classe `.pj-only-tab`. Era código morto. */
-
 /* =========================================================
    Repetíveis (telefone / email / endereço / contato)
    ========================================================= */
@@ -567,7 +531,6 @@
   padding-right: 30px;
   -webkit-appearance: none;
   appearance: none;
-  /* Chevron coberto por theme.css no dark */
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23667085' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
   background-repeat: no-repeat;
   background-position: right 8px center;
@@ -575,7 +538,6 @@
   cursor: pointer;
 }
 
-/* CORREÇÃO #6: hovers sem `#b9bfc9` hardcoded */
 .repeatable-row input:hover,
 .repeatable-row select:hover {
   border-color: color-mix(in srgb, var(--border-strong) 70%, var(--text) 30%);
@@ -671,11 +633,13 @@
   margin-top: 2px;
   font-size: 12px;
   color: var(--text-muted);
-  /* CORREÇÃO #11: nomes de fantasia longos não estouram */
   overflow-wrap: anywhere;
 }
 
-/* Tags PF/PJ */
+/* =========================================================
+   8. Tags PF/PJ (Padronizado Laranja)
+   ========================================================= */
+
 .tag-pf, .tag-pj {
   display: inline-flex;
   align-items: center;
@@ -687,22 +651,34 @@
   text-transform: uppercase;
 }
 
-/* CORREÇÃO #5: cores translúcidas em vez de pastel fixo.
-   No dark, os overrides em theme.css ainda refinam, mas
-   o resultado base já é correto. */
+/* Pessoa Física: Âmbar/Dourado */
 .tag-pf {
-  background: rgba(59, 130, 246, 0.14);
-  color: #1d4ed8;
-  border: 1px solid rgba(59, 130, 246, 0.28);
+  background: rgba(245, 158, 11, 0.14);
+  color: #b45309;
+  border: 1px solid rgba(245, 158, 11, 0.28);
 }
+
+/* Pessoa Jurídica: Laranja Vibrante */
 .tag-pj {
-  background: rgba(236, 72, 153, 0.14);
-  color: #be185d;
-  border: 1px solid rgba(236, 72, 153, 0.28);
+  background: rgba(249, 115, 22, 0.14);
+  color: #EA580C;
+  border: 1px solid rgba(249, 115, 22, 0.28);
+}
+
+/* Ajustes das tags no Dark Mode */
+[data-theme="dark"] .tag-pf {
+  background: rgba(245, 158, 11, 0.18);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.35);
+}
+[data-theme="dark"] .tag-pj {
+  background: rgba(249, 115, 22, 0.18);
+  color: #FB923C;
+  border-color: rgba(249, 115, 22, 0.35);
 }
 
 /* =========================================================
-   8. Responsivo
+   9. Responsivo
    ========================================================= */
 @media (max-width: 720px) {
   .toolbar { align-items: stretch; }
@@ -715,7 +691,6 @@
     align-items: flex-end;
   }
   .modal__dialog {
-    /* CORREÇÃO #1: 100dvh também no mobile */
     max-height: calc(100vh - 24px);
     max-height: calc(100dvh - 24px);
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
@@ -784,7 +759,3 @@
     width: auto;
   }
 }
-
-/* Nota: `.modal[hidden] { display: none }` foi removido
-   (redundante com `[hidden] { display: none !important }`
-   em `global.css`). */

@@ -1,5 +1,5 @@
 /* =========================================================
-   DEV HUB · Tela inicial (Launcher)
+   DEV HUB · Tela inicial (Launcher) - IDENTIDADE LARANJA
    ---------------------------------------------------------
    Estilo: Linear / Raycast / Arc
    - Fundo com gradiente radial sutil no topo
@@ -15,7 +15,6 @@
   padding: 12px 0 80px;
   position: relative;
 }
-
 
 /* ---------- Hero ---------- */
 .welcome__hero {
@@ -39,9 +38,12 @@
   background-clip: text;
 }
 
+/* Nome do usuário no título (ex: Olá Julio) com degradê Laranja */
 .welcome__name {
-  color: var(--accent);
-  -webkit-text-fill-color: var(--accent);
+  background: linear-gradient(135deg, #F97316 0%, #EA580C 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: #F97316;
 }
 
 .welcome__sub {
@@ -72,9 +74,9 @@
 }
 
 .welcome__search:focus-within {
-  border-color: var(--accent);
+  border-color: #F97316;
   box-shadow:
-    0 0 0 4px var(--accent-ring),
+    0 0 0 4px rgba(249, 115, 22, 0.2),
     0 1px 2px rgba(16, 24, 40, 0.04),
     0 12px 32px -8px rgba(16, 24, 40, 0.15);
 }
@@ -148,7 +150,7 @@
   flex: 1 1 auto;
   height: 1px;
   background: linear-gradient(90deg,
-    var(--border) 0%,
+    rgba(249, 115, 22, 0.4) 0%,
     transparent 100%);
 }
 .welcome__group-title:first-child { margin-top: 0; }
@@ -175,7 +177,7 @@
     box-shadow .18s ease;
 }
 
-/* Barra superior colorida que aparece no hover */
+/* Barra superior colorida que aparece no hover - AGORA LARANJA */
 .welcome__card::before {
   content: "";
   position: absolute;
@@ -183,20 +185,18 @@
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg,
-    var(--accent) 0%,
-    #8b5cf6 100%);
+  background: linear-gradient(90deg, #F97316 0%, #FCD34D 100%);
   opacity: 0;
   transition: opacity .18s ease;
 }
 
 .welcome__card:hover {
-  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
-  background: color-mix(in srgb, var(--surface) 94%, var(--accent) 6%);
+  border-color: rgba(249, 115, 22, 0.4);
+  background: color-mix(in srgb, var(--surface) 94%, #F97316 6%);
   transform: translateY(-2px);
   box-shadow:
     0 4px 12px -2px rgba(16, 24, 40, 0.08),
-    0 12px 32px -8px color-mix(in srgb, var(--accent) 20%, transparent);
+    0 12px 32px -8px rgba(249, 115, 22, 0.2);
 }
 
 .welcome__card:hover::before { opacity: 1; }
@@ -206,7 +206,7 @@
 }
 
 .welcome__card:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid #F97316;
   outline-offset: 2px;
 }
 
@@ -224,13 +224,21 @@
 }
 .welcome__card-icon svg { width: 20px; height: 20px; }
 
-/* Cores por categoria */
-.welcome__card[data-group="Comercial"]     .welcome__card-icon { background: rgba(99, 102, 241, 0.12); color: #6366f1; }
-.welcome__card[data-group="Catálogo"]      .welcome__card-icon { background: rgba(59, 130, 246, 0.12); color: #3b82f6; }
-.welcome__card[data-group="Análise"]       .welcome__card-icon { background: rgba(245, 158, 11, 0.12); color: #d97706; }
-.welcome__card[data-group="Administração"] .welcome__card-icon { background: rgba(139, 92, 246, 0.12); color: #8b5cf6; }
-.welcome__card[data-group="Plataforma"]    .welcome__card-icon { background: rgba(236, 72, 153, 0.12); color: #ec4899; }
-.welcome__card[data-id="dashboard"]        .welcome__card-icon { background: var(--accent-soft); color: var(--accent); }
+/* Cores por categoria - TODAS PADRONIZADAS PARA O LARANJA */
+.welcome__card[data-group="Comercial"]     .welcome__card-icon,
+.welcome__card[data-group="Catálogo"]      .welcome__card-icon,
+.welcome__card[data-group="Análise"]       .welcome__card-icon,
+.welcome__card[data-group="Administração"] .welcome__card-icon,
+.welcome__card[data-group="Plataforma"]    .welcome__card-icon,
+.welcome__card[data-id="dashboard"]        .welcome__card-icon { 
+  background: rgba(249, 115, 22, 0.12); 
+  color: #F97316; 
+}
+
+.welcome__card:hover .welcome__card-icon {
+  background: #F97316;
+  color: #ffffff;
+}
 
 /* ---------- Corpo do card ---------- */
 .welcome__card-body {
@@ -281,9 +289,9 @@
 }
 
 .welcome__card:hover .welcome__card-kbd {
-  background: var(--surface);
-  border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
-  color: var(--accent);
+  background: rgba(249, 115, 22, 0.1);
+  border-color: rgba(249, 115, 22, 0.3);
+  color: #F97316;
   opacity: 1;
 }
 
@@ -291,7 +299,7 @@
 .welcome__card-title mark,
 .welcome__card-meta mark {
   background: transparent;
-  color: var(--accent);
+  color: #F97316;
   font-weight: 800;
   padding: 0;
 }
@@ -355,17 +363,21 @@
 
 /* ---------- Dark mode ---------- */
 [data-theme="dark"] .welcome__card:hover {
-  background: color-mix(in srgb, var(--surface) 90%, var(--accent) 10%);
+  background: color-mix(in srgb, var(--surface) 90%, #F97316 10%);
   box-shadow:
     0 4px 12px -2px rgba(0, 0, 0, 0.4),
-    0 12px 32px -8px color-mix(in srgb, var(--accent) 30%, transparent);
+    0 12px 32px -8px rgba(249, 115, 22, 0.3);
 }
 
-[data-theme="dark"] .welcome__card[data-group="Comercial"]     .welcome__card-icon { background: rgba(129, 140, 248, 0.16); color: #a5b4fc; }
-[data-theme="dark"] .welcome__card[data-group="Catálogo"]      .welcome__card-icon { background: rgba(96, 165, 250, 0.16);  color: #93c5fd; }
-[data-theme="dark"] .welcome__card[data-group="Análise"]       .welcome__card-icon { background: rgba(251, 191, 36, 0.16);  color: #fcd34d; }
-[data-theme="dark"] .welcome__card[data-group="Administração"] .welcome__card-icon { background: rgba(167, 139, 250, 0.16); color: #c4b5fd; }
-[data-theme="dark"] .welcome__card[data-group="Plataforma"]    .welcome__card-icon { background: rgba(244, 114, 182, 0.16); color: #f9a8d4; }
+/* Cores por categoria no Dark Mode - TODAS LARANJA */
+[data-theme="dark"] .welcome__card[data-group="Comercial"]     .welcome__card-icon,
+[data-theme="dark"] .welcome__card[data-group="Catálogo"]      .welcome__card-icon,
+[data-theme="dark"] .welcome__card[data-group="Análise"]       .welcome__card-icon,
+[data-theme="dark"] .welcome__card[data-group="Administração"] .welcome__card-icon,
+[data-theme="dark"] .welcome__card[data-group="Plataforma"]    .welcome__card-icon {
+  background: rgba(249, 115, 22, 0.16);
+  color: #FB923C; 
+}
 
 /* ---------- Responsivo ---------- */
 @media (max-width: 900px) {

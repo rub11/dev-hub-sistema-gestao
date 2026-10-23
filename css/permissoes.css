@@ -132,6 +132,7 @@ body[data-page="permissoes"] .prm-content {
   outline: none; border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-ring);
 }
+.prm-select option { background: var(--surface); color: var(--text); }
 
 .prm-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
 .prm-field__label { font-size: 12.5px; font-weight: 600; color: var(--text-soft); }
@@ -154,6 +155,7 @@ body[data-page="permissoes"] .prm-content {
   background-size: 16px 16px;
   -webkit-appearance: none; appearance: none;
 }
+.prm-field select option { background: var(--surface); color: var(--text); }
 .prm-field input:focus,
 .prm-field select:focus,
 .prm-field textarea:focus {
@@ -609,10 +611,10 @@ body[data-page="permissoes"] .prm-content {
 }
 .prm-action:hover { background: var(--surface-2); }
 .prm-action.is-changed {
-  background: rgba(99,102,241,0.06);
+  background: rgba(249,115,22,0.06);
   box-shadow: inset 3px 0 0 0 var(--accent);
 }
-[data-theme="dark"] .prm-action.is-changed { background: rgba(99,102,241,0.10); }
+[data-theme="dark"] .prm-action.is-changed { background: rgba(249,115,22,0.10); }
 
 .prm-action__info {
   flex: 1 1 auto; min-width: 0;
@@ -793,7 +795,7 @@ body.prm-drawer-open { overflow: hidden; }
 .prm-user__avatar {
   flex: none; width: 38px; height: 38px; border-radius: 50%;
   display: grid; place-items: center;
-  background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
+  background: linear-gradient(135deg, #FB923C 0%, #EA580C 100%);
   color: #fff; font-size: 15px; font-weight: 700; text-transform: uppercase;
 }
 .prm-user__body {

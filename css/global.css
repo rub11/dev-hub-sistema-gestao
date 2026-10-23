@@ -20,11 +20,11 @@
   --text-soft: #4b5563;
   --text-muted: #9ca3af;
 
-  /* Marca */
-  --accent: #4f46e5;
-  --accent-hover: #4338ca;
-  --accent-soft: #eef2ff;
-  --accent-ring: rgba(79, 70, 229, 0.14);
+  /* Marca (Padronizado com a cor da Raposa) */
+  --accent: #F97316;           /* Laranja principal */
+  --accent-hover: #EA580C;     /* Laranja mais escuro para hover */
+  --accent-soft: #FFF7ED;      /* Laranja bem claro para fundos */
+  --accent-ring: rgba(249, 115, 22, 0.14); /* Laranja transparente para foco */
 
   /* Semânticas */
   --danger: #b42318;
@@ -75,10 +75,11 @@
   --text-soft: #cbd5e1;
   --text-muted: #64748b;
 
-  --accent: #6366f1;
-  --accent-hover: #818cf8;
-  --accent-soft: rgba(99, 102, 241, 0.12);
-  --accent-ring: rgba(99, 102, 241, 0.28);
+  /* Marca (Ajustado para brilhar no fundo escuro) */
+  --accent: #FB923C; 
+  --accent-hover: #F97316;
+  --accent-soft: rgba(251, 146, 60, 0.12);
+  --accent-ring: rgba(251, 146, 60, 0.28);
 
   --danger: #f87171;
   --danger-soft: rgba(248, 113, 113, 0.10);
@@ -146,7 +147,6 @@ a { color: inherit; text-decoration: none; }
    CÓPIA E SELEÇÃO DE TEXTO (Ctrl+C / Ctrl+V)
    ========================================================= */
 
-/* Garante que textos possam ser selecionados em qualquer lugar */
 body,
 p, h1, h2, h3, h4, h5, h6,
 span, div, li, a,
@@ -159,7 +159,6 @@ pre, code, kbd, samp {
   user-select: text;
 }
 
-/* Bloqueia seleção apenas em elementos decorativos */
 button, .btn, svg, .icon, [aria-hidden="true"], .no-select {
   -webkit-user-select: none;
   -moz-user-select: none;
@@ -167,7 +166,6 @@ button, .btn, svg, .icon, [aria-hidden="true"], .no-select {
   user-select: none;
 }
 
-/* Inputs e textareas sempre selecionáveis */
 input, textarea, [contenteditable] {
   -webkit-user-select: text;
   user-select: text;
@@ -216,7 +214,7 @@ input, textarea, [contenteditable] {
   width: 34px;
   height: 34px;
   border-radius: 9px;
-  background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
   color: #ffffff;
   font-size: 12px;
   font-weight: 700;
@@ -525,7 +523,7 @@ input, textarea, [contenteditable] {
   height: 32px;
   flex: none;
   border-radius: 50%;
-  background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
   color: #ffffff;
   font-size: 13px;
   font-weight: 600;
@@ -542,7 +540,7 @@ input, textarea, [contenteditable] {
 }
 
 /* =========================================================
-   TABELAS (estilo global)
+   TABELAS
    ========================================================= */
 .table-wrap {
   width: 100%;
@@ -694,7 +692,7 @@ body.layout-topnav .app__body {
 .checkbox--alert .checkbox__text strong { color: #f59e0b; }
 
 /* =========================================================
-   ABAS · scroll horizontal
+   ABAS / ORG SWITCHER
    ========================================================= */
 .app-tabs__scroll-wrap {
   position: relative;
@@ -916,7 +914,7 @@ body.layout-topnav .app__body {
   width: 28px;
   height: 28px;
   border-radius: 8px;
-  background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
   color: #fff;
   font-size: 11px;
   font-weight: 700;
@@ -1019,7 +1017,7 @@ body.layout-topnav .app__body {
 }
 
 /* =========================================================
-   BOTÃO DE TEMA (unificado — sem duplicações)
+   BOTÃO DE TEMA (unificado)
    ========================================================= */
 .theme-toggle {
   display: grid;
@@ -1055,7 +1053,6 @@ body.layout-topnav .app__body {
   pointer-events: none;
 }
 
-/* Variante: dentro da topbar (compacta) */
 .theme-toggle--inline {
   width: 34px;
   height: 34px;
@@ -1064,7 +1061,6 @@ body.layout-topnav .app__body {
 }
 .theme-toggle--inline:hover { transform: none; }
 
-/* Variante: flutuante (login / páginas sem topbar) */
 .theme-toggle--floating {
   position: fixed;
   bottom: 20px;
@@ -1076,17 +1072,7 @@ body.layout-topnav .app__body {
   box-shadow: var(--shadow-md);
 }
 
-/* Estado: dark → mostra sol | light → mostra lua */
 [data-theme="dark"]  .theme-toggle__sun  { opacity: 1; transform: rotate(0); }
 [data-theme="dark"]  .theme-toggle__moon { opacity: 0; transform: rotate(45deg); }
 [data-theme="light"] .theme-toggle__sun  { opacity: 0; transform: rotate(-45deg); }
 [data-theme="light"] .theme-toggle__moon { opacity: 1; transform: rotate(0); }
-
-
-/* =========================================================
-   GUARD GLOBAL - Esconde a tela enquanto valida a sessão
-   ========================================================= */
-html.auth-checking {
-  visibility: hidden !important;
-  opacity: 0 !important;
-}

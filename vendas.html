@@ -8,33 +8,6 @@
 
   <script src="js/theme.js"></script>
 
-  <!-- Anti-flash: esconde a lista quando vem de ?novo=orcamento ou ?editar_orcamento -->
-  <script>
-    (function () {
-      try {
-        const p = new URLSearchParams(location.search);
-        if (
-          p.get('novo') === 'orcamento' ||
-          p.get('modo') === 'orcamento' ||
-          p.get('editar_orcamento')
-        ) {
-          document.documentElement.classList.add('dh-form-mode');
-        }
-      } catch (e) {}
-    })();
-  </script>
-
-  <style>
-    html.dh-form-mode #view-list,
-    html.dh-form-mode .sales-tabs,
-    html.dh-form-mode .page-head:not(.page-head--with-back) {
-      display: none !important;
-    }
-    html.dh-form-mode #view-form {
-      display: block !important;
-    }
-  </style>
-
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -125,8 +98,9 @@
 
         <div class="page-head page-head--with-action">
           <div>
+            <!-- CORREÇÃO AQUI: "Olá, " fixo no HTML e span apenas para o nome -->
             <p class="page-head__eyebrow">
-              <span id="greeting-name">Olá</span>
+              Olá, <span id="greeting-name">...</span>
               <span class="role-badge" id="greeting-role" hidden></span>
             </p>
             <h1 class="page-head__title">Vendas</h1>
@@ -134,17 +108,6 @@
           </div>
 
           <div class="page-head__actions">
-            <a class="dh-portal-badge" href="portal-vendas.html">
-              <svg viewBox="0 0 24 24" width="12" height="12" fill="none"
-                   stroke="currentColor" stroke-width="2.4" stroke-linecap="round"
-                   stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
-              <span>Portal de Vendas</span>
-            </a>
-
-            <button type="button" id="new-quote-btn" style="display:none;" aria-hidden="true" tabindex="-1">
-              <span>Novo orçamento</span>
-            </button>
-
             <button type="button" class="btn btn--primary" id="new-sale-btn">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
@@ -314,10 +277,6 @@
                   <select id="sale-customer">
                     <option value="">Cliente não informado</option>
                   </select>
-                </div>
-                <div class="field" id="quote-valid-field" hidden>
-                  <label for="sale-valid-until">Válido até</label>
-                  <input type="date" id="sale-valid-until" />
                 </div>
               </div>
             </section>
@@ -824,14 +783,12 @@
   <script src="js/vendas/modal-detail.js"></script>
   <script src="js/vendas/modal-audit.js"></script>
   <script src="js/vendas/modal-approvals.js"></script>
-  <script src="js/vendas/quotes-print.js"></script>
-  <script src="js/vendas/quotes.js"></script>
-  <script src="js/vendas/installments.js"></script>
+  
+  <!-- Scripts de orçamento e importação removidos para foco total em vendas -->
+  
   <script src="js/vendas/payments.js"></script>
   <script src="js/vendas/form.js"></script>
   <script src="js/vendas/draft.js"></script>
-  <script src="js/vendas/import-sales.js"></script>
-  <script src="js/vendas/import-sales-bootstrap.js"></script>
 
   <script src="js/vendas/main.js"></script>
 
@@ -839,8 +796,6 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <script src="js/vendas/filtros.js"></script>
-
-  <script src="js/vendas/auto-open-quote.js"></script>
 
 </body>
 

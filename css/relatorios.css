@@ -16,6 +16,10 @@
       `estoque.css`, `notas.css` e `relatorios.css`. Refatoração
       possível: mover para `clientes.css` (base compartilhada).
       Aqui mantido para não alterar o contrato entre arquivos.
+   5. Import hub (`.dh-imp-hub__*`) migrado para paleta Laranja.
+      Overlay e textos warm-dark consistentes com portal-vendas.
+   6. `.control-select option` reset para eliminar fundo azul
+      nativo em browsers Windows/Edge.
    ========================================================= */
 
 /* ---------- Cabeçalho com ações ---------- */
@@ -254,6 +258,11 @@ main .report-grid + .panel {
   transition: border-color var(--transition), box-shadow var(--transition);
 }
 
+.control-select option {
+  background: var(--surface);
+  color: var(--text);
+}
+
 /* CORREÇÃO #2: hover com color-mix() funciona nos dois temas.
    Antes: `#b9bfc9` hardcoded (cinza-claro) — destoava no dark. */
 .control-select:hover:not(:focus) {
@@ -407,8 +416,8 @@ main .report-grid + .panel {
 .dh-imp-hub[hidden] { display: none !important; }
 .dh-imp-hub__card {
   width: 100%; max-width: 620px;
-  background: linear-gradient(180deg,#0f1620 0%,#0d131c 100%);
-  color: #e6eaf2;
+  background: linear-gradient(180deg, #15100b 0%, #0d0906 100%);
+  color: #f2ede6;
   border: 1px solid rgba(255,255,255,.10);
   border-radius: 18px;
   box-shadow: 0 24px 60px rgba(0,0,0,.70);
@@ -423,12 +432,12 @@ main .report-grid + .panel {
   border-bottom: 1px solid rgba(255,255,255,.08);
 }
 .dh-imp-hub__head h2 { margin: 0 0 2px; font-size: 16px; font-weight: 700; }
-.dh-imp-hub__head p { margin: 0; font-size: 12.5px; color: #8b95a7; }
+.dh-imp-hub__head p { margin: 0; font-size: 12.5px; color: #8d8278; }
 .dh-imp-hub__close {
-  appearance: none; border: 0; background: transparent; color: #8b95a7;
+  appearance: none; border: 0; background: transparent; color: #8d8278;
   font-size: 22px; cursor: pointer; width: 32px; height: 32px; border-radius: 8px;
 }
-.dh-imp-hub__close:hover { background: rgba(255,255,255,.06); color: #e6eaf2; }
+.dh-imp-hub__close:hover { background: rgba(255,255,255,.06); color: #f2ede6; }
 .dh-imp-hub__body { padding: 18px 20px; overflow-y: auto; }
 .dh-imp-hub__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .dh-imp-hub__item {
@@ -449,13 +458,13 @@ main .report-grid + .panel {
 .dh-imp-hub__icon {
   display: inline-flex; align-items: center; justify-content: center;
   width: 38px; height: 38px; border-radius: 10px;
-  background: rgba(59,130,246,.14); color: #60a5fa;
+  background: rgba(249,115,22,.14); color: #fb923c;
 }
 .dh-imp-hub__icon--ok { background: rgba(34,197,94,.14); color: #22c55e; }
 .dh-imp-hub__icon--warn { background: rgba(245,158,11,.14); color: #f59e0b; }
-.dh-imp-hub__icon--muted { background: rgba(255,255,255,.05); color: #8b95a7; }
-.dh-imp-hub__title { display: block; font-size: 14px; font-weight: 600; color: #e6eaf2; }
-.dh-imp-hub__desc { display: block; font-size: 11.5px; color: #8b95a7; line-height: 1.4; }
+.dh-imp-hub__icon--muted { background: rgba(255,255,255,.05); color: #8d8278; }
+.dh-imp-hub__title { display: block; font-size: 14px; font-weight: 600; color: #f2ede6; }
+.dh-imp-hub__desc { display: block; font-size: 11.5px; color: #8d8278; line-height: 1.4; }
 .dh-imp-hub__badge {
   display: inline-block;
   padding: 1px 7px;

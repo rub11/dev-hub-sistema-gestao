@@ -1,5 +1,5 @@
 /* =========================================================
-   DEV HUB · Cadastros Financeiros
+   DEV HUB · Cadastros Financeiros (Padronizado Laranja)
    ========================================================= */
 
 /* ---------- Abas ---------- */
@@ -35,12 +35,13 @@
   cursor: pointer;
   white-space: nowrap;
   transition: background-color var(--transition), color var(--transition);
+  overflow: visible;
 }
 .cad-tab:hover { background: var(--surface-2); color: var(--text); }
 .cad-tab.is-active {
   background: var(--surface-2);
   color: var(--text);
-  box-shadow: 0 0 0 1px var(--accent) inset;
+  box-shadow: 0 0 0 1px var(--accent) inset; /* Linha laranja ao redor da aba ativa */
 }
 .cad-tab svg { width: 16px; height: 16px; flex: none; }
 .cad-tab.is-active svg { color: var(--accent); }
@@ -62,17 +63,24 @@
 
 .cad-panel[hidden] { display: none; }
 
-/* ---------- Badges ---------- */
+/* ---------- Badges (Cores Padronizadas) ---------- */
 .badge--receita   { background: var(--success-soft); color: var(--success); }
 .badge--despesa   { background: var(--danger-soft);  color: var(--danger); }
+
+/* Custo: Âmbar/Dourado */
 .badge--custo     { background: rgba(245, 158, 11, 0.14); color: #b45309; }
-.badge--imposto   { background: rgba(139, 92, 246, 0.14); color: #6d28d9; }
-.badge--financeiro { background: rgba(14, 165, 233, 0.14); color: #0369a1; }
+
+/* Imposto: Laranja Principal (Raposa) */
+.badge--imposto   { background: rgba(249, 115, 22, 0.14); color: #EA580C; }
+
+/* Financeiro: Laranja mais claro/terroso */
+.badge--financeiro { background: rgba(217, 119, 6, 0.14); color: #b45309; }
+
 .badge--neutral   { background: var(--surface-2); color: var(--text-soft); }
 
 [data-theme="dark"] .badge--custo     { background: rgba(245, 158, 11, 0.18); color: #fbbf24; }
-[data-theme="dark"] .badge--imposto   { background: rgba(139, 92, 246, 0.20); color: #a78bfa; }
-[data-theme="dark"] .badge--financeiro { background: rgba(14, 165, 233, 0.18); color: #38bdf8; }
+[data-theme="dark"] .badge--imposto   { background: rgba(249, 115, 22, 0.20); color: #FB923C; }
+[data-theme="dark"] .badge--financeiro { background: rgba(217, 119, 6, 0.18); color: #fcd34d; }
 
 /* ---------- Código mono ---------- */
 .cell-code {
@@ -141,7 +149,7 @@
 .cad-form__field input:not([type="checkbox"]):focus,
 .cad-form__field select:focus,
 .cad-form__field textarea:focus {
-  border-color: var(--accent) !important;
+  border-color: var(--accent) !important; /* Borda Laranja no foco */
   box-shadow: 0 0 0 3px var(--accent-ring) !important;
   background-color: var(--surface) !important;
 }
@@ -167,7 +175,7 @@
   color: var(--text) !important;
 }
 
-/* ---------- CHECKBOX: quadrado customizado (ignora tema) ---------- */
+/* ---------- CHECKBOX: quadrado customizado ---------- */
 .cad-form__field input[type="checkbox"] {
   all: unset !important;
   box-sizing: border-box !important;
@@ -193,7 +201,7 @@
 }
 
 .cad-form__field input[type="checkbox"]:checked {
-  background-color: var(--accent) !important;
+  background-color: var(--accent) !important; /* Fundo laranja */
   border-color: var(--accent) !important;
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'><path d='M20 6 9 17l-5-5'/></svg>") !important;
   background-repeat: no-repeat !important;
@@ -280,9 +288,4 @@
   font-size: 12.5px;
   color: var(--text-soft);
   font-variant-numeric: tabular-nums;
-}
-.cad-tab {
-  /* ...mantém o resto... */
-  padding: 0 18px 0 18px;
-  overflow: visible;   /* ← adicionar */
 }
