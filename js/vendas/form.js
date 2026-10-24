@@ -82,6 +82,16 @@
     formEls.form.addEventListener('submit', onSubmit);
 
     refreshSubmitEnabled();
+
+    // Verifica se a tela foi aberta via parâmetro de URL (Orçamentos)
+    setTimeout(() => {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('novo') === 'orcamento') {
+        openNewQuote();
+      } else if (urlParams.get('editar_orcamento')) {
+        openEditQuote(urlParams.get('editar_orcamento'));
+      }
+    }, 100);
   }
 
   /* =========================================================
@@ -119,10 +129,7 @@
     }
   }
 
-  function applyMethodDiscount() {
-    /* Não usado mais com múltiplos pagamentos — mantido por segurança */
-    return;
-  }
+  function applyMethodDiscount() { return; }
 
   /* =========================================================
      Habilita/desabilita botão Finalizar
@@ -131,9 +138,8 @@
     if (!formEls.submitBtn) return;
     if (state.submitting) return;
 
-    const hasPayment = DH.payments
-      ? DH.payments.hasPayment()
-      : true;
+    const isQuote = state.formMode === 'quote' || state.formMode === 'quote_edit';
+    const hasPayment = isQuote ? true : (DH.payments ? DH.payments.hasPayment() : true);
     const hasItems   = Array.isArray(state.cart) && state.cart.length > 0;
 
     formEls.submitBtn.disabled = !(hasPayment && hasItems);
@@ -172,8 +178,14 @@
     setFormMode('create');
     showView('form');
 
-    document.getElementById('quote-valid-field').hidden = true;
-    document.getElementById('no-stock-field').hidden = false;
+    const quoteValidField = document.getElementById('quote-valid-field');
+    if (quoteValidField) quoteValidField.hidden = true;
+    
+    const noStockField = document.getElementById('no-stock-field');
+    if (noStockField) noStockField.hidden = false;
+    
+    const paymentsField = document.getElementById('payments-field');
+    if (paymentsField) paymentsField.style.display = 'block';
 
     if (DH.installments) DH.installments.reset();
     if (DH.payments) DH.payments.reset();
@@ -183,7 +195,109 @@
   }
 
   /* =========================================================
-     EDITAR
+     NOVO ORÇAMENTO
+     ========================================================= */
+  async function openNewQuote() {
+    if (!state.perms.create) {
+      DH.toast('Você não tem permissão para criar orçamentos.', 'error');
+      return;
+    }
+    state.editingSaleId = null;
+    state.editingSale = null;
+    state.correctingSaleId = null;
+    state.correctingSale = null;
+    state.convertingFromQuote = null;
+    state.editingQuoteId = null;
+    state.noStock = false;
+    state.appliedMethodDiscount = null;
+
+    if (formEls.noStock) formEls.noStock.checked = false;
+
+    setFormMode('quote');
+    showView('form');
+
+    // CORREÇÃO DE SEGURANÇA: Verifica se os elementos existem antes de tentar esconder/mostrar
+    const quoteValidField = document.getElementById('quote-valid-field');
+    if (quoteValidField) quoteValidField.hidden = false;
+    
+    const noStockField = document.getElementById('no-stock-field');
+    if (noStockField) noStockField.hidden = true;
+    
+    const paymentsField = document.getElementById('payments-field');
+    if (paymentsField) paymentsField.style.display = 'none';
+
+    if (DH.installments) DH.installments.reset();
+    if (DH.payments) DH.payments.reset();
+
+    if (!state.formDataLoaded) await loadFormData();
+    refreshSubmitEnabled();
+  }
+
+  /* =========================================================
+     EDITAR ORÇAMENTO
+     ========================================================= */
+  async function openEditQuote(quoteId) {
+    if (!state.perms.create) {
+      DH.toast('Você não tem permissão para editar orçamentos.', 'error');
+      return;
+    }
+    state.editingQuoteId = quoteId;
+    state.editingSaleId = null;
+    state.editingSale = null;
+    state.correctingSaleId = null;
+    state.correctingSale = null;
+    state.convertingFromQuote = null;
+    state.noStock = false;
+    state.appliedMethodDiscount = null;
+
+    showView('form');
+
+    const quoteValidField = document.getElementById('quote-valid-field');
+    if (quoteValidField) quoteValidField.hidden = false;
+    
+    const noStockField = document.getElementById('no-stock-field');
+    if (noStockField) noStockField.hidden = true;
+    
+    const paymentsField = document.getElementById('payments-field');
+    if (paymentsField) paymentsField.style.display = 'none';
+
+    if (DH.installments) DH.installments.reset();
+    if (!state.formDataLoaded) await loadFormData();
+
+    try {
+      const { data: quote, error } = await window.db.from('quotes').select('*').eq('id', quoteId).single();
+      if (error) throw error;
+
+      const { data: items } = await window.db.from('quote_items').select('*').eq('quote_id', quoteId).order('created_at');
+
+      state.cart = (items || []).map(it => ({
+        product_id: it.product_id,
+        product_name: it.product_name,
+        unit_price: utils.toNumber(it.unit_price, 0),
+        quantity: utils.toInteger(it.quantity, 0),
+        subtotal: utils.toNumber(it.subtotal, 0),
+        stock_available: (utils.findProduct(it.product_id) || {}).stock || 0
+      }));
+
+      formEls.customer.value = quote.customer_id || '';
+      formEls.discount.value = String(utils.toNumber(quote.discount, 0));
+      formEls.notes.value = quote.notes || '';
+      if (formEls.validUntil && quote.valid_until) formEls.validUntil.value = quote.valid_until;
+
+      setFormMode('quote_edit', quote);
+      DH.cart.render();
+      DH.cart.recalc();
+      refreshSubmitEnabled();
+
+    } catch (err) {
+      console.error('[DEV HUB] Erro ao carregar orçamento:', err);
+      DH.toast('Não foi possível carregar o orçamento.', 'error');
+      closeFormView();
+    }
+  }
+
+  /* =========================================================
+     EDITAR VENDA
      ========================================================= */
   async function openEditSale(sale) {
     if (!state.perms.edit) {
@@ -201,8 +315,15 @@
     if (formEls.noStock) formEls.noStock.checked = false;
 
     showView('form');
-    document.getElementById('quote-valid-field').hidden = true;
-    document.getElementById('no-stock-field').hidden = false;
+
+    const quoteValidField = document.getElementById('quote-valid-field');
+    if (quoteValidField) quoteValidField.hidden = true;
+    
+    const noStockField = document.getElementById('no-stock-field');
+    if (noStockField) noStockField.hidden = false;
+    
+    const paymentsField = document.getElementById('payments-field');
+    if (paymentsField) paymentsField.style.display = 'block';
 
     if (DH.installments) DH.installments.reset();
     if (!state.formDataLoaded) await loadFormData();
@@ -262,8 +383,15 @@
     if (formEls.noStock) formEls.noStock.checked = false;
 
     showView('form');
-    document.getElementById('quote-valid-field').hidden = true;
-    document.getElementById('no-stock-field').hidden = false;
+
+    const quoteValidField = document.getElementById('quote-valid-field');
+    if (quoteValidField) quoteValidField.hidden = true;
+    
+    const noStockField = document.getElementById('no-stock-field');
+    if (noStockField) noStockField.hidden = false;
+    
+    const paymentsField = document.getElementById('payments-field');
+    if (paymentsField) paymentsField.style.display = 'block';
 
     if (DH.installments) DH.installments.reset();
     if (!state.formDataLoaded) await loadFormData();
@@ -363,31 +491,54 @@
     if (DH.installments) DH.installments.reset();
     if (DH.payments) DH.payments.reset();
 
-    document.getElementById('quote-valid-field').hidden = true;
-    document.getElementById('no-stock-field').hidden = false;
+    const quoteValidField = document.getElementById('quote-valid-field');
+    if (quoteValidField) quoteValidField.hidden = true;
+    
+    const noStockField = document.getElementById('no-stock-field');
+    if (noStockField) noStockField.hidden = false;
+    
+    const paymentsField = document.getElementById('payments-field');
+    if (paymentsField) paymentsField.style.display = 'block';
 
     showView('list');
+
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('novo') === 'orcamento' || urlParams.get('editar_orcamento')) {
+       window.location.href = 'orcamentos.html';
+    }
   }
 
   /* =========================================================
-     CARREGAR DADOS
+     CARREGAR DADOS 
      ========================================================= */
   async function loadFormData() {
     state.formDataLoaded = false;
+    
+    console.log('[DEV HUB] Buscando clientes e produtos no banco...');
+
     const [customersRes, productsRes] = await Promise.all([
       window.db.from('customers')
-        .select('id, name, phone, email, cpf_cnpj')
+        .select('*') 
         .order('name', { ascending: true }),
       window.db.from('products')
         .select('id, name, code, barcode, description, image_url, price, stock, minimum_stock, active')
         .eq('active', true).order('name', { ascending: true })
     ]);
 
-    if (customersRes.error) console.error('[DEV HUB] loadCustomers:', customersRes.error);
-    if (productsRes.error) console.error('[DEV HUB] loadProducts:', productsRes.error);
+    if (customersRes.error) {
+      console.error('[DEV HUB] ERRO AO BUSCAR CLIENTES:', customersRes.error);
+      DH.toast('Erro ao carregar clientes: ' + customersRes.error.message, 'error');
+    } else {
+      console.log('[DEV HUB] Clientes carregados:', customersRes.data?.length || 0);
+    }
+
+    if (productsRes.error) {
+      console.error('[DEV HUB] ERRO AO BUSCAR PRODUTOS:', productsRes.error);
+    }
 
     state.customers = customersRes.data || [];
     state.products = productsRes.data || [];
+    
     populateCustomerSelect();
 
     await loadPaymentMethods();
@@ -432,13 +583,14 @@
     const mode = state.formMode;
     const warnEl = document.getElementById('payment-warn');
 
-    /* Valida pagamentos */
-    if (!DH.payments.hasPayment()) {
-      if (warnEl) warnEl.hidden = false;
-      DH.cart.showFeedback('Aloque o valor total entre as formas de pagamento.');
-      return;
+    if (mode !== 'quote' && mode !== 'quote_edit') {
+      if (!DH.payments.hasPayment()) {
+        if (warnEl) warnEl.hidden = false;
+        DH.cart.showFeedback('Aloque o valor total entre as formas de pagamento.');
+        return;
+      }
+      if (warnEl) warnEl.hidden = true;
     }
-    if (warnEl) warnEl.hidden = true;
 
     if (mode === 'correct') {
       if (!state.perms.correct) { DH.cart.showFeedback('Apenas supervisores podem corrigir vendas.'); return; }
@@ -493,9 +645,8 @@
     if (!Number.isFinite(depositAmount) || depositAmount < 0) depositAmount = 0;
     if (depositAmount > total) depositAmount = total;
 
-    /* Pega pagamentos múltiplos */
-    const paymentsList = DH.payments.getPayments();
-    const primary      = DH.payments.getPrimary();
+    const paymentsList = mode === 'quote' || mode === 'quote_edit' ? [] : DH.payments.getPayments();
+    const primary      = mode === 'quote' || mode === 'quote_edit' ? null : DH.payments.getPrimary();
     const method       = (state.paymentMethods || []).find(m => m.code === (primary && primary.payment_method));
     const methodRequiresApproval = !!(method && method.requires_approval);
 
@@ -512,6 +663,7 @@
       method_requires_approval: methodRequiresApproval,
       installment_count: primary ? primary.installment_count : null,
       installment_value: primary ? primary.installment_value : null,
+      valid_until: formEls.validUntil && formEls.validUntil.value ? formEls.validUntil.value : null,
       items: state.cart.map(item => ({
         product_id: item.product_id,
         product_name: item.product_name,
@@ -586,8 +738,12 @@
 
       if (DH.installments) DH.installments.reset();
       if (DH.payments) DH.payments.reset();
-      document.getElementById('quote-valid-field').hidden = true;
-      document.getElementById('no-stock-field').hidden = false;
+      
+      const quoteValidField = document.getElementById('quote-valid-field');
+      if (quoteValidField) quoteValidField.hidden = true;
+      
+      const noStockField = document.getElementById('no-stock-field');
+      if (noStockField) noStockField.hidden = false;
 
       await DH.list.loadSales();
       if (DH.quotes) { await DH.quotes.loadQuotes(); DH.quotes.switchTab('sales'); }
@@ -698,7 +854,7 @@
     setSubmitting(true);
     try {
       const isEdit = !!state.editingQuoteId;
-
+      
       const result = await DH.quotes.saveQuote(payload);
       const num = result && result.quote_number;
 
@@ -710,8 +866,14 @@
       if (DH.installments) DH.installments.reset();
       if (DH.payments) DH.payments.reset();
 
-      document.getElementById('quote-valid-field').hidden = true;
-      document.getElementById('no-stock-field').hidden = false;
+      const quoteValidField = document.getElementById('quote-valid-field');
+      if (quoteValidField) quoteValidField.hidden = true;
+      
+      const noStockField = document.getElementById('no-stock-field');
+      if (noStockField) noStockField.hidden = false;
+      
+      const paymentsField = document.getElementById('payments-field');
+      if (paymentsField) paymentsField.style.display = 'block';
 
       DH.toast(
         isEdit
@@ -778,7 +940,7 @@
   DH.form = {
     els,
     setupFormView, setupSaleForm,
-    openFormView, openEditSale, openCorrectSale, closeFormView, showView,
+    openFormView, openNewQuote, openEditQuote, openEditSale, openCorrectSale, closeFormView, showView,
     setFormMode,
     fetchSaleItems,
     loadFormData,

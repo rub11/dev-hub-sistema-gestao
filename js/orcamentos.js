@@ -139,7 +139,7 @@
       if (state.status === 'pendentes') {
         if (!['draft', 'sent'].includes(st)) return false;
       }
-      if (state.status === 'convertidos') {
+      if (state.status === 'aprovados' || state.status === 'convertidos') {
         if (st !== 'converted') return false;
       }
       if (state.status === 'cancelados') {
@@ -301,8 +301,6 @@
   async function abrirModalDetalhes(q) {
     let items = [];
 
-    console.log('[orcamentos] buscando itens do orçamento:', q.id);
-
     try {
       const { data, error } = await window.db
         .from('quote_items')
@@ -310,17 +308,12 @@
         .eq('quote_id', q.id)
         .order('created_at', { ascending: true });
 
-      console.log('[orcamentos] itens retornados:', data);
-      console.log('[orcamentos] erro:', error);
-
       if (error) throw error;
       items = data || [];
     } catch (e) {
       console.error('[orcamentos] erro ao buscar itens:', e);
       items = [];
     }
-
-    console.log('[orcamentos] items.length:', items.length);
 
     const st = String(q.status || '').toLowerCase();
     const badge = statusBadge(st, isExpired(q));

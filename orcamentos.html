@@ -99,8 +99,8 @@
         </div>
 
         <div class="page-head__actions">
-
-          <button type="button" class="btn btn--primary" id="new-quote-btn">
+          <!-- 👇 AQUI ESTÁ A CORREÇÃO: Adicionado o onclick para o modo orçamento 👇 -->
+          <button type="button" class="btn btn--primary" id="new-quote-btn" onclick="window.location.href='vendas.html?tipo=orcamento'">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
                  style="width:16px;height:16px"><path d="M12 5v14M5 12h14"/></svg>
@@ -230,10 +230,25 @@
   <script src="js/nav/search.js"></script>
   <script src="js/nav/org-switcher.js"></script>
   <script src="js/nav/bar.js"></script>
-<script src="js/nav/favorites.js"></script>
+  <script src="js/nav/favorites.js"></script>
   <script src="js/nav/main.js"></script>
 
   <script src="js/orcamentos.js"></script>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      try {
+        const rawUser = sessionStorage.getItem('devhub_user');
+        if (rawUser) {
+          const user = JSON.parse(rawUser);
+          const nameEl = document.getElementById('greeting-name');
+          if (nameEl && user.name) {
+            nameEl.textContent = 'Olá, ' + user.name.split(' ')[0];
+          }
+        }
+      } catch (e) {}
+    });
+  </script>
 
 </body>
 </html>

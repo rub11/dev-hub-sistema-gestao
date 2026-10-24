@@ -91,19 +91,20 @@
     </main>
   </div>
 
-  <!-- Scripts Base -->
+   <!-- Scripts Base -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/permissions.js"></script>
   
-  <!-- Scripts do Topnav (caso o portal tenha a barra de navegação no topo) -->
+  <!-- Scripts do Topnav (O permission-modal estava faltando!) -->
   <script src="js/nav/config.js"></script>
   <script src="js/nav/state.js"></script>
   <script src="js/nav/roles.js"></script>
   <script src="js/nav/styles.js"></script>
   <script src="js/nav/tabs.js"></script>
   <script src="js/nav/module-menu.js"></script>
+  <script src="js/nav/permission-modal.js"></script> <!-- ADICIONADO AQUI -->
   <script src="js/nav/notifications.js"></script>
   <script src="js/nav/user-menu.js"></script>
   <script src="js/nav/search.js"></script>
@@ -114,35 +115,32 @@
 
   <!-- SCRIPT DE INJEÇÃO DO NOME E CARGO -->
   <script>
-    document.addEventListener('DOMContentLoaded', async () => {
+    document.addEventListener('DOMContentLoaded', function () {
       try {
-        // Aguarda a autenticação do Supabase carregar
-        if (window.Auth && window.Auth.readyPromise) {
-          await Auth.readyPromise;
+        // Usa a leitura do sessionStorage, que é muito mais rápida, síncrona e não quebra
+        const rawUser = sessionStorage.getItem('devhub_user');
+        
+        if (rawUser) {
+          const user = JSON.parse(rawUser);
           
-          // Puxa os dados do usuário logado
-          const { data: { user } } = await window.supabase.auth.getUser();
+          // Pega o nome
+          const fullName = user.name || 'Usuário';
+          const firstName = fullName.trim().split(' ')[0];
           
-          if (user) {
-            // Pega o nome (tenta full_name, name ou o prefixo do email)
-            const fullName = user.user_metadata?.full_name || user.user_metadata?.name || user.email.split('@')[0];
-            const firstName = fullName.split(' ')[0];
-            
-            // Pega a role (pode vir do user_metadata ou você pode buscar no banco)
-            const role = user.user_metadata?.role || 'Membro';
+          const nameEl = document.getElementById('greeting-name');
+          if (nameEl) nameEl.textContent = firstName;
 
-            const nameEl = document.getElementById('greeting-name');
-            if (nameEl) nameEl.textContent = firstName;
-
-            const roleEl = document.getElementById('greeting-role');
-            if (roleEl) {
-              roleEl.textContent = role;
-              roleEl.hidden = false; // Torna o crachá visível
-            }
+          // Pega o cargo (role)
+          const roleEl = document.getElementById('greeting-role');
+          if (roleEl && user.role) {
+            // Deixa a primeira letra maiúscula (ex: admin -> Admin)
+            const roleText = user.role.charAt(0).toUpperCase() + user.role.slice(1);
+            roleEl.textContent = roleText;
+            roleEl.hidden = false; 
           }
         }
       } catch (e) {
-        console.error('Erro ao carregar dados do usuário:', e);
+        console.error('Erro ao carregar dados do usuário no HTML:', e);
       }
     });
   </script>

@@ -49,6 +49,9 @@
         NAV.ICONS.bell +
         '<span class="app-tabs__bell-badge" id="app-tabs-bell-badge" hidden>0</span>' +
       '</button>' +
+      
+      /* 👇 BLOCO DA BARRA DE BUSCA COMENTADO 👇 */
+      /*
       '<div class="app-tabs__search" id="tnav-search">' +
         '<span class="tnav-search__icon">' + NAV.ICONS.search + '</span>' +
         '<input type="search" class="tnav-search__input" id="tnav-search-input" ' +
@@ -61,6 +64,10 @@
                 'aria-label="Limpar busca">' + NAV.ICONS.close + '</button>' +
         '<div class="tnav-search__results" id="tnav-search-results" role="listbox" hidden></div>' +
       '</div>' +
+      */
+      /* 👆 FIM DO BLOCO DA BUSCA 👆 */
+      '' + /* Garante que a concatenação continue funcionando */
+
       '<div class="app-tabs__user" id="app-tabs-user">' +
         '<button type="button" class="app-tabs__user-btn" id="app-tabs-user-btn" ' +
                 'aria-haspopup="menu" aria-expanded="false" ' +
@@ -106,7 +113,7 @@
     }
 
     NAV.tabs.render();
-    NAV.search.setup();
+    // NAV.search.setup(); /* 👈 BUSCA DESATIVADA */
     NAV.userMenu.setup();
     NAV.notifications.setup();
     NAV.userMenu.bindLogout(bar);

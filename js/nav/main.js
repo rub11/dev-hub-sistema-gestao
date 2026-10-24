@@ -68,17 +68,22 @@
       if (plusBtn) plusBtn.setAttribute('aria-expanded', 'false');
     }
 
+    /* 👇 BUSCA DESATIVADA 👇 */
+    /*
     if (!state.search.wrap) return;
     if (state.search.wrap.contains(e.target)) return;
     NAV.search.closeResults();
+    */
   });
 
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape') return;
     NAV.moduleMenu.close();
-    NAV.search.closeResults();
+    // NAV.search.closeResults(); /* 👈 BUSCA DESATIVADA */
   });
 
+  /* 👇 ATALHO CTRL+K DESATIVADO 👇 */
+  /*
   document.addEventListener('keydown', function (e) {
     const isK = String(e.key || '').toLowerCase() === 'k';
     if (!isK) return;
@@ -91,6 +96,7 @@
     input.focus();
     input.select();
   });
+  */
 
   window.addEventListener('scroll', function (e) {
     if (!state.menuEl || state.menuEl.hidden) return;

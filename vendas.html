@@ -98,7 +98,6 @@
 
         <div class="page-head page-head--with-action">
           <div>
-            <!-- CORREÇÃO AQUI: "Olá, " fixo no HTML e span apenas para o nome -->
             <p class="page-head__eyebrow">
               Olá, <span id="greeting-name">...</span>
               <span class="role-badge" id="greeting-role" hidden></span>
@@ -264,19 +263,23 @@
               <div class="card__body">
                 <div class="field">
                   <div class="field__label-row">
-                    <label for="sale-customer">Selecione o cliente</label>
-                    <button type="button" class="btn btn--ghost btn--xs" id="new-customer-btn"
-                            title="Cadastrar novo parceiro">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M12 5v14M5 12h14"/>
-                      </svg>
-                      <span>Novo parceiro</span>
-                    </button>
+                    <label>Selecione o cliente</label>
                   </div>
-                  <select id="sale-customer">
+                  
+                  <!-- Select Original Escondido (para o form.js continuar funcionando) -->
+                  <select id="sale-customer" style="display: none;">
                     <option value="">Cliente não informado</option>
                   </select>
+
+                  <!-- Botão que abre o Modal de Busca -->
+                  <button type="button" id="open-customer-picker" class="customer-picker-trigger">
+                    <div class="customer-picker-trigger__left">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+                      <span id="customer-picker-label">Cliente não informado</span>
+                    </div>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><path d="m6 9 6 6 6-6"/></svg>
+                  </button>
+
                 </div>
               </div>
             </section>
@@ -624,6 +627,42 @@
     </div>
   </div>
 
+  <!-- ================= MODAL: BUSCAR CLIENTE ================= -->
+  <div class="modal" id="customer-picker-modal" hidden>
+    <div class="modal__backdrop" data-close-picker></div>
+    <div class="modal__dialog modal__dialog--md" role="dialog" aria-modal="true" aria-labelledby="picker-title">
+      
+      <header class="modal__head">
+        <h2 class="modal__title" id="picker-title">Buscar Cliente / Parceiro</h2>
+        <button type="button" class="icon-btn modal__close" aria-label="Fechar" data-close-picker>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+        </button>
+      </header>
+
+      <div class="modal__body" style="padding-top: 10px;">
+        <!-- Barra de Pesquisa do Modal -->
+        <div class="customer-search-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input type="text" id="customer-search-input" placeholder="Pesquisar por nome, CPF/CNPJ, e-mail ou telefone..." autocomplete="off" />
+        </div>
+
+        <!-- Lista de Clientes -->
+        <div class="customer-list" id="customer-list">
+          <!-- Injetado via JS -->
+        </div>
+      </div>
+
+      <footer class="modal__foot" style="justify-content: space-between;">
+        <p style="margin:0; font-size:12.5px; color:var(--text-muted)">Não achou quem procurava?</p>
+        <button type="button" class="btn btn--primary" id="customer-picker-new-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><path d="M12 5v14M5 12h14"/></svg>
+          <span>Cadastrar novo parceiro</span>
+        </button>
+      </footer>
+
+    </div>
+  </div>
+
   <!-- ================= MODAL: DETALHE / AUDITORIA ================= -->
   <div class="modal" id="detail-modal" hidden>
     <div class="modal__backdrop" data-close-modal></div>
@@ -745,6 +784,7 @@
 
   <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="false"></div>
 
+  <!-- Scripts Base -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase.js"></script>
   <script src="js/auth.js"></script>
@@ -752,6 +792,7 @@
 
   <script src="js/ui-confirm.js"></script>
 
+  <!-- Scripts de Navegação -->
   <script src="js/nav/config.js"></script>
   <script src="js/nav/state.js"></script>
   <script src="js/nav/roles.js"></script>
@@ -767,6 +808,7 @@
   <script src="js/nav/favorites.js"></script>
   <script src="js/nav/main.js"></script>
 
+  <!-- Scripts de Vendas -->
   <script src="js/vendas/config.js"></script>
   <script src="js/vendas/state.js"></script>
   <script src="js/vendas/utils.js"></script>
@@ -784,8 +826,6 @@
   <script src="js/vendas/modal-audit.js"></script>
   <script src="js/vendas/modal-approvals.js"></script>
   
-  <!-- Scripts de orçamento e importação removidos para foco total em vendas -->
-  
   <script src="js/vendas/payments.js"></script>
   <script src="js/vendas/form.js"></script>
   <script src="js/vendas/draft.js"></script>
@@ -797,6 +837,178 @@
 
   <script src="js/vendas/filtros.js"></script>
 
+  <!-- SCRIPT DE CORREÇÃO E MODO ORÇAMENTO -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      
+      // === 1. CORREÇÃO DO NOME DO USUÁRIO (Sem duplicar o "Olá") ===
+      try {
+        const rawUser = sessionStorage.getItem('devhub_user');
+        if (rawUser) {
+          const user = JSON.parse(rawUser);
+          const nameEl = document.getElementById('greeting-name');
+          const roleEl = document.getElementById('greeting-role');
+          
+          if (nameEl && user.name) {
+            nameEl.textContent = user.name.replace(/Olá,?\s*/gi, '').trim().split(' ')[0]; 
+          }
+          if (roleEl && user.role) {
+            roleEl.textContent = user.role.charAt(0).toUpperCase() + user.role.slice(1);
+            roleEl.hidden = false;
+          }
+        }
+      } catch (e) {
+        console.error('Erro ao carregar dados do usuário:', e);
+      }
+
+      // === 2. LÓGICA DO MODO ORÇAMENTO ===
+      const urlParams = new URLSearchParams(window.location.search);
+      const isQuoteMode = urlParams.get('tipo') === 'orcamento';
+
+      if (isQuoteMode) {
+        const titleEl = document.querySelector('.page-head__title');
+        const subEl = document.querySelector('.page-head__sub');
+        const submitBtnLabel = document.querySelector('#submit-sale-btn .btn__label');
+        
+        if (titleEl) titleEl.textContent = 'Novo Orçamento';
+        if (subEl) subEl.textContent = 'Selecione o cliente, adicione produtos e salve o orçamento.';
+        if (submitBtnLabel) submitBtnLabel.textContent = 'Salvar Orçamento';
+
+        const paymentsField = document.getElementById('payments-field');
+        if (paymentsField) paymentsField.style.display = 'none';
+
+        window.MODO_ORCAMENTO = true;
+      }
+
+      // === 3. BOTÕES VOLTAR E CANCELAR ===
+      const backBtn = document.getElementById('back-to-list');
+      const cancelBtn = document.getElementById('cancel-sale');
+      const viewList = document.getElementById('view-list');
+      const viewForm = document.getElementById('view-form');
+
+      function voltarParaLista(e) {
+        if (e) e.preventDefault();
+        if (isQuoteMode) {
+           window.location.href = 'orcamentos.html';
+           return;
+        }
+        if (viewForm) viewForm.hidden = true;
+        if (viewList) viewList.hidden = false;
+      }
+
+      if (backBtn) backBtn.addEventListener('click', voltarParaLista);
+      if (cancelBtn) cancelBtn.addEventListener('click', voltarParaLista);
+
+    });
+  </script>
+
+  <!-- SCRIPT DO CUSTOMER PICKER (MODAL DE BUSCA) -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const originalSelect = document.getElementById('sale-customer');
+      const triggerBtn = document.getElementById('open-customer-picker');
+      const label = document.getElementById('customer-picker-label');
+      const modal = document.getElementById('customer-picker-modal');
+      const searchInput = document.getElementById('customer-search-input');
+      const listContainer = document.getElementById('customer-list');
+      const newBtn = document.getElementById('customer-picker-new-btn');
+      
+      if (!originalSelect || !modal) return;
+
+      // Função para abrir o modal
+      function openModal() {
+        modal.hidden = false;
+        document.body.style.overflow = 'hidden';
+        searchInput.value = '';
+        renderList('');
+        setTimeout(() => searchInput.focus(), 100);
+      }
+
+      // Função para fechar o modal
+      function closeModal() {
+        modal.hidden = true;
+        document.body.style.overflow = '';
+      }
+
+      // Renderiza a lista de clientes baseado na busca
+      function renderList(query) {
+        // Puxa os clientes do estado global (carregados pelo form.js)
+        const customers = window.DH && window.DH.state && window.DH.state.customers ? window.DH.state.customers : [];
+        
+        const q = query.toLowerCase().trim();
+        
+        // Filtra por Nome, CPF/CNPJ, Email ou Telefone
+        const filtered = customers.filter(c => {
+          if (!q) return true;
+          const name = (c.name || '').toLowerCase();
+          const doc = (c.cpf_cnpj || c.documento || '').toLowerCase();
+          const email = (c.email || '').toLowerCase();
+          const phone = (c.phone || '').toLowerCase();
+          return name.includes(q) || doc.includes(q) || email.includes(q) || phone.includes(q);
+        });
+
+        listContainer.innerHTML = '';
+
+        if (filtered.length === 0) {
+          listContainer.innerHTML = '<div class="customer-list__empty">Nenhum cliente encontrado para esta busca.</div>';
+          return;
+        }
+
+        filtered.forEach(c => {
+          const initial = (c.name || '?').trim().charAt(0).toUpperCase();
+          const docText = c.cpf_cnpj || c.documento || 'Sem documento';
+          
+          const item = document.createElement('div');
+          item.className = 'customer-list__item';
+          item.innerHTML = `
+            <div class="customer-list__avatar">${initial}</div>
+            <div class="customer-list__info">
+              <strong>${c.name || '(sem nome)'}</strong>
+              <span>${docText} ${c.phone ? '· ' + c.phone : ''}</span>
+            </div>
+            <svg class="customer-list__check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+          `;
+          
+          item.addEventListener('click', () => {
+            originalSelect.value = c.id;
+            originalSelect.dispatchEvent(new Event('change'));
+            label.textContent = c.name || 'Cliente não informado';
+            closeModal();
+          });
+          
+          listContainer.appendChild(item);
+        });
+      }
+
+      // Eventos
+      triggerBtn.addEventListener('click', openModal);
+      searchInput.addEventListener('input', (e) => renderList(e.target.value));
+      
+      modal.querySelectorAll('[data-close-picker]').forEach(el => {
+        el.addEventListener('click', closeModal);
+      });
+
+      // Botão de novo parceiro
+      newBtn.addEventListener('click', () => {
+        closeModal();
+        const oldNewBtn = document.getElementById('new-customer-btn');
+        if (oldNewBtn) oldNewBtn.click();
+      });
+
+      // Fecha ao apertar ESC
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !modal.hidden) closeModal();
+      });
+
+      // Sincroniza o texto do botão caso o form.js mude o select (ex: ao editar orçamento)
+      const observer = new MutationObserver(() => {
+        if (originalSelect.selectedIndex >= 0) {
+          label.textContent = originalSelect.options[originalSelect.selectedIndex].textContent;
+        }
+      });
+      observer.observe(originalSelect, { childList: true, subtree: true });
+    });
+  </script>
 </body>
 
 </html>
