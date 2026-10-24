@@ -110,8 +110,8 @@
     gestao:              'management.view',
     permissoes:          'management.roles',
     dashboard:           'dashboard.view',
+    comercial:           'sales.view', // NOVO: Permissão para o portal comercial
     vendas:              'sales.view',
-    'portal-vendas':     'sales.view',
     orcamentos:          'sales.view',
     notas:               'notes.view',
     'notas-fiscal':      'invoices.view',
@@ -137,11 +137,17 @@
   NAV.TOPNAV = [
     { id: 'administracao', label: 'Administração', href: 'administracao.html', icon: 'lock', group: 'Administração', capability: 'management.view' },
 
-    { id: 'dashboard', label: 'Dashboard', href: 'dashboard.html', icon: 'dashboard', group: null },
-    { id: 'vendas',        label: 'Vendas',        href: 'portal-vendas.html', icon: 'vendas',      group: 'Comercial' },
+    { id: 'dashboard',     label: 'Dashboard',     href: 'dashboard.html',     icon: 'dashboard', group: null },
+    
+    // NOVO: Botão principal "Comercial" (Não fica dentro de nenhum grupo para não duplicar)
+    { id: 'comercial',     label: 'Comercial',     href: 'portal-vendas.html', icon: 'vendas',    group: null },
+    
+    // Módulos que ficam dentro da pasta Comercial no menu "+"
+    { id: 'vendas',        label: 'Vendas',        href: 'vendas.html',        icon: 'vendas',      group: 'Comercial' },
     { id: 'orcamentos',    label: 'Orçamentos',    href: 'orcamentos.html',    icon: 'notas',       group: 'Comercial' },
     { id: 'notas',         label: 'Notas',         href: 'notas.html',         icon: 'notas',       group: 'Comercial' },
     { id: 'parceiros',     label: 'Parceiros',     href: 'parceiros.html',     icon: 'clientes',    group: 'Comercial' },
+    
     { id: 'produtos',      label: 'Produtos',      href: 'produtos.html',      icon: 'produtos',    group: 'Catálogo' },
     { id: 'estoque',       label: 'Estoque',       href: 'estoque.html',       icon: 'estoque',     group: 'Catálogo' },
     { id: 'compras',         label: 'Compras',         href: 'compras.html',         icon: 'vendas',   group: 'Suprimentos', capability: 'purchases.view' },
@@ -166,13 +172,20 @@
     aprovacoes: 'aprovacoes',
     permissoes: 'permissoes',
     dashboard: 'dashboard',
+    
+    // O portal mapeia para o botão Comercial
+    'portal-vendas': 'comercial',
+    
+    // Os módulos internos também podem manter a aba "Comercial" ativa se desejar.
+    // Mas para permitir múltiplas abas (ex: uma aba de Vendas e outra de Orçamentos),
+    // deixamos eles mapeados para si mesmos:
     vendas: 'vendas',
-    'portal-vendas': 'vendas',
     orcamentos: 'orcamentos',
     notas: 'notas',
     'notas-fiscal': 'notas-fiscal',
     clientes: 'parceiros',
     parceiros: 'parceiros',
+    
     produtos: 'produtos',
     estoque: 'estoque',
     relatorios: 'relatorios',

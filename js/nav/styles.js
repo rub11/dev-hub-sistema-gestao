@@ -1,6 +1,5 @@
 /* =========================================================
    DEV HUB · Navegação · styles
-   Injeta o CSS da barra de abas e dropdowns.
    ========================================================= */
 (function () {
   'use strict';
@@ -388,61 +387,149 @@
       .app-tabs__user-item--danger:hover { background: var(--danger-soft); }
       .app-tabs__user-sep { height: 1px; margin: 4px 6px; background: var(--border); }
 
+      /* =====================================================
+         DROPDOWN DE MÓDULOS (BLINDADO CONTRA CSS GLOBAL)
+         ===================================================== */
       .tnav-menu {
-        position: fixed; top: 0; left: 0;
-        min-width: 280px; max-height: 80vh; overflow-y: auto;
-        overscroll-behavior: contain;
-        padding: 6px;
-        border: 1px solid var(--border); border-radius: 12px;
-        background: var(--surface);
-        box-shadow: 0 12px 32px -8px rgba(16, 24, 40, 0.24);
-        z-index: 9999;
-        animation: tnav-pop 140ms ease-out;
+        position: fixed !important;
+        top: 0; left: 0;
+        width: 260px !important;
+        max-height: 85vh !important; overflow-y: auto !important;
+        overscroll-behavior: contain !important;
+        padding: 8px !important;
+        border: 1px solid var(--border) !important; 
+        border-radius: 12px !important;
+        background: var(--surface) !important;
+        box-shadow: 0 12px 32px -8px rgba(16, 24, 40, 0.4) !important;
+        z-index: 9999 !important;
+        animation: tnav-pop 140ms ease-out !important;
+        
+        display: flex !important;
+        flex-direction: column !important;
+        box-sizing: border-box !important;
+        
+        /* Previne a seleção de texto azul */
+        user-select: none !important;
+        -webkit-user-select: none !important;
       }
       .tnav-menu[hidden] { display: none !important; }
       @keyframes tnav-pop {
         from { opacity: 0; transform: translateY(-4px); }
         to   { opacity: 1; transform: translateY(0); }
       }
-      .tnav-menu__group {
-        padding: 10px 12px 4px;
-        font-size: 10.5px; font-weight: 700;
-        letter-spacing: 0.08em; text-transform: uppercase;
-        color: var(--text-muted);
+      
+      /* Acordeão de Grupos (BLINDADO) */
+      .tnav-menu__group-btn {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        width: 100% !important;
+        padding: 10px 12px !important;
+        margin: 0 !important;
+        border: none !important;
+        background: transparent !important;
+        font-family: inherit !important;
+        cursor: pointer !important;
+        border-radius: 8px !important;
+        box-sizing: border-box !important;
+        transition: background-color 0.15s ease !important;
+        
+        /* Previne o azul de seleção e o outline ao clicar */
+        user-select: none !important;
+        -webkit-user-select: none !important;
+        -webkit-tap-highlight-color: transparent !important;
+        outline: none !important;
       }
+      .tnav-menu__group-btn:hover {
+        background: var(--surface-2) !important;
+      }
+      .tnav-menu__group-label {
+        font-size: 11px !important;
+        font-weight: 700 !important;
+        letter-spacing: 0.08em !important;
+        text-transform: uppercase !important;
+        color: var(--text-muted) !important;
+        text-align: left !important;
+        flex: 1 !important;
+        pointer-events: none !important; /* Impede que o texto seja selecionado ao clicar */
+      }
+      .tnav-menu__group-caret {
+        width: 14px !important;
+        height: 14px !important;
+        min-width: 14px !important;
+        min-height: 14px !important;
+        flex: none !important;
+        color: var(--text-muted) !important;
+        transition: transform 0.2s ease !important;
+        pointer-events: none !important;
+      }
+      .tnav-menu__group-btn.is-open .tnav-menu__group-caret {
+        transform: rotate(180deg) !important;
+        color: var(--accent) !important;
+      }
+      .tnav-menu__group-btn.is-open .tnav-menu__group-label {
+        color: var(--text) !important;
+      }
+      .tnav-menu__group-items {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 2px !important;
+        padding-left: 8px !important;
+        margin-bottom: 6px !important;
+      }
+      .tnav-menu__group-items[hidden] {
+        display: none !important;
+      }
+
+      /* Menu Items (Blindados) */
       .tnav-menu__item {
-        display: flex; align-items: center; gap: 10px;
-        width: 100%; padding: 9px 12px;
-        border: 0; border-radius: 8px;
-        background: transparent; color: var(--text);
-        font-size: 13.5px; font-weight: 500;
-        text-align: left; cursor: pointer; white-space: nowrap;
-        transition: background-color var(--transition), color var(--transition);
+        display: flex !important; 
+        align-items: center !important; 
+        gap: 10px !important;
+        width: 100% !important; 
+        padding: 9px 12px !important;
+        margin: 0 !important;
+        border: none !important; 
+        border-radius: 8px !important;
+        background: transparent !important; 
+        color: var(--text) !important;
+        font-size: 13.5px !important; 
+        font-weight: 500 !important;
+        text-align: left !important; 
+        cursor: pointer !important; 
+        white-space: nowrap !important;
+        box-sizing: border-box !important;
+        transition: background-color 0.15s ease, color 0.15s ease !important;
+        user-select: none !important;
+        -webkit-user-select: none !important;
+        -webkit-tap-highlight-color: transparent !important;
       }
-      .tnav-menu__item--indent { padding-left: 14px; }
-      .tnav-menu__item:hover { background: var(--surface-2); }
+      .tnav-menu__item--indent { padding-left: 14px !important; }
+      .tnav-menu__item:hover { background: var(--surface-2) !important; }
       .tnav-menu__item.is-active {
-        background: var(--accent-soft); color: var(--accent-hover);
+        background: var(--accent-soft) !important; color: var(--accent-hover) !important;
       }
       .tnav-menu__item > svg {
-        width: 16px; height: 16px; flex: none; color: var(--text-muted);
+        width: 16px !important; height: 16px !important; flex: none !important; color: var(--text-muted) !important;
       }
       .tnav-menu__icon {
-        display: inline-flex; flex: none; width: 16px; height: 16px;
-        color: var(--text-muted);
+        display: inline-flex !important; flex: none !important; width: 16px !important; height: 16px !important;
+        color: var(--text-muted) !important;
+        pointer-events: none !important;
       }
-      .tnav-menu__icon svg { width: 16px; height: 16px; }
-      .tnav-menu__item.is-active .tnav-menu__icon { color: var(--accent); }
-      .tnav-menu__label { flex: 1 1 auto; min-width: 0; }
+      .tnav-menu__icon svg { width: 16px !important; height: 16px !important; }
+      .tnav-menu__item.is-active .tnav-menu__icon { color: var(--accent) !important; }
+      .tnav-menu__label { flex: 1 1 auto !important; min-width: 0 !important; pointer-events: none !important; }
       .tnav-menu__dot {
-        flex: none; width: 6px; height: 6px; border-radius: 50%;
-        background: var(--accent); opacity: 0.7;
+        flex: none !important; width: 6px !important; height: 6px !important; border-radius: 50% !important;
+        background: var(--accent) !important; opacity: 0.7 !important;
+        pointer-events: none !important;
       }
-      .tnav-menu__sep { height: 1px; margin: 6px 8px; background: var(--border); }
-      .tnav-menu__item--danger { color: var(--danger); }
-      .tnav-menu__item--danger:hover { background: var(--danger-soft); }
+      .tnav-menu__sep { height: 1px !important; margin: 6px 8px !important; background: var(--border) !important; }
+      .tnav-menu__item--danger { color: var(--danger) !important; }
+      .tnav-menu__item--danger:hover { background: var(--danger-soft) !important; }
       .tnav-menu__item--danger .tnav-menu__icon svg,
-      .tnav-menu__item--danger svg { color: var(--danger); }
+      .tnav-menu__item--danger svg { color: var(--danger) !important; }
 
       .perm-denied__icon {
         display: grid; place-items: center;

@@ -48,28 +48,74 @@
     const openTabs = {};
     NAV.tabs.read().forEach(function (t) { openTabs[t.id] = true; });
 
+    // Dashboard fica solto no topo
     const dashItem = items.find(function (i) { return i.id === 'dashboard'; });
     if (dashItem) {
       el.appendChild(buildMenuItem(dashItem, activeId, openTabs, false));
       el.appendChild(makeSep());
     }
 
+    const groupButtons = []; // Guarda os botões para fechar os outros quando um abrir
+
+    // Renderiza os grupos como Acordeões (Sanfona)
     NAV.GROUP_ORDER.forEach(function (groupName) {
       const groupItems = items.filter(function (i) { return i.group === groupName; });
       if (groupItems.length === 0) return;
 
-      const label = document.createElement('div');
-      label.className = 'tnav-menu__group';
-      label.textContent = groupName;
-      el.appendChild(label);
+      // Se a página atual estiver neste grupo, já abre a pasta
+      const hasActive = groupItems.some(i => i.id === activeId);
+      const isOpen = hasActive; 
+
+      // Botão da "Pasta" (ex: COMERCIAL)
+      const groupBtn = document.createElement('button');
+      groupBtn.type = 'button';
+      groupBtn.className = 'tnav-menu__group-btn' + (isOpen ? ' is-open' : '');
+      groupBtn.innerHTML = `
+        <span class="tnav-menu__group-label">${groupName}</span>
+        <svg class="tnav-menu__group-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+      `;
+
+      // Container com os itens da pasta
+      const groupContainer = document.createElement('div');
+      groupContainer.className = 'tnav-menu__group-items';
+      if (!isOpen) groupContainer.hidden = true;
 
       groupItems.forEach(function (it) {
-        el.appendChild(buildMenuItem(it, activeId, openTabs, true));
+        groupContainer.appendChild(buildMenuItem(it, activeId, openTabs, true));
       });
+
+      // Lógica de abrir/fechar a pasta (Sanfona)
+      groupBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const nowOpen = !groupBtn.classList.contains('is-open');
+        
+        // Fecha todos os outros
+        groupButtons.forEach(function(btn) {
+          btn.classList.remove('is-open');
+          const container = btn.nextElementSibling;
+          if (container && container.classList.contains('tnav-menu__group-items')) {
+            container.hidden = true;
+          }
+        });
+
+        // Se estava fechado, abre o atual
+        if (nowOpen) {
+          groupBtn.classList.add('is-open');
+          groupContainer.hidden = false;
+        }
+      });
+
+      groupButtons.push(groupBtn);
+
+      el.appendChild(groupBtn);
+      el.appendChild(groupContainer);
     });
 
     el.appendChild(makeSep());
 
+    // Botão fechar tudo
     const closeAll = document.createElement('button');
     closeAll.type = 'button';
     closeAll.className = 'tnav-menu__item tnav-menu__item--danger';
