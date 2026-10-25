@@ -470,6 +470,12 @@
                     <input type="number" id="sale-deposit" value="0" min="0" step="0.01" inputmode="decimal" />
                   </div>
 
+                  <!-- NOVO: Forma de pagamento do sinal -->
+                  <div class="totals__row totals__row--field" id="deposit-method-row" hidden>
+                    <label for="sale-deposit-method" class="totals__label">Forma do sinal</label>
+                    <select id="sale-deposit-method" class="totals-input"></select>
+                  </div>
+
                   <div class="totals__row totals__row--balance" id="totals-balance-row" hidden>
                     <span class="totals__label">Saldo a receber</span>
                     <span class="totals__value totals__value--balance" id="total-balance">R$ 0,00</span>
@@ -826,6 +832,7 @@
   <script src="js/vendas/modal-audit.js"></script>
   <script src="js/vendas/modal-approvals.js"></script>
   
+  <script src="js/vendas/installments.js"></script>
   <script src="js/vendas/payments.js"></script>
   <script src="js/vendas/form.js"></script>
   <script src="js/vendas/draft.js"></script>

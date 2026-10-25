@@ -1,7 +1,5 @@
 /* =========================================================
-   DEV HUB · Parceiros · api
-   ---------------------------------------------------------
-   Camada Supabase: RPCs + lookup CNPJ + validações.
+   DEV HUB · Parceiros · api (Com logs de diagnóstico)
    ========================================================= */
 
 (function () {
@@ -12,10 +10,9 @@
     throw new Error('Supabase client não encontrado.');
   };
 
-  /* =========================================================
-     LISTAR — todos os parceiros (sem filtro de papel)
-     ========================================================= */
   async function loadPartners() {
+    console.log('[Parceiros API] Buscando dados no Supabase (com joins)...');
+    
     const { data, error } = await db().from('customers').select(`
       id, organization_id, type, name, company_name, trade_name, cpf_cnpj,
       phone, email, address, status, category, segment, created_at,
@@ -26,13 +23,15 @@
       customer_addresses(street, number, city, state, is_primary)
     `).order('created_at', { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+      console.error('[Parceiros API] Erro no Supabase RLS ou Consulta:', error);
+      throw error;
+    }
+    
+    console.log(`[Parceiros API] Sucesso. ${data ? data.length : 0} registros encontrados.`);
     return data || [];
   }
 
-  /* =========================================================
-     CARREGAR COMPLETO (RPC)
-     ========================================================= */
   async function getPartnerFull(id) {
     const { data, error } = await db().rpc('get_customer_full', { p_customer_id: id });
     if (error) throw error;
@@ -45,9 +44,6 @@
     };
   }
 
-  /* =========================================================
-     SALVAR (RPC)
-     ========================================================= */
   async function upsertPartnerFull(payload) {
     const { error } = await db().rpc('upsert_customer_full', {
       p_customer_id:     payload.customerId || null,
@@ -61,17 +57,11 @@
     if (error) throw error;
   }
 
-  /* =========================================================
-     EXCLUIR
-     ========================================================= */
   async function deletePartner(id) {
     const { error } = await db().from('customers').delete().eq('id', id);
     if (error) throw error;
   }
 
-  /* =========================================================
-     VALIDAÇÕES
-     ========================================================= */
   function validateCNPJ(cnpj) {
     const n = String(cnpj || '').replace(/\D/g, '');
     if (n.length !== 14) return false;
@@ -106,9 +96,6 @@
     return r === parseInt(n[10]);
   }
 
-  /* =========================================================
-     LOOKUP CNPJ (BrasilAPI + ReceitaWS fallback)
-     ========================================================= */
   function buildAddressFromAPI(d) {
     const parts = [];
     if (d.logradouro) parts.push(d.logradouro + (d.numero ? ', ' + d.numero : ''));
@@ -167,9 +154,6 @@
     throw lastErr || new Error('Falha ao consultar CNPJ.');
   }
 
-  /* =========================================================
-     NOTES · banco (extrai linhas "Banco: ..." do texto)
-     ========================================================= */
   function parseBankFromNotes(raw) {
     const out = { bank: '', agency: '', account: '', pix: '' };
     String(raw).split('\n').forEach((line) => {
@@ -185,16 +169,8 @@
   }
 
   Object.assign(window.Parn, {
-    db,
-    loadPartners,
-    getPartnerFull,
-    upsertPartnerFull,
-    deletePartner,
-    validateCNPJ,
-    validateCPF,
-    lookupCNPJ,
-    buildAddressFromAPI,
-    parseBankFromNotes
+    db, loadPartners, getPartnerFull, upsertPartnerFull, deletePartner,
+    validateCNPJ, validateCPF, lookupCNPJ, buildAddressFromAPI, parseBankFromNotes
   });
 
 })();

@@ -26,6 +26,8 @@
     formEls.discount    = document.getElementById('sale-discount');
     formEls.discountPct = document.getElementById('sale-discount-pct');
     formEls.deposit     = document.getElementById('sale-deposit');
+    formEls.depositMethod = document.getElementById('sale-deposit-method');
+    formEls.depositMethodRow = document.getElementById('deposit-method-row');
     formEls.totalSub    = document.getElementById('total-subtotal');
     formEls.totalTotal  = document.getElementById('total-total');
     formEls.notes       = document.getElementById('sale-notes');
@@ -51,7 +53,13 @@
       });
     }
     if (formEls.deposit) {
-      formEls.deposit.addEventListener('input', () => DH.cart.recalc());
+      formEls.deposit.addEventListener('input', () => {
+        DH.cart.recalc();
+        if (formEls.depositMethodRow) {
+          const val = utils.toNumber(formEls.deposit.value, 0);
+          formEls.depositMethodRow.hidden = val <= 0;
+        }
+      });
     }
     if (formEls.noStock) {
       formEls.noStock.addEventListener('change', () => {
@@ -63,7 +71,6 @@
       });
     }
 
-    /* Pagamentos múltiplos (substitui o select único antigo) */
     if (DH.payments) DH.payments.setup();
 
     const newCustomerBtn = document.getElementById('new-customer-btn');
@@ -83,7 +90,6 @@
 
     refreshSubmitEnabled();
 
-    // Verifica se a tela foi aberta via parâmetro de URL (Orçamentos)
     setTimeout(() => {
       const urlParams = new URLSearchParams(window.location.search);
       if (urlParams.get('novo') === 'orcamento') {
@@ -120,12 +126,39 @@
 
       if (error) throw error;
 
-      state.paymentMethods = (data && data.length > 0) ? data : FALLBACK;
+      const rawData = (data && data.length > 0) ? data : FALLBACK;
+      
+      const uniqueMethods = [];
+      const seen = new Set();
+      rawData.forEach(m => {
+        if (!seen.has(m.code)) {
+          seen.add(m.code);
+          uniqueMethods.push(m);
+        }
+      });
+
+      state.paymentMethods = uniqueMethods;
       console.log('[DEV HUB] payment methods:', state.paymentMethods.length,
                   data && data.length > 0 ? '(banco)' : '(fallback)');
     } catch (e) {
       console.warn('[DEV HUB] loadPaymentMethods falhou, usando fallback:', e);
       state.paymentMethods = FALLBACK;
+    }
+
+    // Popula o select de forma de sinal
+    if (formEls.depositMethod) {
+      formEls.depositMethod.innerHTML = '<option value="">Selecione...</option>';
+      state.paymentMethods.forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m.code;
+        opt.textContent = m.label;
+        formEls.depositMethod.appendChild(opt);
+      });
+    }
+
+    // 🔥 A MÁGICA ACONTECE AQUI: Avisa o payments.js para redesenhar o select com os métodos novos 🔥
+    if (DH.payments && typeof DH.payments.render === 'function') {
+      DH.payments.render();
     }
   }
 
@@ -174,6 +207,9 @@
     state.appliedMethodDiscount = null;
 
     if (formEls.noStock) formEls.noStock.checked = false;
+    if (formEls.deposit) formEls.deposit.value = '0';
+    if (formEls.depositMethodRow) formEls.depositMethodRow.hidden = true;
+    if (formEls.depositMethod) formEls.depositMethod.value = '';
 
     setFormMode('create');
     showView('form');
@@ -212,11 +248,13 @@
     state.appliedMethodDiscount = null;
 
     if (formEls.noStock) formEls.noStock.checked = false;
+    if (formEls.deposit) formEls.deposit.value = '0';
+    if (formEls.depositMethodRow) formEls.depositMethodRow.hidden = true;
+    if (formEls.depositMethod) formEls.depositMethod.value = '';
 
     setFormMode('quote');
     showView('form');
 
-    // CORREÇÃO DE SEGURANÇA: Verifica se os elementos existem antes de tentar esconder/mostrar
     const quoteValidField = document.getElementById('quote-valid-field');
     if (quoteValidField) quoteValidField.hidden = false;
     
@@ -283,6 +321,13 @@
       formEls.discount.value = String(utils.toNumber(quote.discount, 0));
       formEls.notes.value = quote.notes || '';
       if (formEls.validUntil && quote.valid_until) formEls.validUntil.value = quote.valid_until;
+      
+      if (formEls.deposit) formEls.deposit.value = String(utils.toNumber(quote.deposit_amount, 0));
+      if (formEls.depositMethod && quote.deposit_method) formEls.depositMethod.value = quote.deposit_method;
+      
+      if (formEls.depositMethodRow) {
+        formEls.depositMethodRow.hidden = utils.toNumber(quote.deposit_amount, 0) <= 0;
+      }
 
       setFormMode('quote_edit', quote);
       DH.cart.render();
@@ -341,6 +386,11 @@
     formEls.customer.value = sale.customer_id || '';
     formEls.discount.value = String(utils.toNumber(sale.discount, 0));
     if (formEls.deposit) formEls.deposit.value = String(utils.toNumber(sale.deposit_amount, 0));
+    
+    if (formEls.depositMethod && sale.deposit_method) formEls.depositMethod.value = sale.deposit_method;
+    if (formEls.depositMethodRow) {
+      formEls.depositMethodRow.hidden = utils.toNumber(sale.deposit_amount, 0) <= 0;
+    }
 
     const subSaved = utils.toNumber(sale.subtotal, 0);
     const dscSaved = utils.toNumber(sale.discount, 0);
@@ -409,6 +459,11 @@
     formEls.customer.value = sale.customer_id || '';
     formEls.discount.value = String(utils.toNumber(sale.discount, 0));
     if (formEls.deposit) formEls.deposit.value = String(utils.toNumber(sale.deposit_amount, 0));
+    
+    if (formEls.depositMethod && sale.deposit_method) formEls.depositMethod.value = sale.deposit_method;
+    if (formEls.depositMethodRow) {
+      formEls.depositMethodRow.hidden = utils.toNumber(sale.deposit_amount, 0) <= 0;
+    }
 
     const subSaved = utils.toNumber(sale.subtotal, 0);
     const dscSaved = utils.toNumber(sale.discount, 0);
@@ -499,6 +554,10 @@
     
     const paymentsField = document.getElementById('payments-field');
     if (paymentsField) paymentsField.style.display = 'block';
+
+    if (formEls.deposit) formEls.deposit.value = '0';
+    if (formEls.depositMethodRow) formEls.depositMethodRow.hidden = true;
+    if (formEls.depositMethod) formEls.depositMethod.value = '';
 
     showView('list');
 
@@ -656,6 +715,7 @@
       discount: utils.round2(discount),
       total,
       deposit_amount: utils.round2(depositAmount),
+      deposit_method: formEls.depositMethod ? formEls.depositMethod.value : null,
       payment_method: primary ? primary.payment_method : '',
       payments: paymentsList,
       notes: formEls.notes.value.trim() || '',
@@ -874,6 +934,10 @@
       
       const paymentsField = document.getElementById('payments-field');
       if (paymentsField) paymentsField.style.display = 'block';
+
+      if (formEls.deposit) formEls.deposit.value = '0';
+      if (formEls.depositMethodRow) formEls.depositMethodRow.hidden = true;
+      if (formEls.depositMethod) formEls.depositMethod.value = '';
 
       DH.toast(
         isEdit

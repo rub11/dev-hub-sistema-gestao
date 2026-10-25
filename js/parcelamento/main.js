@@ -174,7 +174,7 @@
   }
 
   /* =========================================================
-     SALVAR
+     SALVAR (DIRETO NA TABELA)
      ========================================================= */
   async function onSave(e) {
     e.preventDefault();
@@ -197,22 +197,34 @@
 
     try {
       if (state.editingId) {
-        const { error } = await window.db.rpc('update_installment_rule', {
-          p_id: state.editingId,
-          p_max_value: maxValue,
-          p_max_installments: insts,
-          p_min_installment_value: minInst,
-          p_active: els.active.checked
-        });
+        // UPDATE DIRETO
+        const { data, error } = await window.db
+          .from('installment_rules')
+          .update({
+            max_value: maxValue,
+            max_installments: insts,
+            min_installment_value: minInst,
+            active: els.active.checked
+          })
+          .eq('id', state.editingId)
+          .select();
+
         if (error) throw error;
+        if (!data || data.length === 0) throw new Error('Regra não encontrada ou bloqueada pelo RLS.');
+        
         DH.toast && DH.toast('Faixa atualizada.', 'success');
       } else {
-        const { error } = await window.db.rpc('create_installment_rule', {
-          p_max_value: maxValue,
-          p_max_installments: insts,
-          p_min_installment_value: minInst,
-          p_sort_order: 0
-        });
+        // INSERT DIRETO
+        const { error } = await window.db
+          .from('installment_rules')
+          .insert([{
+            max_value: maxValue,
+            max_installments: insts,
+            min_installment_value: minInst,
+            sort_order: 0,
+            active: true
+          }]);
+
         if (error) throw error;
         DH.toast && DH.toast('Faixa criada.', 'success');
       }
@@ -249,13 +261,19 @@
     } else if (btn.dataset.action === 'delete') {
       if (!confirm('Excluir esta faixa de parcelamento?')) return;
       try {
-        const { error } = await window.db.rpc('delete_installment_rule', { p_id: id });
+        // DELETE DIRETO
+        const { error } = await window.db
+          .from('installment_rules')
+          .delete()
+          .eq('id', id);
+
         if (error) throw error;
+        
         DH.toast && DH.toast('Faixa excluída.', 'success');
         await load();
       } catch (err) {
         console.error('[parcelamento] delete:', err);
-        DH.toast && DH.toast('Erro ao excluir.', 'error');
+        DH.toast && DH.toast('Erro ao excluir: ' + err.message, 'error');
       }
     }
   }

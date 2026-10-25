@@ -49,6 +49,13 @@
     els.form.addEventListener('submit', onSave);
     els.tbody.addEventListener('click', onTableClick);
 
+    // 🟢 FORÇA A TABELA A RESPEITAR O TAMANHO (Via JS para vencer o cache)
+    const table = document.querySelector('#methods-table-wrap table');
+    if (table) {
+      table.style.tableLayout = 'fixed';
+      table.style.width = '100%';
+    }
+
     const session = await Auth.requireSession();
     if (!session) return;
     const profile = await Auth.getProfile(session.user.id);
@@ -91,7 +98,7 @@
   }
 
   async function seed() {
-    if (!confirm('Restaurar as formas padrão?')) return;
+    if (!confirm('Restaurar as formas padrão? Isso pode criar duplicadas se já existirem.')) return;
     try {
       const { error } = await window.db.rpc('seed_payment_methods');
       if (error) throw error;
@@ -135,11 +142,12 @@
         ? '<span class="badge badge--success">Ativa</span>'
         : '<span class="badge badge--muted">Inativa</span>';
 
+      // 🟢 ESTILOS INLINE PARA GARANTIR O CORTE DO TEXTO
       return `
         <tr data-id="${m.id}">
-          <td>
-            <strong>${esc(m.label)}</strong>
-            <div style="font-size:11px;color:var(--text-muted)">${esc(m.code)}</div>
+          <td style="max-width: 0; width: 25%; overflow: hidden;">
+            <strong style="display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${esc(m.label)}</strong>
+            <div style="display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size:11px;color:var(--text-muted)">${esc(m.code)}</div>
           </td>
           <td>${catLabels[m.category] || m.category}</td>
           <td>${disc}</td>
@@ -197,39 +205,69 @@
 
     const label = (els.label.value || '').trim();
     const code  = (els.code.value || '').trim().toLowerCase();
+    
     if (!label) return showFb('Informe o nome.');
     if (!state.editingId && !code) return showFb('Informe o código.');
     if (!state.editingId && !/^[a-z0-9_]+$/.test(code))
-      return showFb('Código deve ser minúsculas, números e _.');
+      return showFb('Código deve ser minúsculas, números e _ (underline).');
 
     const dt = els.discType.value;
     const da = Number(els.discAmount.value) || 0;
     if (dt === 'percent' && (da < 0 || da > 100))
-      return showFb('Percentual entre 0 e 100.');
+      return showFb('Percentual deve ser entre 0 e 100.');
 
     els.saveBtn.disabled = true;
     els.saveBtn.classList.add('is-loading');
 
     try {
-      const { error } = await window.db.rpc('upsert_payment_method', {
-        p_id: state.editingId,
-        p_code: code,
-        p_label: label,
-        p_category: els.category.value,
-        p_active: els.active.checked,
-        p_discount_type: dt,
-        p_discount_amount: da,
-        p_requires_approval: els.requiresApr.checked,
-        p_allow_partial: true,
-        p_notes: els.notes.value.trim(),
-        p_sort_order: 0
-      });
-      if (error) throw error;
+      // TRAVA DE SEGURANÇA: Verifica se o código já existe antes de criar um novo
+      if (!state.editingId) {
+        const { data: existing } = await window.db
+          .from('payment_methods')
+          .select('id')
+          .eq('code', code)
+          .maybeSingle();
+
+        if (existing) {
+          throw new Error('Já existe uma forma com esse código. Escolha outro nome interno (ex: cartao_alimentacao_ouro).');
+        }
+      }
+
+      const payload = {
+        code: code,
+        label: label,
+        category: els.category.value,
+        active: els.active.checked,
+        discount_type: dt,
+        discount_amount: da,
+        requires_approval: els.requiresApr.checked,
+        allow_partial: true,
+        notes: els.notes.value.trim(),
+        sort_order: 0
+      };
+
+      if (state.editingId) {
+        const { data, error } = await window.db
+          .from('payment_methods')
+          .update(payload)
+          .eq('id', state.editingId)
+          .select();
+
+        if (error) throw error;
+        if (!data || data.length === 0) throw new Error('Forma não encontrada ou bloqueada pelo RLS.');
+      } else {
+        const { error } = await window.db
+          .from('payment_methods')
+          .insert([payload]);
+
+        if (error) throw error;
+      }
 
       closeModal();
       await load();
       DH.toast && DH.toast('Forma salva.', 'success');
     } catch (err) {
+      console.error('[pagamentos] save:', err);
       const msg = String(err.message || '').toLowerCase();
       showFb(msg.includes('duplicate') || msg.includes('unique')
         ? 'Já existe uma forma com esse código.'
@@ -257,12 +295,18 @@
     } else if (btn.dataset.action === 'delete') {
       if (!confirm(`Excluir "${m.label}"?`)) return;
       try {
-        const { error } = await window.db.rpc('delete_payment_method', { p_id: id });
+        const { error } = await window.db
+          .from('payment_methods')
+          .delete()
+          .eq('id', id);
+
         if (error) throw error;
+        
         await load();
         DH.toast && DH.toast('Forma excluída.', 'success');
       } catch (err) {
-        DH.toast && DH.toast('Erro: ' + err.message, 'error');
+        console.error('[pagamentos] delete:', err);
+        DH.toast && DH.toast('Erro ao excluir: ' + err.message, 'error');
       }
     }
   }

@@ -1,26 +1,12 @@
 /* =========================================================
-   DEV HUB · Parceiros · init
-   ---------------------------------------------------------
-   Bootstrap.
-   ---------------------------------------------------------
-   CORREÇÕES APLICADAS:
-   1. `hasPerm` respeita o fallback se Perms ainda não carregou.
-   2. Não redireciona quando permissão é desconhecida (só se
-      explicitamente negada).
-   3. Boot loga erro se Auth não estiver configurado.
+   DEV HUB · Parceiros · init (Blindado)
    ========================================================= */
 
 (function () {
   'use strict';
 
-  const {
-    showToast,
-    state
-  } = window.Parn;
+  const { showToast, state } = window.Parn;
 
-  /* =========================================================
-     TOPBAR / FILTROS / BUSCA
-     ========================================================= */
   function setupTopbar() {
     document.getElementById('tb-view')?.addEventListener('click', () => {
       const wrap = document.getElementById('partners-table-wrap');
@@ -80,13 +66,9 @@
     });
   }
 
-  /* =========================================================
-     BUSCA
-     ========================================================= */
   function setupSearch() {
     const input = document.getElementById('parn-search-input');
     if (!input) return;
-
     if (input.dataset.searchWired === '1') return;
     input.dataset.searchWired = '1';
 
@@ -129,7 +111,6 @@
         input.focus();
       });
     }
-
     updateClearBtn();
   }
 
@@ -156,51 +137,37 @@
     if (emptyNewBtn && state.perms.create) emptyNewBtn.addEventListener('click', () => window.Parn.openCreateModal());
   }
 
-  /* =========================================================
-     CARREGAR
-     ========================================================= */
   async function loadAll() {
     window.Parn.showLoading(true);
+    console.log('[Parceiros] Iniciando carregamento de dados...');
 
     try {
       const data = await window.Parn.loadPartners();
-      state.all = data;
+      state.all = data || [];
       window.Parn.applyFilter();
+      console.log('[Parceiros] Dados carregados com sucesso:', state.all.length);
     } catch (error) {
-      console.error('[parceiros] loadAll:', error);
+      console.error('[Parceiros] ERRO AO CARREGAR:', error);
       state.all = [];
       state.filtered = [];
       window.Parn.showEmptyState(
         'Não foi possível carregar os parceiros.',
-        'Tente novamente em alguns instantes.',
+        error.message || 'Tente novamente em alguns instantes.',
         false
       );
       window.Parn.updateCountLabel();
-      showToast('Não foi possível carregar os parceiros.', 'error');
+      showToast('Não foi possível carregar os parceiros. Verifique o console.', 'error');
     } finally {
+      console.log('[Parceiros] Ocultando loading.');
       window.Parn.showLoading(false);
     }
   }
 
-  /* =========================================================
-     PERMISSÕES
-     ========================================================= */
-  /**
-   * FIX #1: respeita o fallback quando Perms ainda não carregou.
-   * Só bloqueia se Perms carregou E retornou explicitamente false.
-   */
   function hasPerm(cap, fallback) {
     const fallbackValue = fallback !== false;
-
-    if (
-      window.Perms &&
-      typeof window.Perms.has === 'function' &&
-      typeof window.Perms.isLoaded === 'function' &&
-      window.Perms.isLoaded()
-    ) {
+    if (window.Perms && typeof window.Perms.has === 'function' && typeof window.Perms.isLoaded === 'function' && window.Perms.isLoaded()) {
       return window.Perms.has(cap);
     }
-
     return fallbackValue;
   }
 
@@ -213,69 +180,84 @@
     }
   }
 
-  /* =========================================================
-     BOOT
-     ========================================================= */
   async function boot() {
-    const Auth = window.Auth;
-    if (!Auth || !Auth.isConfigured() || !window.db) {
-      console.error('[parceiros] Auth ou Supabase não configurado.');
-      window.Parn.showGlobalAlert('Não foi possível conectar ao Supabase.', 'error');
-      return;
+    try {
+      console.log('[Parceiros] Iniciando boot...');
+      const Auth = window.Auth;
+      
+      if (!Auth || !Auth.isConfigured() || !window.db) {
+        console.error('[Parceiros] Auth ou Supabase não configurado.');
+        window.Parn.showGlobalAlert('Não foi possível conectar ao Supabase.', 'error');
+        window.Parn.showLoading(false);
+        return;
+      }
+
+      if (window.Perms && typeof window.Perms.load === 'function') {
+        try { 
+          await Promise.race([
+            window.Perms.load(),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout nas permissões')), 5000))
+          ]); 
+        } catch (e) { 
+          console.warn('[Parceiros] Permissões demoraram ou falharam:', e); 
+        }
+      }
+
+      state.perms.view   = hasPerm('customers.view',   true);
+      state.perms.create = hasPerm('customers.create', true);
+      state.perms.edit   = hasPerm('customers.edit',   true);
+      state.perms.remove = hasPerm('customers.delete', true);
+
+      if (!state.perms.view && window.Perms && typeof window.Perms.isLoaded === 'function' && window.Perms.isLoaded()) {
+        console.warn('[Parceiros] Sem permissão customers.view — redirecionando.');
+        window.location.replace('dashboard.html');
+        return;
+      }
+
+      window.Parn.setupForm();
+      window.Parn.setupConfirmModal();
+      window.Parn.setupCtxMenu();
+      window.Parn.setupExportButton();
+      window.Parn.setupImport();
+      setupToolbar();
+      setupSearch();
+      setupTopbar();
+      setupFilters();
+      setupKindChips();
+
+      const urlKind = new URLSearchParams(location.search).get('kind');
+      if (urlKind && ['all','customer','supplier','carrier'].includes(urlKind)) {
+        state.kind = urlKind;
+        document.querySelectorAll('.parn-chip').forEach((c) => {
+          const on = c.dataset.kind === state.kind;
+          c.classList.toggle('is-active', on);
+          c.setAttribute('aria-selected', String(on));
+        });
+      }
+
+      applyPermissions();
+
+      console.log('[Parceiros] Verificando sessão...');
+      const session = await Promise.race([
+        Auth.requireSession(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout ao verificar sessão')), 8000))
+      ]);
+
+      if (!session) {
+        console.warn('[Parceiros] Sem sessão ativa. Abortando e ocultando spinner.');
+        window.Parn.showLoading(false);
+        return;
+      }
+
+      await loadAll();
+
+    } catch (fatalError) {
+      console.error('[Parceiros] ERRO FATAL NO BOOT:', fatalError);
+      window.Parn.showLoading(false);
+      if (window.Parn.showGlobalAlert) {
+        window.Parn.showGlobalAlert('Ocorreu um erro ao inicializar a tela. Verifique o console.', 'error');
+      }
     }
-
-    /* Permissões */
-    if (window.Perms && typeof window.Perms.load === 'function') {
-      try { await window.Perms.load(); } catch (e) { /* fallback */ }
-    }
-
-    state.perms.view   = hasPerm('customers.view',   true);
-    state.perms.create = hasPerm('customers.create', true);
-    state.perms.edit   = hasPerm('customers.edit',   true);
-    state.perms.remove = hasPerm('customers.delete', true);
-
-    /* FIX #2: só redireciona se Perms foi carregado E negou explicitamente */
-    if (
-      !state.perms.view &&
-      window.Perms &&
-      typeof window.Perms.isLoaded === 'function' &&
-      window.Perms.isLoaded()
-    ) {
-      console.warn('[parceiros] Sem permissão customers.view — redirecionando.');
-      window.location.replace('dashboard.html');
-      return;
-    }
-
-    /* Setup de UI */
-    window.Parn.setupForm();
-    window.Parn.setupConfirmModal();
-    window.Parn.setupCtxMenu();
-    window.Parn.setupExportButton();
-    window.Parn.setupImport();
-    setupToolbar();
-    setupSearch();
-    setupTopbar();
-    setupFilters();
-    setupKindChips();
-
-    const urlKind = new URLSearchParams(location.search).get('kind');
-    if (urlKind && ['all','customer','supplier','carrier'].includes(urlKind)) {
-      state.kind = urlKind;
-      document.querySelectorAll('.parn-chip').forEach((c) => {
-        const on = c.dataset.kind === state.kind;
-        c.classList.toggle('is-active', on);
-        c.setAttribute('aria-selected', String(on));
-      });
-    }
-
-    applyPermissions();
-
-    /* Sessão */
-    const session = await Auth.requireSession();
-    if (!session) return;
-
-    /* Carrega */
-    await loadAll();
   }
 
   if (document.readyState === 'loading') {

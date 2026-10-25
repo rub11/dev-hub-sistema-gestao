@@ -1,11 +1,6 @@
 /* =========================================================
    DEV HUB · Vendas · payments.js
    Múltiplas formas de pagamento por venda.
-   ---------------------------------------------------------
-   - Lista dinâmica de pagamentos (até 6)
-   - Cada linha tem forma + valor
-   - Cartão de crédito mostra seletor de parcelas
-   - Valida se a soma dos valores bate com o total da venda
    ========================================================= */
 (function () {
   'use strict';
@@ -14,7 +9,6 @@
 
   const $ = (id) => document.getElementById(id);
 
-  /* [{ method, amount, installment_count, installment_value }] */
   let rows = [];
 
   /* =====================================================
@@ -22,8 +16,12 @@
      ===================================================== */
   function ensureAtLeastOne() {
     if (rows.length === 0) {
-      rows.push({ method: '', amount: 0, installment_count: null, installment_value: null });
+      rows.push({ method: '', amount: 0, installment_count: null, installment_value: null, other_description: '' });
     }
+  }
+
+  function closeAllDropdowns() {
+    document.querySelectorAll('.dh-select-menu').forEach(m => m.classList.remove('is-open'));
   }
 
   function render() {
@@ -32,21 +30,53 @@
 
     ensureAtLeastOne();
 
+    // Deduplicação de métodos
+    const rawMethods = state.paymentMethods || [];
+    const methods = [];
+    const seen = new Set();
+    rawMethods.forEach(m => {
+      if (!seen.has(m.code)) {
+        seen.add(m.code);
+        methods.push(m);
+      }
+    });
+
     list.innerHTML = rows.map((row, i) => {
-      const methods = state.paymentMethods || [];
       const isCredit = row.method === 'credit_card';
+      const isOther = row.method === 'other';
       const canRemove = rows.length > 1;
+      
+      const currentLabel = row.method 
+        ? (methods.find(m => m.code === row.method)?.label || 'Selecione…') 
+        : 'Selecione…';
 
       const options = methods.map(m =>
-        `<option value="${m.code}"${m.code === row.method ? ' selected' : ''}>${m.label}</option>`
+        `<div class="dh-select-option ${m.code === row.method ? 'is-selected' : ''}" data-value="${m.code}">${m.label}</div>`
       ).join('');
 
+      // Formata o texto das parcelas (ex: 1x à vista ou 2x de R$ 50)
+      let instLabel = '1x à vista';
+      if (row.installment_count > 1 && row.installment_value) {
+        instLabel = `${row.installment_count}x de ${utils.formatMoney(row.installment_value)}`;
+      }
+
       return `
-        <div class="payment-row" data-idx="${i}">
-          <select class="payment-row__select" data-action="method">
-            <option value="">Selecione…</option>
-            ${options}
-          </select>
+        <div class="payment-row" data-idx="${i}" style="flex-wrap: wrap;">
+          
+          <!-- CUSTOM SELECT (Método) -->
+          <div class="dh-select" data-action="method-wrap" style="flex: 1;">
+            <button type="button" class="dh-select-trigger">
+              <span>${currentLabel}</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+            
+            <div class="dh-select-menu">
+              <div class="dh-select-option ${!row.method ? 'is-selected' : ''}" data-value="">Selecione…</div>
+              ${options}
+            </div>
+          </div>
+          <!-- /CUSTOM SELECT -->
+
           <div class="payment-row__amount">
             <input type="number" min="0" step="0.01" inputmode="decimal"
                    value="${row.amount ? row.amount.toFixed(2) : ''}"
@@ -60,11 +90,31 @@
                  stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
           </button>
 
+          ${isOther ? `
+            <div class="payment-row__other" style="width: 100%; margin-top: 6px;">
+              <input type="text" class="payment-row__other-input" 
+                     placeholder="Especifique o meio de pagamento..." 
+                     value="${row.other_description || ''}" 
+                     data-action="other-desc" required />
+            </div>
+          ` : ''}
+
           ${isCredit ? `
-            <div class="payment-row__installments">
-              <label>Parcelas</label>
-              <select data-action="installments"></select>
-              <span class="payment-row__installments-hint" data-role="installments-hint"></span>
+            <div class="payment-row__installments" style="width: 100%; margin-top: 6px; display: flex; align-items: center; gap: 10px;">
+              <label style="margin:0; font-size:12px; color:var(--text-muted);">Parcelas</label>
+              
+              <!-- CUSTOM SELECT (Parcelas) -->
+              <div class="dh-select" data-action="installments-wrap" style="width: 140px;">
+                <button type="button" class="dh-select-trigger" style="height:32px;">
+                  <span data-role="inst-label">${instLabel}</span>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
+                <div class="dh-select-menu" data-role="inst-menu">
+                  <!-- Injetado via JS -->
+                </div>
+              </div>
+              <!-- /CUSTOM SELECT -->
+              
             </div>
           ` : ''}
         </div>
@@ -75,20 +125,68 @@
     list.querySelectorAll('.payment-row').forEach(el => {
       const idx = Number(el.dataset.idx);
 
-      el.querySelector('[data-action="method"]').addEventListener('change', (e) => {
-        rows[idx].method = e.target.value;
-        rows[idx].installment_count = null;
-        rows[idx].installment_value = null;
-        render();
-        recalc();
+      // Lógica do Custom Select de MÉTODO
+      const wrap = el.querySelector('[data-action="method-wrap"]');
+      const trigger = wrap.querySelector('.dh-select-trigger');
+      const menu = wrap.querySelector('.dh-select-menu');
+
+      trigger.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const isOpen = menu.classList.contains('is-open');
+        closeAllDropdowns();
+        if (!isOpen) menu.classList.add('is-open');
       });
 
+      menu.querySelectorAll('.dh-select-option').forEach(opt => {
+        opt.addEventListener('click', (e) => {
+          e.stopPropagation();
+          rows[idx].method = opt.dataset.value;
+          rows[idx].installment_count = null;
+          rows[idx].installment_value = null;
+          rows[idx].other_description = '';
+          closeAllDropdowns();
+          render();
+          recalc();
+        });
+      });
+
+      // Lógica do Custom Select de PARCELAS
+      const instWrap = el.querySelector('[data-action="installments-wrap"]');
+      if (instWrap) {
+        const instTrigger = instWrap.querySelector('.dh-select-trigger');
+        const instMenu = instWrap.querySelector('.dh-select-menu');
+        const instLabel = instWrap.querySelector('[data-role="inst-label"]');
+
+        instTrigger.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const isOpen = instMenu.classList.contains('is-open');
+          closeAllDropdowns();
+          if (!isOpen) {
+            populateInstallmentsMenu(idx, instMenu, instLabel);
+            instMenu.classList.add('is-open');
+          }
+        });
+      }
+
+      // Input de valor
       el.querySelector('[data-action="amount"]').addEventListener('input', (e) => {
         const v = Number(String(e.target.value).replace(',', '.')) || 0;
         rows[idx].amount = Math.max(0, v);
         recalc();
       });
 
+      // Input de descrição do "Outro"
+      const otherInput = el.querySelector('[data-action="other-desc"]');
+      if (otherInput) {
+        otherInput.addEventListener('input', (e) => {
+          rows[idx].other_description = e.target.value;
+          recalc();
+        });
+      }
+
+      // Remover
       const rm = el.querySelector('[data-action="remove"]');
       if (rm) {
         rm.addEventListener('click', () => {
@@ -98,77 +196,78 @@
           recalc();
         });
       }
-
-      const instSel = el.querySelector('[data-action="installments"]');
-      if (instSel) {
-        const hint = el.querySelector('[data-role="installments-hint"]');
-        populateInstallments(idx, instSel, hint);
-        instSel.addEventListener('change', () => {
-          const n = Number(instSel.value) || 1;
-          rows[idx].installment_count = n;
-          rows[idx].installment_value = rows[idx].amount > 0
-            ? utils.round2(rows[idx].amount / n)
-            : null;
-          if (hint) {
-            hint.textContent = n > 1 && rows[idx].amount > 0
-              ? `${n}x de ${utils.formatMoney(rows[idx].installment_value)}`
-              : '';
-          }
-        });
-      }
     });
 
     recalc();
   }
 
-  /* Popula select de parcelamento de UMA linha */
-  function populateInstallments(idx, select, hint) {
+  document.addEventListener('click', closeAllDropdowns);
+
+  function populateInstallmentsMenu(idx, menu, labelEl) {
     const row = rows[idx];
-    const total = Number(row.amount) || 0;
+    
+    // Se o valor digitado for 0, pega o valor que falta alocar (ou o total do carrinho) para calcular
+    let total = Number(row.amount) || 0;
+    if (total <= 0) {
+      total = getTotalFromCart() - getAllocated();
+      if (total <= 0) total = getTotalFromCart();
+    }
+
     const rules = (DH.installments && DH.installments.getRules)
       ? DH.installments.getRules()
       : [];
 
-    if (!total || total <= 0 || rules.length === 0) {
-      select.innerHTML = '<option value="1">1x à vista</option>';
-      select.value = '1';
-      row.installment_count = 1;
-      row.installment_value = total;
-      if (hint) hint.textContent = '';
-      return;
-    }
+    let maxInst = 1;
 
-    const sorted = rules.slice().sort((a, b) => Number(a.max_value) - Number(b.max_value));
-    let rule = sorted.find(r => total <= Number(r.max_value));
-    if (!rule) rule = sorted[sorted.length - 1];
+    if (total > 0 && rules.length > 0) {
+      const sorted = rules.slice().sort((a, b) => Number(a.max_value) - Number(b.max_value));
+      let rule = sorted.find(r => total <= Number(r.max_value));
+      if (!rule) rule = sorted[sorted.length - 1];
 
-    let maxInst = Number(rule.max_installments) || 1;
-    const minInst = Number(rule.min_installment_value) || 0;
-    if (minInst > 0) {
-      while (maxInst > 1 && (total / maxInst) < minInst) maxInst -= 1;
+      maxInst = Number(rule.max_installments) || 1;
+      const minInst = Number(rule.min_installment_value) || 0;
+      if (minInst > 0) {
+        while (maxInst > 1 && (total / maxInst) < minInst) maxInst -= 1;
+      }
     }
     if (maxInst < 1) maxInst = 1;
 
-    const opts = [];
+    let html = '';
     for (let i = 1; i <= maxInst; i++) {
       const value = utils.round2(total / i);
       const label = i === 1
         ? `À vista — ${utils.formatMoney(total)}`
         : `${i}x de ${utils.formatMoney(value)}`;
-      opts.push(`<option value="${i}">${label}</option>`);
+      
+      const isSelected = (row.installment_count || 1) === i;
+      html += `<div class="dh-select-option ${isSelected ? 'is-selected' : ''}" data-val="${i}">${label}</div>`;
     }
-    select.innerHTML = opts.join('');
 
-    const cur = Number(row.installment_count) || 1;
-    select.value = String(Math.min(cur, maxInst));
-    row.installment_count = Number(select.value) || 1;
-    row.installment_value = utils.round2(total / row.installment_count);
+    menu.innerHTML = html;
 
-    if (hint) {
-      hint.textContent = row.installment_count > 1
-        ? `${row.installment_count}x de ${utils.formatMoney(row.installment_value)}`
-        : '';
-    }
+    menu.querySelectorAll('.dh-select-option').forEach(opt => {
+      opt.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const n = Number(opt.dataset.val) || 1;
+        
+        // Se o input de valor estava zerado, preenche automaticamente ao escolher a parcela
+        if (Number(row.amount) <= 0) {
+           row.amount = total;
+           const inputAmount = document.querySelector(`.payment-row[data-idx="${idx}"] [data-action="amount"]`);
+           if (inputAmount) inputAmount.value = total.toFixed(2);
+        }
+
+        rows[idx].installment_count = n;
+        rows[idx].installment_value = total > 0 ? utils.round2(total / n) : null;
+        
+        labelEl.textContent = n === 1 
+          ? '1x à vista' 
+          : `${n}x de ${utils.formatMoney(rows[idx].installment_value)}`;
+
+        menu.classList.remove('is-open');
+        recalc();
+      });
+    });
   }
 
   /* =====================================================
@@ -242,7 +341,14 @@
 
   function hasPayment() {
     if (rows.length === 0) return false;
-    return rows.every(r => r.method && Number(r.amount) > 0) && isBalanced();
+    
+    const allRowsValid = rows.every(r => {
+      if (!r.method || Number(r.amount) <= 0) return false;
+      if (r.method === 'other' && !r.other_description?.trim()) return false;
+      return true;
+    });
+
+    return allRowsValid && isBalanced();
   }
 
   function getPayments() {
@@ -253,6 +359,7 @@
         amount: utils.round2(Number(r.amount)),
         installment_count: r.installment_count || 1,
         installment_value: r.installment_value || null,
+        other_description: r.other_description || null,
         sort_order: i
       }));
   }
@@ -263,7 +370,7 @@
   }
 
   function reset() {
-    rows = [{ method: '', amount: 0, installment_count: null, installment_value: null }];
+    rows = [{ method: '', amount: 0, installment_count: null, installment_value: null, other_description: '' }];
     render();
   }
 
@@ -274,7 +381,8 @@
         method: sale.payment_method,
         amount: Number(sale.total) || 0,
         installment_count: sale.installment_count || 1,
-        installment_value: sale.installment_value || null
+        installment_value: sale.installment_value || null,
+        other_description: sale.other_description || ''
       });
     }
     ensureAtLeastOne();
@@ -292,7 +400,7 @@
           if (DH.toast) DH.toast('Máximo de 6 formas por venda.', 'info');
           return;
         }
-        rows.push({ method: '', amount: 0, installment_count: null, installment_value: null });
+        rows.push({ method: '', amount: 0, installment_count: null, installment_value: null, other_description: '' });
         render();
         recalc();
       });
