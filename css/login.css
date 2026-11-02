@@ -99,7 +99,7 @@ html, body.login-page {
   padding: 4px 0 !important;
   height: 32px !important;
   font-size: 15px !important;
-  color: #111827 !important;
+  color: #111827 !important; /* Texto escuro */
   width: 100%;
   font-family: inherit;
 }
@@ -229,4 +229,32 @@ html, body.login-page {
   .login__panel {
     padding: 24px;
   }
+}
+
+/* =========================================================
+   FIX DEFINITIVO DO SELECT (SEM AZUL E SEM QUEBRAR O DESIGN)
+   ========================================================= */
+.login-page .field select {
+  /* Mantém o visual de "linha embaixo" transparente */
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  
+  /* MÁGICA: Força o navegador a usar o Laranja no destaque em vez do Azul */
+  accent-color: #F97316 !important; 
+  color-scheme: light !important; /* Mantém o input claro para combinar com a tela */
+  
+  /* Coloca uma setinha personalizada alinhada à direita */
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23667085' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0px center;
+  background-size: 16px;
+}
+
+/* Força a lista de opções a ficar escura e elegante */
+.login-page .field select option {
+  background-color: #14171b !important;
+  color: #ffffff !important;
+  padding: 12px !important;
+  font-size: 14.5px !important;
 }

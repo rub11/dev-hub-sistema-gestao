@@ -53,6 +53,15 @@
         color: var(--text); white-space: nowrap;
       }
 
+      /* 🔥 A CORREÇÃO ESTÁ AQUI 🔥 */
+      .app-tabs__scroll-wrap {
+        display: flex;
+        align-items: center;
+        flex: 1 1 auto; /* Ocupa todo o espaço vazio e empurra o resto para a direita */
+        min-width: 0;
+        position: relative;
+      }
+
       .app-tabs__scroll {
         display: flex; align-items: center; gap: 2px;
         flex: 1 1 auto; min-width: 0;
@@ -61,9 +70,26 @@
       }
       .app-tabs__scroll::-webkit-scrollbar { display: none; }
 
+      /* Setinhas de rolagem */
+      .app-tabs__arrow {
+        display: flex; align-items: center; justify-content: center;
+        flex: none; width: 28px; height: 28px;
+        border: 0; border-radius: 6px; background: transparent;
+        color: var(--text-muted); cursor: pointer;
+        transition: background-color 0.15s ease, color 0.15s ease;
+      }
+      .app-tabs__arrow:hover:not(:disabled) { background: var(--surface); color: var(--text); }
+      .app-tabs__arrow:disabled { opacity: 0.3; cursor: default; }
+      
+      /* Esconde as setas se não houver abas suficientes para rolar */
+      .app-tabs__scroll-wrap:not(.has-overflow) .app-tabs__arrow {
+        display: none !important;
+      }
+
       .app-tabs__empty {
         padding: 0 10px; font-size: 12.5px;
         color: var(--text-muted); font-style: italic;
+        display: flex; align-items: center; height: 100%;
       }
 
       .app-tab {
@@ -104,7 +130,7 @@
 
       .app-tabs__new {
         flex: none; display: grid; place-items: center; align-self: center;
-        width: 34px; height: 34px; margin: 0 6px 0 6px;
+        width: 34px; height: 34px; margin: 0 6px 0 12px;
         border: 1px solid transparent; border-radius: 8px;
         background: transparent; color: var(--text-muted);
         cursor: pointer;
@@ -118,122 +144,6 @@
       .app-tabs__new:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
       .app-tabs__spacer { flex: 0 0 12px; }
-
-      .app-tabs__bell {
-        position: relative; flex: none; align-self: center;
-        display: grid; place-items: center;
-        width: 36px; height: 36px; margin: 0 4px;
-        border: 1px solid transparent; border-radius: 9px;
-        background: transparent; color: var(--text-muted);
-        cursor: pointer;
-        transition: background-color var(--transition), color var(--transition), border-color var(--transition);
-      }
-      .app-tabs__bell:hover,
-      .app-tabs__bell[aria-expanded="true"] {
-        background: var(--surface); border-color: var(--border); color: var(--text);
-      }
-      .app-tabs__bell:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-      .app-tabs__bell svg { width: 17px; height: 17px; }
-
-      .app-tabs__bell-badge {
-        position: absolute; top: -2px; right: -2px;
-        min-width: 16px; height: 16px; padding: 0 4px;
-        border-radius: 999px; background: var(--danger); color: #fff;
-        font-size: 10px; font-weight: 700; line-height: 16px; text-align: center;
-        box-shadow: 0 0 0 2px var(--surface-2);
-      }
-
-      .tnav-notif {
-        position: fixed; top: 0; left: 0;
-        max-height: 520px;
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        box-shadow: 0 20px 40px -12px rgba(16, 24, 40, 0.24);
-        z-index: 9999;
-        overflow: hidden;
-        display: flex; flex-direction: column;
-        animation: tnav-pop 140ms ease-out;
-      }
-      .tnav-notif[hidden] { display: none !important; }
-
-      .tnav-notif__head {
-        display: flex; align-items: center; justify-content: space-between;
-        gap: 10px; padding: 12px 14px;
-        border-bottom: 1px solid var(--border);
-        font-size: 13px; font-weight: 700; color: var(--text);
-      }
-      .tnav-notif__mark {
-        border: 0; background: transparent;
-        color: var(--accent); font-family: inherit;
-        font-size: 11.5px; font-weight: 600;
-        cursor: pointer; padding: 4px 6px; border-radius: 6px;
-      }
-      .tnav-notif__mark:hover { background: var(--accent-soft); }
-      .tnav-notif__mark:disabled { opacity: .6; cursor: progress; }
-
-      .tnav-notif__list { flex: 1 1 auto; overflow-y: auto; max-height: 380px; }
-
-      .tnav-notif__item {
-        display: flex; gap: 10px;
-        padding: 12px 14px;
-        border-bottom: 1px solid var(--border);
-        text-decoration: none; color: inherit;
-        transition: background-color 140ms ease;
-      }
-      .tnav-notif__item:hover { background: var(--surface-2); }
-      .tnav-notif__item.is-unread { background: var(--accent-soft); }
-      .tnav-notif__item:last-child { border-bottom: 0; }
-
-      .tnav-notif__dot {
-        flex: none; width: 8px; height: 8px; margin-top: 5px;
-        border-radius: 50%; background: var(--text-muted);
-      }
-      .tnav-notif__dot[data-kind="success"] { background: #10b981; }
-      .tnav-notif__dot[data-kind="warn"]    { background: #f59e0b; }
-      .tnav-notif__dot[data-kind="danger"]  { background: #dc2626; }
-      .tnav-notif__dot[data-kind="info"]    { background: var(--accent); }
-
-      .tnav-notif__body {
-        display: flex; flex-direction: column; gap: 3px;
-        min-width: 0; flex: 1 1 auto;
-      }
-      .tnav-notif__title {
-        font-size: 13px; font-weight: 600;
-        color: var(--text); line-height: 1.35;
-      }
-      .tnav-notif__msg {
-        font-size: 12.5px; color: var(--text-soft); line-height: 1.4;
-        overflow: hidden; display: -webkit-box;
-        -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-      }
-      .tnav-notif__time {
-        font-size: 11px; color: var(--text-muted); margin-top: 2px;
-      }
-
-      .tnav-notif__empty {
-        display: flex; flex-direction: column; align-items: center;
-        gap: 8px; padding: 40px 20px;
-        color: var(--text-muted); font-size: 13px;
-      }
-      .tnav-notif__empty svg { width: 28px; height: 28px; color: var(--border-strong); }
-
-      .tnav-notif__loading {
-        padding: 24px 14px; text-align: center;
-        font-size: 13px; color: var(--text-muted);
-      }
-
-      .tnav-notif__foot {
-        padding: 10px 14px;
-        border-top: 1px solid var(--border);
-        background: var(--surface-2);
-        text-align: center;
-      }
-      .tnav-notif__see-all {
-        font-size: 12.5px; font-weight: 600;
-        color: var(--accent); text-decoration: none;
-      }
-      .tnav-notif__see-all:hover { text-decoration: underline; }
 
       .app-tabs__search {
         position: relative; flex: 0 0 260px;
@@ -408,7 +318,6 @@
         flex-direction: column !important;
         box-sizing: border-box !important;
         
-        /* Previne a seleção de texto azul */
         user-select: none !important;
         -webkit-user-select: none !important;
       }
@@ -418,7 +327,6 @@
         to   { opacity: 1; transform: translateY(0); }
       }
       
-      /* Acordeão de Grupos (BLINDADO) */
       .tnav-menu__group-btn {
         display: flex !important;
         align-items: center !important;
@@ -434,7 +342,6 @@
         box-sizing: border-box !important;
         transition: background-color 0.15s ease !important;
         
-        /* Previne o azul de seleção e o outline ao clicar */
         user-select: none !important;
         -webkit-user-select: none !important;
         -webkit-tap-highlight-color: transparent !important;
@@ -451,7 +358,7 @@
         color: var(--text-muted) !important;
         text-align: left !important;
         flex: 1 !important;
-        pointer-events: none !important; /* Impede que o texto seja selecionado ao clicar */
+        pointer-events: none !important; 
       }
       .tnav-menu__group-caret {
         width: 14px !important;
@@ -481,7 +388,6 @@
         display: none !important;
       }
 
-      /* Menu Items (Blindados) */
       .tnav-menu__item {
         display: flex !important; 
         align-items: center !important; 
@@ -568,7 +474,6 @@
         .app-tab__label { font-size: 11.5px; }
         .app-tabs__search { flex: 0 0 130px; }
         .app-tabs__new { width: 32px; height: 32px; margin: 0 2px; }
-        .app-tabs__bell { width: 32px; height: 32px; margin: 0 2px; }
       }
     `;
 

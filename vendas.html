@@ -266,8 +266,8 @@
                     <label>Selecione o cliente</label>
                   </div>
                   
-                  <!-- Select Original Escondido (para o form.js continuar funcionando) -->
-                  <select id="sale-customer" style="display: none;">
+                  <!-- Select Original Escondido (Usando hidden em vez de CSS inline) -->
+                  <select id="sale-customer" hidden>
                     <option value="">Cliente não informado</option>
                   </select>
 
@@ -808,6 +808,7 @@
   <script src="js/nav/module-menu.js"></script>
   <script src="js/nav/notifications.js"></script>
   <script src="js/nav/user-menu.js"></script>
+<script src="js/nav/favorites-modal.js"></script>
   <script src="js/nav/search.js"></script>
   <script src="js/nav/org-switcher.js"></script>
   <script src="js/nav/bar.js"></script>
@@ -848,7 +849,7 @@
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       
-      // === 1. CORREÇÃO DO NOME DO USUÁRIO (Sem duplicar o "Olá") ===
+      // === 1. CORREÇÃO DO NOME DO USUÁRIO ===
       try {
         const rawUser = sessionStorage.getItem('devhub_user');
         if (rawUser) {
@@ -856,16 +857,16 @@
           const nameEl = document.getElementById('greeting-name');
           const roleEl = document.getElementById('greeting-role');
           
-          if (nameEl && user.name) {
-            nameEl.textContent = user.name.replace(/Olá,?\s*/gi, '').trim().split(' ')[0]; 
+          if (nameEl && user?.name) {
+            nameEl.textContent = user.name.replace(/^Olá,?\s*/i, '').trim().split(' ')[0]; 
           }
-          if (roleEl && user.role) {
+          if (roleEl && user?.role) {
             roleEl.textContent = user.role.charAt(0).toUpperCase() + user.role.slice(1);
             roleEl.hidden = false;
           }
         }
       } catch (e) {
-        console.error('Erro ao carregar dados do usuário:', e);
+        console.warn('DEV HUB: Falha ao carregar dados do usuário local.', e);
       }
 
       // === 2. LÓGICA DO MODO ORÇAMENTO ===

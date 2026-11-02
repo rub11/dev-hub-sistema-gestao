@@ -1,24 +1,12 @@
 /* =========================================================
    DEV HUB · Navegação · user menu + avatar + logout
-   ---------------------------------------------------------
-   CORREÇÕES:
-   - applyTopbarAvatar busca o avatar no banco UMA vez por
-     carregamento de página (antes eram até 5 queries por
-     causa do scheduleAvatarRefresh).
-   - O refresh reagendado agora apenas re-renderiza do cache.
    ========================================================= */
 (function () {
   'use strict';
   const NAV = window.NAV;
-  if (!NAV) {
-    console.error('[nav] window.NAV não encontrado. Verifique a ordem dos scripts.');
-    return;
-  }
+  if (!NAV) return;
   const state = NAV.state;
 
-  /* =========================================================
-     Slot do org switcher dentro do dropdown
-     ========================================================= */
   function ensureOrgSlot(menu) {
     if (!menu) return null;
     let slot = menu.querySelector('#user-menu-org-slot');
@@ -31,9 +19,6 @@
     return slot;
   }
 
-  /* =========================================================
-     Gestão no dropdown (só pra gestor/admin)
-     ========================================================= */
   function usuarioPodeGerenciar() {
     try {
       if (NAV.roles && typeof NAV.roles.readContext === 'function') {
@@ -41,64 +26,32 @@
         if (ctx.isPlatform) return true;
         const r = String(ctx.role || '').toLowerCase();
         if (['admin', 'administrador', 'gestor', 'manager'].indexOf(r) !== -1) return true;
-        const caps = ctx.caps || {};
-        if (caps['management.view'] === true) return true;
       }
     } catch (e) {}
-
-    try {
-      const raw = sessionStorage.getItem('devhub_user');
-      if (raw) {
-        const ctx = JSON.parse(raw);
-        const r = String(ctx.role || '').toLowerCase();
-        if (['admin', 'administrador', 'gestor', 'manager', 'platform_admin'].indexOf(r) !== -1) return true;
-      }
-    } catch (e) {}
-
-    try {
-      if (window.Perms && typeof window.Perms.has === 'function') {
-        return window.Perms.has('management.view') === true;
-      }
-    } catch (e) {}
-
     return false;
   }
 
+  function makeSeparator() {
+    const sep = document.createElement('div');
+    sep.className = 'app-tabs__user-sep';
+    sep.setAttribute('role', 'separator');
+    return sep;
+  }
+
+  // ==========================================
+  // INJETAR GESTÃO DE USUÁRIOS
+  // ==========================================
   function injetarItemGestao(menu) {
-    if (!menu) return;
-    if (menu.querySelector('[data-user-menu-gestao]')) return;
-    if (!usuarioPodeGerenciar()) return;
-
-    const todosItens = menu.querySelectorAll('.app-tabs__user-item, .menu-item, a, button');
-    let ancora = null;
-    for (const el of todosItens) {
-      if (el.closest('#user-menu-org-slot')) continue;
-      if (el.hasAttribute('data-user-menu-gestao')) continue;
-      const txt = (el.textContent || '').trim().toLowerCase();
-      if (txt.startsWith('minha conta') || txt.includes('perfil') || txt.includes('configura')) {
-        ancora = el;
-        break;
-      }
-    }
-    if (!ancora) {
-      for (const el of todosItens) {
-        if (el.closest('#user-menu-org-slot')) continue;
-        ancora = el;
-        break;
-      }
-    }
-
-    const classeBase = ancora ? ancora.className : 'menu-item';
+    if (!menu || menu.querySelector('[data-user-menu-gestao]') || !usuarioPodeGerenciar()) return;
 
     const link = document.createElement('a');
     link.href = 'gestao.html';
-    link.className = classeBase;
+    // Usamos APENAS a classe do topnav para herdar o alinhamento correto
+    link.className = 'app-tabs__user-item'; 
     link.setAttribute('role', 'menuitem');
     link.setAttribute('data-user-menu-gestao', '1');
-    link.innerHTML =
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" ' +
-      'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ' +
-      'style="width:16px;height:16px;margin-right:8px;vertical-align:-3px">' +
+    link.innerHTML = 
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">' +
         '<path d="M16 20v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20"/>' +
         '<circle cx="9" cy="7.5" r="3.5"/>' +
         '<path d="M22 20v-1.5a4 4 0 0 0-3-3.87"/>' +
@@ -106,6 +59,7 @@
       '</svg>' +
       '<span>Gestão de usuários</span>';
 
+    const ancora = menu.querySelector('[href="configuracoes.html"]');
     if (ancora && ancora.parentNode) {
       ancora.parentNode.insertBefore(link, ancora);
     } else {
@@ -113,21 +67,86 @@
     }
   }
 
-  /* =========================================================
-     Setup do dropdown
-     ========================================================= */
+  // ==========================================
+  // INJETAR FAVORITOS E ALTERNAR TEMA
+  // ==========================================
+  function injetarItensMenu(menu) {
+    if (!menu) return;
+
+    // 1. Favoritos
+    if (!menu.querySelector('[data-user-menu-fav]')) {
+      const btnFav = document.createElement('button');
+      btnFav.type = 'button';
+      btnFav.className = 'app-tabs__user-item'; // Sem a classe menu-item conflitante
+      btnFav.setAttribute('role', 'menuitem');
+      btnFav.setAttribute('data-user-menu-fav', '1');
+      btnFav.innerHTML = 
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">' +
+          '<path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>' +
+        '</svg>' +
+        '<span>Favoritos</span>';
+      
+      btnFav.addEventListener('click', () => {
+        if (window.DHFavoritesModal) window.DHFavoritesModal.open();
+      });
+
+      const ancora = menu.querySelector('[href="configuracoes.html"]');
+      if (ancora && ancora.parentNode) {
+        ancora.parentNode.insertBefore(btnFav, ancora);
+      } else {
+        menu.appendChild(btnFav);
+      }
+    }
+
+    // 2. Alternar Tema
+    if (!menu.querySelector('[data-user-menu-tema]')) {
+      // Adiciona separador antes do tema se não existir
+      const sairBtn = menu.querySelector('[data-action="logout"]');
+      if (sairBtn && sairBtn.parentNode) {
+        // Verifica se já tem um separador antes do "Sair"
+        if (!sairBtn.previousElementSibling || !sairBtn.previousElementSibling.classList.contains('app-tabs__user-sep')) {
+          sairBtn.parentNode.insertBefore(makeSeparator(), sairBtn);
+        }
+      }
+
+      const btnTema = document.createElement('button');
+      btnTema.type = 'button';
+      btnTema.className = 'app-tabs__user-item'; // Sem a classe menu-item conflitante
+      btnTema.setAttribute('role', 'menuitem');
+      btnTema.setAttribute('data-user-menu-tema', '1');
+      btnTema.innerHTML = 
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">' +
+          '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>' +
+        '</svg>' +
+        '<span>Alternar Tema</span>';
+      
+      btnTema.addEventListener('click', () => {
+        if (window.Theme && typeof window.Theme.toggle === 'function') {
+          window.Theme.toggle();
+        } else {
+          const html = document.documentElement;
+          const newTheme = (html.getAttribute('data-theme') || 'dark') === 'dark' ? 'light' : 'dark';
+          html.setAttribute('data-theme', newTheme);
+          localStorage.setItem('devhub_theme', newTheme);
+        }
+      });
+
+      if (sairBtn && sairBtn.parentNode) {
+        sairBtn.parentNode.insertBefore(btnTema, sairBtn);
+      } else {
+        menu.appendChild(btnTema);
+      }
+    }
+  }
+
   function setupUserDropdown() {
     const btn  = document.getElementById('app-tabs-user-btn');
     const menu = document.getElementById('app-tabs-user-menu');
     if (!btn || !menu) return;
 
     ensureOrgSlot(menu);
-
-    if (NAV.orgSwitcher && typeof NAV.orgSwitcher.init === 'function') {
-      try { NAV.orgSwitcher.init(); } catch (e) {}
-    }
-
     injetarItemGestao(menu);
+    injetarItensMenu(menu);
 
     function position() {
       const rect = btn.getBoundingClientRect();
@@ -137,9 +156,7 @@
       if (left < margin) left = rect.left;
       if (left < margin) left = margin;
       const menuW = menu.offsetWidth || 0;
-      if (left + menuW > window.innerWidth - margin) {
-        left = window.innerWidth - menuW - margin;
-      }
+      if (left + menuW > window.innerWidth - margin) left = window.innerWidth - menuW - margin;
       const menuH = menu.offsetHeight || 0;
       if (menuH && top + menuH > window.innerHeight - margin) {
         const above = rect.top - gap - menuH;
@@ -150,13 +167,14 @@
     }
 
     function open() {
+      document.querySelectorAll('.nav-fav-panel, .tnav-notif, .popover-menu').forEach(el => el.hidden = true);
       menu.hidden = false;
       injetarItemGestao(menu);
+      injetarItensMenu(menu);
       position();
       btn.setAttribute('aria-expanded', 'true');
-      const first = menu.querySelector('.app-tabs__user-item, .menu-item, a, button');
-      if (first) first.focus();
     }
+    
     function close() {
       menu.hidden = true;
       btn.setAttribute('aria-expanded', 'false');
@@ -190,12 +208,12 @@
     window.addEventListener('scroll', function () { if (!menu.hidden) position(); }, true);
   }
 
-  /* =========================================================
-     Avatar — leitura
-     ========================================================= */
+  // =========================================================
+  // Avatar e Logout
+  // =========================================================
   function readCachedAvatar() {
     try {
-      const raw = sessionStorage.getItem('devhub_user');
+      const raw = sessionStorage.getItem('devhub_user') || localStorage.getItem('devhub_user');
       if (!raw) return null;
       const ctx = JSON.parse(raw);
       return ctx && ctx.avatar_url ? ctx.avatar_url : null;
@@ -204,20 +222,16 @@
 
   function writeCachedAvatar(url) {
     try {
-      let raw = sessionStorage.getItem('devhub_user');
+      let raw = sessionStorage.getItem('devhub_user') || localStorage.getItem('devhub_user');
       let ctx = {};
       if (raw) {
         try { ctx = JSON.parse(raw) || {}; } catch (e) { ctx = {}; }
       }
       if (typeof ctx !== 'object' || ctx === null) ctx = {};
-
       if (url) ctx.avatar_url = url;
       else delete ctx.avatar_url;
-
       sessionStorage.setItem('devhub_user', JSON.stringify(ctx));
-    } catch (e) {
-      console.warn('[DEV HUB] Falha ao gravar avatar no sessionStorage:', e);
-    }
+    } catch (e) {}
   }
 
   async function fetchAvatarFromDb() {
@@ -226,46 +240,24 @@
       const { data: sess } = await window.db.auth.getSession();
       const uid = sess && sess.session && sess.session.user && sess.session.user.id;
       if (!uid) return null;
-
-      const { data, error } = await window.db
-        .from('profiles')
-        .select('avatar_url')
-        .eq('id', uid)
-        .maybeSingle();
-      if (error) {
-        console.warn('[user-menu] fetchAvatar:', error);
-        return null;
-      }
+      const { data, error } = await window.db.from('profiles').select('avatar_url').eq('id', uid).maybeSingle();
+      if (error) return null;
       return data && data.avatar_url ? data.avatar_url : null;
-    } catch (e) {
-      console.warn('[user-menu] fetchAvatar exceção:', e);
-      return null;
-    }
+    } catch (e) { return null; }
   }
 
-  /* Busca no banco no máximo uma vez por carregamento de página. */
   let avatarFetchPromise = null;
   function fetchAvatarOnce() {
     if (!avatarFetchPromise) avatarFetchPromise = fetchAvatarFromDb();
     return avatarFetchPromise;
   }
 
-  /* =========================================================
-     Avatar — aplicação no topbar
-     ---------------------------------------------------------
-     1. Aplica cache imediatamente (evita flash)
-     2. Busca do banco (uma única vez por página)
-     3. Se diferente, atualiza + reescreve cache
-     ========================================================= */
   async function applyTopbarAvatar() {
     const el = document.getElementById('user-avatar');
     if (!el) return;
-
     const cached = readCachedAvatar();
     if (cached) renderTopbarAvatar(cached);
-
     const url = await fetchAvatarOnce();
-
     if (url !== readCachedAvatar()) {
       renderTopbarAvatar(url);
       writeCachedAvatar(url);
@@ -276,10 +268,8 @@
     const el = document.getElementById('user-avatar');
     if (!el) return;
     if (el.dataset.avatarUrl === (url || '')) return;
-
     el.innerHTML = '';
     el.dataset.avatarUrl = url || '';
-
     if (url) {
       el.style.background = 'none';
       const img = document.createElement('img');
@@ -300,7 +290,6 @@
     const el = document.getElementById('user-avatar-bar');
     if (!el) return;
     if (el.dataset.avatarUrl) return;
-
     const cached = readCachedAvatar();
     if (cached) {
       el.style.background = 'none';
@@ -315,33 +304,26 @@
 
   function syncBarUserInfo() {
     applyBarAvatar();
-
     try {
-      const raw = sessionStorage.getItem('devhub_user');
+      const raw = sessionStorage.getItem('devhub_user') || localStorage.getItem('devhub_user');
       if (!raw) return;
       const ctx = JSON.parse(raw);
-
       const fullName = ctx.name || '';
       const first = String(fullName).trim().split(/\s+/)[0] || '';
       const initial = first.charAt(0).toUpperCase() || '?';
-
       const nameEl = document.getElementById('user-name-bar');
       const roleEl = document.getElementById('user-role-bar');
       const avatarEl = document.getElementById('user-avatar-bar');
 
       if (nameEl) nameEl.textContent = fullName || 'Usuário';
-
       if (roleEl) {
-        const roleText = window.Auth && window.Auth.roleLabel
-          ? window.Auth.roleLabel(ctx.role || '')
-          : (ctx.role || '');
+        const roleText = window.Auth && window.Auth.roleLabel ? window.Auth.roleLabel(ctx.role || '') : (ctx.role || '');
         roleEl.textContent = roleText;
       }
-
       if (avatarEl && !avatarEl.dataset.avatarUrl) {
         avatarEl.textContent = initial;
       }
-    } catch (e) { /* ignora */ }
+    } catch (e) { }
   }
 
   function scheduleAvatarRefresh() {
@@ -354,9 +336,6 @@
     });
   }
 
-  /* =========================================================
-     Logout
-     ========================================================= */
   function bindLogout(scope) {
     scope.querySelectorAll('[data-action="logout"]').forEach(function (btn) {
       if (btn.dataset.logoutBound === '1') return;
@@ -367,7 +346,6 @@
         btn.disabled = true;
         btn.setAttribute('aria-busy', 'true');
         try { sessionStorage.removeItem(NAV.TABS_KEY); } catch (e) {}
-
         if (window.Auth && typeof window.Auth.signOut === 'function') {
           window.Auth.signOut();
         } else {
@@ -386,6 +364,7 @@
     applyBarAvatar,
     ensureOrgSlot,
     injetarItemGestao,
+    injetarItensMenu,
     readCachedAvatar,
     writeCachedAvatar
   };

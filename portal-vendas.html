@@ -220,6 +220,7 @@
   <script src="js/nav/module-menu.js"></script>
   <script src="js/nav/notifications.js"></script>
   <script src="js/nav/user-menu.js"></script>
+  <script src="js/nav/favorites-modal.js"></script>
   <script src="js/nav/search.js"></script>
   <script src="js/nav/org-switcher.js"></script>
   <script src="js/nav/bar.js"></script>
@@ -227,25 +228,25 @@
   <script src="js/nav/main.js"></script>
 
   <script>
-    // Injeta o nome do usuário logado
+    // Injeta o nome do usuário logado de forma mais robusta
     document.addEventListener('DOMContentLoaded', function () {
       try {
         const rawUser = sessionStorage.getItem('devhub_user');
-        if (rawUser) {
-          const user = JSON.parse(rawUser);
-          const nameEl = document.getElementById('greeting-name');
-          const roleEl = document.getElementById('greeting-role');
-          
-          if (nameEl && user.name) {
-            nameEl.textContent = user.name.replace(/Olá,?\s*/gi, '').trim().split(' ')[0]; 
-          }
-          if (roleEl && user.role) {
-            roleEl.textContent = user.role.charAt(0).toUpperCase() + user.role.slice(1);
-            roleEl.hidden = false;
-          }
+        if (!rawUser) return;
+        
+        const user = JSON.parse(rawUser);
+        const nameEl = document.getElementById('greeting-name');
+        const roleEl = document.getElementById('greeting-role');
+        
+        if (nameEl && user?.name) {
+          nameEl.textContent = user.name.replace(/^Olá,?\s*/i, '').trim().split(' ')[0]; 
+        }
+        if (roleEl && user?.role) {
+          roleEl.textContent = user.role.charAt(0).toUpperCase() + user.role.slice(1);
+          roleEl.hidden = false;
         }
       } catch (e) {
-        console.error('Erro ao carregar dados do usuário:', e);
+        console.warn('DEV HUB: Falha ao carregar dados do usuário local.', e);
       }
     });
   </script>

@@ -1,20 +1,5 @@
 /* =========================================================
-   DEV HUB · Tela inicial (Launcher)
-   ---------------------------------------------------------
-   - Grid de módulos disponíveis para o usuário
-   - Busca com filtro em tempo real
-   - Atalhos de teclado 1-9 para abrir rapidamente
-   - Enter abre o primeiro resultado
-   ---------------------------------------------------------
-   Sincroniza capabilities direto de window.NAV (nav/config.js)
-   em vez de duplicar. Uma capability nova adicionada no
-   nav/config.js já reflete no welcome sem tocar aqui.
-   ---------------------------------------------------------
-   CORREÇÕES APLICADAS:
-   1. readContext() lê localStorage E sessionStorage (fallback).
-   2. Auth.getProfile() chamado sem argumento (usa cache).
-   3. Aviso no console se window.NAV não carregar.
-   4. Guard adicional: se buildIndex() ficar vazio, avisa no console.
+   DEV HUB · Tela inicial (Spotlight Search)
    ========================================================= */
 
 (function () {
@@ -26,67 +11,41 @@
   let filtered = [];
   let searchQuery = '';
 
-  /* =========================================================
-     FONTE DE VERDADE — window.NAV
-     ========================================================= */
   function getNavConfig() {
     const NAV = window.NAV;
-    if (!NAV) {
-      console.warn('[welcome] window.NAV não carregado — verifique js/nav/config.js.');
-      return { CAPABILITIES: {}, BASE_CAPS: {} };
-    }
-    return {
-      CAPABILITIES: NAV.CAPABILITIES || {},
-      BASE_CAPS:    NAV.BASE_CAPS    || {}
-    };
+    if (!NAV) return { CAPABILITIES: {}, BASE_CAPS: {} };
+    return { CAPABILITIES: NAV.CAPABILITIES || {}, BASE_CAPS: NAV.BASE_CAPS || {} };
   }
 
-  /* ---------- Contexto do usuário (localStorage + sessionStorage) ---------- */
   function readContext() {
-    let role = '';
-    let isPlatform = false;
+    let role = '', isPlatform = false;
     try {
-      /* FIX: lê de localStorage primeiro; cai para sessionStorage */
-      const raw =
-        localStorage.getItem('devhub_user') ||
-        sessionStorage.getItem('devhub_user');
+      const raw = localStorage.getItem('devhub_user') || sessionStorage.getItem('devhub_user');
       if (raw) {
         const data = JSON.parse(raw);
         role = String(data.role || '').toLowerCase();
         isPlatform = data.is_platform_admin === true;
       }
-    } catch (e) { /* ignora */ }
+    } catch (e) {}
     return { role, isPlatform };
   }
 
   function capsForRole(role, isPlatform) {
     const { CAPABILITIES } = getNavConfig();
     const baseCaps = CAPABILITIES[String(role || '').toLowerCase()] || ['operations'];
-    if (isPlatform && baseCaps.indexOf('platform') === -1) {
-      return baseCaps.concat(['platform']);
-    }
+    if (isPlatform && baseCaps.indexOf('platform') === -1) return baseCaps.concat(['platform']);
     return baseCaps;
   }
 
   function baseCapsForRole() {
     const ctx = readContext();
-    const r = String(ctx.role || '').toLowerCase();
-
     const { BASE_CAPS } = getNavConfig();
     const fallback = BASE_CAPS.user || ['dashboard.view'];
-
-    const caps = BASE_CAPS[r] || fallback;
-    if (ctx.isPlatform && caps.indexOf('platform') === -1) {
-      return caps.concat(['platform']);
-    }
+    const caps = BASE_CAPS[ctx.role] || fallback;
+    if (ctx.isPlatform && caps.indexOf('platform') === -1) return caps.concat(['platform']);
     return caps;
   }
 
-  /**
-   * Verificação de capability com fallback — MESMA lógica do nav.js.
-   * Prioriza Perms.has() do banco; se não houver, cai no BASE_CAPS
-   * do nav/config.js (que é uma lista estática de permissões por role).
-   */
   function hasCapWithFallback(cap) {
     if (!cap) return true;
     if (cap === 'platform') return readContext().isPlatform;
@@ -99,15 +58,12 @@
       try {
         const list = (typeof window.Perms.list === 'function') ? window.Perms.list() : null;
         const listEmpty = !list || Object.keys(list).length === 0;
-
         if (!listEmpty) {
           const r = window.Perms.has(c);
           if (r === true)  return true;
           if (r === false) return inFallback;
         }
-      } catch (e) {
-        console.warn('[welcome] Perms.has falhou para', c, e);
-      }
+      } catch (e) {}
     }
 
     const genericCaps = capsForRole(readContext().role, readContext().isPlatform);
@@ -115,79 +71,56 @@
     return inFallback;
   }
 
-  /* =========================================================
-     Init
-     ========================================================= */
   document.addEventListener('DOMContentLoaded', init);
 
   async function init() {
     const Auth = window.Auth;
     if (!Auth || !Auth.isConfigured() || !window.db) return;
 
-    els.grid      = document.getElementById('welcome-grid');
     els.search    = document.getElementById('welcome-search');
-    els.empty     = document.getElementById('welcome-no-results');
+    els.results   = document.getElementById('welcome-results');
     els.title     = document.getElementById('welcome-title');
 
-    if (!els.grid || !els.search) return;
+    if (!els.search || !els.results) return;
 
     const session = await Auth.requireSession();
     if (!session) return;
 
-    /* Nome no hero */
     try {
-      /* FIX: chamada sem argumento → usa cache se existir,
-         evita re-query e possível purge de contexto. */
       let profile = null;
-      try {
-        profile = await Auth.getProfile();
-      } catch (e) {
-        console.warn('[welcome] getProfile falhou:', e);
-      }
+      try { profile = await Auth.getProfile(); } catch (e) {}
 
       const meta = session.user.user_metadata || {};
-      const fullName =
-        (profile && profile.name) ||
-        meta.name || meta.full_name ||
-        (session.user.email ? session.user.email.split('@')[0] : '') || '';
-
+      const fullName = (profile && profile.name) || meta.name || meta.full_name || (session.user.email ? session.user.email.split('@')[0] : '') || '';
       const first = String(fullName).trim().split(/\s+/)[0] || '';
       const nameEl = els.title ? els.title.querySelector('.welcome__name') : null;
       if (nameEl) nameEl.textContent = first ? ' ' + first : '';
-    } catch (e) { /* silencioso */ }
+    } catch (e) {}
 
     if (window.Perms && typeof window.Perms.load === 'function') {
-      try { await window.Perms.load(); } catch (e) { /* fallback */ }
+      try { await window.Perms.load(); } catch (e) {}
     }
 
     buildIndex();
 
-    if (index.length === 0) {
-      console.warn(
-        '[welcome] Nenhum módulo liberado. Verifique window.DHModules e as capabilities.'
-      );
-    }
-
-    renderGrid(index);
-
     els.search.addEventListener('input', onSearchInput);
     els.search.addEventListener('keydown', onSearchKeydown);
+    document.addEventListener('click', (e) => {
+      if (!els.search.contains(e.target) && !els.results.contains(e.target)) {
+        els.results.hidden = true;
+      }
+    });
 
-    /* Ctrl+K foca a busca */
     document.addEventListener('keydown', function (e) {
       const isK = String(e.key || '').toLowerCase() === 'k';
-      if (!isK) return;
-      if (!(e.ctrlKey || e.metaKey)) return;
-
+      if (!isK || !(e.ctrlKey || e.metaKey)) return;
       const active = document.activeElement;
       if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) return;
-
       e.preventDefault();
       els.search.focus();
       els.search.select();
     });
 
-    /* Atalhos 1-9 abrem o item N visível */
     document.addEventListener('keydown', function (e) {
       if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
@@ -204,9 +137,6 @@
     });
   }
 
-  /* =========================================================
-     Índice
-     ========================================================= */
   function buildIndex() {
     const all = Array.isArray(window.DHModules) ? window.DHModules : [];
     const ITEM_PERM = window.DHItemPerm || {};
@@ -221,91 +151,36 @@
     filtered = index.slice();
   }
 
-  /* =========================================================
-     Grid
-     ========================================================= */
-  function renderGrid(items) {
-    els.grid.innerHTML = '';
-
-    if (items.length === 0) {
-      if (els.empty) els.empty.hidden = false;
-      return;
-    }
-    if (els.empty) els.empty.hidden = true;
-
-    const order = ['Comercial', 'Catálogo', 'Suprimentos', 'Financeiro',
-                   'Análise', 'Administração', 'Plataforma'];
-    const dashboardItem = items.find(function (i) { return i.id === 'dashboard'; });
-    const grouped = {};
-
-    items.forEach(function (it) {
-      if (it.id === 'dashboard') return;
-      const g = it.group || 'Outros';
-      if (!grouped[g]) grouped[g] = [];
-      grouped[g].push(it);
-    });
-
-    const frag = document.createDocumentFragment();
-
-    if (dashboardItem) {
-      frag.appendChild(buildGroupTitle('Início'));
-      frag.appendChild(buildCard(dashboardItem));
-    }
-
-    order.forEach(function (g) {
-      if (!grouped[g] || grouped[g].length === 0) return;
-      frag.appendChild(buildGroupTitle(g));
-      grouped[g].forEach(function (it) { frag.appendChild(buildCard(it)); });
-      delete grouped[g];
-    });
-
-    Object.keys(grouped).forEach(function (g) {
-      frag.appendChild(buildGroupTitle(g));
-      grouped[g].forEach(function (it) { frag.appendChild(buildCard(it)); });
-    });
-
-    els.grid.appendChild(frag);
-
-    updateShortcuts();
-  }
-
-  function buildGroupTitle(label) {
-    const el = document.createElement('p');
-    el.className = 'welcome__group-title';
-    el.textContent = label;
-    return el;
-  }
-
-  function buildCard(item) {
+  function buildResultItem(item, index) {
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.className = 'welcome__card';
+    btn.className = 'welcome__result-item';
     btn.dataset.id = item.id;
-    btn.dataset.group = item.group || '';
 
+    // Ícone
     const icon = document.createElement('span');
-    icon.className = 'welcome__card-icon';
-    icon.setAttribute('aria-hidden', 'true');
+    icon.className = 'welcome__result-icon';
     icon.innerHTML = getIcon(item.icon);
 
+    // Textos
     const body = document.createElement('span');
-    body.className = 'welcome__card-body';
-
+    body.className = 'welcome__result-body';
+    
     const title = document.createElement('span');
-    title.className = 'welcome__card-title';
+    title.className = 'welcome__result-title';
     title.innerHTML = highlight(item.label, searchQuery);
 
     const meta = document.createElement('span');
-    meta.className = 'welcome__card-meta';
-    meta.textContent = item.group ? item.group : 'Página inicial';
+    meta.className = 'welcome__result-meta';
+    meta.textContent = item.group ? item.group : 'Geral';
 
     body.appendChild(title);
     body.appendChild(meta);
 
+    // Atalho numérico
     const kbd = document.createElement('span');
-    kbd.className = 'welcome__card-kbd';
-    kbd.setAttribute('aria-hidden', 'true');
-    kbd.textContent = '';
+    kbd.className = 'welcome__result-kbd';
+    if (index < 9) kbd.textContent = String(index + 1); else kbd.hidden = true;
 
     btn.appendChild(icon);
     btn.appendChild(body);
@@ -316,23 +191,6 @@
     return btn;
   }
 
-  function updateShortcuts() {
-    const cards = els.grid.querySelectorAll('.welcome__card');
-    cards.forEach(function (card, i) {
-      const kbd = card.querySelector('.welcome__card-kbd');
-      if (!kbd) return;
-      if (i < 9) {
-        kbd.textContent = String(i + 1);
-        kbd.hidden = false;
-      } else {
-        kbd.hidden = true;
-      }
-    });
-  }
-
-  /* =========================================================
-     Abrir
-     ========================================================= */
   function openModule(item) {
     if (window.DHTabs && typeof window.DHTabs.open === 'function') {
       window.DHTabs.open(item);
@@ -341,54 +199,58 @@
     window.location.href = item.href;
   }
 
-  /* =========================================================
-     Busca
-     ========================================================= */
   function onSearchInput() {
     searchQuery = String(els.search.value || '').trim();
     const q = normalize(searchQuery);
 
     if (!q) {
+      els.results.hidden = true;
       filtered = index.slice();
-    } else {
-      const words = q.split(/\s+/).filter(Boolean);
-      filtered = index.filter(function (item) {
-        const haystack = normalize(item.label + ' ' + (item.group || ''));
-        return words.every(function (w) { return haystack.indexOf(w) !== -1; });
-      });
+      return;
     }
 
-    renderGrid(filtered);
+    const words = q.split(/\s+/).filter(Boolean);
+    filtered = index.filter(function (item) {
+      const haystack = normalize(item.label + ' ' + (item.group || ''));
+      return words.every(function (w) { return haystack.indexOf(w) !== -1; });
+    });
+
+    renderResults();
+  }
+
+  function renderResults() {
+    els.results.innerHTML = '';
+    
+    if (filtered.length === 0) {
+      els.results.innerHTML = '<div class="welcome__result-empty">Nenhum módulo encontrado.</div>';
+      els.results.hidden = false;
+      return;
+    }
+
+    filtered.forEach((item, i) => {
+      els.results.appendChild(buildResultItem(item, i));
+    });
+
+    els.results.hidden = false;
   }
 
   function onSearchKeydown(e) {
     if (e.key === 'Escape') {
-      if (els.search.value) {
-        els.search.value = '';
-        searchQuery = '';
-        filtered = index.slice();
-        renderGrid(filtered);
-      } else {
-        els.search.blur();
-      }
+      els.search.value = '';
+      searchQuery = '';
+      els.results.hidden = true;
+      els.search.blur();
       return;
     }
 
     if (e.key === 'Enter') {
       e.preventDefault();
-      if (filtered.length > 0) {
-        openModule(filtered[0]);
-      }
+      if (filtered.length > 0) openModule(filtered[0]);
     }
   }
 
-  /* =========================================================
-     Helpers
-     ========================================================= */
   function normalize(s) {
-    return String(s == null ? '' : s)
-      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-      .toLowerCase().trim();
+    return String(s == null ? '' : s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
   }
 
   function escapeHtml(v) {
@@ -400,12 +262,10 @@
   function highlight(text, query) {
     const safe = escapeHtml(text);
     if (!query) return safe;
-
     const hay = normalize(text);
     const needle = normalize(query);
     const i = hay.indexOf(needle);
     if (i === -1) return safe;
-
     const before = escapeHtml(text.slice(0, i));
     const match  = escapeHtml(text.slice(i, i + needle.length));
     const after  = escapeHtml(text.slice(i + needle.length));

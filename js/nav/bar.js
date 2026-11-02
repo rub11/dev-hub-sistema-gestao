@@ -42,32 +42,8 @@
         NAV.ICONS.plus +
       '</button>' +
       '<span class="app-tabs__spacer"></span>' +
-      /* ⬇️ NOVO — slot do seletor de empresa */
       '<div class="app-tabs__org" id="org-switcher-slot"></div>' +
-      '<button type="button" class="app-tabs__bell" id="app-tabs-bell" ' +
-              'aria-label="Notificações" aria-expanded="false">' +
-        NAV.ICONS.bell +
-        '<span class="app-tabs__bell-badge" id="app-tabs-bell-badge" hidden>0</span>' +
-      '</button>' +
-      
-      /* 👇 BLOCO DA BARRA DE BUSCA COMENTADO 👇 */
-      /*
-      '<div class="app-tabs__search" id="tnav-search">' +
-        '<span class="tnav-search__icon">' + NAV.ICONS.search + '</span>' +
-        '<input type="search" class="tnav-search__input" id="tnav-search-input" ' +
-               'placeholder="Buscar… (Ctrl+K)" ' +
-               'autocomplete="off" spellcheck="false" ' +
-               'aria-label="Buscar opção do menu" ' +
-               'aria-autocomplete="list" aria-controls="tnav-search-results" ' +
-               'aria-expanded="false" />' +
-        '<button type="button" class="tnav-search__clear" id="tnav-search-clear" ' +
-                'aria-label="Limpar busca">' + NAV.ICONS.close + '</button>' +
-        '<div class="tnav-search__results" id="tnav-search-results" role="listbox" hidden></div>' +
-      '</div>' +
-      */
-      /* 👆 FIM DO BLOCO DA BUSCA 👆 */
-      '' + /* Garante que a concatenação continue funcionando */
-
+      /* O BOTÃO DO SINO FOI REMOVIDO AQUI */
       '<div class="app-tabs__user" id="app-tabs-user">' +
         '<button type="button" class="app-tabs__user-btn" id="app-tabs-user-btn" ' +
                 'aria-haspopup="menu" aria-expanded="false" ' +
@@ -113,9 +89,7 @@
     }
 
     NAV.tabs.render();
-    // NAV.search.setup(); /* 👈 BUSCA DESATIVADA */
     NAV.userMenu.setup();
-    NAV.notifications.setup();
     NAV.userMenu.bindLogout(bar);
     NAV.userMenu.bindLogout(document.body);
     NAV.userMenu.syncBarUserInfo();
@@ -126,18 +100,13 @@
       ctx.isPlatform ? 'platform_admin' : (ctx.role || 'guest')
     );
 
-    /* Ativa o scroll horizontal com setas */
     setupTabsScroll();
 
-    /* ⬇️ NOVO — ativa o seletor de empresa */
     if (NAV.orgSwitcher && typeof NAV.orgSwitcher.init === 'function') {
       NAV.orgSwitcher.init();
     }
   }
 
-  /* =========================================================
-     ABAS · scroll horizontal com setas + roda do mouse
-     ========================================================= */
   function setupTabsScroll() {
     const scroll = document.getElementById('app-tabs-scroll');
     if (!scroll) return;
@@ -145,7 +114,6 @@
     if (scroll.dataset.scrollReady === '1') return;
     scroll.dataset.scrollReady = '1';
 
-    /* Wrapper + setas */
     let wrapper = scroll.parentNode;
     if (!wrapper.classList.contains('app-tabs__scroll-wrap')) {
       const newWrap = document.createElement('div');
@@ -181,12 +149,8 @@
       rightBtn.disabled = !hasOverflow || atEnd;
     }
 
-    leftBtn.addEventListener('click', () => {
-      scroll.scrollBy({ left: -200, behavior: 'smooth' });
-    });
-    rightBtn.addEventListener('click', () => {
-      scroll.scrollBy({ left: 200, behavior: 'smooth' });
-    });
+    leftBtn.addEventListener('click', () => { scroll.scrollBy({ left: -200, behavior: 'smooth' }); });
+    rightBtn.addEventListener('click', () => { scroll.scrollBy({ left: 200, behavior: 'smooth' }); });
 
     scroll.addEventListener('wheel', (e) => {
       if (e.deltaY === 0) return;
@@ -197,10 +161,7 @@
     scroll.addEventListener('scroll', updateArrows, { passive: true });
     window.addEventListener('resize', updateArrows);
 
-    const mo = new MutationObserver(() => {
-      updateArrows();
-      scrollToActive();
-    });
+    const mo = new MutationObserver(() => { updateArrows(); scrollToActive(); });
     mo.observe(scroll, { childList: true, subtree: false });
 
     function scrollToActive() {
@@ -217,10 +178,7 @@
     document.addEventListener('app-tab-changed', scrollToActive);
     scroll.addEventListener('click', () => setTimeout(scrollToActive, 100));
 
-    setTimeout(() => {
-      updateArrows();
-      scrollToActive();
-    }, 60);
+    setTimeout(() => { updateArrows(); scrollToActive(); }, 60);
   }
 
   NAV.bar = { render: renderBar };

@@ -26,78 +26,7 @@
         }
       } catch (e) {}
     })();
-
-
-    /* =========================================================
-   DEV HUB · Botão de trocar tema
-   ---------------------------------------------------------
-   Injeta um botão flutuante no canto superior direito.
-   Clique alterna light ↔ dark. Long-press (ou duplo clique)
-   volta para 'auto'.
-   ========================================================= */
-
-(function () {
-  'use strict';
-
-  function buildButton() {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'theme-toggle';
-    btn.setAttribute('aria-label', 'Alternar tema');
-    btn.innerHTML = `
-      <svg class="theme-toggle__sun" viewBox="0 0 24 24" fill="none"
-           stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"
-           aria-hidden="true">
-        <circle cx="12" cy="12" r="4"/>
-        <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
-      </svg>
-      <svg class="theme-toggle__moon" viewBox="0 0 24 24" fill="none"
-           stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"
-           aria-hidden="true">
-        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-      </svg>
-    `;
-
-    let pressTimer = null;
-    let longPressed = false;
-
-    btn.addEventListener('pointerdown', function () {
-      longPressed = false;
-      pressTimer = setTimeout(function () {
-        longPressed = true;
-        window.Theme.set('auto');
-        btn.setAttribute('title', 'Seguindo o sistema');
-      }, 700);
-    });
-
-    ['pointerup', 'pointerleave', 'pointercancel'].forEach(function (ev) {
-      btn.addEventListener(ev, function () {
-        if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
-      });
-    });
-
-    btn.addEventListener('click', function () {
-      if (longPressed) return;
-      window.Theme.toggle();
-    });
-
-    return btn;
-  }
-
-  function init() {
-    if (!window.Theme) return;
-    if (document.querySelector('.theme-toggle')) return;
-    document.body.appendChild(buildButton());
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
-  }
-})();
   </script>
-  
 </head>
 
 <body class="layout-topnav" data-page="welcome">
@@ -121,15 +50,6 @@
       <span class="topbar__brand">DEV HUB</span>
 
       <div class="topbar__actions">
-        <button type="button" class="icon-btn" id="notifications-btn"
-                aria-label="Notificações (em breve)" title="Em breve" disabled>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M18 8.5a6 6 0 1 0-12 0c0 6.5-2.5 8.5-2.5 8.5h17S18 15 18 8.5" />
-            <path d="M13.7 20.5a2 2 0 0 1-3.4 0" />
-          </svg>
-        </button>
-
         <div class="user-menu">
           <button type="button" class="user-menu__trigger" id="user-menu-trigger"
                   aria-haspopup="true" aria-expanded="false" aria-controls="user-menu-panel">
@@ -160,49 +80,41 @@
       <div id="global-alert" class="alert" role="alert" hidden></div>
 
       <section class="welcome">
-
         <div class="welcome__hero">
           <span class="welcome__badge">Bem-vindo de volta</span>
           <h1 class="welcome__title" id="welcome-title">
             Olá<span class="welcome__name"></span>, no que vamos trabalhar hoje?
           </h1>
           <p class="welcome__sub">
-            Escolha um módulo abaixo ou use a busca para encontrar rapidamente.
+            Busque por um módulo, tela ou ação para começar.
           </p>
         </div>
 
-        <div class="welcome__search">
-          <span class="welcome__search-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                 stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" />
-            </svg>
-          </span>
-          <input
-            type="search"
-            id="welcome-search"
-            class="welcome__search-input"
-            placeholder="Buscar módulo, tela ou ação…"
-            autocomplete="off"
-            spellcheck="false"
-            aria-label="Buscar módulo"
-            aria-controls="welcome-grid"
-          />
-          <span class="welcome__search-kbd">Ctrl K</span>
-        </div>
-
-        <div class="welcome__empty" id="welcome-no-results" hidden>
-          <div class="welcome__empty-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
-                 stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" />
-            </svg>
+        <!-- Container da Busca com Dropdown de Resultados -->
+        <div class="welcome__search-container">
+          <div class="welcome__search">
+            <span class="welcome__search-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" />
+              </svg>
+            </span>
+            <input
+              type="search"
+              id="welcome-search"
+              class="welcome__search-input"
+              placeholder="Buscar módulo, tela ou ação…"
+              autocomplete="off"
+              spellcheck="false"
+              aria-label="Buscar módulo"
+              aria-controls="welcome-results"
+            />
+            <span class="welcome__search-kbd">Ctrl K</span>
           </div>
-          <p><strong>Nenhum módulo encontrado.</strong></p>
-          <small>Tente outro termo ou limpe a busca para ver tudo.</small>
-        </div>
 
-        <div class="welcome__grid" id="welcome-grid" aria-live="polite"></div>
+          <!-- Lista Suspensa de Resultados -->
+          <div class="welcome__search-results" id="welcome-results" role="listbox" hidden></div>
+        </div>
 
       </section>
 
@@ -214,7 +126,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/supabase.js"></script>
 <script src="js/auth.js"></script>
-<script src="js/permissions.js"></script>   <!-- ANTES do nav/ -->
+<script src="js/permissions.js"></script>
  
 <script src="js/nav/config.js"></script>
 <script src="js/nav/state.js"></script>
@@ -225,6 +137,7 @@
 <script src="js/nav/module-menu.js"></script>
 <script src="js/nav/notifications.js"></script>
 <script src="js/nav/user-menu.js"></script>
+<script src="js/nav/favorites-modal.js"></script>
 <script src="js/nav/search.js"></script>
 <script src="js/nav/org-switcher.js"></script>
 <script src="js/nav/bar.js"></script>

@@ -110,7 +110,7 @@
     gestao:              'management.view',
     permissoes:          'management.roles',
     dashboard:           'dashboard.view',
-    comercial:           'sales.view', // NOVO: Permissão para o portal comercial
+    comercial:           'sales.view',
     vendas:              'sales.view',
     orcamentos:          'sales.view',
     notas:               'notes.view',
@@ -131,61 +131,69 @@
     'compras-receber':   'stock.receive',
     fornecedores:        'purchases.view',
     'config-pagamentos':   'management.view',
-    'config-parcelamento': 'management.view'
+    'config-parcelamento': 'management.view',
+    'config-empresa':      'management.view'
   };
 
+  // =========================================================
+  // MENU TOPNAV (O que aparece no botão "+")
+  // =========================================================
   NAV.TOPNAV = [
-    { id: 'administracao', label: 'Administração', href: 'administracao.html', icon: 'lock', group: 'Administração', capability: 'management.view' },
-
     { id: 'dashboard',     label: 'Dashboard',     href: 'dashboard.html',     icon: 'dashboard', group: null },
     
-    // NOVO: Botão principal "Comercial" (Não fica dentro de nenhum grupo para não duplicar)
+    // Comercial
     { id: 'comercial',     label: 'Comercial',     href: 'portal-vendas.html', icon: 'vendas',    group: null },
-    
-    // Módulos que ficam dentro da pasta Comercial no menu "+"
     { id: 'vendas',        label: 'Vendas',        href: 'vendas.html',        icon: 'vendas',      group: 'Comercial' },
     { id: 'orcamentos',    label: 'Orçamentos',    href: 'orcamentos.html',    icon: 'notas',       group: 'Comercial' },
     { id: 'notas',         label: 'Notas',         href: 'notas.html',         icon: 'notas',       group: 'Comercial' },
     { id: 'parceiros',     label: 'Parceiros',     href: 'parceiros.html',     icon: 'clientes',    group: 'Comercial' },
     
-    { id: 'produtos',      label: 'Produtos',      href: 'produtos.html',      icon: 'produtos',    group: 'Catálogo' },
-    { id: 'estoque',       label: 'Estoque',       href: 'estoque.html',       icon: 'estoque',     group: 'Catálogo' },
-    { id: 'compras',         label: 'Compras',         href: 'compras.html',         icon: 'vendas',   group: 'Suprimentos', capability: 'purchases.view' },
-    { id: 'compras-receber', label: 'Receber compras', href: 'compras-receber.html', icon: 'estoque',  group: 'Suprimentos', capability: 'stock.receive' },
+    // Suprimentos (Produtos e Estoque movidos para cá)
+    { id: 'produtos',        label: 'Produtos',        href: 'produtos.html',        icon: 'produtos',    group: 'Suprimentos' },
+    { id: 'estoque',         label: 'Estoque',         href: 'estoque.html',         icon: 'estoque',     group: 'Suprimentos' },
+    { id: 'compras',         label: 'Compras',         href: 'compras.html',         icon: 'vendas',      group: 'Suprimentos', capability: 'purchases.view' },
+    { id: 'compras-receber', label: 'Receber compras', href: 'compras-receber.html', icon: 'estoque',     group: 'Suprimentos', capability: 'stock.receive' },
+    
+    // Financeiro
     { id: 'financeiro',    label: 'Financeiro',    href: 'financeiro.html',    icon: 'finance',     group: 'Financeiro', capability: 'finance.view' },
+    
+    // Análise
     { id: 'relatorios',    label: 'Relatórios',    href: 'relatorios.html',    icon: 'relatorios',  group: 'Análise' },
     { id: 'dre',           label: 'DRE',           href: 'relatorios-dre.html', icon: 'dre',        group: 'Análise' },
+    
+    // Administração
+    { id: 'gestao',              label: 'Gestão de usuários',       href: 'gestao.html',                     icon: 'usuarios',       group: 'Administração', capability: 'management.view' },
+    { id: 'permissoes',          label: 'Permissões',               href: 'permissoes.html',                 icon: 'lock',           group: 'Administração', capability: 'management.roles' },
+    { id: 'config-pagamentos',   label: 'Formas de pagamento',      href: 'configuracoes-pagamentos.html',   icon: 'finance',        group: 'Administração', capability: 'management.view' },
+    { id: 'config-parcelamento', label: 'Parcelamento',             href: 'configuracoes-parcelamento.html', icon: 'payment',        group: 'Administração', capability: 'management.view' },
+    { id: 'aprovacoes',          label: 'Aprovações',               href: 'aprovacoes.html',                 icon: 'check',          group: 'Administração', capability: 'purchases.approve' },
+    { id: 'config-empresa',      label: 'Configurações da empresa', href: 'configuracoes.html',              icon: 'configuracoes',  group: 'Administração', capability: 'management.view' },
+
+    // Plataforma
     { id: 'plataforma',    label: 'Dashboard da plataforma',     href: 'plataforma.html',               icon: 'dashboard',      group: 'Plataforma', capability: 'platform' },
     { id: 'empresas',      label: 'Empresas',                    href: 'plataforma.html#empresas',      icon: 'empresas',       group: 'Plataforma', capability: 'platform' },
     { id: 'plat-usuarios', label: 'Usuários da plataforma',      href: 'plataforma-usuarios.html',      icon: 'usuarios',       group: 'Plataforma', capability: 'platform' },
     { id: 'plat-config',   label: 'Configurações da plataforma', href: 'plataforma-configuracoes.html', icon: 'configuracoes',  group: 'Plataforma', capability: 'platform' }
   ];
 
-  NAV.GROUP_ORDER = ['Comercial', 'Catálogo', 'Suprimentos', 'Financeiro', 'Análise', 'Administração', 'Plataforma'];
+  // Ordem dos grupos no menu (Catálogo removido)
+  NAV.GROUP_ORDER = ['Comercial', 'Suprimentos', 'Financeiro', 'Análise', 'Administração', 'Plataforma'];
 
   NAV.PAGE_MAP = {
     administracao: 'administracao',
     adm: 'administracao',
-
     gestao: 'gestao',
     funcionarios: 'gestao',
     aprovacoes: 'aprovacoes',
     permissoes: 'permissoes',
     dashboard: 'dashboard',
-    
-    // O portal mapeia para o botão Comercial
     'portal-vendas': 'comercial',
-    
-    // Os módulos internos também podem manter a aba "Comercial" ativa se desejar.
-    // Mas para permitir múltiplas abas (ex: uma aba de Vendas e outra de Orçamentos),
-    // deixamos eles mapeados para si mesmos:
     vendas: 'vendas',
     orcamentos: 'orcamentos',
     notas: 'notas',
     'notas-fiscal': 'notas-fiscal',
     clientes: 'parceiros',
     parceiros: 'parceiros',
-    
     produtos: 'produtos',
     estoque: 'estoque',
     relatorios: 'relatorios',
@@ -193,11 +201,9 @@
     financeiro: 'financeiro',
     financeiro_novo: 'financeiro',
     'contas-bancarias': 'contas-bancarias',
-    configuracoes: 'configuracoes',
-
+    configuracoes: 'config-empresa',
     'configuracoes-pagamentos':   'config-pagamentos',
     'configuracoes-parcelamento': 'config-parcelamento',
-
     'plataforma-configuracoes': 'plat-config',
     'plataforma-usuarios': 'plat-usuarios',
     compras: 'compras',

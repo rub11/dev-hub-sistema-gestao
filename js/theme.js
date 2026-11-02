@@ -1,73 +1,43 @@
 /* =========================================================
-   DEV HUB · Tema (light / dark / auto)
-   ---------------------------------------------------------
-   - Preferência salva em localStorage: 'light' | 'dark' | 'auto'
-   - 'auto' segue prefers-color-scheme do sistema
-   - Aplica data-theme no <html> ANTES da CSS carregar (sem flash)
-   - Dispara `theme:changed` para charts/listeners reagirem
-   - API: Theme.get() | Theme.resolved() | Theme.set(pref) | Theme.toggle()
+   DEV HUB · Theme Engine
    ========================================================= */
-
 (function () {
   'use strict';
 
-  const STORAGE_KEY = 'dev-hub-theme';
-  const MEDIA = window.matchMedia('(prefers-color-scheme: dark)');
-
-  function getStored() {
-    try {
-      const v = localStorage.getItem(STORAGE_KEY);
-      if (v === 'light' || v === 'dark' || v === 'auto') return v;
-    } catch (e) { /* storage indisponível */ }
-    return 'auto';
-  }
-
-  function resolve(pref) {
-    if (pref === 'light' || pref === 'dark') return pref;
-    return MEDIA.matches ? 'dark' : 'light';
-  }
-
-  function apply(pref, silent) {
-    const resolved = resolve(pref);
-    const root = document.documentElement;
-    root.setAttribute('data-theme', resolved);
-    root.setAttribute('data-theme-pref', pref);
-
-    if (!silent) {
-      try {
-        document.dispatchEvent(new CustomEvent('theme:changed', {
-          detail: { preference: pref, resolved: resolved }
-        }));
-      } catch (e) { /* CustomEvent indisponível */ }
+  const THEME_KEY = 'devhub_theme';
+  
+  // 1. Recupera o tema salvo ou define 'dark' como padrão
+  let savedTheme = 'dark';
+  try {
+    const stored = localStorage.getItem(THEME_KEY);
+    if (stored === 'light' || stored === 'dark') {
+      savedTheme = stored;
+    } else {
+      // Se não tem nada salvo, cravamos o dark como padrão do sistema
+      localStorage.setItem(THEME_KEY, 'dark');
     }
+  } catch (e) {
+    console.warn('[Theme] Erro ao acessar localStorage', e);
   }
 
-  /* Aplica imediatamente — antes da CSS carregar */
-  apply(getStored(), true);
+  // 2. Aplica no HTML o mais rápido possível (evita tela branca)
+  document.documentElement.setAttribute('data-theme', savedTheme);
 
-  /* Reage a mudanças do sistema (só quando pref = 'auto') */
-  function onSystemChange() {
-    if (getStored() === 'auto') apply('auto', false);
-  }
-  if (MEDIA.addEventListener) MEDIA.addEventListener('change', onSystemChange);
-  else if (MEDIA.addListener) MEDIA.addListener(onSystemChange);
-
+  // 3. API global para ser usada pelo botão no menu do usuário
   window.Theme = {
-    get: function () { return getStored(); },
-    resolved: function () { return resolve(getStored()); },
-
-    set: function (pref) {
-      pref = (pref === 'light' || pref === 'dark') ? pref : 'auto';
-      try {
-        if (pref === 'auto') localStorage.removeItem(STORAGE_KEY);
-        else localStorage.setItem(STORAGE_KEY, pref);
-      } catch (e) { /* storage indisponível */ }
-      apply(pref, false);
+    current: () => localStorage.getItem(THEME_KEY) || 'dark',
+    set: (theme) => {
+      if (theme !== 'light' && theme !== 'dark') return;
+      localStorage.setItem(THEME_KEY, theme);
+      document.documentElement.setAttribute('data-theme', theme);
+      
+      // Dispara evento para scripts que quiserem ouvir a mudança
+      document.dispatchEvent(new CustomEvent('theme:changed', { detail: theme }));
     },
-
-    toggle: function () {
-      const current = resolve(getStored());
-      this.set(current === 'dark' ? 'light' : 'dark');
+    toggle: () => {
+      const next = window.Theme.current() === 'dark' ? 'light' : 'dark';
+      window.Theme.set(next);
+      return next;
     }
   };
 })();

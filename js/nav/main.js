@@ -124,4 +124,16 @@
   window.DHModules = NAV.TOPNAV;
   window.DHItemPerm = NAV.ITEM_PERM;
   window.DHHomeUrl = NAV.HOME_URL;
+
+// =========================================================
+// INJEÇÃO GLOBAL DO MODAL DE FAVORITOS
+// =========================================================
+(function loadFavoritesModal() {
+  if (document.querySelector('script[src*="favorites-modal.js"]')) return;
+  const script = document.createElement('script');
+  script.src = 'js/nav/favorites-modal.js';
+  script.defer = true;
+  document.head.appendChild(script);
+})();
+
 })();
