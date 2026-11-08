@@ -1,7 +1,5 @@
 /* =========================================================
    DEV HUB · Compras · nova
-   ---------------------------------------------------------
-   Página compras-nova.html — criar/editar compra.
    ========================================================= */
 
 (function () {
@@ -23,8 +21,124 @@
     const isEdit = !!editId;
 
     let currentStatus = 'rascunho';
+    let subtotalCents = 0;
+    let discountCents = 0;
+    let shippingCents = 0;
+    let shippingType = 'none';
+    let otherCents = 0;
 
-    /* ---------- Código sequencial (só em criação) ---------- */
+    const elSubtotal = $('#cmp-subtotal');
+    const elTotal = $('#cmp-total');
+    const elShippingDisplay = $('#cmp-shipping-display');
+    const elDiscountDisplay = $('#cmp-discount-display');
+
+    function parseValueToCents(v) {
+      if (v === null || v === undefined) return 0;
+      if (typeof v === 'number') return Math.round(v * 100);
+      let str = String(v).replace(/[^\d,.-]/g, '');
+      if (str.includes(',')) str = str.replace(/\./g, '').replace(',', '.');
+      return Math.round(parseFloat(str || 0) * 100);
+    }
+
+    function updateTotalsUI() {
+      const currentItems = window.CompraItemsAPI && typeof window.CompraItemsAPI.getItems === 'function' 
+        ? window.CompraItemsAPI.getItems() : [];
+
+      subtotalCents = currentItems.reduce((acc, it) => {
+        const qty = Number(it.qty || it.quantity) || 0;
+        const priceCents = parseValueToCents(it.price || it.unit_price);
+        const itemDiscCents = parseValueToCents(it.discount);
+        return acc + Math.max(0, (qty * priceCents) - itemDiscCents);
+      }, 0);
+
+      let count = currentItems.length;
+      const itemsContainer = document.getElementById('cmp-items-body');
+      if (subtotalCents === 0 && itemsContainer && itemsContainer.children.length > 0) {
+        let domTotal = 0;
+        itemsContainer.querySelectorAll('.cmp-items-card__price').forEach(el => {
+          domTotal += parseValueToCents(el.textContent);
+        });
+        subtotalCents = domTotal;
+        count = itemsContainer.children.length;
+      }
+
+      if (discountCents > subtotalCents) discountCents = subtotalCents;
+      if (discountCents < 0) discountCents = 0;
+      if (shippingCents < 0) shippingCents = 0;
+
+      const totalCents = Math.max(0, subtotalCents - discountCents + shippingCents + otherCents);
+
+      if (elSubtotal) elSubtotal.textContent = fmtBRL(subtotalCents);
+      if (elTotal) elTotal.textContent = fmtBRL(totalCents);
+
+      const countText = count === 1 ? '1 item' : `${count} itens`;
+      if (document.getElementById('items-count-badge')) document.getElementById('items-count-badge').textContent = countText;
+      if (document.getElementById('items-footer-count')) document.getElementById('items-footer-count').textContent = countText;
+      if (document.getElementById('items-header-total')) document.getElementById('items-header-total').textContent = fmtBRL(subtotalCents);
+      if (document.getElementById('items-footer-subtotal')) document.getElementById('items-footer-subtotal').textContent = fmtBRL(subtotalCents);
+      
+      const footerShipping = document.getElementById('items-footer-shipping');
+      if (footerShipping) {
+        if (shippingType === 'none') footerShipping.textContent = 'Não informado';
+        else if (shippingType === 'free') footerShipping.textContent = 'Grátis';
+        else footerShipping.textContent = fmtBRL(shippingCents);
+      }
+
+      if (document.getElementById('items-footer-grand-total')) document.getElementById('items-footer-grand-total').textContent = fmtBRL(totalCents);
+
+      if (elShippingDisplay) {
+        if (shippingType === 'none') {
+          elShippingDisplay.textContent = 'Não informado';
+          elShippingDisplay.className = 'cmp-values-value is-empty';
+        } else if (shippingType === 'free') {
+          elShippingDisplay.textContent = 'Grátis';
+          elShippingDisplay.className = 'cmp-values-value is-free';
+        } else {
+          elShippingDisplay.textContent = fmtBRL(shippingCents);
+          elShippingDisplay.className = 'cmp-values-value cmp-values-value--action';
+        }
+      }
+
+      if (elDiscountDisplay) {
+        if (discountCents === 0) {
+          elDiscountDisplay.textContent = 'Adicionar desconto';
+          elDiscountDisplay.className = 'cmp-values-value is-empty';
+        } else {
+          elDiscountDisplay.textContent = `- ${fmtBRL(discountCents)}`;
+          elDiscountDisplay.className = 'cmp-values-value cmp-values-value--action cmp-values-value--discount';
+        }
+      }
+    }
+
+    updateTotalsUI();
+
+    const itemsContainerObs = document.getElementById('cmp-items-body');
+    if (itemsContainerObs) {
+      const observer = new MutationObserver(() => { setTimeout(updateTotalsUI, 50); });
+      observer.observe(itemsContainerObs, { childList: true, subtree: true, characterData: true });
+    }
+
+    document.addEventListener('submit', (e) => {
+      if (e.target && e.target.id === 'item-form') {
+        setTimeout(() => {
+          const itemModal = document.getElementById('item-modal');
+          if (itemModal && !itemModal.hidden) itemModal.hidden = true;
+          updateTotalsUI();
+        }, 100);
+      }
+    });
+
+    const itemSaveBtn = document.getElementById('item-save-btn');
+    if (itemSaveBtn) {
+      itemSaveBtn.addEventListener('click', () => {
+        setTimeout(() => {
+          const itemModal = document.getElementById('item-modal');
+          if (itemModal && !itemModal.hidden) itemModal.hidden = true;
+          updateTotalsUI();
+        }, 150);
+      });
+    }
+
     if (!isEdit) {
       try {
         const code = await API.nextPurchaseCode();
@@ -32,19 +146,15 @@
       } catch (e) { /* ignora */ }
     }
 
-    /* ---------- Data default ---------- */
     const dateInput = document.getElementById('cmp-date');
     if (dateInput && !dateInput.value && !isEdit) dateInput.value = todayISO();
 
-    /* ---------- Fornecedores ---------- */
     const supplierSel = $('#cmp-supplier');
     if (supplierSel) {
       try {
         const list = await API.listSuppliers();
         supplierSel.innerHTML = '<option value="">— Selecione —</option>' +
-          list.map((s) =>
-            `<option value="${s.id}" data-doc="${escapeHTML(s.doc || '')}">${escapeHTML(s.name)}</option>`
-          ).join('');
+          list.map((s) => `<option value="${s.id}" data-doc="${escapeHTML(s.doc || '')}">${escapeHTML(s.name)}</option>`).join('');
       } catch (e) {
         console.error(e);
         supplierSel.innerHTML = '<option value="">Erro ao carregar fornecedores</option>';
@@ -52,128 +162,125 @@
       initSupplierInline(supplierSel);
     }
 
-    /* ---------- Itens ---------- */
-    const itemsWrap = $('#cmp-items-body');
-    const products = await API.listProducts().catch(() => []);
-    let items = [{ description: '', unit: 'un', quantity: 1, unit_price_cents: 0, discount_cents: 0 }];
-
-    function recalcTotals() {
-      let subtotal = 0;
-      items.forEach((it, i) => {
-        const line = (Number(it.quantity) || 0) * (Number(it.unit_price_cents) || 0)
-                   - (Number(it.discount_cents) || 0);
-        it.total_cents = Math.max(0, Math.round(line));
-        subtotal += it.total_cents;
-        const el = document.querySelector(`[data-line-total="${i}"]`);
-        if (el) el.textContent = fmtBRL(it.total_cents);
-      });
-      const disc  = parseBRLToCents(val('#cmp-discount'));
-      const ship  = parseBRLToCents(val('#cmp-shipping'));
-      const other = parseBRLToCents(val('#cmp-other'));
-      const total = Math.max(0, subtotal - disc + ship + other);
-
-      const subEl   = $('#cmp-subtotal');
-      const totalEl = $('#cmp-total');
-      if (subEl)   subEl.textContent   = fmtBRL(subtotal);
-      if (totalEl) totalEl.textContent = fmtBRL(total);
-
-      return { subtotal, disc, ship, other, total };
-    }
-
-    function renderItems() {
-      if (!itemsWrap) return;
-      itemsWrap.innerHTML = items.map((it, i) => `
-        <div class="cmp-items__row" data-row="${i}">
-          <select data-field="product_id" data-idx="${i}">
-            <option value="">Item avulso (digite abaixo)</option>
-            ${products.map((p) => `
-              <option value="${p.id}" ${it.product_id === p.id ? 'selected' : ''}>${escapeHTML(p.name)}</option>
-            `).join('')}
-          </select>
-          <input type="number" min="0" step="0.001" data-field="quantity" data-idx="${i}" value="${it.quantity}" placeholder="Qtd" />
-          <input type="text" data-field="unit" data-idx="${i}" value="${escapeHTML(it.unit || 'un')}" placeholder="un" />
-          <input type="text" data-field="unit_price" data-idx="${i}" value="${(it.unit_price_cents / 100).toFixed(2).replace('.', ',')}" placeholder="0,00" />
-          <input type="text" data-field="discount" data-idx="${i}" value="${(it.discount_cents / 100).toFixed(2).replace('.', ',')}" placeholder="0,00" />
-          <div class="cmp-items__total" data-line-total="${i}">R$ 0,00</div>
-          <button type="button" class="cmp-items__remove" data-action="remove" data-idx="${i}" title="Remover linha" aria-label="Remover linha">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
-          </button>
-        </div>
-      `).join('');
-
-      itemsWrap.querySelectorAll('[data-field]').forEach((el) => {
-        el.addEventListener('input', (e) => {
-          const idx   = Number(e.target.dataset.idx);
-          const field = e.target.dataset.field;
-          if (field === 'quantity')        items[idx].quantity = Number(e.target.value) || 0;
-          else if (field === 'unit')       items[idx].unit = e.target.value;
-          else if (field === 'unit_price') items[idx].unit_price_cents = parseBRLToCents(e.target.value);
-          else if (field === 'discount')   items[idx].discount_cents = parseBRLToCents(e.target.value);
-          else if (field === 'product_id') {
-            items[idx].product_id = e.target.value || null;
-            const p = products.find((x) => x.id === e.target.value);
-            if (p) {
-              items[idx].description = p.name;
-              if (!items[idx].unit_price_cents) {
-                items[idx].unit_price_cents = Math.round((p.price || 0) * 100);
-                const inp = itemsWrap.querySelector(`[data-field="unit_price"][data-idx="${idx}"]`);
-                if (inp) inp.value = (p.price || 0).toFixed(2).replace('.', ',');
-              }
-            }
-          }
-          recalcTotals();
-        });
-      });
-
-      itemsWrap.querySelectorAll('[data-action="remove"]').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const idx = Number(btn.dataset.idx);
-          if (items.length === 1) { toast('Precisa ter pelo menos 1 item.', 'error'); return; }
-          items.splice(idx, 1);
-          renderItems();
-          recalcTotals();
-        });
-      });
-    }
-
-    const addBtn = $('#cmp-add-item');
-    if (addBtn) {
-      addBtn.addEventListener('click', () => {
-        items.push({ description: '', unit: 'un', quantity: 1, unit_price_cents: 0, discount_cents: 0 });
-        renderItems();
-        recalcTotals();
-      });
-    }
-
-    ['cmp-discount', 'cmp-shipping', 'cmp-other'].forEach((id) => {
-      const el = document.getElementById(id);
-      if (el) el.addEventListener('input', recalcTotals);
-    });
-
-    renderItems();
-    recalcTotals();
-
-    if (supplierSel) {
-      supplierSel.addEventListener('change', () => {
-        const opt = supplierSel.selectedOptions[0];
-        setVal('#cmp-supplier-doc', opt ? (opt.dataset.doc || '') : '');
-      });
-    }
-
-    /* ---------- Sync radios de modo ---------- */
     const modeRadios = document.querySelectorAll('input[name="save-mode"]');
     const modeHidden = document.getElementById('cmp-save-mode');
     if (modeRadios.length && modeHidden) {
       const initial = document.querySelector('input[name="save-mode"]:checked');
       if (initial) modeHidden.value = initial.value;
       modeRadios.forEach((r) => {
-        r.addEventListener('change', () => {
-          if (r.checked) modeHidden.value = r.value;
-        });
+        r.addEventListener('change', () => { if (r.checked) modeHidden.value = r.value; });
       });
     }
 
-    /* ---------- Modo edição ---------- */
+    const shipModal = $('#shipping-modal');
+    const shipInput = $('#shipping-input');
+    const shipRadios = document.querySelectorAll('input[name="shipping-type"]');
+    const wrapperShipValue = $('#shipping-value-wrapper');
+
+    if ($('#btn-open-shipping')) {
+      $('#btn-open-shipping').addEventListener('click', () => {
+        if (shippingType === 'paid') {
+          document.querySelector('input[name="shipping-type"][value="paid"]').checked = true;
+          shipInput.value = (shippingCents / 100).toFixed(2).replace('.', ',');
+          wrapperShipValue.hidden = false;
+        } else if (shippingType === 'free') {
+          document.querySelector('input[name="shipping-type"][value="free"]').checked = true;
+          shipInput.value = '';
+          wrapperShipValue.hidden = true;
+        } else {
+          document.querySelector('input[name="shipping-type"][value="none"]').checked = true;
+          shipInput.value = '';
+          wrapperShipValue.hidden = true;
+        }
+        shipModal.hidden = false;
+      });
+    }
+
+    shipRadios.forEach(r => r.addEventListener('change', (e) => {
+      const isPaid = e.target.value === 'paid';
+      wrapperShipValue.hidden = !isPaid;
+      if (!isPaid) shipInput.value = '';
+    }));
+
+    document.querySelectorAll('[data-close-shipping]').forEach(el => {
+      el.addEventListener('click', () => { shipModal.hidden = true; });
+    });
+
+    if ($('#btn-apply-shipping')) {
+      $('#btn-apply-shipping').addEventListener('click', () => {
+        const isPaid = document.querySelector('input[name="shipping-type"][value="paid"]').checked;
+        const isFree = document.querySelector('input[name="shipping-type"][value="free"]').checked;
+        
+        if (isPaid) {
+          shippingType = 'paid';
+          let valCents = parseBRLToCents(shipInput.value);
+          if (valCents < 0) valCents = 0;
+          shippingCents = valCents;
+        } else if (isFree) {
+          shippingType = 'free';
+          shippingCents = 0;
+        } else {
+          shippingType = 'none';
+          shippingCents = 0;
+        }
+        updateTotalsUI();
+        shipModal.hidden = true;
+      });
+    }
+
+    const discModal = $('#discount-modal');
+    const discInput = $('#discount-input');
+    const btnRemoveDisc = $('#btn-remove-discount');
+    const elDiscModalSub = $('#disc-modal-subtotal');
+    const elDiscModalDisc = $('#disc-modal-discount');
+    const elDiscModalTotal = $('#disc-modal-total');
+
+    function updateDiscountPreview() {
+      const valCents = parseBRLToCents(discInput.value);
+      const previewDisc = Math.min(valCents, subtotalCents);
+      const previewTotal = Math.max(0, subtotalCents - previewDisc + shippingCents + otherCents);
+
+      if (elDiscModalSub) elDiscModalSub.textContent = fmtBRL(subtotalCents);
+      if (elDiscModalDisc) elDiscModalDisc.textContent = `- ${fmtBRL(previewDisc)}`;
+      if (elDiscModalTotal) elDiscModalTotal.textContent = fmtBRL(previewTotal);
+      
+      if (btnRemoveDisc) btnRemoveDisc.style.display = (valCents > 0 || discountCents > 0) ? 'inline-flex' : 'none';
+    }
+
+    if ($('#btn-open-discount')) {
+      $('#btn-open-discount').addEventListener('click', () => {
+        discInput.value = discountCents > 0 ? (discountCents / 100).toFixed(2).replace('.', ',') : '';
+        updateDiscountPreview();
+        discModal.hidden = false;
+      });
+    }
+
+    if (discInput) discInput.addEventListener('input', updateDiscountPreview);
+
+    document.querySelectorAll('[data-close-discount]').forEach(el => {
+      el.addEventListener('click', () => { discModal.hidden = true; });
+    });
+
+    if (btnRemoveDisc) {
+      btnRemoveDisc.addEventListener('click', () => {
+        discountCents = 0;
+        discInput.value = '';
+        updateTotalsUI();
+        discModal.hidden = true;
+      });
+    }
+
+    if ($('#btn-apply-discount')) {
+      $('#btn-apply-discount').addEventListener('click', () => {
+        let valCents = parseBRLToCents(discInput.value);
+        if (valCents < 0) valCents = 0;
+        if (valCents > subtotalCents) valCents = subtotalCents;
+        discountCents = valCents;
+        updateTotalsUI();
+        discModal.hidden = true;
+      });
+    }
+
     if (isEdit) {
       try {
         const { purchase, items: existingItems } = await API.getPurchase(editId);
@@ -185,9 +292,6 @@
         setVal('#cmp-supplier-name-manual', purchase.supplier_name || '');
         setVal('#cmp-supplier-doc', purchase.supplier_doc || '');
         setVal('#cmp-supplier-contact', purchase.supplier_contact || '');
-        setVal('#cmp-discount', ((purchase.discount_cents || 0) / 100).toFixed(2).replace('.', ','));
-        setVal('#cmp-shipping', ((purchase.shipping_cents || 0) / 100).toFixed(2).replace('.', ','));
-        setVal('#cmp-other',    ((purchase.other_cents    || 0) / 100).toFixed(2).replace('.', ','));
         setVal('#cmp-payment-method', purchase.payment_method || '');
         setVal('#cmp-payment-terms',  purchase.payment_terms  || '');
         setVal('#cmp-installments',   purchase.installments   || 1);
@@ -195,22 +299,23 @@
         setVal('#cmp-notes',          purchase.notes          || '');
         setVal('#cmp-invoice',        purchase.invoice_number || '');
 
+        discountCents = purchase.discount_cents || 0;
+        shippingCents = purchase.shipping_cents || 0;
+        otherCents = purchase.other_cents || 0;
+        
+        if (shippingCents > 0) shippingType = 'paid';
+        else shippingType = 'none';
+
         if (purchase.supplier_id && supplierSel) supplierSel.value = purchase.supplier_id;
 
-        items = existingItems.map((it) => ({
-          product_id:       it.product_id || null,
-          description:      it.description,
-          unit:             it.unit || 'un',
-          quantity:         Number(it.quantity),
-          unit_price_cents: Number(it.unit_price_cents),
-          discount_cents:   Number(it.discount_cents),
-          total_cents:      Number(it.total_cents)
-        }));
-        if (!items.length) items = [{ description: '', unit: 'un', quantity: 1, unit_price_cents: 0, discount_cents: 0 }];
-        renderItems();
-        recalcTotals();
+        if (window.CompraItemsAPI) {
+          window.CompraItemsAPI.setItems(existingItems || []);
+        }
+        
+        setTimeout(updateTotalsUI, 100);
+        updateTotalsUI();
 
-        const titleEl = document.querySelector('.cmp-page-head__title');
+        const titleEl = document.querySelector('.page-head__title');
         if (titleEl) titleEl.textContent = 'Editar compra';
         const submitBtn = $('#cmp-submit');
         if (submitBtn) {
@@ -242,7 +347,6 @@
       }
     }
 
-    /* ---------- Status alvo ---------- */
     function resolveTargetStatus() {
       const chosen = val('#cmp-save-mode') || 'rascunho';
       if (!isEdit) return chosen;
@@ -253,7 +357,6 @@
       return currentStatus;
     }
 
-    /* ---------- Submit ---------- */
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const btn = $('#cmp-submit');
@@ -271,12 +374,32 @@
 
         if (!supplierId && !supplierName) throw new Error('Selecione um fornecedor.');
 
-        const validItems = items.filter((it) => it.quantity > 0 && (it.description || it.product_id));
-        if (!validItems.length) throw new Error('Adicione pelo menos 1 item com quantidade e descrição.');
+        const currentItems = window.CompraItemsAPI ? window.CompraItemsAPI.getItems() : [];
+        if (!currentItems.length) throw new Error('Adicione pelo menos 1 item.');
 
-        const totals = recalcTotals();
+        updateTotalsUI();
+
+        const itemsPayload = currentItems.map((it) => {
+          const qty = Number(it.qty || it.quantity) || 0;
+          const priceCents = parseValueToCents(it.price || it.unit_price);
+          const itemDiscCents = parseValueToCents(it.discount);
+          const totalCents = Math.max(0, (qty * priceCents) - itemDiscCents);
+          
+          return {
+            // AQUI ESTÁ A CORREÇÃO: Envia o ID verdadeiro ou nulo
+            product_id: it.productId || null,
+            description: it.name || 'Item',
+            unit: it.unit || 'un',
+            quantity: qty,
+            unit_price_cents: priceCents,
+            discount_cents: itemDiscCents,
+            total_cents: totalCents
+          };
+        });
+
+        const totalCents = Math.max(0, subtotalCents - discountCents + shippingCents + otherCents);
+        const totals = { subtotal: subtotalCents, disc: discountCents, ship: shippingCents, other: otherCents, total: totalCents };
         const targetStatus = resolveTargetStatus();
-
         const purchaseDate = (val('#cmp-date') || '').trim() || todayISO();
         const expectedDate = (val('#cmp-expected') || '').trim() || null;
         const firstDue     = (val('#cmp-first-due') || '').trim() || null;
@@ -301,16 +424,6 @@
           notes:            (val('#cmp-notes') || '').trim() || null,
           invoice_number:   (val('#cmp-invoice') || '').trim() || null
         };
-
-        const itemsPayload = validItems.map((it) => ({
-          product_id:       it.product_id,
-          description:      it.description || (products.find((p) => p.id === it.product_id) || {}).name || 'Item',
-          unit:             it.unit || 'un',
-          quantity:         it.quantity,
-          unit_price_cents: it.unit_price_cents,
-          discount_cents:   it.discount_cents,
-          total_cents:      it.total_cents
-        }));
 
         if (isEdit) {
           await API.updatePurchase(editId, basePayload);

@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Detalhes da Movimentação · DEV HUB</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  
+  <link rel="stylesheet" href="css/global.css" />
+  <link rel="stylesheet" href="css/theme.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/estoque.css" />
+  
+  <script src="js/theme.js"></script>
+  
+  <style>
+    /* 1. RESET DE SEGURANÇA (Evita que o body empurre a navbar para baixo) */
+    body {
+      margin: 0 !important;
+      padding: 0 !important;
+      background-color: var(--bg);
+      /* Removemos qualquer flex do body para a navbar ficar no topo */
+    }
+
+    .app__body {
+      width: 100% !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+
+    /* 2. ÁREA DE CONTEÚDO (Dá espaço para a navbar e centraliza horizontalmente) */
+    main.content {
+      width: 100% !important;
+      display: flex !important;
+      justify-content: center !important; /* Centraliza na horizontal */
+      padding-top: 100px !important; /* Compensa a altura da navbar fixa */
+      padding-bottom: 60px !important;
+    }
+
+    /* 3. WRAPPER DOS CARDS */
+    .mov-page-wrapper {
+      width: 100% !important;
+      max-width: 1040px !important; /* Largura para os dois cards */
+      padding: 0 24px !important;
+      box-sizing: border-box !important;
+    }
+
+    /* CABEÇALHO DA PÁGINA */
+    .mov-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .mov-header .page-head__eyebrow { margin-bottom: 16px; }
+    .mov-header .page-head__title { font-size: 32px; font-weight: 800; margin: 0 0 8px 0; color: var(--text); letter-spacing: -0.02em; }
+    .mov-header .page-head__sub { font-size: 15px; color: var(--text-muted); margin: 0; }
+
+    /* GRID LADO A LADO DOS CARDS */
+    .mov-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: stretch;
+    }
+
+    @media (max-width: 860px) {
+      .mov-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ESTILO DOS CARDS */
+    .mov-card {
+      display: flex;
+      flex-direction: column;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 28px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+    }
+
+    .mov-card h2 {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text);
+      margin: 0 0 24px 0;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .mov-card h2 svg { color: var(--accent); }
+
+    /* LISTA VERTICAL DE PROPRIEDADES */
+    .mov-props {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin: 0;
+      flex: 1;
+    }
+
+    .mov-prop-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding-bottom: 16px;
+      border-bottom: 1px dashed var(--border);
+    }
+
+    .mov-prop-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .mov-prop-label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    .mov-prop-value { font-size: 14.5px; color: var(--text); font-weight: 500; margin: 0; line-height: 1.4; word-break: break-word; }
+    .mov-prop-value.highlight { font-size: 16px; font-weight: 700; }
+    .mov-reason-box { background: var(--surface-2); padding: 14px; border-radius: 8px; font-size: 13.5px; color: var(--text-soft); line-height: 1.5; border: 1px solid var(--border); margin-top: 4px; }
+
+    /* TABELA DE ORIGEM (COMPRA) */
+    .origem-table-wrap { margin-top: auto; padding-top: 20px; border-top: 1px solid var(--border); }
+    .origem-table-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 12px; }
+    .origem-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .origem-table th { text-align: left; padding: 8px 0; color: var(--text-muted); font-size: 11px; font-weight: 600; text-transform: uppercase; border-bottom: 1px solid var(--border); }
+    .origem-table td { padding: 10px 0; border-bottom: 1px solid var(--border); color: var(--text); font-weight: 500; }
+    .origem-table tr:last-child td { border-bottom: none; }
+    .origem-table th.text-center, .origem-table td.text-center { text-align: center; }
+    .origem-table th.text-right, .origem-table td.text-right { text-align: right; }
+  </style>
+</head>
+<body data-page="estoque">
+  
+  <!-- Container principal que o sistema reconhece -->
+  <div class="app__body">
+    <main class="content">
+      <div class="mov-page-wrapper">
+        
+        <header class="mov-header">
+          <div class="page-head__eyebrow">
+            <a href="estoque.html" style="color:var(--text-muted); text-decoration:none; display:flex; align-items:center; gap:6px; font-weight:600; font-size: 13px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+              Voltar para o estoque
+            </a>
+          </div>
+          <h1 class="page-head__title">Detalhes da Movimentação</h1>
+          <p class="page-head__sub">Rastreabilidade completa de entrada e saída de estoque.</p>
+        </header>
+
+        <div id="loading-msg" class="cmp-loading" style="text-align:center; padding: 40px; color: var(--text-muted);">Carregando informações...</div>
+
+        <div id="mov-content" hidden>
+          <div class="mov-grid">
+            
+            <!-- Card 1 -->
+            <div class="mov-card">
+              <h2>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                Informações do Registro
+              </h2>
+              
+              <dl class="mov-props">
+                <div class="mov-prop-item">
+                  <dt class="mov-prop-label">Produto</dt>
+                  <dd class="mov-prop-value highlight" id="mov-prod-name">—</dd>
+                </div>
+                <div class="mov-prop-item">
+                  <dt class="mov-prop-label">Tipo de Movimentação</dt>
+                  <dd class="mov-prop-value" id="mov-type">—</dd>
+                </div>
+                <div class="mov-prop-item">
+                  <dt class="mov-prop-label">Quantidade</dt>
+                  <dd class="mov-prop-value highlight" id="mov-qty">—</dd>
+                </div>
+                <div class="mov-prop-item">
+                  <dt class="mov-prop-label">Estoque Anterior</dt>
+                  <dd class="mov-prop-value" id="mov-prev">—</dd>
+                </div>
+                <div class="mov-prop-item">
+                  <dt class="mov-prop-label">Estoque Atualizado</dt>
+                  <dd class="mov-prop-value highlight" id="mov-new">—</dd>
+                </div>
+                <div class="mov-prop-item">
+                  <dt class="mov-prop-label">Data / Hora</dt>
+                  <dd class="mov-prop-value" id="mov-date">—</dd>
+                </div>
+                <div class="mov-prop-item">
+                  <dt class="mov-prop-label">Usuário Responsável</dt>
+                  <dd class="mov-prop-value" id="mov-user">—</dd>
+                </div>
+                <div class="mov-prop-item">
+                  <dt class="mov-prop-label">Categoria</dt>
+                  <dd class="mov-prop-value" id="mov-category">—</dd>
+                </div>
+                <div class="mov-prop-item">
+                  <dt class="mov-prop-label">Motivo / Observação</dt>
+                  <dd class="mov-prop-value mov-reason-box" id="mov-reason">—</dd>
+                </div>
+              </dl>
+            </div>
+
+            <!-- Card 2 -->
+            <div class="mov-card">
+              <h2>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                Origem da Operação
+              </h2>
+              
+              <div id="origem-content" style="display:flex; flex-direction:column; flex:1;">
+                <p style="color:var(--text-muted); font-size:13.5px; text-align:center; padding: 20px 0;">Nenhum documento de origem vinculado.</p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- SCRIPTS DE NAVEGAÇÃO GLOBAL -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/nav/config.js"></script>
+  <script src="js/nav/state.js"></script>
+  <script src="js/nav/roles.js"></script>
+  <script src="js/nav/styles.js"></script>
+  <script src="js/nav/permission-modal.js"></script>
+  <script src="js/nav/tabs.js"></script>
+  <script src="js/nav/module-menu.js"></script>
+  <script src="js/nav/notifications.js"></script>
+  <script src="js/nav/user-menu.js"></script>
+  <script src="js/nav/favorites-modal.js"></script>
+  <script src="js/nav/search.js"></script>
+  <script src="js/nav/org-switcher.js"></script>
+  <script src="js/nav/bar.js"></script>
+  <script src="js/nav/favorites.js"></script>
+  <script src="js/nav/main.js"></script>
+  <script src="js/permissions.js"></script>
+
+  <!-- SCRIPT DA PÁGINA -->
+  <script src="js/estoque-movimentacao.js"></script>
+</body>
+</html>

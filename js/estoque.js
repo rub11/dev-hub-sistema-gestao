@@ -9,10 +9,6 @@
     day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
   });
 
-  const currencyFormatter = new Intl.NumberFormat('pt-BR', {
-    style: 'currency', currency: 'BRL'
-  });
-
   const TYPE_INFO = {
     entrada: { label: 'Entrada', modifier: 'badge--success', sign: '+' },
     saida:   { label: 'Saída',   modifier: 'badge--danger',  sign: '-' },
@@ -65,7 +61,6 @@
       try { await window.Perms.load(); } catch (e) { /* fallback */ }
     }
     
-    // CORREÇÃO: Padronizado para 'stock.movement' (singular)
     state.perms.view     = hasPerm('stock.view',     true);
     state.perms.movement = hasPerm('stock.movement', true);
     state.perms.audit    = hasPerm('stock.audit',    false);
@@ -258,6 +253,13 @@
   function buildProductRow(product) {
     const row = document.createElement('tr');
     row.dataset.id = product.id || '';
+    row.style.cursor = 'pointer';
+    
+    // LINHA CLICÁVEL PARA DETALHES DO PRODUTO
+    row.addEventListener('click', function(e) {
+      if (e.target.closest('.dropdown-action-menu') || e.target.closest('.btn-action-menu')) return;
+      window.location.href = 'estoque-produto.html?id=' + product.id;
+    });
 
     const nameCell = document.createElement('td');
     nameCell.className = 'cell-product';
@@ -293,28 +295,58 @@
     return cell;
   }
 
+  // NOVO MENU DE AÇÕES
   function buildActionsCell(product) {
     const cell = document.createElement('td');
     cell.className = 'cell--num';
+    
     const wrap = document.createElement('div');
     wrap.className = 'row-actions';
+    wrap.style.position = 'relative';
 
-    if (state.perms.movement) {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'row-action';
-      btn.setAttribute('aria-label', 'Movimentar estoque de ' + (product.name || ''));
-      btn.title = 'Movimentar estoque';
-      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m17 3 4 4-4 4"/><path d="M21 7H8a4 4 0 0 0-4 4v1"/><path d="m7 21-4-4 4-4"/><path d="M3 17h13a4 4 0 0 0 4-4v-1"/></svg>';
-      btn.addEventListener('click', function () { openMovementModal(product); });
-      wrap.appendChild(btn);
-    } else {
-      const dash = document.createElement('span');
-      dash.className = 'cell--muted';
-      dash.textContent = '—';
-      wrap.appendChild(dash);
+    // Botão de menu (3 pontinhos)
+    const menuBtn = document.createElement('button');
+    menuBtn.type = 'button';
+    menuBtn.className = 'row-action btn-action-menu';
+    menuBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>';
+    
+    // Dropdown
+    const dropdown = document.createElement('div');
+    dropdown.className = 'dropdown-action-menu';
+    dropdown.style.cssText = 'display:none; position:absolute; right:100%; top:0; background:var(--surface); border:1px solid var(--border); border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.2); z-index:50; min-width:160px; padding:4px; margin-right:8px;';
+    
+    dropdown.innerHTML = `
+      <button type="button" class="dropdown-item" onclick="window.location.href='estoque-produto.html?id=${product.id}'">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        Ver detalhes
+      </button>
+      ${state.perms.movement ? `
+      <button type="button" class="dropdown-item btn-movimentar">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m17 3 4 4-4 4"/><path d="M21 7H8a4 4 0 0 0-4 4v1"/><path d="m7 21-4-4 4-4"/><path d="M3 17h13a4 4 0 0 0 4-4v-1"/></svg>
+        Movimentar
+      </button>` : ''}
+    `;
+
+    // Lógica de abrir/fechar
+    menuBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const isOpen = dropdown.style.display === 'block';
+      document.querySelectorAll('.dropdown-action-menu').forEach(el => el.style.display = 'none');
+      dropdown.style.display = isOpen ? 'none' : 'block';
+    });
+
+    // Ação de movimentar
+    const btnMov = dropdown.querySelector('.btn-movimentar');
+    if (btnMov) {
+      btnMov.addEventListener('click', function(e) {
+        e.stopPropagation();
+        dropdown.style.display = 'none';
+        openMovementModal(product);
+      });
     }
 
+    wrap.appendChild(menuBtn);
+    wrap.appendChild(dropdown);
     cell.appendChild(wrap);
     return cell;
   }
@@ -345,7 +377,6 @@
     const category  = state.movementsCategoryFilter;
     const period    = state.movementsPeriodFilter;
     const user      = state.movementsUserFilter;
-
     const range = getMovementPeriodRange(period);
 
     state.movementsFiltered = state.movements.filter(function (m) {
@@ -353,14 +384,12 @@
       if (type && String(m.type || '').toLowerCase() !== type) return false;
       if (category && String(m.category || '').toLowerCase() !== category) return false;
       if (user && String(m.created_by || m.user_id || '') !== user) return false;
-
       if (range) {
         const d = new Date(m.created_at);
         if (!(d >= range.start && d <= range.end)) return false;
       }
       return true;
     });
-
     renderMovements();
   }
 
@@ -395,15 +424,12 @@
     const wrap = document.getElementById('movements-table-wrap');
     if (!tbody || !wrap) return;
 
-    const total = state.movements.length;
-    const filtered = state.movementsFiltered;
-
-    if (total === 0) {
+    if (state.movements.length === 0) {
       wrap.hidden = true;
       showEmpty('movements', 'Nenhuma movimentação registrada.', 'As movimentações de estoque aparecerão aqui.');
       return;
     }
-    if (filtered.length === 0) {
+    if (state.movementsFiltered.length === 0) {
       wrap.hidden = true;
       showEmpty('movements', 'Nenhuma movimentação encontrada.', 'Ajuste os filtros para visualizar outras movimentações.');
       return;
@@ -414,12 +440,19 @@
     tbody.innerHTML = '';
 
     const fragment = document.createDocumentFragment();
-    filtered.forEach(function (m) { fragment.appendChild(buildMovementRow(m)); });
+    state.movementsFiltered.forEach(function (m) { fragment.appendChild(buildMovementRow(m)); });
     tbody.appendChild(fragment);
   }
 
   function buildMovementRow(movement) {
     const row = document.createElement('tr');
+    row.style.cursor = 'pointer';
+    
+    // LINHA CLICÁVEL PARA DETALHES DA MOVIMENTAÇÃO
+    row.addEventListener('click', function() {
+      window.location.href = 'estoque-movimentacao.html?id=' + movement.id;
+    });
+
     row.appendChild(createCell(formatDateTime(movement.created_at), 'cell--muted'));
     row.appendChild(createCell(productName(movement.product_id), ''));
     row.appendChild(buildTypeCell(movement));

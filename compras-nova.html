@@ -20,15 +20,18 @@
 <body data-page="compras-nova">
   <div class="app__body">
     <main class="content">
+      
       <header class="page-head">
-        <div class="page-head__eyebrow"><a href="compras.html" style="color:inherit">← Voltar para compras</a></div>
+        <div class="page-head__eyebrow">
+          <a href="compras.html" style="color:inherit; text-decoration:none;">← Voltar para compras</a>
+        </div>
         <h1 class="page-head__title">Nova compra</h1>
         <p class="page-head__sub">Lançamento de pedido de compra.</p>
       </header>
 
       <form id="cmp-form" class="cmp-form" novalidate>
 
-        <!-- ============== IDENTIFICAÇÃO ============== -->
+        <!-- IDENTIFICAÇÃO -->
         <section class="cmp-section">
           <h2 class="cmp-section__title">Identificação</h2>
           <div class="cmp-grid cmp-grid--3">
@@ -47,105 +50,132 @@
           </div>
         </section>
 
-        <!-- ============== FORNECEDOR ============== -->
-        <section class="cmp-section">
-          <h2 class="cmp-section__title">Fornecedor</h2>
+        <!-- FORNECEDOR -->
+        <section class="cmp-section cmp-section--supplier">
+          <div class="supplier-header">
+            <h2 class="supplier-header__title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16"/><path d="M15 21V9h4a2 2 0 0 1 2 2v10"/></svg>
+              Fornecedor
+            </h2>
+            <p class="supplier-header__sub">Selecione um fornecedor para vincular à operação.</p>
+          </div>
 
-          <!-- AQUI ESTÁ A MUDANÇA: limitando a largura do grid a 450px -->
-          <div class="cmp-grid" style="grid-template-columns: minmax(0, 450px);">
-            <div class="field">
-              <label for="cmp-supplier">Fornecedor</label>
-              <div class="cmp-supplier-row">
-                
-                <!-- O atributo dh-no-custom impede que o script crie um botão falso aqui -->
-                <select id="cmp-supplier" class="dh-no-custom" hidden>
-                  <option value="">— Selecione —</option>
-                </select>
+          <div class="supplier-body">
+            <select id="cmp-supplier" class="dh-no-custom" hidden>
+              <option value="">— Selecione —</option>
+            </select>
 
-                <!-- Botão que abre o modal de busca -->
-                <button type="button" id="open-supplier-picker" class="supplier-picker-trigger">
-                  <div class="supplier-picker-trigger__left">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-                    <span id="supplier-picker-label">— Selecione o fornecedor —</span>
-                  </div>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><path d="m6 9 6 6 6-6"/></svg>
-                </button>
-
-                <!-- Botão apenas com ícone "+" -->
-                <button type="button" class="cmp-btn cmp-btn--ghost cmp-btn--sm" id="cmp-new-supplier" title="Cadastrar novo fornecedor">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
-                    <path d="M12 5v14M5 12h14"/>
-                  </svg>
-                </button>
+            <button type="button" id="open-supplier-picker" class="supplier-picker-trigger">
+              <div class="supplier-picker-trigger__left">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" class="supplier-picker-trigger__icon"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+                <span id="supplier-picker-label">Pesquisar ou selecionar fornecedor...</span>
               </div>
+            </button>
 
-              <!-- NOVO: Card de Detalhes do Fornecedor -->
-              <div class="supplier-summary" id="supplier-summary" hidden>
-                <div class="supplier-summary__row">
-                  <span class="supplier-summary__label">CNPJ / CPF</span>
-                  <span class="supplier-summary__value supplier-summary__value--mono" id="ss-doc">—</span>
-                </div>
-                <div class="supplier-summary__row">
-                  <span class="supplier-summary__label">Telefone</span>
-                  <span class="supplier-summary__value" id="ss-phone">—</span>
-                </div>
-                <div class="supplier-summary__row">
-                  <span class="supplier-summary__label">E-mail</span>
-                  <span class="supplier-summary__value" id="ss-email">—</span>
-                </div>
-                <div class="supplier-summary__row supplier-summary__row--full">
-                  <span class="supplier-summary__label">Endereço</span>
-                  <span class="supplier-summary__value" id="ss-address">—</span>
-                </div>
+            <button type="button" class="btn-add-supplier" id="cmp-new-supplier">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+              <span>Adicionar fornecedor</span>
+            </button>
+
+            <div class="supplier-summary" id="supplier-summary" hidden>
+              <div class="supplier-summary__row">
+                <span class="supplier-summary__label">CNPJ / CPF</span>
+                <span class="supplier-summary__value supplier-summary__value--mono" id="ss-doc">—</span>
               </div>
-
+              <div class="supplier-summary__row">
+                <span class="supplier-summary__label">Telefone</span>
+                <span class="supplier-summary__value" id="ss-phone">—</span>
+              </div>
+              <div class="supplier-summary__row">
+                <span class="supplier-summary__label">E-mail</span>
+                <span class="supplier-summary__value" id="ss-email">—</span>
+              </div>
+              <div class="supplier-summary__row supplier-summary__row--full">
+                <span class="supplier-summary__label">Endereço</span>
+                <span class="supplier-summary__value" id="ss-address">—</span>
+              </div>
             </div>
           </div>
         </section>
 
-        <!-- Itens -->
+        <!-- ITENS -->
         <section class="cmp-section">
-          <h2 class="cmp-section__title">Itens</h2>
-          <div class="cmp-items">
-            <div class="cmp-items__head">
-              <span>Produto / Descrição</span>
-              <span>Qtd</span>
-              <span>Unid.</span>
-              <span>Valor unit.</span>
-              <span>Desconto</span>
-              <span style="text-align:right">Total</span>
-              <span></span>
+          <div class="cmp-items-card">
+            <div class="cmp-items-card__header">
+              <div class="cmp-items-card__title-group">
+                <h3 class="cmp-items-card__title">
+                  Itens da operação
+                  <span class="badge badge--count" id="items-count-badge">0 itens</span>
+                </h3>
+                <p class="cmp-items-card__subtitle">Produtos adicionados</p>
+                <h2 class="cmp-items-card__big-total" id="items-header-total">R$ 0,00</h2>
+              </div>
+              <button type="button" class="btn btn--primary" id="cmp-add-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                Adicionar item
+              </button>
             </div>
-            <div id="cmp-items-body"></div>
-          </div>
-          <div class="cmp-items__add">
-            <button type="button" class="btn" id="cmp-add-item">+ Adicionar item</button>
+
+            <div class="cmp-items-card__list" id="cmp-items-body">
+              <!-- JS injeta os cards aqui -->
+            </div>
+
+            <!-- RESUMO DOS ITENS (REFORMULADO) -->
+            <div class="cmp-items-card__footer" style="padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+              <div class="cmp-items-summary">
+                <div class="cmp-items-summary__item">
+                  <span class="cmp-items-summary__label">Quantidade</span>
+                  <strong class="cmp-items-summary__value" id="items-footer-count">0 itens</strong>
+                </div>
+                <div class="cmp-items-summary__item">
+                  <span class="cmp-items-summary__label">Subtotal</span>
+                  <strong class="cmp-items-summary__value" id="items-footer-subtotal">R$ 0,00</strong>
+                </div>
+                <div class="cmp-items-summary__item">
+                  <span class="cmp-items-summary__label">Frete</span>
+                  <strong class="cmp-items-summary__value" id="items-footer-shipping">Não informado</strong>
+                </div>
+              </div>
+              <div class="cmp-items-grand-total">
+                <span>Total da operação</span>
+                <strong id="items-footer-grand-total">R$ 0,00</strong>
+              </div>
+            </div>
+            
           </div>
         </section>
 
-        <!-- Valores -->
+        <!-- VALORES (REFORMULADO) -->
         <section class="cmp-section">
-          <h2 class="cmp-section__title">Valores</h2>
-          <div class="cmp-grid cmp-grid--3">
-            <div class="field">
-              <label for="cmp-discount">Desconto (R$)</label>
-              <input id="cmp-discount" type="text" placeholder="0,00" />
+          <h2 class="cmp-section__title">Valores da operação</h2>
+          
+          <div class="cmp-values-panel">
+            <div class="cmp-values-row">
+              <span class="cmp-values-label">Subtotal</span>
+              <span class="cmp-values-value" id="cmp-subtotal">R$ 0,00</span>
             </div>
-            <div class="field">
-              <label for="cmp-shipping">Frete (R$)</label>
-              <input id="cmp-shipping" type="text" placeholder="0,00" />
+
+            <div class="cmp-values-row cmp-values-row--action" id="btn-open-shipping">
+              <span class="cmp-values-label">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;margin-right:6px;vertical-align:text-top;"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                Frete
+              </span>
+              <span class="cmp-values-value cmp-values-value--action" id="cmp-shipping-display">Não informado</span>
             </div>
-            <div class="field">
-              <label for="cmp-other">Outros (R$)</label>
-              <input id="cmp-other" type="text" placeholder="0,00" />
+
+            <div class="cmp-values-row cmp-values-row--action" id="btn-open-discount">
+              <span class="cmp-values-label">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;margin-right:6px;vertical-align:text-top;"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                Desconto
+              </span>
+              <span class="cmp-values-value cmp-values-value--action" id="cmp-discount-display">Adicionar desconto</span>
+            </div>
+
+            <div class="cmp-values-row cmp-values-row--grand">
+              <span class="cmp-values-label">Total</span>
+              <span class="cmp-values-value" id="cmp-total">R$ 0,00</span>
             </div>
           </div>
-          <dl class="cmp-totals">
-            <dt>Subtotal</dt><dd id="cmp-subtotal">R$ 0,00</dd>
-            <div class="cmp-totals__grand">
-              <dt>Total</dt><dd id="cmp-total">R$ 0,00</dd>
-            </div>
-          </dl>
         </section>
 
         <!-- Pagamento -->
@@ -208,10 +238,7 @@
               <label class="cmp-save-option">
                 <input type="radio" name="save-mode" value="rascunho" checked />
                 <span class="cmp-save-option__box">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/>
-                    <path d="M17 21v-8H7v8M7 3v5h8"/>
-                  </svg>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
                   <span>Rascunho</span>
                 </span>
               </label>
@@ -219,10 +246,7 @@
               <label class="cmp-save-option">
                 <input type="radio" name="save-mode" value="pendente_recebimento" />
                 <span class="cmp-save-option__box">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="M3 3h2l2.4 12.4a2 2 0 0 0 2 1.6h9.2a2 2 0 0 0 2-1.6L22 7H6"/>
-                    <path d="m13 11 3 3 5-5"/>
-                  </svg>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3h2l2.4 12.4a2 2 0 0 0 2 1.6h9.2a2 2 0 0 0 2-1.6L22 7H6"/><path d="m13 11 3 3 5-5"/></svg>
                   <span>Enviar para recebimento</span>
                 </span>
               </label>
@@ -232,25 +256,20 @@
           <div class="cmp-action-bar__buttons">
             <a href="compras.html" class="cmp-btn cmp-btn--ghost">Cancelar</a>
             <button type="submit" class="cmp-btn cmp-btn--primary cmp-btn--lg" id="cmp-submit">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M5 12l5 5L20 7"/>
-              </svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg>
               <span>Salvar compra</span>
             </button>
           </div>
-
           <input type="hidden" id="cmp-save-mode" value="rascunho" />
         </div>
-
       </form>
     </main>
   </div>
 
-  <!-- ================= MODAL: BUSCAR FORNECEDOR ================= -->
+  <!-- MODAL: BUSCAR FORNECEDOR -->
   <div class="modal" id="supplier-picker-modal" hidden>
     <div class="modal__backdrop" data-close-picker></div>
     <div class="modal__dialog modal__dialog--md" role="dialog" aria-modal="true" aria-labelledby="supplier-picker-title">
-      
       <header class="modal__head">
         <h2 class="modal__title" id="supplier-picker-title">Buscar Fornecedor</h2>
         <button type="button" class="icon-btn modal__close" aria-label="Fechar" data-close-picker>
@@ -258,25 +277,19 @@
         </button>
       </header>
 
-      <!-- VIEW 1: BUSCA -->
       <div class="modal__body" id="supplier-view-search" style="padding-top: 10px;">
         <div class="supplier-search-box">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
           <input type="text" id="supplier-search-input" placeholder="Pesquisar por nome ou CNPJ..." autocomplete="off" />
         </div>
-        <div class="supplier-list" id="supplier-list">
-          <!-- Injetado via JS -->
-        </div>
+        <div class="supplier-list" id="supplier-list"></div>
       </div>
 
-      <!-- VIEW 2: DETALHES -->
       <div class="modal__body" id="supplier-view-details" hidden>
         <div class="supplier-details">
           <div class="supplier-details__header">
             <div class="supplier-details__avatar" id="sd-avatar">A</div>
-            <div>
-              <h3 class="supplier-details__name" id="sd-name">Nome do Fornecedor</h3>
-            </div>
+            <div><h3 class="supplier-details__name" id="sd-name">Nome do Fornecedor</h3></div>
           </div>
           <div class="supplier-details__grid">
             <div class="supplier-details__item">
@@ -299,10 +312,7 @@
         </div>
       </div>
 
-      <!-- FOOTER DINÂMICO -->
       <footer class="modal__foot" id="supplier-picker-footer" style="justify-content: space-between;">
-        
-        <!-- Botões da Tela de Busca -->
         <div id="footer-search" style="display: contents;">
           <p style="margin:0; font-size:12.5px; color:var(--text-muted)">Não achou quem procurava?</p>
           <button type="button" class="btn btn--primary" id="supplier-picker-new-btn">
@@ -311,23 +321,18 @@
           </button>
         </div>
 
-        <!-- Botões da Tela de Detalhes -->
         <div id="footer-details" style="display: none; width: 100%; justify-content: space-between;">
-          <button type="button" class="btn btn--ghost" id="supplier-picker-back-btn">
-            ← Voltar
-          </button>
+          <button type="button" class="btn btn--ghost" id="supplier-picker-back-btn">← Voltar</button>
           <button type="button" class="btn btn--primary" id="supplier-picker-confirm-btn">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><path d="M20 6 9 17l-5-5"/></svg>
             <span>Adicionar Fornecedor</span>
           </button>
         </div>
-
       </footer>
-
     </div>
   </div>
 
-  <!-- MODAL DE CADASTRO DE FORNECEDOR (Puxa CNPJ) -->
+  <!-- MODAL DE CADASTRO DE FORNECEDOR -->
   <div class="cmp-modal" id="supplier-modal" hidden>
     <div class="cmp-modal__backdrop" data-close></div>
     <div class="cmp-modal__dialog cmp-modal__dialog--lg">
@@ -346,16 +351,11 @@
           </div>
           <button type="button" class="cmp-btn cmp-btn--primary cmp-cnpj__btn" id="sup-cnpj-search" title="Buscar dados do CNPJ automaticamente">
             <span class="cmp-cnpj__spinner" aria-hidden="true"></span>
-            <svg class="cmp-cnpj__icon-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>
-            </svg>
+            <svg class="cmp-cnpj__icon-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
             <span>Buscar dados</span>
           </button>
         </div>
-
-        <p class="cmp-cnpj__hint" id="sup-cnpj-hint">
-          Digite o CNPJ e clique em <strong>Buscar dados</strong> para preencher automaticamente.
-        </p>
+        <p class="cmp-cnpj__hint" id="sup-cnpj-hint">Digite o CNPJ e clique em <strong>Buscar dados</strong> para preencher automaticamente.</p>
 
         <div class="cmp-grid cmp-grid--2">
           <div class="field" style="grid-column: 1 / -1">
@@ -383,7 +383,6 @@
             <input id="sup-address" type="text" placeholder="Rua, número, bairro, cidade/UF, CEP" />
           </div>
         </div>
-
         <div class="cmp-error" id="sup-error" hidden></div>
       </div>
 
@@ -393,6 +392,306 @@
           <span class="cmp-cnpj__spinner" aria-hidden="true"></span>
           <span>Salvar fornecedor</span>
         </button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- MODAL: ITEM DA COMPRA -->
+  <div class="cmp-modal" id="item-modal" hidden>
+    <div class="cmp-modal__backdrop" data-close-item></div>
+    <div class="cmp-modal__dialog cmp-modal__dialog--md">
+      <header class="cmp-modal__head">
+        <div>
+          <h3 class="cmp-modal__title" id="item-modal-title">Adicionar novo item</h3>
+          <p style="margin:4px 0 0; font-size:12.5px; color:var(--text-muted);">Defina as informações do produto para a operação.</p>
+        </div>
+        <button type="button" class="cmp-modal__close" aria-label="Fechar" data-close-item>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </header>
+
+      <form id="item-form" class="cmp-modal__body" novalidate>
+        <input type="hidden" id="item-index" value="" />
+
+        <div class="item-modal__toggle">
+          <label class="item-modal__toggle-opt">
+            <input type="radio" name="item-type-radio" value="produto" checked>
+            <span>Produto</span>
+          </label>
+          <label class="item-modal__toggle-opt">
+            <input type="radio" name="item-type-radio" value="avulso">
+            <span>Item avulso</span>
+          </label>
+        </div>
+
+        <div class="item-modal__block">
+          <span class="item-modal__block-title">INFORMAÇÕES DO PRODUTO</span>
+          
+          <div class="field item-modal__search-field" id="wrapper-product-search">
+            <label for="item-product-search">Produto / Descrição *</label>
+            <div class="item-modal__search-wrap">
+              <svg class="item-modal__search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              <input type="text" id="item-product-search" placeholder="Pesquisar produto ou digitar descrição..." autocomplete="off" />
+              <div class="item-modal__search-dropdown" id="product-dropdown" hidden></div>
+            </div>
+            <p class="item-modal__hint">Você pode selecionar um produto cadastrado ou inserir um item avulso.</p>
+          </div>
+
+          <div class="field" id="wrapper-product-input" hidden>
+            <label for="item-product">Descrição *</label>
+            <input type="text" id="item-product" placeholder="Ex: Caneta Esferográfica Azul" autocomplete="off" />
+          </div>
+
+          <div class="cmp-grid cmp-grid--2" style="margin-top: 16px;">
+            <div class="field">
+              <label for="item-qty">Quantidade *</label>
+              <input type="number" id="item-qty" min="1" max="999999" step="1" required value="1" inputmode="numeric" maxlength="10" />
+            </div>
+            <div class="field">
+              <label for="item-unit">Unidade de Medida</label>
+              <select id="item-unit" class="control-select">
+                <optgroup label="Unidade e Embalagem">
+                  <option value="UN" selected>UN - Unidade</option>
+                  <option value="PC">PC - Peça</option>
+                  <option value="PÇ">PÇ - Peça</option>
+                  <option value="PAR">PAR - Par</option>
+                  <option value="DZ">DZ - Dúzia</option>
+                  <option value="DZA">DZA - Dúzia</option>
+                  <option value="CENT">CENT - Centena</option>
+                  <option value="MIL">MIL - Milheiro</option>
+                  <option value="KIT">KIT - Kit</option>
+                  <option value="CJ">CJ - Conjunto</option>
+                  <option value="JG">JG - Jogo</option>
+                  <option value="FD">FD - Fardo</option>
+                  <option value="CX">CX - Caixa</option>
+                  <option value="CT">CT - Cartela</option>
+                  <option value="BL">BL - Bloco</option>
+                  <option value="ENV">ENV - Envelope</option>
+                  <option value="PAC">PAC - Pacote</option>
+                  <option value="PT">PT - Pote</option>
+                  <option value="VD">VD - Vidro</option>
+                  <option value="FR">FR - Frasco</option>
+                  <option value="TB">TB - Tubo</option>
+                  <option value="RL">RL - Rolo</option>
+                  <option value="SC">SC - Saco</option>
+                  <option value="BD">BD - Balde</option>
+                  <option value="GL">GL - Galão</option>
+                  <option value="LT">LT - Lata</option>
+                  <option value="BJA">BJA - Bandeja</option>
+                  <option value="AMP">AMP - Ampola</option>
+                  <option value="BIS">BIS - Bisnaga</option>
+                </optgroup>
+                <optgroup label="Comprimento e Distância">
+                  <option value="MM">MM - Milímetro</option>
+                  <option value="CM">CM - Centímetro</option>
+                  <option value="M">M - Metro</option>
+                  <option value="KM">KM - Quilômetro</option>
+                  <option value="POL">POL - Polegada</option>
+                  <option value="FT">FT - Pé</option>
+                  <option value="JAR">JAR - Jarda</option>
+                </optgroup>
+                <optgroup label="Peso e Massa">
+                  <option value="MG">MG - Miligrama</option>
+                  <option value="G">G - Grama</option>
+                  <option value="KG">KG - Quilograma</option>
+                  <option value="T">T - Tonelada</option>
+                  <option value="TON">TON - Tonelada</option>
+                  <option value="LB">LB - Libra</option>
+                  <option value="OZ">OZ - Onça</option>
+                </optgroup>
+                <optgroup label="Volume e Capacidade">
+                  <option value="ML">ML - Mililitro</option>
+                  <option value="L">L - Litro</option>
+                  <option value="M³">M³ - Metro cúbico</option>
+                  <option value="CM³">CM³ - Centímetro cúbico</option>
+                  <option value="MM³">MM³ - Milímetro cúbico</option>
+                  <option value="GAL">GAL - Galão</option>
+                  <option value="FL OZ">FL OZ - Onça fluida</option>
+                </optgroup>
+                <optgroup label="Área e Superfície">
+                  <option value="MM²">MM² - Milímetro quadrado</option>
+                  <option value="CM²">CM² - Centímetro quadrado</option>
+                  <option value="M²">M² - Metro quadrado</option>
+                  <option value="KM²">KM² - Quilômetro quadrado</option>
+                  <option value="HA">HA - Hectare</option>
+                  <option value="A">A - Are</option>
+                </optgroup>
+                <optgroup label="Comercialização">
+                  <option value="FDO">FDO - Fardo</option>
+                  <option value="CXP">CXP - Caixa pequena</option>
+                  <option value="CXR">CXR - Caixa grande</option>
+                  <option value="PCT">PCT - Pacote</option>
+                  <option value="STR">STR - Strip</option>
+                  <option value="ROL">ROL - Rolo</option>
+                  <option value="BOB">BOB - Bobina</option>
+                  <option value="ENG">ENG - Engradado</option>
+                  <option value="PAL">PAL - Palete</option>
+                  <option value="SKD">SKD - Skid</option>
+                  <option value="SAC">SAC - Sacaria</option>
+                </optgroup>
+                <optgroup label="Tempo e Serviços">
+                  <option value="SEG">SEG - Segundo</option>
+                  <option value="MIN">MIN - Minuto</option>
+                  <option value="H">H - Hora</option>
+                  <option value="DIA">DIA - Dia</option>
+                  <option value="SEM">SEM - Semana</option>
+                  <option value="MES">MES - Mês</option>
+                  <option value="ANO">ANO - Ano</option>
+                  <option value="SRV">SRV - Serviço</option>
+                  <option value="H/H">H/H - Homem-hora</option>
+                </optgroup>
+                <optgroup label="Elétrica e Técnica">
+                  <option value="W">W - Watt</option>
+                  <option value="KW">KW - Quilowatt</option>
+                  <option value="V">V - Volt</option>
+                  <option value="A">A - Ampere</option>
+                  <option value="KW/H">KW/H - Quilowatt-hora</option>
+                  <option value="UNID">UNID - Unidade técnica</option>
+                </optgroup>
+              </select>
+            </div>
+          </div>
+
+          <div class="cmp-grid cmp-grid--2" style="margin-top: 16px;">
+            <div class="field">
+              <label for="item-price">Valor unitário (R$) *</label>
+              <input type="text" id="item-price" required placeholder="0,00" inputmode="decimal" maxlength="18" />
+            </div>
+            <div class="field">
+              <label for="item-discount">Desconto</label>
+              <div class="item-modal__discount-group">
+                <div class="item-modal__toggle-type">
+                  <input type="radio" name="discount-type" id="disc-r" value="R$" checked>
+                  <label for="disc-r">R$</label>
+                  <input type="radio" name="discount-type" id="disc-p" value="%">
+                  <label for="disc-p">%</label>
+                </div>
+                <input type="text" id="item-discount" placeholder="0,00" inputmode="decimal" maxlength="18" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="item-modal__total">
+          <div>
+            <span class="item-modal__total-label">TOTAL DO ITEM</span>
+            <strong id="item-total-preview">R$ 0,00</strong>
+            <span class="item-modal__total-hint">Calculado automaticamente.</span>
+          </div>
+        </div>
+
+        <p id="item-feedback" class="feedback feedback--error" role="alert" aria-live="polite" hidden></p>
+      </form>
+
+      <footer class="cmp-modal__foot">
+        <button type="button" class="cmp-btn cmp-btn--ghost" data-close-item>Cancelar</button>
+        <button type="submit" form="item-form" class="cmp-btn cmp-btn--primary" id="item-save-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+          <span class="btn__label">Salvar item</span>
+        </button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- MODAL: CONFIGURAR FRETE -->
+  <div class="cmp-modal" id="shipping-modal" hidden>
+    <div class="cmp-modal__backdrop" data-close-shipping></div>
+    <div class="cmp-modal__dialog cmp-modal__dialog--md">
+      <header class="cmp-modal__head">
+        <div>
+          <h3 class="cmp-modal__title">Configurar Frete</h3>
+          <p style="margin:4px 0 0; font-size:12.5px; color:var(--text-muted);">Defina as condições do frete para esta operação.</p>
+        </div>
+        <button type="button" class="cmp-modal__close" aria-label="Fechar" data-close-shipping>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </header>
+
+      <div class="cmp-modal__body">
+        <div class="cmp-radio-group">
+          <label class="cmp-radio-card">
+            <input type="radio" name="shipping-type" value="none" checked>
+            <div class="cmp-radio-card__content">
+              <strong>Não informado</strong>
+              <span>O frete não será contabilizado na operação</span>
+            </div>
+          </label>
+
+          <label class="cmp-radio-card">
+            <input type="radio" name="shipping-type" value="free">
+            <div class="cmp-radio-card__content">
+              <strong>Frete Grátis</strong>
+              <span>O valor do frete será R$ 0,00</span>
+            </div>
+          </label>
+          
+          <label class="cmp-radio-card">
+            <input type="radio" name="shipping-type" value="paid">
+            <div class="cmp-radio-card__content">
+              <strong>Frete Pago</strong>
+              <span>Informar o valor cobrado pelo fornecedor</span>
+            </div>
+          </label>
+        </div>
+
+        <div class="field" id="shipping-value-wrapper" hidden style="margin-top: 16px;">
+          <label for="shipping-input">Valor do Frete (R$)</label>
+          <input type="text" id="shipping-input" placeholder="0,00" inputmode="decimal" maxlength="20" />
+        </div>
+      </div>
+
+      <footer class="cmp-modal__foot">
+        <button type="button" class="cmp-btn cmp-btn--ghost" data-close-shipping>Cancelar</button>
+        <button type="button" class="cmp-btn cmp-btn--primary" id="btn-apply-shipping">Aplicar Frete</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- MODAL: CONFIGURAR DESCONTO -->
+  <div class="cmp-modal" id="discount-modal" hidden>
+    <div class="cmp-modal__backdrop" data-close-discount></div>
+    <div class="cmp-modal__dialog cmp-modal__dialog--md">
+      <header class="cmp-modal__head">
+        <div>
+          <h3 class="cmp-modal__title">Adicionar Desconto</h3>
+          <p style="margin:4px 0 0; font-size:12.5px; color:var(--text-muted);">Aplique um desconto global na operação.</p>
+        </div>
+        <button type="button" class="cmp-modal__close" aria-label="Fechar" data-close-discount>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </header>
+
+      <div class="cmp-modal__body">
+        <div class="cmp-discount-summary">
+          <div class="cmp-discount-summary__row">
+            <span>Subtotal</span>
+            <span id="disc-modal-subtotal">R$ 0,00</span>
+          </div>
+          <div class="cmp-discount-summary__row" style="color: var(--danger);">
+            <span>Desconto aplicado</span>
+            <span id="disc-modal-discount">- R$ 0,00</span>
+          </div>
+          <div class="cmp-discount-summary__row cmp-discount-summary__row--total">
+            <span>Total</span>
+            <span id="disc-modal-total">R$ 0,00</span>
+          </div>
+        </div>
+
+        <div class="field" style="margin-top: 16px;">
+          <label for="discount-input">Valor do Desconto (R$)</label>
+          <input type="text" id="discount-input" placeholder="0,00" inputmode="decimal" maxlength="20" />
+        </div>
+      </div>
+
+      <footer class="cmp-modal__foot" style="justify-content: space-between;">
+        <button type="button" class="cmp-btn cmp-btn--ghost" id="btn-remove-discount" style="color: var(--danger); border-color: transparent; display: none;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          Remover desconto
+        </button>
+        <div style="display: flex; gap: 10px; margin-left: auto;">
+          <button type="button" class="cmp-btn cmp-btn--ghost" data-close-discount>Cancelar</button>
+          <button type="button" class="cmp-btn cmp-btn--primary" id="btn-apply-discount">Aplicar Desconto</button>
+        </div>
       </footer>
     </div>
   </div>
@@ -419,12 +718,12 @@
   
   <script src="js/custom-select.js"></script>
 
-  <!-- compras — ordem importa! -->
   <script src="js/compras/state.js"></script>
   <script src="js/compras/api.js"></script>
   <script src="js/compras/supplier-modal.js"></script>
   <script src="js/compras/supplier-picker.js"></script>
   <script src="js/compras/list.js"></script>
+  <script src="js/compras/items-modal.js"></script>
   <script src="js/compras/nova.js"></script>
   <script src="js/compras/receber.js"></script>
   <script src="js/compras/fornecedores.js"></script>

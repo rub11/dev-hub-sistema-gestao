@@ -1,11 +1,5 @@
 /* =========================================================
-   DEV HUB · Nova Compra · CSS dedicado (Padronizado Laranja)
-   ---------------------------------------------------------
-   CORREÇÕES APLICADAS:
-   1. Bloco `.cmp-cnpj` unificado (estava duplicado 3 vezes).
-   2. Força centralização com alta especificidade.
-   3. Corrige chevron dos selects.
-   4. Todos os estilos do formulário em um único arquivo.
+   DEV HUB · Nova Compra · CSS dedicado
    ========================================================= */
 
 /* =========================================================
@@ -31,19 +25,13 @@ body[data-page="compras-nova"] main.content > * {
 
 /* Responsivo */
 @media (max-width: 1200px) {
-  body[data-page="compras-nova"] .content {
-    padding: 32px 32px 48px !important;
-  }
+  body[data-page="compras-nova"] .content { padding: 32px 32px 48px !important; }
 }
 @media (max-width: 768px) {
-  body[data-page="compras-nova"] .content {
-    padding: 24px 20px 40px !important;
-  }
+  body[data-page="compras-nova"] .content { padding: 24px 20px 40px !important; }
 }
 @media (max-width: 480px) {
-  body[data-page="compras-nova"] .content {
-    padding: 20px 16px 32px !important;
-  }
+  body[data-page="compras-nova"] .content { padding: 20px 16px 32px !important; }
 }
 
 /* Wrapper principal */
@@ -56,7 +44,7 @@ body[data-page="compras-nova"] .cmp-form {
 }
 
 /* =========================================================
-   2) FIX DO CHEVRON — selects com um único ícone à direita
+   2) FIX DO CHEVRON E ESTILO DO SELECT
    ========================================================= */
 body[data-page="compras-nova"] select {
   appearance: none !important;
@@ -75,38 +63,47 @@ body[data-page="compras-nova"] select {
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a8b0ba' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>") !important;
 }
 
-/* =========================================================
-   3) HEADER DA PÁGINA
-   ========================================================= */
-body[data-page="compras-nova"] .cmp-page-head {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-bottom: 8px;
+/* Estilo para os agrupadores de unidade */
+body[data-page="compras-nova"] select optgroup {
+  font-weight: 700;
+  color: var(--text-muted);
+  background-color: var(--surface-2);
+  font-size: 13px;
+}
+body[data-page="compras-nova"] select optgroup option {
+  font-weight: 500;
+  color: var(--text);
+  background-color: var(--surface);
+  padding: 8px;
 }
 
-body[data-page="compras-nova"] .cmp-page-head__eyebrow {
+/* =========================================================
+   3) HEADER DA PÁGINA (CENTRALIZADO)
+   ========================================================= */
+body[data-page="compras-nova"] .page-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+body[data-page="compras-nova"] .page-head__eyebrow {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-size: 11.5px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  font-size: 12px;
+  font-weight: 600;
   color: var(--text-muted);
   text-decoration: none;
-  width: fit-content;
   transition: color 160ms ease;
 }
-body[data-page="compras-nova"] .cmp-page-head__eyebrow:hover {
-  color: var(--text-soft);
-}
-body[data-page="compras-nova"] .cmp-page-head__eyebrow svg {
-  width: 14px;
-  height: 14px;
+body[data-page="compras-nova"] .page-head__eyebrow:hover {
+  color: var(--text);
 }
 
-body[data-page="compras-nova"] .cmp-page-head__title {
+body[data-page="compras-nova"] .page-head__title {
   margin: 0;
   font-size: 32px;
   line-height: 1.1;
@@ -115,7 +112,7 @@ body[data-page="compras-nova"] .cmp-page-head__title {
   color: var(--text);
 }
 
-body[data-page="compras-nova"] .cmp-page-head__sub {
+body[data-page="compras-nova"] .page-head__sub {
   margin: 0;
   font-size: 15px;
   line-height: 1.55;
@@ -123,7 +120,7 @@ body[data-page="compras-nova"] .cmp-page-head__sub {
 }
 
 /* =========================================================
-   4) BOTÕES (usados no form)
+   4) BOTÕES
    ========================================================= */
 body[data-page="compras-nova"] .cmp-btn {
   display: inline-flex;
@@ -176,7 +173,7 @@ body[data-page="compras-nova"] .cmp-btn--primary:hover {
 }
 
 /* =========================================================
-   5) SEÇÕES (.cmp-section)
+   5) SEÇÕES
    ========================================================= */
 body[data-page="compras-nova"] .cmp-section {
   padding: 28px 30px;
@@ -194,22 +191,192 @@ body[data-page="compras-nova"] .cmp-section__title {
   font-weight: 700;
   letter-spacing: -0.01em;
   color: var(--text);
-  padding-left: 12px;
-  border-left: 3px solid var(--accent);
+  padding-left: 0;
   line-height: 1.3;
 }
 
 @media (max-width: 720px) {
-  body[data-page="compras-nova"] .cmp-section {
-    padding: 22px 18px;
-  }
-  body[data-page="compras-nova"] .cmp-section__title {
-    margin-bottom: 20px;
-  }
+  body[data-page="compras-nova"] .cmp-section { padding: 22px 18px; }
+  body[data-page="compras-nova"] .cmp-section__title { margin-bottom: 20px; }
 }
 
 /* =========================================================
-   6) GRIDS
+   5.1) SEÇÃO DE FORNECEDOR
+   ========================================================= */
+body[data-page="compras-nova"] .cmp-section--supplier {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  align-items: center;
+  text-align: center;
+}
+
+body[data-page="compras-nova"] .supplier-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+  width: 100%;
+}
+
+body[data-page="compras-nova"] .supplier-header__title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+body[data-page="compras-nova"] .supplier-header__title svg {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  color: var(--text-soft);
+}
+
+body[data-page="compras-nova"] .supplier-header__sub {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+body[data-page="compras-nova"] .supplier-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 500px;
+}
+
+body[data-page="compras-nova"] .supplier-picker-trigger {
+  width: 100%;
+  height: 44px;
+  background-color: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text);
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+  font-family: inherit;
+}
+
+body[data-page="compras-nova"] .supplier-picker-trigger:hover {
+  border-color: var(--border-strong);
+}
+
+body[data-page="compras-nova"] .supplier-picker-trigger:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-ring);
+}
+
+body[data-page="compras-nova"] .supplier-picker-trigger__left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-muted);
+  flex: none;
+}
+
+body[data-page="compras-nova"] .supplier-picker-trigger__icon {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+
+body[data-page="compras-nova"] .supplier-picker-trigger__left span {
+  color: var(--text);
+  font-weight: 500;
+  font-size: 14.5px;
+}
+
+body[data-page="compras-nova"] .btn-add-supplier {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 44px;
+  background-color: transparent;
+  border: 1px dashed var(--border-strong);
+  border-radius: 10px;
+  color: var(--text-soft);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  width: 100%;
+}
+
+body[data-page="compras-nova"] .btn-add-supplier:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background-color: var(--accent-soft);
+}
+
+body[data-page="compras-nova"] .btn-add-supplier svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+
+/* Card de Resumo do Fornecedor */
+body[data-page="compras-nova"] .supplier-summary {
+  margin-top: 4px;
+  background-color: var(--surface-2);
+  border: 1px dashed var(--border-strong);
+  border-radius: 10px;
+  padding: 16px 20px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 24px;
+  font-size: 13px;
+  text-align: left;
+  width: 100%;
+}
+
+body[data-page="compras-nova"] .supplier-summary[hidden] { display: none !important; }
+
+body[data-page="compras-nova"] .supplier-summary__row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+body[data-page="compras-nova"] .supplier-summary__row--full {
+  grid-column: 1 / -1;
+}
+
+body[data-page="compras-nova"] .supplier-summary__label {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+body[data-page="compras-nova"] .supplier-summary__value {
+  color: var(--text);
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+body[data-page="compras-nova"] .supplier-summary__value--mono {
+  font-family: ui-monospace, monospace;
+}
+
+@media (max-width: 640px) {
+  body[data-page="compras-nova"] .supplier-summary { grid-template-columns: 1fr; }
+}
+
+/* =========================================================
+   6) GRIDS E CAMPOS
    ========================================================= */
 body[data-page="compras-nova"] .cmp-grid {
   display: grid;
@@ -217,37 +384,21 @@ body[data-page="compras-nova"] .cmp-grid {
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   width: 100%;
 }
-body[data-page="compras-nova"] .cmp-grid--2 {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-body[data-page="compras-nova"] .cmp-grid--3 {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-body[data-page="compras-nova"] .cmp-grid--4 {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-body[data-page="compras-nova"] .cmp-grid .field {
-  margin: 0;
-  min-width: 0;
-}
+body[data-page="compras-nova"] .cmp-grid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+body[data-page="compras-nova"] .cmp-grid--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+body[data-page="compras-nova"] .cmp-grid--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+body[data-page="compras-nova"] .cmp-grid .field { margin: 0; min-width: 0; }
 
 @media (max-width: 900px) {
   body[data-page="compras-nova"] .cmp-grid--3,
-  body[data-page="compras-nova"] .cmp-grid--4 {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+  body[data-page="compras-nova"] .cmp-grid--4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 640px) {
   body[data-page="compras-nova"] .cmp-grid--2,
   body[data-page="compras-nova"] .cmp-grid--3,
-  body[data-page="compras-nova"] .cmp-grid--4 {
-    grid-template-columns: 1fr;
-  }
+  body[data-page="compras-nova"] .cmp-grid--4 { grid-template-columns: 1fr; }
 }
 
-/* =========================================================
-   7) CAMPOS
-   ========================================================= */
 body[data-page="compras-nova"] .field {
   display: flex;
   flex-direction: column;
@@ -281,15 +432,11 @@ body[data-page="compras-nova"] .field textarea {
 }
 
 body[data-page="compras-nova"] .field input::placeholder,
-body[data-page="compras-nova"] .field textarea::placeholder {
-  color: var(--text-muted);
-}
+body[data-page="compras-nova"] .field textarea::placeholder { color: var(--text-muted); }
 
 body[data-page="compras-nova"] .field input:hover,
 body[data-page="compras-nova"] .field select:hover,
-body[data-page="compras-nova"] .field textarea:hover {
-  border-color: var(--border-strong);
-}
+body[data-page="compras-nova"] .field textarea:hover { border-color: var(--border-strong); }
 
 body[data-page="compras-nova"] .field input:focus,
 body[data-page="compras-nova"] .field select:focus,
@@ -305,7 +452,6 @@ body[data-page="compras-nova"] .field textarea {
   line-height: 1.55;
 }
 
-/* input readonly (código) */
 body[data-page="compras-nova"] .field input[readonly] {
   background-color: var(--surface-2);
   color: var(--text-soft);
@@ -313,290 +459,191 @@ body[data-page="compras-nova"] .field input[readonly] {
 }
 
 /* =========================================================
-   8) ITENS DA COMPRA
+   7) PAINEL DE VALORES (REFORMULADO)
    ========================================================= */
-body[data-page="compras-nova"] .cmp-items {
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  overflow: hidden;
-  background: var(--surface);
-  width: 100%;
-  box-sizing: border-box;
-}
-
-body[data-page="compras-nova"] .cmp-items__head,
-body[data-page="compras-nova"] .cmp-items__row {
-  display: grid;
-  grid-template-columns:
-    minmax(200px, 2fr)
-    100px
-    80px
-    120px
-    110px
-    130px
-    48px;
-  gap: 10px;
-  align-items: center;
-  padding: 12px 18px;
-}
-
-body[data-page="compras-nova"] .cmp-items__head {
-  background: var(--surface-2);
-  border-bottom: 1px solid var(--border);
-  font-size: 11.5px;
-  font-weight: 600;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-
-body[data-page="compras-nova"] .cmp-items__row {
-  border-bottom: 1px solid var(--border);
-}
-body[data-page="compras-nova"] .cmp-items__row:last-child {
-  border-bottom: 0;
-}
-
-body[data-page="compras-nova"] .cmp-items__row input,
-body[data-page="compras-nova"] .cmp-items__row select {
-  width: 100%;
-  height: 38px;
-  padding: 0 10px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background-color: var(--surface);
-  color: var(--text);
-  font-size: 13.5px;
-  font-family: inherit;
-  box-sizing: border-box;
-  transition: border-color 160ms ease, box-shadow 160ms ease;
-}
-
-body[data-page="compras-nova"] .cmp-items__row select {
-  padding-right: 32px !important;
-  background-position: right 10px center !important;
-  background-size: 14px 14px !important;
-}
-
-body[data-page="compras-nova"] .cmp-items__row input:focus,
-body[data-page="compras-nova"] .cmp-items__row select:focus {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-ring);
-}
-
-body[data-page="compras-nova"] .cmp-items__row input[type="number"] {
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-
-body[data-page="compras-nova"] .cmp-items__total {
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-  font-weight: 600;
-  color: var(--text);
-  font-size: 13.5px;
-  white-space: nowrap;
-}
-
-body[data-page="compras-nova"] .cmp-items__remove {
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: background-color 140ms ease, color 140ms ease;
-}
-body[data-page="compras-nova"] .cmp-items__remove:hover {
-  background: var(--danger-soft);
-  color: var(--danger);
-}
-body[data-page="compras-nova"] .cmp-items__remove svg {
-  width: 14px;
-  height: 14px;
-}
-
-body[data-page="compras-nova"] .cmp-items__add {
+body[data-page="compras-nova"] .cmp-values-panel {
   display: flex;
-  justify-content: flex-start;
-  margin-top: 14px;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
 }
 
-/* Scroll horizontal em telas médias */
-@media (max-width: 1100px) {
-  body[data-page="compras-nova"] .cmp-items {
-    overflow-x: auto;
-  }
-  body[data-page="compras-nova"] .cmp-items__head,
-  body[data-page="compras-nova"] .cmp-items__row {
-    min-width: 800px;
-  }
-}
-
-/* Mobile: cards verticais */
-@media (max-width: 720px) {
-  body[data-page="compras-nova"] .cmp-items {
-    border: 0;
-    background: transparent;
-    overflow: visible;
-  }
-  body[data-page="compras-nova"] .cmp-items__head {
-    display: none;
-  }
-  body[data-page="compras-nova"] .cmp-items__row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    padding: 18px;
-    margin-bottom: 12px;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    background: var(--surface);
-    min-width: 0 !important;
-  }
-  body[data-page="compras-nova"] .cmp-items__row:last-child {
-    margin-bottom: 0;
-  }
-  body[data-page="compras-nova"] .cmp-items__row > *:nth-child(1) {
-    grid-column: 1 / -1;
-  }
-  body[data-page="compras-nova"] .cmp-items__row > *:nth-child(6) {
-    grid-column: 1 / -1;
-    text-align: left;
-  }
-  body[data-page="compras-nova"] .cmp-items__row > *:nth-child(7) {
-    grid-column: 1 / -1;
-    justify-self: start;
-  }
-  body[data-page="compras-nova"] .cmp-items__total {
-    text-align: left;
-    font-size: 14.5px;
-  }
-}
-
-/* =========================================================
-   9) TOTAIS
-   ========================================================= */
-body[data-page="compras-nova"] .cmp-totals {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 10px 24px;
-  max-width: 440px;
-  margin-left: auto;
-  margin-top: 20px;
+body[data-page="compras-nova"] .cmp-values-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
   font-size: 14.5px;
-  width: 100%;
 }
 
-body[data-page="compras-nova"] .cmp-totals dt {
+body[data-page="compras-nova"] .cmp-values-row:last-child {
+  border-bottom: none;
+}
+
+body[data-page="compras-nova"] .cmp-values-label {
   color: var(--text-soft);
   font-weight: 500;
-  padding: 3px 0;
-}
-body[data-page="compras-nova"] .cmp-totals dd {
-  margin: 0;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-  color: var(--text);
-  font-weight: 500;
-  padding: 3px 0;
-}
-
-body[data-page="compras-nova"] .cmp-totals__grand {
-  grid-column: 1 / -1;
-  display: contents;
-}
-body[data-page="compras-nova"] .cmp-totals__grand dt {
-  margin-top: 10px;
-  padding-top: 14px;
-  border-top: 1px solid var(--border);
-  font-weight: 700;
-  color: var(--text);
-  font-size: 15px;
-}
-body[data-page="compras-nova"] .cmp-totals__grand dd {
-  margin-top: 10px;
-  padding-top: 14px;
-  border-top: 1px solid var(--border);
-  font-weight: 700;
-  color: var(--text);
-  font-size: 19px;
-  letter-spacing: -0.015em;
-}
-
-/* =========================================================
-   10) AÇÕES DO FORMULÁRIO
-   ========================================================= */
-body[data-page="compras-nova"] .cmp-form__actions {
   display: flex;
-  justify-content: flex-end;
   align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  padding-top: 8px;
 }
 
-body[data-page="compras-nova"] .cmp-form__actions .control-select {
-  height: 42px;
-  min-width: 260px;
+body[data-page="compras-nova"] .cmp-values-value {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--text);
 }
 
-@media (max-width: 640px) {
-  body[data-page="compras-nova"] .cmp-form__actions {
-    flex-direction: column-reverse;
-    align-items: stretch;
-  }
-  body[data-page="compras-nova"] .cmp-form__actions .cmp-btn,
-  body[data-page="compras-nova"] .cmp-form__actions .control-select {
-    width: 100%;
-  }
+/* Linhas clicáveis (Frete e Desconto) */
+body[data-page="compras-nova"] .cmp-values-row--action {
+  cursor: pointer;
+  transition: background-color 160ms ease;
+  background: var(--surface-2);
 }
 
-/* =========================================================
-   11) FEEDBACK / LOADING
-   ========================================================= */
-body[data-page="compras-nova"] .cmp-loading {
-  padding: 56px 24px;
-  text-align: center;
-  color: var(--text-muted);
-  font-size: 14px;
-}
-
-body[data-page="compras-nova"] .cmp-error {
-  padding: 14px 18px;
-  border-radius: 10px;
-  background: var(--danger-soft);
-  border: 1px solid var(--danger-border);
-  color: var(--danger);
-  font-size: 13.5px;
-  line-height: 1.5;
-}
-
-body[data-page="compras-nova"] .cmp-info {
-  padding: 14px 18px;
-  border-radius: 10px;
+body[data-page="compras-nova"] .cmp-values-row--action:hover {
   background: var(--accent-soft);
-  border: 1px solid var(--accent-ring);
-  color: var(--accent-hover);
-  font-size: 13.5px;
-  line-height: 1.5;
+}
+
+body[data-page="compras-nova"] .cmp-values-row--action:hover .cmp-values-label,
+body[data-page="compras-nova"] .cmp-values-row--action:hover .cmp-values-value {
+  color: var(--accent);
+}
+
+body[data-page="compras-nova"] .cmp-values-value--action {
+  color: var(--accent);
+  border-bottom: 1px dashed var(--accent);
+}
+
+body[data-page="compras-nova"] .cmp-values-value.is-free {
+  color: var(--text-muted);
+  border-bottom: none;
+}
+
+body[data-page="compras-nova"] .cmp-values-value.is-empty {
+  color: var(--text-muted);
+  border-bottom: none;
+  font-weight: 500;
+}
+
+body[data-page="compras-nova"] .cmp-values-value--discount {
+  color: var(--danger);
+  border-bottom-color: var(--danger);
+}
+
+/* Linha do Total */
+body[data-page="compras-nova"] .cmp-values-row--grand {
+  background: var(--surface);
+  padding: 20px;
+  border-top: 2px solid var(--border);
+}
+
+body[data-page="compras-nova"] .cmp-values-row--grand .cmp-values-label {
+  font-weight: 700;
+  color: var(--text);
+  font-size: 16px;
+}
+
+body[data-page="compras-nova"] .cmp-values-row--grand .cmp-values-value {
+  font-weight: 800;
+  font-size: 24px;
+  letter-spacing: -0.02em;
+  color: var(--accent);
 }
 
 /* =========================================================
-   12) REDUCED MOTION
+   8) ESTILOS DOS NOVOS MODAIS (FRETE E DESCONTO)
    ========================================================= */
-@media (prefers-reduced-motion: reduce) {
-  body[data-page="compras-nova"] * {
-    transition-duration: 0.01ms !important;
-  }
+body[data-page="compras-nova"] .cmp-radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+body[data-page="compras-nova"] .cmp-radio-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 160ms ease;
+  background: var(--surface-2);
+}
+
+body[data-page="compras-nova"] .cmp-radio-card:hover {
+  border-color: var(--border-strong);
+}
+
+body[data-page="compras-nova"] .cmp-radio-card:has(input:checked) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+body[data-page="compras-nova"] .cmp-radio-card input[type="radio"] {
+  margin-top: 4px;
+  accent-color: var(--accent);
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+body[data-page="compras-nova"] .cmp-radio-card__content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+body[data-page="compras-nova"] .cmp-radio-card__content strong {
+  font-size: 14.5px;
+  color: var(--text);
+}
+
+body[data-page="compras-nova"] .cmp-radio-card__content span {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+body[data-page="compras-nova"] .cmp-discount-summary {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+body[data-page="compras-nova"] .cmp-discount-summary__row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  color: var(--text-soft);
+}
+
+body[data-page="compras-nova"] .cmp-discount-summary__row--total {
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--text);
+}
+
+body[data-page="compras-nova"] .cmp-discount-summary__row--total span:last-child {
+  color: var(--accent);
 }
 
 /* =========================================================
-   13) FALLBACK · botões com .btn ou .btn--primary
+   9) FEEDBACK / LOADING
+   ========================================================= */
+body[data-page="compras-nova"] .cmp-error { padding: 14px 18px; border-radius: 10px; background: var(--danger-soft); border: 1px solid var(--danger-border); color: var(--danger); font-size: 13.5px; line-height: 1.5; }
+body[data-page="compras-nova"] .cmp-info { padding: 14px 18px; border-radius: 10px; background: var(--accent-soft); border: 1px solid var(--accent-ring); color: var(--accent-hover); font-size: 13.5px; line-height: 1.5; }
+
+/* =========================================================
+   10) BOTÕES FALLBACK
    ========================================================= */
 body[data-page="compras-nova"] .btn,
 body[data-page="compras-nova"] .cmp-btn {
@@ -617,532 +664,455 @@ body[data-page="compras-nova"] .cmp-btn {
   cursor: pointer;
   white-space: nowrap;
   box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
-  transition: background-color 160ms ease, border-color 160ms ease,
-              color 160ms ease, box-shadow 160ms ease;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
 }
 
 body[data-page="compras-nova"] .btn svg,
-body[data-page="compras-nova"] .cmp-btn svg {
-  width: 16px;
-  height: 16px;
-  flex: none;
-}
+body[data-page="compras-nova"] .cmp-btn svg { width: 16px; height: 16px; flex: none; }
 
 body[data-page="compras-nova"] .btn:hover,
-body[data-page="compras-nova"] .cmp-btn:hover {
-  background: var(--surface-2);
-  border-color: var(--border-strong);
-}
-
-body[data-page="compras-nova"] .btn:focus-visible,
-body[data-page="compras-nova"] .cmp-btn:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 4px var(--accent-ring);
-}
+body[data-page="compras-nova"] .cmp-btn:hover { background: var(--surface-2); border-color: var(--border-strong); }
 
 body[data-page="compras-nova"] .btn--primary,
-body[data-page="compras-nova"] .cmp-btn--primary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
-}
-
+body[data-page="compras-nova"] .cmp-btn--primary { background: var(--accent); border-color: var(--accent); color: #fff; }
 body[data-page="compras-nova"] .btn--primary:hover,
-body[data-page="compras-nova"] .cmp-btn--primary:hover {
-  background: var(--accent-hover);
-  border-color: var(--accent-hover);
-}
+body[data-page="compras-nova"] .cmp-btn--primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
 
 body[data-page="compras-nova"] .btn--ghost,
-body[data-page="compras-nova"] .cmp-btn--ghost {
-  background: var(--surface);
-  border-color: var(--border);
-  color: var(--text-soft);
-}
-
+body[data-page="compras-nova"] .cmp-btn--ghost { background: var(--surface); border-color: var(--border); color: var(--text-soft); }
 body[data-page="compras-nova"] .btn--ghost:hover,
-body[data-page="compras-nova"] .cmp-btn--ghost:hover {
-  background: var(--surface-2);
-  border-color: var(--border-strong);
-  color: var(--text);
-}
-
-body[data-page="compras-nova"] .btn--block {
-  width: 100%;
-}
+body[data-page="compras-nova"] .cmp-btn--ghost:hover { background: var(--surface-2); border-color: var(--border-strong); color: var(--text); }
 
 /* =========================================================
-   13.1) FORNECEDOR · linha com select + botão Novo
+   11) MODAIS GERAIS (Fornecedor e Item)
    ========================================================= */
-body[data-page="compras-nova"] .cmp-supplier-row {
-  display: flex;
-  align-items: stretch;
-  gap: 8px;
-  width: 100%;
-}
-
-body[data-page="compras-nova"] .cmp-supplier-row select {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-body[data-page="compras-nova"] .cmp-btn--sm {
-  height: 44px;
-  padding: 0 14px;
-  font-size: 13.5px;
-  flex: none;
-  gap: 6px;
-}
-body[data-page="compras-nova"] .cmp-btn--sm svg {
-  width: 14px;
-  height: 14px;
-}
-
-/* =========================================================
-   14) MODAL · FORNECEDOR (cadastro inline) — Unificado
-   ========================================================= */
-body[data-page="compras-nova"] .cmp-cnpj {
-  display: flex !important;
-  align-items: flex-end;
-  gap: 10px;
-  width: 100%;
-}
-
-body[data-page="compras-nova"] .cmp-cnpj__field {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-body[data-page="compras-nova"] .cmp-cnpj__field > label {
-  display: block;
-  margin-bottom: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-soft);
-}
-
-body[data-page="compras-nova"] .cmp-cnpj__field > input {
-  width: 100%;
-  height: 44px;
-  padding: 0 14px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background-color: var(--surface);
-  color: var(--text);
-  font-family: inherit;
-  font-size: 14.5px;
-  outline: none;
-  transition: border-color 160ms ease, box-shadow 160ms ease;
-}
-body[data-page="compras-nova"] .cmp-cnpj__field > input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 4px var(--accent-ring);
-}
-
-body[data-page="compras-nova"] .cmp-cnpj__btn {
-  flex: none;
-  height: 44px;
-  min-width: 148px;
-  padding: 0 18px;
-  gap: 8px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 0;
-  border-radius: 10px;
-  background: var(--accent);
-  color: #fff;
-  font-family: inherit;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background-color 160ms ease, box-shadow 160ms ease;
-}
-body[data-page="compras-nova"] .cmp-cnpj__btn:hover { background: var(--accent-hover); }
-body[data-page="compras-nova"] .cmp-cnpj__btn:disabled { opacity: 0.65; cursor: progress; }
-body[data-page="compras-nova"] .cmp-cnpj__btn svg { width: 15px; height: 15px; flex: none; }
-
-body[data-page="compras-nova"] .cmp-cnpj__hint {
-  margin: 10px 0 0 !important;
-  font-size: 12.5px;
-  color: var(--text-muted);
-  line-height: 1.55;
-}
-body[data-page="compras-nova"] .cmp-cnpj__hint strong { color: var(--text-soft); font-weight: 600; }
-
-body[data-page="compras-nova"] .cmp-modal__body {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
-body[data-page="compras-nova"] .cmp-modal__body .cmp-grid--2 {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
-}
-
-body[data-page="compras-nova"] .cmp-modal__body .field[style*="grid-column"] {
-  grid-column: 1 / -1;
-}
-
-body[data-page="compras-nova"] .cmp-modal__body .field {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 0;
-}
-body[data-page="compras-nova"] .cmp-modal__body .field > label {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-soft);
-  line-height: 1.35;
-}
-body[data-page="compras-nova"] .cmp-modal__body .field > input,
-body[data-page="compras-nova"] .cmp-modal__body .field > select,
-body[data-page="compras-nova"] .cmp-modal__body .field > textarea {
-  width: 100%;
-  min-height: 44px;
-  padding: 0 14px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background-color: var(--surface);
-  color: var(--text);
-  font-family: inherit;
-  font-size: 14.5px;
-  outline: none;
-  transition: border-color 160ms ease, box-shadow 160ms ease;
-}
-body[data-page="compras-nova"] .cmp-modal__body .field > input::placeholder {
-  color: var(--text-muted);
-}
-body[data-page="compras-nova"] .cmp-modal__body .field > input:hover {
-  border-color: var(--border-strong);
-}
-body[data-page="compras-nova"] .cmp-modal__body .field > input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 4px var(--accent-ring);
-}
-
-body[data-page="compras-nova"] .cmp-modal__body .cmp-error {
-  margin: 0;
-  padding: 12px 16px;
-  border-radius: 10px;
-  background: var(--danger-soft);
-  border: 1px solid var(--danger-border);
-  color: var(--danger);
-  font-size: 13.5px;
-  line-height: 1.5;
-}
-
-body[data-page="compras-nova"] .cmp-cnpj__spinner {
-  display: none;
-  width: 14px;
-  height: 14px;
-  border: 2px solid rgba(255,255,255,0.4);
-  border-top-color: #fff;
-  border-radius: 50%;
-  animation: cmp-spin 700ms linear infinite;
-}
-body[data-page="compras-nova"] .cmp-cnpj__btn.is-loading .cmp-cnpj__spinner,
-body[data-page="compras-nova"] #f-save.is-loading .cmp-cnpj__spinner,
-body[data-page="compras-nova"] #sup-save.is-loading .cmp-cnpj__spinner {
-  display: inline-block;
-}
-body[data-page="compras-nova"] .cmp-cnpj__btn.is-loading .cmp-cnpj__icon-search {
-  display: none;
-}
-@keyframes cmp-spin { to { transform: rotate(360deg); } }
-
-@keyframes cmp-field-filled {
-  from { background-color: var(--accent-soft); }
-  to   { background-color: var(--surface); }
-}
-body[data-page="compras-nova"] input.is-autofilled {
-  animation: cmp-field-filled 1200ms ease-out;
-}
-
-@media (max-width: 560px) {
-  body[data-page="compras-nova"] .cmp-cnpj {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  body[data-page="compras-nova"] .cmp-cnpj__btn {
-    width: 100%;
-    justify-content: center;
-  }
-  body[data-page="compras-nova"] .cmp-supplier-row {
-    flex-direction: column;
-  }
-  body[data-page="compras-nova"] .cmp-supplier-row .cmp-btn {
-    width: 100%;
-    justify-content: center;
-  }
-  body[data-page="compras-nova"] .cmp-modal__body .cmp-grid--2 {
-    grid-template-columns: 1fr;
-  }
-  body[data-page="compras-nova"] .cmp-modal__body .field[style*="grid-column"] {
-    grid-column: auto;
-  }
-}
-
-[data-theme="dark"] body[data-page="compras-nova"] .cmp-cnpj__field > input:focus,
-[data-theme="dark"] body[data-page="compras-nova"] .cmp-modal__body .field > input:focus {
-  box-shadow: 0 0 0 4px var(--accent-ring);
-}
-
-/* =========================================================
-   15) MODAL (Wrapper)
-   ========================================================= */
-body[data-page="compras-nova"] .cmp-modal[hidden] {
-  display: none !important;
-}
-
-body[data-page="compras-nova"] .cmp-modal {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  display: grid;
-  place-items: center;
-  padding: 24px;
-  animation: cmp-fade 200ms ease-out;
-}
-
-@keyframes cmp-fade {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-
-body[data-page="compras-nova"] .cmp-modal__backdrop {
-  position: absolute;
-  inset: 0;
-  background: rgba(10, 11, 18, 0.55);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-}
-
+body[data-page="compras-nova"] .cmp-modal[hidden] { display: none !important; }
+body[data-page="compras-nova"] .cmp-modal { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 24px; animation: cmp-fade 200ms ease-out; }
+@keyframes cmp-fade { from { opacity: 0; } to { opacity: 1; } }
+body[data-page="compras-nova"] .cmp-modal__backdrop { position: absolute; inset: 0; background: rgba(10, 11, 18, 0.55); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
 body[data-page="compras-nova"] .cmp-modal__dialog {
-  position: relative;
-  width: 100%;
-  max-width: 560px;
-  max-height: 90vh;
-  overflow: auto;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  box-shadow:
-    0 4px 12px -2px rgba(16, 24, 40, 0.08),
-    0 12px 28px -8px rgba(16, 24, 40, 0.10);
+  position: relative; width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto; overflow-x: hidden;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+  box-shadow: 0 4px 12px -2px rgba(16, 24, 40, 0.08), 0 12px 28px -8px rgba(16, 24, 40, 0.10);
   animation: cmp-pop 240ms cubic-bezier(.2,.9,.3,1);
 }
-
-body[data-page="compras-nova"] .cmp-modal__dialog--lg {
-  max-width: 720px;
-}
-
-@keyframes cmp-pop {
-  from { opacity: 0; transform: translateY(8px) scale(.98); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-body[data-page="compras-nova"] .cmp-modal__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 20px 24px 16px;
-  border-bottom: 1px solid var(--border);
-}
-
-body[data-page="compras-nova"] .cmp-modal__title {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--text);
-  letter-spacing: -0.01em;
-}
-
-body[data-page="compras-nova"] .cmp-modal__close {
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: background-color 140ms ease, color 140ms ease;
-}
-body[data-page="compras-nova"] .cmp-modal__close:hover {
-  background: var(--surface-2);
-  color: var(--text);
-}
-body[data-page="compras-nova"] .cmp-modal__close svg {
-  width: 15px;
-  height: 15px;
-}
-
-body[data-page="compras-nova"] .cmp-modal__foot {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  padding: 16px 24px;
-  border-top: 1px solid var(--border);
-  background: var(--surface-2);
-}
+body[data-page="compras-nova"] .cmp-modal__dialog--lg { max-width: 720px; }
+body[data-page="compras-nova"] .cmp-modal__dialog--md { max-width: 600px; }
+@keyframes cmp-pop { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+body[data-page="compras-nova"] .cmp-modal__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 20px 24px 16px; border-bottom: 1px solid var(--border); }
+body[data-page="compras-nova"] .cmp-modal__title { margin: 0; font-size: 16px; font-weight: 700; color: var(--text); letter-spacing: -0.01em; }
+body[data-page="compras-nova"] .cmp-modal__close { display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--text-muted); cursor: pointer; transition: background-color 140ms ease, color 140ms ease; }
+body[data-page="compras-nova"] .cmp-modal__close:hover { background: var(--surface-2); color: var(--text); }
+body[data-page="compras-nova"] .cmp-modal__close svg { width: 15px; height: 15px; }
+body[data-page="compras-nova"] .cmp-modal__foot { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 24px; border-top: 1px solid var(--border); background: var(--surface-2); }
+body[data-page="compras-nova"] .cmp-modal__body { display: flex; flex-direction: column; gap: 18px; padding: 24px; }
+body[data-page="compras-nova"] .cmp-modal__body .cmp-grid--2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 
 @media (max-width: 640px) {
   body[data-page="compras-nova"] .cmp-modal { padding: 16px; }
   body[data-page="compras-nova"] .cmp-modal__head { padding: 18px 18px 14px; }
   body[data-page="compras-nova"] .cmp-modal__body { padding: 18px; }
-  body[data-page="compras-nova"] .cmp-modal__foot {
-    padding: 14px 18px;
-    flex-direction: column-reverse;
-  }
-  body[data-page="compras-nova"] .cmp-modal__foot .cmp-btn {
-    width: 100%;
-    justify-content: center;
-  }
+  body[data-page="compras-nova"] .cmp-modal__foot { padding: 14px 18px; flex-direction: column-reverse; }
+  body[data-page="compras-nova"] .cmp-modal__foot .cmp-btn { width: 100%; justify-content: center; }
+  body[data-page="compras-nova"] .cmp-modal__body .cmp-grid--2 { grid-template-columns: 1fr; }
 }
 
 /* =========================================================
-   16) BARRA DE AÇÕES DO FORMULÁRIO
+   12) BARRA DE AÇÕES DO FORMULÁRIO
    ========================================================= */
-body[data-page="compras-nova"] .cmp-action-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  flex-wrap: wrap;
-  padding: 18px 22px;
-  background: var(--surface);
+body[data-page="compras-nova"] .cmp-action-bar { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; padding: 18px 22px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04); }
+body[data-page="compras-nova"] .cmp-save-mode { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; min-width: 0; }
+body[data-page="compras-nova"] .cmp-save-mode__label { font-size: 13px; font-weight: 600; color: var(--text-soft); white-space: nowrap; }
+body[data-page="compras-nova"] .cmp-save-mode__group { display: inline-flex; padding: 4px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; gap: 2px; }
+body[data-page="compras-nova"] .cmp-save-option { position: relative; cursor: pointer; user-select: none; }
+body[data-page="compras-nova"] .cmp-save-option input { position: absolute; opacity: 0; pointer-events: none; }
+body[data-page="compras-nova"] .cmp-save-option__box { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 8px; font-size: 13.5px; font-weight: 500; color: var(--text-soft); white-space: nowrap; transition: background-color 160ms ease, color 160ms ease, box-shadow 160ms ease; }
+body[data-page="compras-nova"] .cmp-save-option__box svg { width: 15px; height: 15px; flex: none; }
+body[data-page="compras-nova"] .cmp-save-option:hover .cmp-save-option__box { color: var(--text); }
+body[data-page="compras-nova"] .cmp-save-option input:checked + .cmp-save-option__box { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px rgba(16, 24, 40, 0.08), 0 0 0 1px color-mix(in srgb, var(--border) 80%, transparent); }
+body[data-page="compras-nova"] .cmp-save-option input:focus-visible + .cmp-save-option__box { outline: 2px solid var(--accent); outline-offset: 2px; }
+body[data-page="compras-nova"] .cmp-action-bar__buttons { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+body[data-page="compras-nova"] .cmp-btn--lg { height: 46px; padding: 0 22px; font-size: 14.5px; font-weight: 600; }
+body[data-page="compras-nova"] .cmp-btn--lg svg { width: 16px; height: 16px; }
+@media (max-width: 720px) {
+  body[data-page="compras-nova"] .cmp-action-bar { flex-direction: column; align-items: stretch; gap: 16px; }
+  body[data-page="compras-nova"] .cmp-save-mode { flex-direction: column; align-items: stretch; gap: 10px; }
+  body[data-page="compras-nova"] .cmp-save-mode__group { width: 100%; }
+  body[data-page="compras-nova"] .cmp-save-option { flex: 1; }
+  body[data-page="compras-nova"] .cmp-save-option__box { width: 100%; justify-content: center; }
+  body[data-page="compras-nova"] .cmp-action-bar__buttons { width: 100%; }
+  body[data-page="compras-nova"] .cmp-action-bar__buttons .cmp-btn { flex: 1; justify-content: center; }
+}
+[data-theme="dark"] body[data-page="compras-nova"] .cmp-save-option input:checked + .cmp-save-option__box { background: color-mix(in srgb, var(--surface) 90%, #ffffff 10%); }
+
+/* =========================================================
+   13) ESTILOS DO MODAL DE BUSCA DE FORNECEDOR (PICKER)
+   ========================================================= */
+body[data-page="compras-nova"] .supplier-search-box { position: relative; display: flex; align-items: center; margin-bottom: 16px; }
+body[data-page="compras-nova"] .supplier-search-box svg { position: absolute; left: 14px; width: 18px; height: 18px; color: var(--text-muted); pointer-events: none; }
+body[data-page="compras-nova"] .supplier-search-box input { width: 100%; height: 46px; padding: 0 14px 0 42px; background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: 10px; color: var(--text); font-family: inherit; font-size: 14.5px; outline: none; transition: border-color 160ms ease, box-shadow 160ms ease; }
+body[data-page="compras-nova"] .supplier-search-box input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-ring); }
+
+body[data-page="compras-nova"] .supplier-list { display: flex; flex-direction: column; gap: 4px; max-height: 400px; overflow-y: auto; }
+body[data-page="compras-nova"] .supplier-list__item { display: flex; align-items: center; gap: 14px; padding: 12px; border-radius: 10px; cursor: pointer; border: 1px solid transparent; transition: background 0.15s, border-color 0.15s; }
+body[data-page="compras-nova"] .supplier-list__item:hover { background: var(--surface-2); border-color: var(--border); }
+body[data-page="compras-nova"] .supplier-list__avatar { width: 38px; height: 38px; flex: none; border-radius: 8px; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; font-weight: 700; font-size: 15px; }
+body[data-page="compras-nova"] .supplier-list__info { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+body[data-page="compras-nova"] .supplier-list__info strong { font-size: 14.5px; color: var(--text); font-weight: 600; }
+body[data-page="compras-nova"] .supplier-list__info span { font-size: 12.5px; color: var(--text-muted); margin-top: 2px; }
+body[data-page="compras-nova"] .supplier-list__empty { padding: 30px; text-align: center; color: var(--text-muted); font-size: 13.5px; }
+
+body[data-page="compras-nova"] .supplier-details { display: flex; flex-direction: column; gap: 24px; padding: 10px 4px 20px; }
+body[data-page="compras-nova"] .supplier-details__header { display: flex; align-items: center; gap: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+body[data-page="compras-nova"] .supplier-details__avatar { width: 64px; height: 64px; border-radius: 14px; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; font-size: 26px; font-weight: 700; }
+body[data-page="compras-nova"] .supplier-details__name { margin: 0; font-size: 20px; font-weight: 700; color: var(--text); line-height: 1.3; }
+body[data-page="compras-nova"] .supplier-details__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 24px; }
+body[data-page="compras-nova"] .supplier-details__item { display: flex; flex-direction: column; gap: 6px; }
+body[data-page="compras-nova"] .supplier-details__label { font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); font-weight: 600; }
+body[data-page="compras-nova"] .supplier-details__value { font-size: 15px; color: var(--text); }
+body[data-page="compras-nova"] .supplier-details__value--mono { font-family: ui-monospace, monospace; }
+
+body[data-page="compras-nova"] #supplier-picker-modal .modal__foot { padding: 20px 24px !important; border-top: 1px solid var(--border); background: var(--surface-2); }
+body[data-page="compras-nova"] #footer-details { display: none; width: 100%; justify-content: space-between; align-items: center; gap: 16px; }
+body[data-page="compras-nova"] #footer-search { display: contents; }
+
+body[data-page="compras-nova"] #supplier-picker-modal .modal__dialog { max-width: 640px; height: 520px; max-height: 90vh; }
+body[data-page="compras-nova"] #supplier-picker-modal .modal__body { flex: 1; display: flex; flex-direction: column; padding: 24px; overflow: hidden; }
+body[data-page="compras-nova"] #supplier-picker-modal .supplier-list { flex: 1; overflow-y: auto; min-height: 200px; }
+body[data-page="compras-nova"] #supplier-picker-modal .supplier-list__empty { height: 100%; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+body[data-page="compras-nova"] #supplier-picker-modal .modal__close { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 8px; color: var(--text-muted); background: transparent; border: none; cursor: pointer; transition: background 0.2s, color 0.2s; }
+body[data-page="compras-nova"] #supplier-picker-modal .modal__close:hover { background: var(--surface-2); color: var(--text); }
+body[data-page="compras-nova"] #supplier-picker-modal .modal__close svg { width: 20px; height: 20px; flex: none; }
+
+/* =========================================================
+   14) NOVO VISUAL DA ABA DE ITENS (CARDS)
+   ========================================================= */
+body[data-page="compras-nova"] .cmp-items-card {
   border: 1px solid var(--border);
   border-radius: 14px;
-  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+  background: var(--surface);
+  overflow: hidden;
 }
 
-body[data-page="compras-nova"] .cmp-save-mode {
+body[data-page="compras-nova"] .cmp-items-card__header {
   display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 24px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+}
+
+body[data-page="compras-nova"] .cmp-items-card__title-group { display: flex; flex-direction: column; gap: 4px; }
+body[data-page="compras-nova"] .cmp-items-card__title { display: flex; align-items: center; gap: 12px; margin: 0; font-size: 16px; font-weight: 700; color: var(--text); }
+body[data-page="compras-nova"] .cmp-items-card__subtitle { margin: 0; font-size: 13px; color: var(--text-muted); }
+body[data-page="compras-nova"] .cmp-items-card__big-total { margin: 4px 0 0 0; font-size: 24px; font-weight: 700; color: var(--text); letter-spacing: -0.02em; }
+body[data-page="compras-nova"] .cmp-items-card__list { display: flex; flex-direction: column; }
+
+body[data-page="compras-nova"] .cmp-items-card__row {
+  display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 14px;
-  flex-wrap: wrap;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
   min-width: 0;
 }
 
-body[data-page="compras-nova"] .cmp-save-mode__label {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-soft);
-  white-space: nowrap;
+body[data-page="compras-nova"] .cmp-items-card__row:last-child { border-bottom: none; }
+body[data-page="compras-nova"] .cmp-items-card__row:hover { background-color: var(--surface-2); }
+body[data-page="compras-nova"] .cmp-items-card__info { display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1; margin-right: 16px; }
+body[data-page="compras-nova"] .cmp-items-card__item-title { margin: 0; font-size: 15px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body[data-page="compras-nova"] .cmp-items-card__item-details { font-size: 13px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body[data-page="compras-nova"] .cmp-items-card__math { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+body[data-page="compras-nova"] .cmp-items-card__calc { font-size: 13px; color: var(--text-soft); white-space: nowrap; }
+body[data-page="compras-nova"] .cmp-items-card__price { font-size: 15px; font-weight: 700; color: var(--text); white-space: nowrap; }
+
+body[data-page="compras-nova"] .cmp-items-card__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  background: var(--surface-2);
+  border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+  gap: 16px;
 }
 
-body[data-page="compras-nova"] .cmp-save-mode__group {
-  display: inline-flex;
-  padding: 4px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: 10px;
+body[data-page="compras-nova"] .cmp-items-summary {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+}
+
+body[data-page="compras-nova"] .cmp-items-summary__item {
+  display: flex;
+  flex-direction: column;
   gap: 2px;
 }
 
-body[data-page="compras-nova"] .cmp-save-option {
-  position: relative;
-  cursor: pointer;
-  user-select: none;
+body[data-page="compras-nova"] .cmp-items-summary__label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  font-weight: 600;
 }
 
-body[data-page="compras-nova"] .cmp-save-option input {
+body[data-page="compras-nova"] .cmp-items-summary__value {
+  font-size: 14px;
+  color: var(--text);
+  font-weight: 500;
+}
+
+body[data-page="compras-nova"] .cmp-items-grand-total {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+body[data-page="compras-nova"] .cmp-items-grand-total span {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+body[data-page="compras-nova"] .cmp-items-grand-total strong {
+  font-size: 22px;
+  color: var(--accent);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+body[data-page="compras-nova"] .badge { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; text-transform: none; letter-spacing: 0; }
+body[data-page="compras-nova"] .badge--count { background: var(--accent-soft); color: var(--accent); }
+body[data-page="compras-nova"] .badge--type { background: var(--surface); border: 1px solid var(--border-strong); color: var(--text-soft); text-transform: uppercase; letter-spacing: 0.05em; }
+
+body[data-page="compras-nova"] .cmp-items-card__delete { background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 8px; border-radius: 8px; margin-left: 16px; transition: all 0.2s; }
+body[data-page="compras-nova"] .cmp-items-card__delete:hover { color: var(--danger); background: var(--danger-soft); }
+
+/* =========================================================
+   15) MODAL DE ITEM (REFORMULADO)
+   ========================================================= */
+body[data-page="compras-nova"] .item-modal__toggle {
+  display: flex;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 4px;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+body[data-page="compras-nova"] .item-modal__toggle-opt {
+  flex: 1;
+  cursor: pointer;
+  position: relative;
+}
+
+body[data-page="compras-nova"] .item-modal__toggle-opt input {
   position: absolute;
   opacity: 0;
   pointer-events: none;
 }
 
-body[data-page="compras-nova"] .cmp-save-option__box {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 14px;
-  border-radius: 8px;
-  font-size: 13.5px;
-  font-weight: 500;
-  color: var(--text-soft);
-  white-space: nowrap;
-  transition: background-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
-}
-
-body[data-page="compras-nova"] .cmp-save-option__box svg {
-  width: 15px;
-  height: 15px;
-  flex: none;
-}
-
-body[data-page="compras-nova"] .cmp-save-option:hover .cmp-save-option__box {
-  color: var(--text);
-}
-
-body[data-page="compras-nova"] .cmp-save-option input:checked + .cmp-save-option__box {
-  background: var(--surface);
-  color: var(--text);
-  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.08),
-              0 0 0 1px color-mix(in srgb, var(--border) 80%, transparent);
-}
-
-body[data-page="compras-nova"] .cmp-save-option input:focus-visible + .cmp-save-option__box {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-
-body[data-page="compras-nova"] .cmp-action-bar__buttons {
+body[data-page="compras-nova"] .item-modal__toggle-opt span {
   display: flex;
   align-items: center;
-  gap: 10px;
-  flex-shrink: 0;
-}
-
-body[data-page="compras-nova"] .cmp-btn--lg {
-  height: 46px;
-  padding: 0 22px;
-  font-size: 14.5px;
+  justify-content: center;
+  padding: 10px;
+  font-size: 13.5px;
   font-weight: 600;
+  color: var(--text-soft);
+  border-radius: 8px;
+  transition: all 0.2s ease;
 }
 
-body[data-page="compras-nova"] .cmp-btn--lg svg {
-  width: 16px;
-  height: 16px;
+body[data-page="compras-nova"] .item-modal__toggle-opt input:checked + span {
+  background: var(--surface);
+  color: var(--accent);
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.08), 0 0 0 1px color-mix(in srgb, var(--border) 80%, transparent);
 }
 
-@media (max-width: 720px) {
-  body[data-page="compras-nova"] .cmp-action-bar {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 16px;
-  }
-  body[data-page="compras-nova"] .cmp-save-mode {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
-  }
-  body[data-page="compras-nova"] .cmp-save-mode__group {
-    width: 100%;
-  }
-  body[data-page="compras-nova"] .cmp-save-option {
-    flex: 1;
-  }
-  body[data-page="compras-nova"] .cmp-save-option__box {
-    width: 100%;
-    justify-content: center;
-  }
-  body[data-page="compras-nova"] .cmp-action-bar__buttons {
-    width: 100%;
-  }
-  body[data-page="compras-nova"] .cmp-action-bar__buttons .cmp-btn {
-    flex: 1;
-    justify-content: center;
-  }
+body[data-page="compras-nova"] .item-modal__block {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px;
+  background: var(--surface-2);
 }
 
-[data-theme="dark"] body[data-page="compras-nova"] .cmp-save-option input:checked + .cmp-save-option__box {
-  background: color-mix(in srgb, var(--surface) 90%, #ffffff 10%);
+body[data-page="compras-nova"] .item-modal__block-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  font-weight: 700;
+  margin-bottom: 16px;
 }
+
+body[data-page="compras-nova"] .item-modal__search-field {
+  position: relative;
+}
+
+body[data-page="compras-nova"] .item-modal__search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+body[data-page="compras-nova"] .item-modal__search-icon {
+  position: absolute;
+  left: 14px;
+  width: 18px;
+  height: 18px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+body[data-page="compras-nova"] .item-modal__search-wrap input {
+  padding-left: 42px;
+}
+
+body[data-page="compras-nova"] .item-modal__search-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  max-height: 220px;
+  overflow-y: auto;
+  z-index: 50;
+}
+
+body[data-page="compras-nova"] .item-modal__search-dropdown[hidden] {
+  display: none !important;
+}
+
+body[data-page="compras-nova"] .item-modal__search-item {
+  padding: 12px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  transition: background 0.15s;
+}
+
+body[data-page="compras-nova"] .item-modal__search-item:last-child {
+  border-bottom: none;
+}
+
+body[data-page="compras-nova"] .item-modal__search-item:hover {
+  background: var(--accent-soft);
+}
+
+body[data-page="compras-nova"] .item-modal__search-item strong {
+  font-size: 14px;
+  color: var(--text);
+}
+
+body[data-page="compras-nova"] .item-modal__search-item span {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+body[data-page="compras-nova"] .item-modal__hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 6px 0 0;
+}
+
+body[data-page="compras-nova"] .item-modal__total {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: var(--accent-soft);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-top: 4px;
+  overflow: hidden;
+}
+
+body[data-page="compras-nova"] .item-modal__total-label {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+body[data-page="compras-nova"] .item-modal__total strong {
+  display: block;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 4px 0;
+  word-break: break-all;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+}
+
+body[data-page="compras-nova"] .item-modal__total-hint {
+  display: block;
+  font-size: 12.5px;
+  color: var(--text-soft);
+}
+
+/* Customização do campo de desconto com toggle R$ / % */
+body[data-page="compras-nova"] .item-modal__discount-group {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+body[data-page="compras-nova"] .item-modal__toggle-type {
+  display: flex;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 3px;
+  flex-shrink: 0;
+  height: 44px;
+  box-sizing: border-box;
+}
+
+body[data-page="compras-nova"] .item-modal__toggle-type input {
+  display: none;
+}
+
+body[data-page="compras-nova"] .item-modal__toggle-type label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 100%;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+  transition: all 0.2s ease;
+}
+
+body[data-page="compras-nova"] .item-modal__toggle-type input:checked + label {
+  background: var(--surface-2);
+  color: var(--text);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+body[data-page="compras-nova"] .item-modal__discount-group > input {
+  flex: 1;
+  min-width: 0;
+}
+
+body[data-page="compras-nova"] .feedback { margin: 0; padding: 10px 14px; border-radius: 8px; font-size: 13px; line-height: 1.5; }
+body[data-page="compras-nova"] .feedback--error { background: var(--danger-soft); border: 1px solid var(--danger-border); color: var(--danger); }
