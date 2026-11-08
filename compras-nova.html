@@ -11,7 +11,7 @@
   
   <link rel="stylesheet" href="css/global.css" />
   <link rel="stylesheet" href="css/theme.css" />
-  <link rel="stylesheet" href="css/clientes.css" /> <!-- ⬅️ ESSENCIAL PARA O MODAL FUNCIONAR -->
+  <link rel="stylesheet" href="css/clientes.css" />
   <link rel="stylesheet" href="css/custom-select.css" />
   <link rel="stylesheet" href="css/supplier-picker.css" />
   
@@ -51,8 +51,8 @@
         <section class="cmp-section">
           <h2 class="cmp-section__title">Fornecedor</h2>
 
-          <!-- O grid agora tem apenas 1 campo ocupando a linha inteira -->
-          <div class="cmp-grid" style="grid-template-columns: 1fr;">
+          <!-- AQUI ESTÁ A MUDANÇA: limitando a largura do grid a 450px -->
+          <div class="cmp-grid" style="grid-template-columns: minmax(0, 450px);">
             <div class="field">
               <label for="cmp-supplier">Fornecedor</label>
               <div class="cmp-supplier-row">
@@ -71,13 +71,34 @@
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><path d="m6 9 6 6 6-6"/></svg>
                 </button>
 
+                <!-- Botão apenas com ícone "+" -->
                 <button type="button" class="cmp-btn cmp-btn--ghost cmp-btn--sm" id="cmp-new-supplier" title="Cadastrar novo fornecedor">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
                     <path d="M12 5v14M5 12h14"/>
                   </svg>
-                  <span>Novo</span>
                 </button>
               </div>
+
+              <!-- NOVO: Card de Detalhes do Fornecedor -->
+              <div class="supplier-summary" id="supplier-summary" hidden>
+                <div class="supplier-summary__row">
+                  <span class="supplier-summary__label">CNPJ / CPF</span>
+                  <span class="supplier-summary__value supplier-summary__value--mono" id="ss-doc">—</span>
+                </div>
+                <div class="supplier-summary__row">
+                  <span class="supplier-summary__label">Telefone</span>
+                  <span class="supplier-summary__value" id="ss-phone">—</span>
+                </div>
+                <div class="supplier-summary__row">
+                  <span class="supplier-summary__label">E-mail</span>
+                  <span class="supplier-summary__value" id="ss-email">—</span>
+                </div>
+                <div class="supplier-summary__row supplier-summary__row--full">
+                  <span class="supplier-summary__label">Endereço</span>
+                  <span class="supplier-summary__value" id="ss-address">—</span>
+                </div>
+              </div>
+
             </div>
           </div>
         </section>
@@ -237,23 +258,70 @@
         </button>
       </header>
 
-      <div class="modal__body" style="padding-top: 10px;">
+      <!-- VIEW 1: BUSCA -->
+      <div class="modal__body" id="supplier-view-search" style="padding-top: 10px;">
         <div class="supplier-search-box">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
           <input type="text" id="supplier-search-input" placeholder="Pesquisar por nome ou CNPJ..." autocomplete="off" />
         </div>
-
         <div class="supplier-list" id="supplier-list">
           <!-- Injetado via JS -->
         </div>
       </div>
 
-      <footer class="modal__foot" style="justify-content: space-between;">
-        <p style="margin:0; font-size:12.5px; color:var(--text-muted)">Não achou quem procurava?</p>
-        <button type="button" class="btn btn--primary" id="supplier-picker-new-btn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><path d="M12 5v14M5 12h14"/></svg>
-          <span>Cadastrar novo fornecedor</span>
-        </button>
+      <!-- VIEW 2: DETALHES -->
+      <div class="modal__body" id="supplier-view-details" hidden>
+        <div class="supplier-details">
+          <div class="supplier-details__header">
+            <div class="supplier-details__avatar" id="sd-avatar">A</div>
+            <div>
+              <h3 class="supplier-details__name" id="sd-name">Nome do Fornecedor</h3>
+            </div>
+          </div>
+          <div class="supplier-details__grid">
+            <div class="supplier-details__item">
+              <span class="supplier-details__label">CNPJ / CPF</span>
+              <span class="supplier-details__value supplier-details__value--mono" id="sd-doc">—</span>
+            </div>
+            <div class="supplier-details__item">
+              <span class="supplier-details__label">Telefone</span>
+              <span class="supplier-details__value" id="sd-phone">—</span>
+            </div>
+            <div class="supplier-details__item">
+              <span class="supplier-details__label">E-mail</span>
+              <span class="supplier-details__value" id="sd-email">—</span>
+            </div>
+            <div class="supplier-details__item">
+              <span class="supplier-details__label">Endereço</span>
+              <span class="supplier-details__value" id="sd-address">—</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FOOTER DINÂMICO -->
+      <footer class="modal__foot" id="supplier-picker-footer" style="justify-content: space-between;">
+        
+        <!-- Botões da Tela de Busca -->
+        <div id="footer-search" style="display: contents;">
+          <p style="margin:0; font-size:12.5px; color:var(--text-muted)">Não achou quem procurava?</p>
+          <button type="button" class="btn btn--primary" id="supplier-picker-new-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><path d="M12 5v14M5 12h14"/></svg>
+            <span>Cadastrar novo fornecedor</span>
+          </button>
+        </div>
+
+        <!-- Botões da Tela de Detalhes -->
+        <div id="footer-details" style="display: none; width: 100%; justify-content: space-between;">
+          <button type="button" class="btn btn--ghost" id="supplier-picker-back-btn">
+            ← Voltar
+          </button>
+          <button type="button" class="btn btn--primary" id="supplier-picker-confirm-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><path d="M20 6 9 17l-5-5"/></svg>
+            <span>Adicionar Fornecedor</span>
+          </button>
+        </div>
+
       </footer>
 
     </div>

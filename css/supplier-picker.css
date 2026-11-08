@@ -43,11 +43,24 @@
   flex: none;
 }
 
+/* =========================================================
+   BOTÃO + NOVO (APENAS ÍCONE)
+   ========================================================= */
+.cmp-supplier-row .cmp-btn--sm {
+  width: 44px;
+  padding: 0;
+  flex: none;
+  justify-content: center;
+}
+
+/* =========================================================
+   BUSCA NO MODAL
+   ========================================================= */
 .supplier-search-box {
   position: relative;
   display: flex;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
 .supplier-search-box svg {
@@ -78,10 +91,13 @@
   box-shadow: 0 0 0 3px var(--accent-ring);
 }
 
+/* =========================================================
+   LISTA DE RESULTADOS
+   ========================================================= */
 .supplier-list {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   max-height: 400px;
   overflow-y: auto;
   margin: 0 -10px;
@@ -157,47 +173,48 @@
 .supplier-details {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 10px 0;
+  gap: 24px; 
+  padding: 10px 4px 20px; 
 }
 
 .supplier-details__header {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding-bottom: 16px;
+  gap: 20px;
+  padding-bottom: 20px; 
   border-bottom: 1px solid var(--border);
 }
 
 .supplier-details__avatar {
-  width: 56px;
-  height: 56px;
-  border-radius: 12px;
+  width: 64px; 
+  height: 64px;
+  border-radius: 14px;
   background: var(--accent-soft);
   color: var(--accent);
   display: grid;
   place-items: center;
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 700;
 }
 
 .supplier-details__name {
   margin: 0;
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 700;
   color: var(--text);
+  line-height: 1.3;
 }
 
 .supplier-details__grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: 20px 24px; 
 }
 
 .supplier-details__item {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px; 
 }
 
 .supplier-details__label {
@@ -209,10 +226,79 @@
 }
 
 .supplier-details__value {
-  font-size: 14.5px;
+  font-size: 15px; 
   color: var(--text);
 }
 
 .supplier-details__value--mono {
+  font-family: ui-monospace, monospace;
+}
+
+/* =========================================================
+   FOOTER DO MODAL (CORREÇÃO DE ESPAÇAMENTO)
+   ========================================================= */
+#supplier-picker-modal .modal__foot {
+  padding: 20px 24px !important; /* Força espaço nas laterais e embaixo */
+  border-top: 1px solid var(--border);
+  background: var(--surface-2);
+}
+
+#footer-details {
+  display: none; 
+  width: 100%; 
+  justify-content: space-between; 
+  align-items: center;
+  gap: 16px;
+}
+
+#footer-search {
+  display: contents;
+}
+
+/* =========================================================
+   CARD DE RESUMO DO FORNECEDOR (NA PÁGINA)
+   ========================================================= */
+.supplier-summary {
+  margin-top: 12px;
+  padding: 16px 20px; 
+  background: var(--surface-2);
+  border: 1px dashed var(--border-strong);
+  border-radius: 10px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 24px;
+  font-size: 13px;
+}
+
+.supplier-summary[hidden] {
+  display: none !important;
+}
+
+.supplier-summary__row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.supplier-summary__row--full {
+  grid-column: 1 / -1;
+}
+
+.supplier-summary__label {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.supplier-summary__value {
+  color: var(--text);
+  font-weight: 500;
+  line-height: 1.4;
+  font-size: 14px;
+}
+
+.supplier-summary__value--mono {
   font-family: ui-monospace, monospace;
 }
