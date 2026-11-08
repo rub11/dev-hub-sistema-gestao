@@ -1,0 +1,218 @@
+/* =========================================================
+   DEV HUB · Fornecedor Picker (Modal de Seleção)
+   ========================================================= */
+
+.supplier-picker-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14.5px;
+  cursor: pointer;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.supplier-picker-trigger:hover {
+  border-color: var(--border-strong);
+}
+
+.supplier-picker-trigger:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-ring);
+}
+
+.supplier-picker-trigger__left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.supplier-picker-trigger__left svg {
+  color: var(--text-muted);
+  flex: none;
+}
+
+.supplier-search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.supplier-search-box svg {
+  position: absolute;
+  left: 14px;
+  width: 18px;
+  height: 18px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.supplier-search-box input {
+  width: 100%;
+  height: 46px;
+  padding: 0 14px 0 42px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14.5px;
+  outline: none;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.supplier-search-box input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+
+.supplier-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 400px;
+  overflow-y: auto;
+  margin: 0 -10px;
+  padding: 0 10px;
+}
+
+.supplier-list::-webkit-scrollbar {
+  width: 6px;
+}
+.supplier-list::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 3px;
+}
+
+.supplier-list__item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.supplier-list__item:hover {
+  background: var(--surface-2);
+  border-color: var(--border);
+}
+
+.supplier-list__avatar {
+  width: 38px;
+  height: 38px;
+  flex: none;
+  border-radius: 8px;
+  background: rgba(249, 115, 22, 0.12);
+  color: var(--accent);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.supplier-list__info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.supplier-list__info strong {
+  font-size: 14.5px;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.supplier-list__info span {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.supplier-list__empty {
+  padding: 30px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13.5px;
+}
+
+/* =========================================================
+   VIEW DE DETALHES DO FORNECEDOR
+   ========================================================= */
+.supplier-details {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 10px 0;
+}
+
+.supplier-details__header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.supplier-details__avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  display: grid;
+  place-items: center;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.supplier-details__name {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.supplier-details__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.supplier-details__item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.supplier-details__label {
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.supplier-details__value {
+  font-size: 14.5px;
+  color: var(--text);
+}
+
+.supplier-details__value--mono {
+  font-family: ui-monospace, monospace;
+}

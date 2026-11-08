@@ -8,8 +8,12 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  
   <link rel="stylesheet" href="css/global.css" />
   <link rel="stylesheet" href="css/theme.css" />
+  <link rel="stylesheet" href="css/clientes.css" /> <!-- ⬅️ ESSENCIAL PARA O MODAL FUNCIONAR -->
+  <link rel="stylesheet" href="css/custom-select.css" />
+  <link rel="stylesheet" href="css/supplier-picker.css" />
   
   <link rel="stylesheet" href="css/compras-nova.css" />
 </head>
@@ -24,65 +28,59 @@
 
       <form id="cmp-form" class="cmp-form" novalidate>
 
-       
-        
-        </section>
         <!-- ============== IDENTIFICAÇÃO ============== -->
-<section class="cmp-section">
-  <h2 class="cmp-section__title">Identificação</h2>
-  <div class="cmp-grid cmp-grid--3">
-    <div class="field">
-      <label for="cmp-code">Código</label>
-      <input id="cmp-code" type="text" readonly />
-    </div>
-    <div class="field">
-      <label for="cmp-date">Data da compra</label>
-      <input id="cmp-date" type="date" />
-    </div>
-    <div class="field">
-      <label for="cmp-expected">Previsão de entrega</label>
-      <input id="cmp-expected" type="date" />
-    </div>
-  </div>
-</section>
+        <section class="cmp-section">
+          <h2 class="cmp-section__title">Identificação</h2>
+          <div class="cmp-grid cmp-grid--3">
+            <div class="field">
+              <label for="cmp-code">Código</label>
+              <input id="cmp-code" type="text" readonly />
+            </div>
+            <div class="field">
+              <label for="cmp-date">Data da compra</label>
+              <input id="cmp-date" type="date" />
+            </div>
+            <div class="field">
+              <label for="cmp-expected">Previsão de entrega</label>
+              <input id="cmp-expected" type="date" />
+            </div>
+          </div>
+        </section>
 
-     <!-- ============== FORNECEDOR ============== -->
-<section class="cmp-section">
-  <h2 class="cmp-section__title">Fornecedor</h2>
+        <!-- ============== FORNECEDOR ============== -->
+        <section class="cmp-section">
+          <h2 class="cmp-section__title">Fornecedor</h2>
 
-  <div class="cmp-grid cmp-grid--2">
-    <div class="field">
-      <label for="cmp-supplier">Fornecedor cadastrado</label>
-      <div class="cmp-supplier-row">
-        <select id="cmp-supplier" class="control-select">
-          <option value="">— Selecione —</option>
-        </select>
-        <button type="button" class="cmp-btn cmp-btn--ghost cmp-btn--sm" id="cmp-new-supplier" title="Cadastrar novo fornecedor">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
-            <path d="M12 5v14M5 12h14"/>
-          </svg>
-          <span>Novo</span>
-        </button>
-      </div>
-    </div>
+          <!-- O grid agora tem apenas 1 campo ocupando a linha inteira -->
+          <div class="cmp-grid" style="grid-template-columns: 1fr;">
+            <div class="field">
+              <label for="cmp-supplier">Fornecedor</label>
+              <div class="cmp-supplier-row">
+                
+                <!-- O atributo dh-no-custom impede que o script crie um botão falso aqui -->
+                <select id="cmp-supplier" class="dh-no-custom" hidden>
+                  <option value="">— Selecione —</option>
+                </select>
 
-    <div class="field">
-      <label for="cmp-supplier-name-manual">Ou nome livre</label>
-      <input id="cmp-supplier-name-manual" type="text" placeholder="Se não cadastrado" />
-    </div>
+                <!-- Botão que abre o modal de busca -->
+                <button type="button" id="open-supplier-picker" class="supplier-picker-trigger">
+                  <div class="supplier-picker-trigger__left">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+                    <span id="supplier-picker-label">— Selecione o fornecedor —</span>
+                  </div>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
 
-    <div class="field">
-      <label for="cmp-supplier-doc">CNPJ / CPF</label>
-      <input id="cmp-supplier-doc" type="text" inputmode="numeric" placeholder="00.000.000/0000-00" />
-    </div>
-
-    <div class="field">
-      <label for="cmp-supplier-contact">Contato</label>
-      <input id="cmp-supplier-contact" type="text" placeholder="Nome, telefone..." />
-    </div>
-  </div>
-</section>
-
+                <button type="button" class="cmp-btn cmp-btn--ghost cmp-btn--sm" id="cmp-new-supplier" title="Cadastrar novo fornecedor">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+                    <path d="M12 5v14M5 12h14"/>
+                  </svg>
+                  <span>Novo</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
 
         <!-- Itens -->
         <section class="cmp-section">
@@ -182,179 +180,186 @@
         </section>
 
         <!-- Ações -->
-           <!-- ============== BARRA DE AÇÕES ============== -->
-      <div class="cmp-action-bar">
+        <div class="cmp-action-bar">
+          <div class="cmp-save-mode" role="radiogroup" aria-label="Modo de salvamento">
+            <span class="cmp-save-mode__label">Salvar como</span>
+            <div class="cmp-save-mode__group">
+              <label class="cmp-save-option">
+                <input type="radio" name="save-mode" value="rascunho" checked />
+                <span class="cmp-save-option__box">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/>
+                    <path d="M17 21v-8H7v8M7 3v5h8"/>
+                  </svg>
+                  <span>Rascunho</span>
+                </span>
+              </label>
 
-        <!-- Modo de salvamento (segmented control) -->
-        <div class="cmp-save-mode" role="radiogroup" aria-label="Modo de salvamento">
-          <span class="cmp-save-mode__label">Salvar como</span>
-          <div class="cmp-save-mode__group">
-            <label class="cmp-save-option">
-              <input type="radio" name="save-mode" value="rascunho" checked />
-              <span class="cmp-save-option__box">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/>
-                  <path d="M17 21v-8H7v8M7 3v5h8"/>
-                </svg>
-                <span>Rascunho</span>
-              </span>
-            </label>
-
-            <label class="cmp-save-option">
-              <input type="radio" name="save-mode" value="pendente_recebimento" />
-              <span class="cmp-save-option__box">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path d="M3 3h2l2.4 12.4a2 2 0 0 0 2 1.6h9.2a2 2 0 0 0 2-1.6L22 7H6"/>
-                  <path d="m13 11 3 3 5-5"/>
-                </svg>
-                <span>Enviar para recebimento</span>
-              </span>
-            </label>
+              <label class="cmp-save-option">
+                <input type="radio" name="save-mode" value="pendente_recebimento" />
+                <span class="cmp-save-option__box">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M3 3h2l2.4 12.4a2 2 0 0 0 2 1.6h9.2a2 2 0 0 0 2-1.6L22 7H6"/>
+                    <path d="m13 11 3 3 5-5"/>
+                  </svg>
+                  <span>Enviar para recebimento</span>
+                </span>
+              </label>
+            </div>
           </div>
+
+          <div class="cmp-action-bar__buttons">
+            <a href="compras.html" class="cmp-btn cmp-btn--ghost">Cancelar</a>
+            <button type="submit" class="cmp-btn cmp-btn--primary cmp-btn--lg" id="cmp-submit">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M5 12l5 5L20 7"/>
+              </svg>
+              <span>Salvar compra</span>
+            </button>
+          </div>
+
+          <input type="hidden" id="cmp-save-mode" value="rascunho" />
         </div>
 
-        <!-- Ações -->
-        <div class="cmp-action-bar__buttons">
-          <a href="compras.html" class="cmp-btn cmp-btn--ghost">Cancelar</a>
-          <button type="submit" class="cmp-btn cmp-btn--primary cmp-btn--lg" id="cmp-submit">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M5 12l5 5L20 7"/>
+      </form>
+    </main>
+  </div>
+
+  <!-- ================= MODAL: BUSCAR FORNECEDOR ================= -->
+  <div class="modal" id="supplier-picker-modal" hidden>
+    <div class="modal__backdrop" data-close-picker></div>
+    <div class="modal__dialog modal__dialog--md" role="dialog" aria-modal="true" aria-labelledby="supplier-picker-title">
+      
+      <header class="modal__head">
+        <h2 class="modal__title" id="supplier-picker-title">Buscar Fornecedor</h2>
+        <button type="button" class="icon-btn modal__close" aria-label="Fechar" data-close-picker>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+        </button>
+      </header>
+
+      <div class="modal__body" style="padding-top: 10px;">
+        <div class="supplier-search-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input type="text" id="supplier-search-input" placeholder="Pesquisar por nome ou CNPJ..." autocomplete="off" />
+        </div>
+
+        <div class="supplier-list" id="supplier-list">
+          <!-- Injetado via JS -->
+        </div>
+      </div>
+
+      <footer class="modal__foot" style="justify-content: space-between;">
+        <p style="margin:0; font-size:12.5px; color:var(--text-muted)">Não achou quem procurava?</p>
+        <button type="button" class="btn btn--primary" id="supplier-picker-new-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><path d="M12 5v14M5 12h14"/></svg>
+          <span>Cadastrar novo fornecedor</span>
+        </button>
+      </footer>
+
+    </div>
+  </div>
+
+  <!-- MODAL DE CADASTRO DE FORNECEDOR (Puxa CNPJ) -->
+  <div class="cmp-modal" id="supplier-modal" hidden>
+    <div class="cmp-modal__backdrop" data-close></div>
+    <div class="cmp-modal__dialog cmp-modal__dialog--lg">
+      <header class="cmp-modal__head">
+        <h3 class="cmp-modal__title">Novo fornecedor</h3>
+        <button type="button" class="cmp-modal__close" aria-label="Fechar" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </header>
+
+      <div class="cmp-modal__body">
+        <div class="cmp-cnpj">
+          <div class="field cmp-cnpj__field">
+            <label for="sup-cnpj">CNPJ</label>
+            <input id="sup-cnpj" type="text" inputmode="numeric" placeholder="00.000.000/0000-00" maxlength="18" autocomplete="off" />
+          </div>
+          <button type="button" class="cmp-btn cmp-btn--primary cmp-cnpj__btn" id="sup-cnpj-search" title="Buscar dados do CNPJ automaticamente">
+            <span class="cmp-cnpj__spinner" aria-hidden="true"></span>
+            <svg class="cmp-cnpj__icon-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>
             </svg>
-            <span>Salvar compra</span>
+            <span>Buscar dados</span>
           </button>
         </div>
 
-        <!-- Campo oculto que o JS lê (compatibilidade) -->
-        <input type="hidden" id="cmp-save-mode" value="rascunho" />
+        <p class="cmp-cnpj__hint" id="sup-cnpj-hint">
+          Digite o CNPJ e clique em <strong>Buscar dados</strong> para preencher automaticamente.
+        </p>
+
+        <div class="cmp-grid cmp-grid--2">
+          <div class="field" style="grid-column: 1 / -1">
+            <label for="sup-name">Razão social / Nome *</label>
+            <input id="sup-name" type="text" />
+          </div>
+          <div class="field">
+            <label for="sup-fantasy">Nome fantasia</label>
+            <input id="sup-fantasy" type="text" />
+          </div>
+          <div class="field">
+            <label for="sup-email">E-mail</label>
+            <input id="sup-email" type="email" />
+          </div>
+          <div class="field">
+            <label for="sup-phone">Telefone</label>
+            <input id="sup-phone" type="text" />
+          </div>
+          <div class="field">
+            <label for="sup-contact">Contato responsável</label>
+            <input id="sup-contact" type="text" placeholder="Nome de quem atende" />
+          </div>
+          <div class="field" style="grid-column: 1 / -1">
+            <label for="sup-address">Endereço</label>
+            <input id="sup-address" type="text" placeholder="Rua, número, bairro, cidade/UF, CEP" />
+          </div>
+        </div>
+
+        <div class="cmp-error" id="sup-error" hidden></div>
       </div>
 
-      </form>
-      <!-- ============================================================
-     MODAL · Cadastrar fornecedor (inline)
-     ============================================================ -->
-<div class="cmp-modal" id="supplier-modal" hidden>
-  <div class="cmp-modal__backdrop" data-close></div>
-  <div class="cmp-modal__dialog cmp-modal__dialog--lg">
-    <header class="cmp-modal__head">
-      <h3 class="cmp-modal__title">Novo fornecedor</h3>
-      <button type="button" class="cmp-modal__close" aria-label="Fechar" data-close>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
-      </button>
-    </header>
-
-    <div class="cmp-modal__body">
-
-      <!-- Busca por CNPJ -->
-      <div class="cmp-cnpj">
-        <div class="field cmp-cnpj__field">
-          <label for="sup-cnpj">CNPJ</label>
-          <input
-            id="sup-cnpj"
-            type="text"
-            inputmode="numeric"
-            placeholder="00.000.000/0000-00"
-            maxlength="18"
-            autocomplete="off"
-          />
-        </div>
-        <button
-          type="button"
-          class="cmp-btn cmp-btn--primary cmp-cnpj__btn"
-          id="sup-cnpj-search"
-          title="Buscar dados do CNPJ automaticamente"
-        >
+      <footer class="cmp-modal__foot">
+        <button type="button" class="cmp-btn cmp-btn--ghost" data-close>Cancelar</button>
+        <button type="button" class="cmp-btn cmp-btn--primary" id="sup-save">
           <span class="cmp-cnpj__spinner" aria-hidden="true"></span>
-          <svg class="cmp-cnpj__icon-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="11" cy="11" r="7"/>
-            <path d="m20 20-3.5-3.5"/>
-          </svg>
-          <span>Buscar dados</span>
+          <span>Salvar fornecedor</span>
         </button>
-      </div>
-
-      <p class="cmp-cnpj__hint" id="sup-cnpj-hint">
-        Digite o CNPJ e clique em <strong>Buscar dados</strong> para preencher automaticamente.
-      </p>
-
-      <!-- Dados do fornecedor -->
-      <div class="cmp-grid cmp-grid--2">
-        <div class="field" style="grid-column: 1 / -1">
-          <label for="sup-name">Razão social / Nome *</label>
-          <input id="sup-name" type="text" />
-        </div>
-
-        <div class="field">
-          <label for="sup-fantasy">Nome fantasia</label>
-          <input id="sup-fantasy" type="text" />
-        </div>
-
-        <div class="field">
-          <label for="sup-email">E-mail</label>
-          <input id="sup-email" type="email" />
-        </div>
-
-        <div class="field">
-          <label for="sup-phone">Telefone</label>
-          <input id="sup-phone" type="text" />
-        </div>
-
-        <div class="field">
-          <label for="sup-contact">Contato responsável</label>
-          <input id="sup-contact" type="text" placeholder="Nome de quem atende" />
-        </div>
-
-        <div class="field" style="grid-column: 1 / -1">
-          <label for="sup-address">Endereço</label>
-          <input id="sup-address" type="text" placeholder="Rua, número, bairro, cidade/UF, CEP" />
-        </div>
-      </div>
-
-      <div class="cmp-error" id="sup-error" hidden></div>
-
+      </footer>
     </div>
-
-    <footer class="cmp-modal__foot">
-      <button type="button" class="cmp-btn cmp-btn--ghost" data-close>Cancelar</button>
-      <button type="button" class="cmp-btn cmp-btn--primary" id="sup-save">
-        <span class="cmp-cnpj__spinner" aria-hidden="true"></span>
-        <span>Salvar fornecedor</span>
-      </button>
-    </footer>
-  </div>
-</div>
-    </main>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/nav/config.js"></script>
-<script src="js/nav/state.js"></script>
-<script src="js/nav/roles.js"></script>
-<script src="js/nav/styles.js"></script>
-<script src="js/nav/permission-modal.js"></script>
-<script src="js/nav/tabs.js"></script>
-<script src="js/nav/module-menu.js"></script>
-<script src="js/nav/notifications.js"></script>
-<script src="js/nav/user-menu.js"></script>
-<script src="js/nav/favorites-modal.js"></script>
-<script src="js/nav/search.js"></script>
-<script src="js/nav/org-switcher.js"></script>
-<script src="js/nav/bar.js"></script>
-<script src="js/nav/favorites.js"></script>
-<script src="js/nav/main.js"></script>
+  <script src="js/nav/state.js"></script>
+  <script src="js/nav/roles.js"></script>
+  <script src="js/nav/styles.js"></script>
+  <script src="js/nav/permission-modal.js"></script>
+  <script src="js/nav/tabs.js"></script>
+  <script src="js/nav/module-menu.js"></script>
+  <script src="js/nav/notifications.js"></script>
+  <script src="js/nav/user-menu.js"></script>
+  <script src="js/nav/favorites-modal.js"></script>
+  <script src="js/nav/search.js"></script>
+  <script src="js/nav/org-switcher.js"></script>
+  <script src="js/nav/bar.js"></script>
+  <script src="js/nav/favorites.js"></script>
+  <script src="js/nav/main.js"></script>
   <script src="js/permissions.js"></script>
+  
+  <script src="js/custom-select.js"></script>
 
   <!-- compras — ordem importa! -->
   <script src="js/compras/state.js"></script>
   <script src="js/compras/api.js"></script>
   <script src="js/compras/supplier-modal.js"></script>
+  <script src="js/compras/supplier-picker.js"></script>
   <script src="js/compras/list.js"></script>
   <script src="js/compras/nova.js"></script>
   <script src="js/compras/receber.js"></script>
   <script src="js/compras/fornecedores.js"></script>
   <script src="js/compras/init.js"></script>
-</body>
-</html>
 </body>
 </html>

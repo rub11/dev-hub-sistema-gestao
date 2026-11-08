@@ -41,7 +41,7 @@
 .cad-tab.is-active {
   background: var(--surface-2);
   color: var(--text);
-  box-shadow: 0 0 0 1px var(--accent) inset; /* Linha laranja ao redor da aba ativa */
+  box-shadow: 0 0 0 1px var(--accent) inset;
 }
 .cad-tab svg { width: 16px; height: 16px; flex: none; }
 .cad-tab.is-active svg { color: var(--accent); }
@@ -66,16 +66,9 @@
 /* ---------- Badges (Cores Padronizadas) ---------- */
 .badge--receita   { background: var(--success-soft); color: var(--success); }
 .badge--despesa   { background: var(--danger-soft);  color: var(--danger); }
-
-/* Custo: Âmbar/Dourado */
 .badge--custo     { background: rgba(245, 158, 11, 0.14); color: #b45309; }
-
-/* Imposto: Laranja Principal (Raposa) */
 .badge--imposto   { background: rgba(249, 115, 22, 0.14); color: #EA580C; }
-
-/* Financeiro: Laranja mais claro/terroso */
 .badge--financeiro { background: rgba(217, 119, 6, 0.14); color: #b45309; }
-
 .badge--neutral   { background: var(--surface-2); color: var(--text-soft); }
 
 [data-theme="dark"] .badge--custo     { background: rgba(245, 158, 11, 0.18); color: #fbbf24; }
@@ -114,130 +107,128 @@
 .cad-form__field--full { grid-column: 1 / -1; }
 
 /* =========================================================
-   RESET NUCLEAR — "all: unset" zera tudo que o global.css
-   ou theme.css aplicam, e depois reconstruímos do zero
+   Estilização limpa dos campos (Substitui o "Reset Nuclear")
    ========================================================= */
-
 .cad-form__field input:not([type="checkbox"]),
 .cad-form__field select,
 .cad-form__field textarea {
-  all: unset !important;
-  box-sizing: border-box !important;
-  display: block !important;
-  width: 100% !important;
-  min-height: 40px !important;
-  padding: 9px 12px !important;
-  border: 1px solid var(--border-strong) !important;
-  border-radius: var(--radius) !important;
-  background-color: var(--surface-2) !important;
-  color: var(--text) !important;
-  font-family: inherit !important;
-  font-size: 13.5px !important;
-  font-weight: 400 !important;
-  line-height: 1.4 !important;
-  outline: none !important;
-  transition: border-color .15s, box-shadow .15s, background-color .15s !important;
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  min-height: 40px;
+  padding: 9px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background-color: var(--surface-2);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 400;
+  line-height: 1.4;
+  outline: none;
+  transition: border-color .15s, box-shadow .15s, background-color .15s;
 }
 
 .cad-form__field textarea {
-  min-height: 92px !important;
-  padding: 10px 12px !important;
-  resize: vertical !important;
-  white-space: pre-wrap !important;
+  min-height: 92px;
+  padding: 10px 12px;
+  resize: vertical;
+  white-space: pre-wrap;
 }
 
 .cad-form__field input:not([type="checkbox"]):focus,
 .cad-form__field select:focus,
 .cad-form__field textarea:focus {
-  border-color: var(--accent) !important; /* Borda Laranja no foco */
-  box-shadow: 0 0 0 3px var(--accent-ring) !important;
-  background-color: var(--surface) !important;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-ring);
+  background-color: var(--surface);
 }
 
 /* ---------- SELECT: sem seta nativa, UMA seta custom ---------- */
 .cad-form__field select {
-  -webkit-appearance: none !important;
-  appearance: none !important;
-  padding-right: 38px !important;
-  cursor: pointer !important;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23667085' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>") !important;
-  background-repeat: no-repeat !important;
-  background-position: right 12px center !important;
-  background-size: 14px 14px !important;
+  -webkit-appearance: none;
+  appearance: none;
+  padding-right: 38px;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23667085' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 14px 14px;
 }
 
 [data-theme="dark"] .cad-form__field select {
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>") !important;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
 }
 
 .cad-form__field select option {
-  background-color: var(--surface) !important;
-  color: var(--text) !important;
+  background-color: var(--surface);
+  color: var(--text);
 }
 
 /* ---------- CHECKBOX: quadrado customizado ---------- */
 .cad-form__field input[type="checkbox"] {
-  all: unset !important;
-  box-sizing: border-box !important;
-  display: inline-block !important;
-  width: 18px !important;
-  height: 18px !important;
-  flex: none !important;
-  border: 1.5px solid var(--border-strong) !important;
-  border-radius: 4px !important;
-  background-color: var(--surface) !important;
-  cursor: pointer !important;
-  position: relative !important;
-  vertical-align: middle !important;
-  transition: background-color .15s, border-color .15s !important;
+  box-sizing: border-box;
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  flex: none;
+  border: 1.5px solid var(--border-strong);
+  border-radius: 4px;
+  background-color: var(--surface);
+  cursor: pointer;
+  position: relative;
+  vertical-align: middle;
+  transition: background-color .15s, border-color .15s;
+  appearance: none;
+  -webkit-appearance: none;
 }
 
 .cad-form__field input[type="checkbox"]:hover {
-  border-color: var(--accent) !important;
+  border-color: var(--accent);
 }
 
 .cad-form__field input[type="checkbox"]:focus-visible {
-  box-shadow: 0 0 0 3px var(--accent-ring) !important;
+  box-shadow: 0 0 0 3px var(--accent-ring);
 }
 
 .cad-form__field input[type="checkbox"]:checked {
-  background-color: var(--accent) !important; /* Fundo laranja */
-  border-color: var(--accent) !important;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'><path d='M20 6 9 17l-5-5'/></svg>") !important;
-  background-repeat: no-repeat !important;
-  background-position: center !important;
-  background-size: 12px 12px !important;
+  background-color: var(--accent);
+  border-color: var(--accent);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'><path d='M20 6 9 17l-5-5'/></svg>");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 12px 12px;
 }
 
 /* ---------- Checkbox wrapper ---------- */
 .cad-form__checkbox {
-  display: flex !important;
-  align-items: center !important;
-  gap: 10px !important;
-  padding: 10px 12px !important;
-  border: 1px solid var(--border) !important;
-  border-radius: var(--radius) !important;
-  background-color: var(--surface-2) !important;
-  cursor: pointer !important;
-  user-select: none !important;
-  transition: border-color .15s !important;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background-color: var(--surface-2);
+  cursor: pointer;
+  user-select: none;
+  transition: border-color .15s;
 }
-.cad-form__checkbox:hover { border-color: var(--border-strong) !important; }
+.cad-form__checkbox:hover { border-color: var(--border-strong); }
 .cad-form__checkbox span {
-  font-size: 13.5px !important;
-  color: var(--text) !important;
-  font-weight: 500 !important;
-  line-height: 1 !important;
+  font-size: 13.5px;
+  color: var(--text);
+  font-weight: 500;
+  line-height: 1;
 }
 
 /* ---------- Labels ---------- */
 .cad-form__field > label {
-  display: block !important;
-  margin-bottom: 6px !important;
-  font-size: 12.5px !important;
-  font-weight: 600 !important;
-  color: var(--text-soft) !important;
-  letter-spacing: 0.01em !important;
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-soft);
+  letter-spacing: 0.01em;
 }
 
 .cad-form__hint {

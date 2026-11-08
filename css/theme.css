@@ -20,6 +20,8 @@ body {
   --warning: #fdb022; --warning-soft: rgba(253, 176, 34, 0.12); --warning-border: rgba(253, 176, 34, 0.28);
   --success: #4ade80; --success-soft: rgba(74, 222, 128, 0.12);
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4); --shadow-md: 0 6px 20px -6px rgba(0, 0, 0, 0.55), 0 2px 6px -2px rgba(0, 0, 0, 0.35);
+  
+  color-scheme: dark;
 }
 
 [data-theme="light"] {
@@ -30,9 +32,58 @@ body {
   --warning: #f59e0b; --warning-soft: rgba(245, 158, 11, 0.12); --warning-border: rgba(245, 158, 11, 0.28);
   --success: #10b981; --success-soft: rgba(16, 185, 129, 0.12);
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03); --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+  
+  color-scheme: light;
 }
 
-/* Tela Inicial */
+/* =========================================================
+   CONTROLES NATIVOS · Correção de Vazamento de Tema
+   ========================================================= */
+
+/* Destaca seleção e checagem com a cor da marca em vez do azul do OS */
+* {
+  accent-color: var(--accent) !important;
+}
+
+/* Caixa de seleção (Select) */
+select {
+  background-color: var(--surface);
+  color: var(--text);
+}
+
+/* Lista de opções (Dropdown aberto) */
+option {
+  background-color: var(--surface) !important;
+  color: var(--text) !important;
+  padding: 8px;
+}
+
+/* Tenta forçar a cor de destaque no hover/seleção dos options */
+select option:checked,
+select option:hover,
+select option:focus {
+  background-color: var(--accent-hover) !important;
+  color: #fff !important;
+  /* Fallback para navegadores que usam gradiente no highlight nativo */
+  background-image: linear-gradient(0deg, var(--accent-hover) 0%, var(--accent-hover) 100%) !important;
+}
+
+/* Esconde as setinhas nativas dos inputs numéricos */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* =========================================================
+   Tela Inicial
+   ========================================================= */
 [data-theme="light"] .welcome__card { background-color: #ffffff !important; border: 1px solid #e2e8f0 !important; box-shadow: 0 2px 4px rgba(0,0,0,0.02), 0 1px 2px rgba(0,0,0,0.04) !important; }
 [data-theme="light"] .welcome__card:hover { border-color: rgba(249, 115, 22, 0.4) !important; background: #ffffff !important; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05), 0 8px 16px -6px rgba(249, 115, 22, 0.1) !important; transform: translateY(-2px); }
 [data-theme="light"] .welcome__card-icon { background: #fff7ed !important; color: #f97316 !important; }
@@ -100,8 +151,6 @@ body {
    ========================================================= */
 
 /* 1. Alinhamento e Grid dos Cards de Resumo */
-/* Se a sua div que envolve os cards tiver uma classe, ajuste aqui. */
-/* Este seletor tenta pegar os cards do topo de forma genérica. */
 .stats-grid, 
 .kpi-grid,
 .dashboard-cards {
@@ -111,41 +160,56 @@ body {
   margin-bottom: 32px;
 }
 
-/* 2. Os Cards de Resumo (Total, Pendentes, Aprovados...) */
-/* Substitui o fundo preto chapado por um tom de superfície elegante */
-div[class*="stat"], 
-div[class*="kpi"], 
-div[class*="card"] {
+/* 2. Os Cards de Resumo (.kpi, .stat, .dash-card, .orc-stat, .sale-stat) */
+.kpi, 
+.stat, 
+.dash-card, 
+.orc-stat, 
+.sale-stat,
+.fin-kpi {
   background-color: var(--surface) !important;
   border: 1px solid var(--border) !important;
-  border-radius: 16px !important; /* Bordas mais arredondadas */
+  border-radius: 16px !important;
   padding: 20px 24px !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) !important; /* Sombra suave */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) !important;
   transition: transform 0.2s ease, box-shadow 0.2s ease !important;
 }
 
 /* Efeito flutuante ao passar o mouse */
-div[class*="stat"]:hover, 
-div[class*="kpi"]:hover {
+.kpi:hover, 
+.stat:hover,
+.orc-stat:hover,
+.sale-stat:hover,
+.fin-kpi:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08) !important;
 }
 
 /* Ajuste fino das cores dos textos dos cards */
-[data-theme="dark"] div[class*="stat"],
-[data-theme="dark"] div[class*="kpi"] {
+[data-theme="dark"] .kpi,
+[data-theme="dark"] .stat,
+[data-theme="dark"] .dash-card,
+[data-theme="dark"] .orc-stat,
+[data-theme="dark"] .sale-stat,
+[data-theme="dark"] .fin-kpi {
   background: linear-gradient(145deg, #14171b, #1a1e23) !important;
 }
 
-[data-theme="light"] div[class*="stat"],
-[data-theme="light"] div[class*="kpi"] {
+[data-theme="light"] .kpi,
+[data-theme="light"] .stat,
+[data-theme="light"] .dash-card,
+[data-theme="light"] .orc-stat,
+[data-theme="light"] .sale-stat,
+[data-theme="light"] .fin-kpi {
   background: #ffffff !important;
 }
 
 /* 3. Títulos e Números dentro dos Cards */
-div[class*="stat"] [class*="label"],
-div[class*="stat"] span,
-div[class*="kpi"] [class*="label"] {
+.kpi__label,
+.stat__label,
+.orc-stat__label,
+.sale-stat__label,
+.fin-kpi__label {
   font-size: 11px !important;
   font-weight: 700 !important;
   text-transform: uppercase !important;
@@ -155,9 +219,11 @@ div[class*="kpi"] [class*="label"] {
   display: block !important;
 }
 
-div[class*="stat"] [class*="value"],
-div[class*="stat"] strong,
-div[class*="kpi"] [class*="value"] {
+.kpi__value,
+.stat__value,
+.orc-stat__value,
+.sale-stat__value,
+.fin-kpi__value {
   font-size: 28px !important;
   font-weight: 800 !important;
   letter-spacing: -0.03em !important;
@@ -165,13 +231,12 @@ div[class*="kpi"] [class*="value"] {
   line-height: 1 !important;
 }
 
-/* Cores específicas dos números baseados no texto */
-div[class*="stat"]:nth-child(2) strong { color: #f59e0b !important; } /* Pendentes (Amarelo) */
-div[class*="stat"]:nth-child(3) strong { color: #10b981 !important; } /* Aprovados (Verde) */
-div[class*="stat"]:nth-child(4) strong { color: var(--accent) !important; } /* Valor Total (Laranja) */
+/* Cores específicas dos números baseados nas classes dos cards */
+.orc-stat--warn .orc-stat__value { color: #f59e0b !important; } /* Pendentes (Amarelo) */
+.orc-stat--ok .orc-stat__value { color: #10b981 !important; } /* Aprovados (Verde) */
+.orc-stat--info .orc-stat__value { color: var(--accent) !important; } /* Valor Total (Laranja) */
 
 /* 4. Tabela de Orçamentos (Visual Mais Limpo) */
-/* Arredonda a caixa que envolve a tabela */
 .table-wrap, .panel, .table-container {
   background: var(--surface) !important;
   border: 1px solid var(--border) !important;
@@ -256,14 +321,19 @@ div[class*="stat"]:nth-child(4) strong { color: var(--accent) !important; } /* V
   background:
     radial-gradient(ellipse 60% 100% at 50% 0%, rgba(249, 115, 22, 0.05) 0%, transparent 70%),
     radial-gradient(ellipse 40% 80% at 80% 0%, rgba(234, 88, 12, 0.03) 0%, transparent 60%),
-    #f8fafc !important; /* Cinza quase branco, mais elegante que o branco puro */
+    #f8fafc !important;
   background-attachment: fixed !important;
 }
 
 /* 2. Cards (Total, Pendentes, etc) Brancos com Sombra */
 [data-theme="light"] .card,
 [data-theme="light"] .stat-card,
-[data-theme="light"] div[class*="stat"],
+[data-theme="light"] .kpi,
+[data-theme="light"] .stat,
+[data-theme="light"] .dash-card,
+[data-theme="light"] .orc-stat,
+[data-theme="light"] .sale-stat,
+[data-theme="light"] .fin-kpi,
 [data-theme="light"] .panel {
   background: #ffffff !important;
   border: 1px solid #e2e8f0 !important;
@@ -271,8 +341,10 @@ div[class*="stat"]:nth-child(4) strong { color: var(--accent) !important; } /* V
 }
 
 /* 3. Títulos dos cards (TOTAL, PENDENTES) em cinza elegante */
-[data-theme="light"] div[class*="stat"] [class*="label"],
-[data-theme="light"] div[class*="stat"] span:first-child {
+[data-theme="light"] .kpi__label,
+[data-theme="light"] .stat__label,
+[data-theme="light"] .orc-stat__label,
+[data-theme="light"] .sale-stat__label {
   color: #64748b !important;
   font-weight: 700 !important;
   letter-spacing: 0.05em !important;
@@ -282,9 +354,9 @@ div[class*="stat"]:nth-child(4) strong { color: var(--accent) !important; } /* V
 [data-theme="light"] .badge,
 [data-theme="light"] .status,
 [data-theme="light"] span[class*="badge"] {
-  background-color: #ecfdf5 !important; /* Fundo verde bem clarinho */
-  color: #059669 !important;           /* Texto verde escuro */
-  border: 1px solid #a7f3d0 !important; /* Borda verde clara */
+  background-color: #ecfdf5 !important;
+  color: #059669 !important;
+  border: 1px solid #a7f3d0 !important;
   padding: 4px 10px !important;
   border-radius: 20px !important;
   font-weight: 600 !important;
@@ -312,13 +384,13 @@ div[class*="stat"]:nth-child(4) strong { color: var(--accent) !important; } /* V
 /* 7. Destaque nos Ícones de Ação (O olhinho) */
 [data-theme="light"] td svg,
 [data-theme="light"] .row-action svg {
-  color: #94a3b8 !important; /* Cinza azulado */
+  color: #94a3b8 !important;
   transition: color 0.2s ease, transform 0.2s ease !important;
 }
 
 [data-theme="light"] .row-action:hover svg {
-  color: #f97316 !important; /* Fica laranja ao passar o mouse */
-  transform: scale(1.1) !important; /* Dá um leve zoom */
+  color: #f97316 !important;
+  transform: scale(1.1) !important;
 }
 
 /* 8. Botão "+ Novo Orçamento" com mais destaque */
@@ -346,8 +418,8 @@ div[class*="stat"]:nth-child(4) strong { color: var(--accent) !important; } /* V
 [data-theme="light"] .btn--outline,
 [data-theme="light"] .filter-btn,
 [data-theme="light"] .welcome__search {
-  border: 1px solid #94a3b8 !important; /* Borda cinza médio para dar contraste */
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important; /* Sombra sutil para dar relevo */
+  border: 1px solid #94a3b8 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
 }
 
 /* Efeito ao passar o mouse (Fica Laranja) */
@@ -366,7 +438,7 @@ div[class*="stat"]:nth-child(4) strong { color: var(--accent) !important; } /* V
 [data-theme="light"] input[type="search"]:focus,
 [data-theme="light"] select:focus {
   border-color: #f97316 !important;
-  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15) !important; /* Brilho laranja em volta */
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15) !important;
 }
 
 /* Ajuste específico para o botão de "Aprovações" que tem ícone */
@@ -378,4 +450,3 @@ div[class*="stat"]:nth-child(4) strong { color: var(--accent) !important; } /* V
 [data-theme="light"] .btn:has(svg):hover {
   border-color: #f97316 !important;
 }
-

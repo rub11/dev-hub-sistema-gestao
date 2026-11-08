@@ -1,10 +1,11 @@
 /* =========================================================
    DEV HUB · Nova Compra · CSS dedicado (Padronizado Laranja)
    ---------------------------------------------------------
-   - Força centralização com alta especificidade
-   - Corrige chevron dos selects
-   - Todos os estilos do formulário em um único arquivo
-   - NÃO depende de compras.css
+   CORREÇÕES APLICADAS:
+   1. Bloco `.cmp-cnpj` unificado (estava duplicado 3 vezes).
+   2. Força centralização com alta especificidade.
+   3. Corrige chevron dos selects.
+   4. Todos os estilos do formulário em um único arquivo.
    ========================================================= */
 
 /* =========================================================
@@ -698,31 +699,141 @@ body[data-page="compras-nova"] .cmp-btn--sm svg {
 }
 
 /* =========================================================
-   14) MODAL · linha de busca CNPJ
+   14) MODAL · FORNECEDOR (cadastro inline) — Unificado
    ========================================================= */
 body[data-page="compras-nova"] .cmp-cnpj {
-  display: flex;
+  display: flex !important;
   align-items: flex-end;
   gap: 10px;
   width: 100%;
 }
+
 body[data-page="compras-nova"] .cmp-cnpj__field {
   flex: 1 1 auto;
   min-width: 0;
 }
+
+body[data-page="compras-nova"] .cmp-cnpj__field > label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-soft);
+}
+
+body[data-page="compras-nova"] .cmp-cnpj__field > input {
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background-color: var(--surface);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14.5px;
+  outline: none;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+body[data-page="compras-nova"] .cmp-cnpj__field > input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-ring);
+}
+
 body[data-page="compras-nova"] .cmp-cnpj__btn {
   flex: none;
   height: 44px;
+  min-width: 148px;
+  padding: 0 18px;
   gap: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #fff;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 160ms ease, box-shadow 160ms ease;
 }
+body[data-page="compras-nova"] .cmp-cnpj__btn:hover { background: var(--accent-hover); }
+body[data-page="compras-nova"] .cmp-cnpj__btn:disabled { opacity: 0.65; cursor: progress; }
+body[data-page="compras-nova"] .cmp-cnpj__btn svg { width: 15px; height: 15px; flex: none; }
+
 body[data-page="compras-nova"] .cmp-cnpj__hint {
-  margin: -6px 0 4px;
+  margin: 10px 0 0 !important;
   font-size: 12.5px;
   color: var(--text-muted);
-  line-height: 1.5;
+  line-height: 1.55;
 }
-body[data-page="compras-nova"] .cmp-cnpj__hint strong {
+body[data-page="compras-nova"] .cmp-cnpj__hint strong { color: var(--text-soft); font-weight: 600; }
+
+body[data-page="compras-nova"] .cmp-modal__body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+body[data-page="compras-nova"] .cmp-modal__body .cmp-grid--2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+body[data-page="compras-nova"] .cmp-modal__body .field[style*="grid-column"] {
+  grid-column: 1 / -1;
+}
+
+body[data-page="compras-nova"] .cmp-modal__body .field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+body[data-page="compras-nova"] .cmp-modal__body .field > label {
+  font-size: 13px;
+  font-weight: 600;
   color: var(--text-soft);
+  line-height: 1.35;
+}
+body[data-page="compras-nova"] .cmp-modal__body .field > input,
+body[data-page="compras-nova"] .cmp-modal__body .field > select,
+body[data-page="compras-nova"] .cmp-modal__body .field > textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background-color: var(--surface);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14.5px;
+  outline: none;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+body[data-page="compras-nova"] .cmp-modal__body .field > input::placeholder {
+  color: var(--text-muted);
+}
+body[data-page="compras-nova"] .cmp-modal__body .field > input:hover {
+  border-color: var(--border-strong);
+}
+body[data-page="compras-nova"] .cmp-modal__body .field > input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-ring);
+}
+
+body[data-page="compras-nova"] .cmp-modal__body .cmp-error {
+  margin: 0;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: var(--danger-soft);
+  border: 1px solid var(--danger-border);
+  color: var(--danger);
+  font-size: 13.5px;
+  line-height: 1.5;
 }
 
 body[data-page="compras-nova"] .cmp-cnpj__spinner {
@@ -735,17 +846,14 @@ body[data-page="compras-nova"] .cmp-cnpj__spinner {
   animation: cmp-spin 700ms linear infinite;
 }
 body[data-page="compras-nova"] .cmp-cnpj__btn.is-loading .cmp-cnpj__spinner,
+body[data-page="compras-nova"] #f-save.is-loading .cmp-cnpj__spinner,
 body[data-page="compras-nova"] #sup-save.is-loading .cmp-cnpj__spinner {
   display: inline-block;
 }
 body[data-page="compras-nova"] .cmp-cnpj__btn.is-loading .cmp-cnpj__icon-search {
   display: none;
 }
-body[data-page="compras-nova"] .cmp-cnpj__btn.is-loading,
-body[data-page="compras-nova"] #sup-save.is-loading {
-  cursor: progress;
-  opacity: 0.9;
-}
+@keyframes cmp-spin { to { transform: rotate(360deg); } }
 
 @keyframes cmp-field-filled {
   from { background-color: var(--accent-soft); }
@@ -771,10 +879,21 @@ body[data-page="compras-nova"] input.is-autofilled {
     width: 100%;
     justify-content: center;
   }
+  body[data-page="compras-nova"] .cmp-modal__body .cmp-grid--2 {
+    grid-template-columns: 1fr;
+  }
+  body[data-page="compras-nova"] .cmp-modal__body .field[style*="grid-column"] {
+    grid-column: auto;
+  }
+}
+
+[data-theme="dark"] body[data-page="compras-nova"] .cmp-cnpj__field > input:focus,
+[data-theme="dark"] body[data-page="compras-nova"] .cmp-modal__body .field > input:focus {
+  box-shadow: 0 0 0 4px var(--accent-ring);
 }
 
 /* =========================================================
-   15) MODAL (usado pelo cadastro de fornecedor inline)
+   15) MODAL (Wrapper)
    ========================================================= */
 body[data-page="compras-nova"] .cmp-modal[hidden] {
   display: none !important;
@@ -865,13 +984,6 @@ body[data-page="compras-nova"] .cmp-modal__close svg {
   height: 15px;
 }
 
-body[data-page="compras-nova"] .cmp-modal__body {
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
 body[data-page="compras-nova"] .cmp-modal__foot {
   display: flex;
   justify-content: flex-end;
@@ -879,57 +991,6 @@ body[data-page="compras-nova"] .cmp-modal__foot {
   padding: 16px 24px;
   border-top: 1px solid var(--border);
   background: var(--surface-2);
-}
-
-/* Row do CNPJ: input + botão lado a lado */
-body[data-page="compras-nova"] .cmp-cnpj {
-  display: flex;
-  align-items: flex-end;
-  gap: 10px;
-  width: 100%;
-}
-body[data-page="compras-nova"] .cmp-cnpj__field {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-body[data-page="compras-nova"] .cmp-cnpj__btn {
-  flex: none;
-  height: 44px;
-  gap: 8px;
-}
-body[data-page="compras-nova"] .cmp-cnpj__hint {
-  margin: -8px 0 4px;
-  font-size: 12.5px;
-  color: var(--text-muted);
-  line-height: 1.5;
-}
-body[data-page="compras-nova"] .cmp-cnpj__hint strong {
-  color: var(--text-soft);
-}
-
-body[data-page="compras-nova"] .cmp-cnpj__spinner {
-  display: none;
-  width: 14px;
-  height: 14px;
-  border: 2px solid rgba(255,255,255,0.4);
-  border-top-color: #fff;
-  border-radius: 50%;
-  animation: cmp-spin 700ms linear infinite;
-}
-body[data-page="compras-nova"] .cmp-cnpj__btn.is-loading .cmp-cnpj__spinner,
-body[data-page="compras-nova"] #sup-save.is-loading .cmp-cnpj__spinner {
-  display: inline-block;
-}
-body[data-page="compras-nova"] .cmp-cnpj__btn.is-loading .cmp-cnpj__icon-search {
-  display: none;
-}
-
-@keyframes cmp-field-filled {
-  from { background-color: var(--accent-soft); }
-  to   { background-color: var(--surface); }
-}
-body[data-page="compras-nova"] input.is-autofilled {
-  animation: cmp-field-filled 1200ms ease-out;
 }
 
 @media (max-width: 640px) {
@@ -944,20 +1005,12 @@ body[data-page="compras-nova"] input.is-autofilled {
     width: 100%;
     justify-content: center;
   }
-  body[data-page="compras-nova"] .cmp-cnpj {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  body[data-page="compras-nova"] .cmp-cnpj__btn {
-    width: 100%;
-    justify-content: center;
-  }
 }
 
 /* =========================================================
    16) BARRA DE AÇÕES DO FORMULÁRIO
    ========================================================= */
-.cmp-action-bar {
+body[data-page="compras-nova"] .cmp-action-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -970,7 +1023,7 @@ body[data-page="compras-nova"] input.is-autofilled {
   box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
 }
 
-.cmp-save-mode {
+body[data-page="compras-nova"] .cmp-save-mode {
   display: flex;
   align-items: center;
   gap: 14px;
@@ -978,14 +1031,14 @@ body[data-page="compras-nova"] input.is-autofilled {
   min-width: 0;
 }
 
-.cmp-save-mode__label {
+body[data-page="compras-nova"] .cmp-save-mode__label {
   font-size: 13px;
   font-weight: 600;
   color: var(--text-soft);
   white-space: nowrap;
 }
 
-.cmp-save-mode__group {
+body[data-page="compras-nova"] .cmp-save-mode__group {
   display: inline-flex;
   padding: 4px;
   background: var(--surface-2);
@@ -994,19 +1047,19 @@ body[data-page="compras-nova"] input.is-autofilled {
   gap: 2px;
 }
 
-.cmp-save-option {
+body[data-page="compras-nova"] .cmp-save-option {
   position: relative;
   cursor: pointer;
   user-select: none;
 }
 
-.cmp-save-option input {
+body[data-page="compras-nova"] .cmp-save-option input {
   position: absolute;
   opacity: 0;
   pointer-events: none;
 }
 
-.cmp-save-option__box {
+body[data-page="compras-nova"] .cmp-save-option__box {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -1019,264 +1072,77 @@ body[data-page="compras-nova"] input.is-autofilled {
   transition: background-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
 }
 
-.cmp-save-option__box svg {
+body[data-page="compras-nova"] .cmp-save-option__box svg {
   width: 15px;
   height: 15px;
   flex: none;
 }
 
-.cmp-save-option:hover .cmp-save-option__box {
+body[data-page="compras-nova"] .cmp-save-option:hover .cmp-save-option__box {
   color: var(--text);
 }
 
-.cmp-save-option input:checked + .cmp-save-option__box {
+body[data-page="compras-nova"] .cmp-save-option input:checked + .cmp-save-option__box {
   background: var(--surface);
   color: var(--text);
   box-shadow: 0 1px 3px rgba(16, 24, 40, 0.08),
               0 0 0 1px color-mix(in srgb, var(--border) 80%, transparent);
 }
 
-.cmp-save-option input:focus-visible + .cmp-save-option__box {
+body[data-page="compras-nova"] .cmp-save-option input:focus-visible + .cmp-save-option__box {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
-.cmp-action-bar__buttons {
+body[data-page="compras-nova"] .cmp-action-bar__buttons {
   display: flex;
   align-items: center;
   gap: 10px;
   flex-shrink: 0;
 }
 
-.cmp-btn--lg {
+body[data-page="compras-nova"] .cmp-btn--lg {
   height: 46px;
   padding: 0 22px;
   font-size: 14.5px;
   font-weight: 600;
 }
 
-.cmp-btn--lg svg {
+body[data-page="compras-nova"] .cmp-btn--lg svg {
   width: 16px;
   height: 16px;
 }
 
 @media (max-width: 720px) {
-  .cmp-action-bar {
+  body[data-page="compras-nova"] .cmp-action-bar {
     flex-direction: column;
     align-items: stretch;
     gap: 16px;
   }
-  .cmp-save-mode {
+  body[data-page="compras-nova"] .cmp-save-mode {
     flex-direction: column;
     align-items: stretch;
     gap: 10px;
   }
-  .cmp-save-mode__group {
+  body[data-page="compras-nova"] .cmp-save-mode__group {
     width: 100%;
   }
-  .cmp-save-option {
+  body[data-page="compras-nova"] .cmp-save-option {
     flex: 1;
   }
-  .cmp-save-option__box {
+  body[data-page="compras-nova"] .cmp-save-option__box {
     width: 100%;
     justify-content: center;
   }
-  .cmp-action-bar__buttons {
+  body[data-page="compras-nova"] .cmp-action-bar__buttons {
     width: 100%;
   }
-  .cmp-action-bar__buttons .cmp-btn {
+  body[data-page="compras-nova"] .cmp-action-bar__buttons .cmp-btn {
     flex: 1;
     justify-content: center;
   }
 }
 
-[data-theme="dark"] .cmp-save-option input:checked + .cmp-save-option__box {
+[data-theme="dark"] body[data-page="compras-nova"] .cmp-save-option input:checked + .cmp-save-option__box {
   background: color-mix(in srgb, var(--surface) 90%, #ffffff 10%);
-}
-
-/* =========================================================
-   17) MODAL · FORNECEDOR (cadastro inline)
-   ========================================================= */
-.cmp-cnpj {
-  display: flex !important;
-  align-items: flex-end;
-  gap: 10px;
-  width: 100%;
-}
-
-.cmp-cnpj__field {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-.cmp-cnpj__field > label {
-  display: block;
-  margin-bottom: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-soft);
-}
-
-.cmp-cnpj__field > input {
-  width: 100%;
-  height: 44px;
-  padding: 0 14px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background-color: var(--surface);
-  color: var(--text);
-  font-family: inherit;
-  font-size: 14.5px;
-  outline: none;
-  transition: border-color 160ms ease, box-shadow 160ms ease;
-}
-.cmp-cnpj__field > input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 4px var(--accent-ring);
-}
-
-.cmp-cnpj__btn {
-  flex: none;
-  height: 44px;
-  min-width: 148px;
-  padding: 0 18px;
-  gap: 8px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 0;
-  border-radius: 10px;
-  background: var(--accent);
-  color: #fff;
-  font-family: inherit;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background-color 160ms ease, box-shadow 160ms ease;
-}
-.cmp-cnpj__btn:hover { background: var(--accent-hover); }
-.cmp-cnpj__btn:disabled { opacity: 0.65; cursor: progress; }
-.cmp-cnpj__btn svg { width: 15px; height: 15px; flex: none; }
-
-.cmp-cnpj__hint {
-  margin: 10px 0 0 !important;
-  font-size: 12.5px;
-  color: var(--text-muted);
-  line-height: 1.55;
-}
-.cmp-cnpj__hint strong { color: var(--text-soft); font-weight: 600; }
-
-.cmp-modal__body {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
-.cmp-modal__body .cmp-grid--2 {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
-}
-
-.cmp-modal__body .field[style*="grid-column"] {
-  grid-column: 1 / -1;
-}
-
-.cmp-modal__body .field {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 0;
-}
-.cmp-modal__body .field > label {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-soft);
-  line-height: 1.35;
-}
-.cmp-modal__body .field > input,
-.cmp-modal__body .field > select,
-.cmp-modal__body .field > textarea {
-  width: 100%;
-  min-height: 44px;
-  padding: 0 14px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background-color: var(--surface);
-  color: var(--text);
-  font-family: inherit;
-  font-size: 14.5px;
-  outline: none;
-  transition: border-color 160ms ease, box-shadow 160ms ease;
-}
-.cmp-modal__body .field > input::placeholder {
-  color: var(--text-muted);
-}
-.cmp-modal__body .field > input:hover {
-  border-color: var(--border-strong);
-}
-.cmp-modal__body .field > input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 4px var(--accent-ring);
-}
-
-.cmp-modal__body .cmp-error {
-  margin: 0;
-  padding: 12px 16px;
-  border-radius: 10px;
-  background: var(--danger-soft);
-  border: 1px solid var(--danger-border);
-  color: var(--danger);
-  font-size: 13.5px;
-  line-height: 1.5;
-}
-
-.cmp-cnpj__spinner {
-  display: none;
-  width: 14px;
-  height: 14px;
-  border: 2px solid rgba(255,255,255,0.4);
-  border-top-color: #fff;
-  border-radius: 50%;
-  animation: cmp-spin 700ms linear infinite;
-}
-.cmp-cnpj__btn.is-loading .cmp-cnpj__spinner,
-#f-save.is-loading .cmp-cnpj__spinner,
-#sup-save.is-loading .cmp-cnpj__spinner {
-  display: inline-block;
-}
-.cmp-cnpj__btn.is-loading .cmp-cnpj__icon-search {
-  display: none;
-}
-@keyframes cmp-spin { to { transform: rotate(360deg); } }
-
-@keyframes cmp-field-filled {
-  from { background-color: var(--accent-soft); }
-  to   { background-color: var(--surface); }
-}
-.cmp-modal__body input.is-autofilled {
-  animation: cmp-field-filled 1200ms ease-out;
-}
-
-@media (max-width: 560px) {
-  .cmp-cnpj {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .cmp-cnpj__btn {
-    width: 100%;
-  }
-  .cmp-modal__body .cmp-grid--2 {
-    grid-template-columns: 1fr;
-  }
-  .cmp-modal__body .field[style*="grid-column"] {
-    grid-column: auto;
-  }
-}
-
-[data-theme="dark"] .cmp-cnpj__field > input:focus,
-[data-theme="dark"] .cmp-modal__body .field > input:focus {
-  /* Corrigido de roxo para a variável do laranja */
-  box-shadow: 0 0 0 4px var(--accent-ring); 
 }

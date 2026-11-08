@@ -1,0 +1,128 @@
+/* =========================================================
+   DEV HUB · Custom Select
+   Substitui o visual do <select> nativo para manter a
+   identidade visual (Laranja) e evitar o highlight azul do OS.
+   ========================================================= */
+
+.dh-custom-select {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+  user-select: none;
+}
+
+/* Esconde o select nativo visualmente, mas mantém para envio de forms e acessibilidade */
+.dh-custom-select select {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+/* O botão que o usuário vê e clica */
+.dh-custom-select__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background-color: var(--surface);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+  text-align: left;
+}
+
+.dh-custom-select__trigger:hover {
+  border-color: var(--accent);
+}
+
+.dh-custom-select__trigger:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-ring);
+}
+
+.dh-custom-select.is-open .dh-custom-select__trigger {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-ring);
+}
+
+.dh-custom-select__value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.dh-custom-select__chevron {
+  width: 16px;
+  height: 16px;
+  color: var(--text-muted);
+  transition: transform 0.2s;
+  flex: none;
+  margin-left: 10px;
+}
+
+.dh-custom-select.is-open .dh-custom-select__chevron {
+  transform: rotate(180deg);
+}
+
+/* A lista de opções (dropdown) */
+.dh-custom-select__dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  width: 100%;
+  max-height: 250px;
+  overflow-y: auto;
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  z-index: 1000;
+  list-style: none;
+  padding: 6px;
+  margin: 0;
+  display: none;
+}
+
+.dh-custom-select.is-open .dh-custom-select__dropdown {
+  display: block;
+  animation: dh-custom-select-fade 150ms ease-out;
+}
+
+/* Os itens da lista */
+.dh-custom-select__option {
+  padding: 10px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13.5px;
+  color: var(--text);
+  transition: background 0.15s, color 0.15s;
+}
+
+.dh-custom-select__option:hover,
+.dh-custom-select__option.is-selected {
+  background-color: var(--accent-soft);
+  color: var(--accent-hover);
+}
+
+.dh-custom-select__option.is-selected {
+  font-weight: 600;
+}
+
+@keyframes dh-custom-select-fade {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}

@@ -1,28 +1,14 @@
 /* =========================================================
    DEV HUB · Permissões granulares
    ---------------------------------------------------------
-   Uso:
-     await Perms.load();            // 1x por página
-     Perms.has('sales.edit')        // true/false
-     Perms.can('stock.view')        // mesmo que has
-     Perms.gate(elem, 'customers.delete')  // esconde se não pode
-     Perms.gateAll('products.create')      // aplica em [data-perm]
-   ---------------------------------------------------------
    CORREÇÕES APLICADAS:
-   1. `load()` não marca `loaded = true` quando não há contexto.
-   2. `perms:ready` disparado ao final de `load()`.
-   3. `gateAll(root)` inclui o próprio root.
-   4. `gate()` remove `data-perm-hidden` ao reexibir.
-   5. Lock para evitar cargas paralelas.
-   6. `Perms.reset()` e `Perms.isLoaded()` expostos.
-   7. [NOVO] `readCtx()` lê localStorage E sessionStorage.
-   8. [NOVO] Capabilities canônicas expandidas (purchases/finance/stock).
+   1. Padronização da nomenclatura para `stock.movement` (singular).
    ========================================================= */
 
 (function () {
   'use strict';
 
-  /* Lista canônica de capabilities — expandida para casar com nav/config.js */
+  /* Lista canônica de capabilities */
   const CAPABILITIES = [
     'dashboard.view',
 
@@ -34,7 +20,7 @@
 
     'products.view', 'products.create', 'products.edit', 'products.delete',
 
-    'stock.view', 'stock.receive', 'stock.movement', 'stock.movements',
+    'stock.view', 'stock.receive', 'stock.movement',
     'stock.audit', 'stock.report',
 
     'purchases.view', 'purchases.create', 'purchases.approve', 'purchases.cancel',
@@ -50,7 +36,6 @@
     'platform'
   ];
 
-  /* Permissões padrão por base_role (fallback quando não configurado) */
   const DEFAULTS = {
     user: [
       'dashboard.view',
@@ -71,7 +56,7 @@
       'invoices.view', 'invoices.create', 'invoices.cancel', 'invoices.delete',
       'customers.view', 'customers.create', 'customers.edit', 'customers.delete',
       'products.view', 'products.create', 'products.edit',
-      'stock.view', 'stock.receive', 'stock.movement', 'stock.movements',
+      'stock.view', 'stock.receive', 'stock.movement',
       'stock.audit', 'stock.report',
       'purchases.view', 'purchases.create', 'purchases.approve',
       'purchases.receive', 'purchases.dispute', 'purchases.return',
@@ -91,7 +76,6 @@
 
   let loadPromise = null;
 
-  /* FIX #7: lê localStorage E sessionStorage */
   function readCtx() {
     try {
       const raw =
@@ -101,12 +85,6 @@
     } catch (e) { return null; }
   }
 
-  /* =========================================================
-     Resolve o contexto por 3 caminhos, em ordem:
-       1. storage (rápido)
-       2. Auth.getStoredUser() (já lê ambos)
-       3. Auth.getSession() + Auth.getProfile()
-     ========================================================= */
   async function resolveContext() {
     let ctx = readCtx();
     if (ctx) return ctx;
@@ -119,10 +97,7 @@
     if (window.Auth && typeof window.Auth.getSession === 'function') {
       try {
         const session = await window.Auth.getSession();
-        if (
-          session && session.user &&
-          typeof window.Auth.getProfile === 'function'
-        ) {
+        if (session && session.user && typeof window.Auth.getProfile === 'function') {
           ctx = await window.Auth.getProfile(session.user.id);
         }
       } catch (e) {
@@ -145,7 +120,7 @@
 
     if (!ctx) {
       loadPromise = null;
-      console.warn('[DEV HUB] Perms.load: contexto ainda indisponível — não marcado como carregado.');
+      console.warn('[DEV HUB] Perms.load: contexto ainda indisponível.');
       return;
     }
 
@@ -159,7 +134,6 @@
       next[cap] = true;
     });
 
-    /* Overlay do banco (role_permissions) */
     try {
       if (window.db && typeof window.db.rpc === 'function') {
         const { data, error } = await window.db.rpc('my_capabilities');
@@ -223,15 +197,9 @@
 
   function gateAll(root) {
     const scope = root || document;
-
-    if (
-      scope.nodeType === 1 &&
-      typeof scope.hasAttribute === 'function' &&
-      scope.hasAttribute('data-perm')
-    ) {
+    if (scope.nodeType === 1 && typeof scope.hasAttribute === 'function' && scope.hasAttribute('data-perm')) {
       gate(scope, scope.getAttribute('data-perm'));
     }
-
     scope.querySelectorAll('[data-perm]').forEach(function (el) {
       const cap = el.getAttribute('data-perm');
       gate(el, cap);
@@ -242,19 +210,15 @@
     window.Perms = {
       CAPABILITIES: CAPABILITIES,
       DEFAULTS: DEFAULTS,
-
       load: load,
       reset: reset,
       isLoaded: function () { return state.loaded === true; },
-
       has: has,
       can: has,
       any: any,
       all: all,
-
       gate: gate,
       gateAll: gateAll,
-
       currentSlug: function () { return state.roleSlug; },
       list: function () { return Object.assign({}, state.capabilities); }
     };
