@@ -1,10 +1,5 @@
 /* =========================================================
    DEV HUB · Financeiro · overview
-   ---------------------------------------------------------
-   KPIs + period picker.
-   Funciona em 2 contextos:
-     • Hub (financeiro.html)                → mode: 'all'
-     • Tela única (financeiro-titulos?tab=) → mode: 'pagar' | 'receber'
    ========================================================= */
 
 (function () {
@@ -158,19 +153,25 @@
   /* =========================================================
      CÁLCULOS
      ========================================================= */
-  function computeOverview(mode) {
+  function computeOverview(mode, ignoreDate = false) {
     const ym = state.selectedMonth || currentMonthISO();
     const mStart = toISO(startOfMonthFromISO(ym));
     const mEnd   = toISO(endOfMonthFromISO(ym));
     const hoje   = todayISO();
 
-    const kind = mode === 'receber' ? 'receita' : 'despesa';
+    let entries = state.entries;
+    if (mode === 'receber') entries = entries.filter(e => e.kind === 'receita');
+    if (mode === 'pagar')   entries = entries.filter(e => e.kind === 'despesa');
 
-    const entries = state.entries.filter((e) => e.kind === kind);
+    // FILTRO DE DATA (se ignoreDate for true, ignora o mês)
+    const inPeriod = (dateStr) => {
+      if (ignoreDate) return true;
+      if (!dateStr) return false;
+      return dateStr >= mStart && dateStr <= mEnd;
+    };
 
     const noMes = entries.filter((e) =>
-      e.status === 'pendente' && e.due_date &&
-      e.due_date >= mStart && e.due_date <= mEnd
+      e.status === 'pendente' && inPeriod(e.due_date)
     );
     const noMesCents = noMes.reduce((s, e) => s + Number(e.amount_cents || 0), 0);
 
@@ -185,8 +186,7 @@
     const vencidasCents = vencidas.reduce((s, e) => s + Number(e.amount_cents || 0), 0);
 
     const pagoMes = entries.filter((e) =>
-      e.settlement_date &&
-      e.settlement_date >= mStart && e.settlement_date <= mEnd
+      e.settlement_date && inPeriod(e.settlement_date)
     );
     const pagoMesCents = pagoMes.reduce((s, e) => s + Number(e.paid_cents || 0), 0);
 
@@ -206,70 +206,26 @@
   }
 
   /* =========================================================
-     SPARKLINES
+     SPARKLINES E ICONES
      ========================================================= */
   const SPARKS = {
-    noMes: `
-      <svg class="fin-kpi__spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true">
-        <defs><linearGradient id="spark-pagar" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#ef4444" stop-opacity="0.32"/>
-          <stop offset="100%" stop-color="#ef4444" stop-opacity="0"/>
-        </linearGradient></defs>
-        <path d="M0,22 C10,8 18,16 26,18 C34,20 40,12 50,15 C58,18 66,10 74,13 C82,16 90,8 100,14 L100,30 L0,30 Z" fill="url(#spark-pagar)"/>
-        <path d="M0,22 C10,8 18,16 26,18 C34,20 40,12 50,15 C58,18 66,10 74,13 C82,16 90,8 100,14" fill="none" stroke="#ef4444" stroke-width="1.4" stroke-linecap="round"/>
-      </svg>`,
-    hoje: `
-      <svg class="fin-kpi__spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true">
-        <rect x="4"  y="16" width="6" height="14" rx="1.2" fill="#f59e0b" opacity="0.55"/>
-        <rect x="16" y="10" width="6" height="20" rx="1.2" fill="#f59e0b" opacity="0.75"/>
-        <rect x="28" y="13" width="6" height="17" rx="1.2" fill="#f59e0b" opacity="0.65"/>
-        <rect x="40" y="6"  width="6" height="24" rx="1.2" fill="#f59e0b" opacity="0.95"/>
-        <rect x="52" y="11" width="6" height="19" rx="1.2" fill="#f59e0b" opacity="0.7"/>
-        <rect x="64" y="3"  width="6" height="27" rx="1.2" fill="#f59e0b" opacity="1"/>
-        <rect x="76" y="9"  width="6" height="21" rx="1.2" fill="#f59e0b" opacity="0.8"/>
-        <rect x="88" y="14" width="6" height="16" rx="1.2" fill="#f59e0b" opacity="0.5"/>
-      </svg>`,
-    vencidas: `
-      <svg class="fin-kpi__spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true">
-        <circle cx="4"   cy="24" r="1.6" fill="#ef4444" opacity="0.45"/>
-        <circle cx="12"  cy="22" r="1.6" fill="#ef4444" opacity="0.5"/>
-        <circle cx="20"  cy="20" r="1.6" fill="#ef4444" opacity="0.6"/>
-        <circle cx="28"  cy="23" r="1.6" fill="#ef4444" opacity="0.55"/>
-        <circle cx="36"  cy="19" r="1.6" fill="#ef4444" opacity="0.7"/>
-        <circle cx="44"  cy="17" r="1.6" fill="#ef4444" opacity="0.8"/>
-        <circle cx="52"  cy="20" r="1.6" fill="#ef4444" opacity="0.75"/>
-        <circle cx="60"  cy="15" r="1.6" fill="#ef4444" opacity="0.9"/>
-        <circle cx="68"  cy="18" r="1.6" fill="#ef4444" opacity="0.85"/>
-        <circle cx="76"  cy="13" r="1.6" fill="#ef4444" opacity="0.95"/>
-        <circle cx="84"  cy="16" r="1.6" fill="#ef4444" opacity="0.9"/>
-        <circle cx="92"  cy="12" r="1.6" fill="#ef4444" opacity="1"/>
-      </svg>`,
-    pago: `
-      <svg class="fin-kpi__spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true">
-        <defs><linearGradient id="spark-pago" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#10b981" stop-opacity="0.32"/>
-          <stop offset="100%" stop-color="#10b981" stop-opacity="0"/>
-        </linearGradient></defs>
-        <path d="M0,20 C10,14 18,20 26,18 C34,16 40,20 50,17 C58,15 66,18 74,14 C82,11 90,15 100,10 L100,30 L0,30 Z" fill="url(#spark-pago)"/>
-        <path d="M0,20 C10,14 18,20 26,18 C34,16 40,20 50,17 C58,15 66,18 74,14 C82,11 90,15 100,10" fill="none" stroke="#10b981" stroke-width="1.4" stroke-linecap="round"/>
-      </svg>`,
-    boletos: `
-      <svg class="fin-kpi__spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true">
-        <defs><linearGradient id="spark-boletos" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.32"/>
-          <stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/>
-        </linearGradient></defs>
-        <path d="M0,22 C8,20 15,14 24,16 C32,18 40,24 50,22 C58,20 66,12 74,14 C82,16 90,20 100,18 L100,30 L0,30 Z" fill="url(#spark-boletos)"/>
-        <path d="M0,22 C8,20 15,14 24,16 C32,18 40,24 50,22 C58,20 66,12 74,14 C82,16 90,20 100,18" fill="none" stroke="#3b82f6" stroke-width="1.4" stroke-linecap="round"/>
-      </svg>`
+    receber: `<svg class="fin-kpi__spark" viewBox="0 0 100 30" preserveAspectRatio="none"><defs><linearGradient id="spark-receber" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#10b981" stop-opacity="0.32"/><stop offset="100%" stop-color="#10b981" stop-opacity="0"/></linearGradient></defs><path d="M0,22 C10,8 18,16 26,18 C34,20 40,12 50,15 C58,18 66,10 74,13 C82,16 90,8 100,14 L100,30 L0,30 Z" fill="url(#spark-receber)"/><path d="M0,22 C10,8 18,16 26,18 C34,20 40,12 50,15 C58,18 66,10 74,13 C82,16 90,8 100,14" fill="none" stroke="#10b981" stroke-width="1.4"/></svg>`,
+    pagar: `<svg class="fin-kpi__spark" viewBox="0 0 100 30" preserveAspectRatio="none"><defs><linearGradient id="spark-pagar" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ef4444" stop-opacity="0.32"/><stop offset="100%" stop-color="#ef4444" stop-opacity="0"/></linearGradient></defs><path d="M0,22 C10,8 18,16 26,18 C34,20 40,12 50,15 C58,18 66,10 74,13 C82,16 90,8 100,14 L100,30 L0,30 Z" fill="url(#spark-pagar)"/><path d="M0,22 C10,8 18,16 26,18 C34,20 40,12 50,15 C58,18 66,10 74,13 C82,16 90,8 100,14" fill="none" stroke="#ef4444" stroke-width="1.4"/></svg>`,
+    hoje: `<svg class="fin-kpi__spark" viewBox="0 0 100 30" preserveAspectRatio="none"><rect x="4" y="16" width="6" height="14" rx="1.2" fill="#f59e0b" opacity="0.55"/><rect x="16" y="10" width="6" height="20" rx="1.2" fill="#f59e0b" opacity="0.75"/><rect x="28" y="13" width="6" height="17" rx="1.2" fill="#f59e0b" opacity="0.65"/><rect x="40" y="6" width="6" height="24" rx="1.2" fill="#f59e0b" opacity="0.95"/><rect x="52" y="11" width="6" height="19" rx="1.2" fill="#f59e0b" opacity="0.7"/><rect x="64" y="3" width="6" height="27" rx="1.2" fill="#f59e0b" opacity="1"/><rect x="76" y="9" width="6" height="21" rx="1.2" fill="#f59e0b" opacity="0.8"/><rect x="88" y="14" width="6" height="16" rx="1.2" fill="#f59e0b" opacity="0.5"/></svg>`,
+    vencidas: `<svg class="fin-kpi__spark" viewBox="0 0 100 30" preserveAspectRatio="none"><circle cx="4" cy="24" r="1.6" fill="#ef4444" opacity="0.45"/><circle cx="12" cy="22" r="1.6" fill="#ef4444" opacity="0.5"/><circle cx="20" cy="20" r="1.6" fill="#ef4444" opacity="0.6"/><circle cx="28" cy="23" r="1.6" fill="#ef4444" opacity="0.55"/><circle cx="36" cy="19" r="1.6" fill="#ef4444" opacity="0.7"/><circle cx="44" cy="17" r="1.6" fill="#ef4444" opacity="0.8"/><circle cx="52" cy="20" r="1.6" fill="#ef4444" opacity="0.75"/><circle cx="60" cy="15" r="1.6" fill="#ef4444" opacity="0.9"/><circle cx="68" cy="18" r="1.6" fill="#ef4444" opacity="0.85"/><circle cx="76" cy="13" r="1.6" fill="#ef4444" opacity="0.95"/><circle cx="84" cy="16" r="1.6" fill="#ef4444" opacity="0.9"/><circle cx="92" cy="12" r="1.6" fill="#ef4444" opacity="1"/></svg>`,
+    pago: `<svg class="fin-kpi__spark" viewBox="0 0 100 30" preserveAspectRatio="none"><defs><linearGradient id="spark-pago" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#10b981" stop-opacity="0.32"/><stop offset="100%" stop-color="#10b981" stop-opacity="0"/></linearGradient></defs><path d="M0,20 C10,14 18,20 26,18 C34,16 40,20 50,17 C58,15 66,18 74,14 C82,11 90,15 100,10 L100,30 L0,30 Z" fill="url(#spark-pago)"/><path d="M0,20 C10,14 18,20 26,18 C34,16 40,20 50,17 C58,15 66,18 74,14 C82,11 90,15 100,10" fill="none" stroke="#10b981" stroke-width="1.4"/></svg>`,
+    boletos: `<svg class="fin-kpi__spark" viewBox="0 0 100 30" preserveAspectRatio="none"><defs><linearGradient id="spark-boletos" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#3b82f6" stop-opacity="0.32"/><stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/></linearGradient></defs><path d="M0,22 C8,20 15,14 24,16 C32,18 40,24 50,22 C58,20 66,12 74,14 C82,16 90,20 100,18 L100,30 L0,30 Z" fill="url(#spark-boletos)"/><path d="M0,22 C8,20 15,14 24,16 C32,18 40,24 50,22 C58,20 66,12 74,14 C82,16 90,20 100,18" fill="none" stroke="#3b82f6" stroke-width="1.4"/></svg>`,
+    saldo: `<svg class="fin-kpi__spark" viewBox="0 0 100 30" preserveAspectRatio="none"><defs><linearGradient id="spark-saldo" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.32"/><stop offset="100%" stop-color="#8b5cf6" stop-opacity="0"/></linearGradient></defs><path d="M0,15 C15,10 25,20 40,15 C55,10 65,18 80,12 C90,8 100,14 100,14 L100,30 L0,30 Z" fill="url(#spark-saldo)"/><path d="M0,15 C15,10 25,20 40,15 C55,10 65,18 80,12 C90,8 100,14 100,14" fill="none" stroke="#8b5cf6" stroke-width="1.4"/></svg>`
   };
 
   const ICONS = {
-    noMes:    '<path d="M12 5v14M19 12l-7 7-7-7"/>',
+    receber:  '<path d="M12 19V5M5 12l7-7 7 7"/>',
+    pagar:    '<path d="M12 5v14M19 12l-7 7-7-7"/>',
     hoje:     '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
     vencidas: '<path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/>',
     pago:     '<path d="M20 6 9 17l-5-5"/>',
-    boletos:  '<rect x="2.5" y="6" width="19" height="12" rx="2"/><path d="M2.5 10h19"/>'
+    boletos:  '<rect x="2.5" y="6" width="19" height="12" rx="2"/><path d="M2.5 10h19"/>',
+    saldo:    '<path d="M12 2v20M17 6.5a5 5 0 0 0-5-3.5c-3 0-5 1.5-5 4 0 3 2 3.5 5 4.5s5 1.5 5 4.5c0 2.5-2 4-5 4a5 5 0 0 1-5-3.5"/>'
   };
 
   /* =========================================================
@@ -281,14 +237,69 @@
 
     updatePeriodLabel();
 
-    const data = computeOverview(mode || 'pagar');
-
     const plural = (n, sing, plur) => n === 1 ? `1 ${sing}` : `${n} ${plur}`;
+
+    // ── MODO HUB (Resumo combinado, Ignora o Mês) ──
+    if (!mode || mode === 'all') {
+      const rec = computeOverview('receber', true);
+      const desp = computeOverview('pagar', true);
+
+      const cards = [
+        {
+          cls: 'receber',
+          label: 'A Receber (Total)',
+          value: fmtBRL(rec.noMes.cents),
+          hint: plural(rec.noMes.count, 'título pendente', 'títulos pendentes')
+        },
+        {
+          cls: 'pagar',
+          label: 'A Pagar (Total)',
+          value: fmtBRL(desp.noMes.cents),
+          hint: plural(desp.noMes.count, 'título pendente', 'títulos pendentes')
+        },
+        {
+          cls: 'hoje',
+          label: 'Vencendo Hoje',
+          value: fmtBRL(rec.vencendoHoje.cents + desp.vencendoHoje.cents),
+          hint: plural(rec.vencendoHoje.count + desp.vencendoHoje.count, 'título', 'títulos')
+        },
+        {
+          cls: 'vencidas',
+          label: 'Total Vencido',
+          value: fmtBRL(rec.vencidas.cents + desp.vencidas.cents),
+          hint: plural(rec.vencidas.count + desp.vencidas.count, 'título', 'títulos')
+        },
+        {
+          cls: 'saldo',
+          label: 'Saldo Previsto (Total)',
+          value: fmtBRL(rec.noMes.cents - desp.noMes.cents),
+          hint: 'Receitas - Despesas'
+        }
+      ];
+
+      wrap.innerHTML = cards.map((c) => `
+        <article class="fin-kpi fin-kpi--${c.cls}">
+          <div class="fin-kpi__head">
+            <span class="fin-kpi__label">${c.label}</span>
+            <span class="fin-kpi__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${ICONS[c.cls] || ''}</svg>
+            </span>
+          </div>
+          <div class="fin-kpi__value">${c.value}</div>
+          <div class="fin-kpi__hint">${c.hint}</div>
+          ${SPARKS[c.cls] || ''}
+        </article>
+      `).join('');
+      return;
+    }
+
+    // ── MODOS ESPECÍFICOS (Pagar / Receber nas telas de títulos) ──
+    const data = computeOverview(mode, false);
     const isReceber = mode === 'receber';
 
     const cards = [
       {
-        cls: 'pagar',
+        cls: isReceber ? 'receber' : 'pagar',
         label: isReceber ? 'Total a Receber (Mês)' : 'Total a Pagar (Mês)',
         value: fmtBRL(data.noMes.cents),
         hint: plural(data.noMes.count, 'título pendente', 'títulos pendentes')
@@ -324,9 +335,7 @@
         <div class="fin-kpi__head">
           <span class="fin-kpi__label">${c.label}</span>
           <span class="fin-kpi__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-              ${ICONS[c.cls] || ''}
-            </svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${ICONS[c.cls] || ''}</svg>
           </span>
         </div>
         <div class="fin-kpi__value">${c.value}</div>

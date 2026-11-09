@@ -17,7 +17,6 @@
   <script src="js/theme.js"></script>
   
   <style>
-    /* 1. RESET DE SEGURANÇA */
     body {
       margin: 0 !important;
       padding: 0 !important;
@@ -30,12 +29,11 @@
       padding: 0 !important;
     }
 
-    /* 2. ÁREA DE CONTEÚDO CENTRALIZADA */
     main.content {
       width: 100% !important;
       display: flex !important;
       justify-content: center !important;
-      padding-top: 100px !important; /* Compensa a navbar */
+      padding-top: 70px !important; /* Reduzido */
       padding-bottom: 60px !important;
     }
 
@@ -46,6 +44,13 @@
       box-sizing: border-box !important;
     }
 
+    /* BOTÃO VOLTAR - ALINHADO À ESQUERDA */
+    .back-link-wrapper {
+      display: flex;
+      justify-content: flex-start;
+      margin-bottom: 24px;
+    }
+
     .mov-header {
       display: flex;
       flex-direction: column;
@@ -54,7 +59,6 @@
       margin-bottom: 40px;
     }
 
-    .mov-header .page-head__eyebrow { margin-bottom: 16px; }
     .mov-header .page-head__title { font-size: 32px; font-weight: 800; margin: 0 0 8px 0; color: var(--text); letter-spacing: -0.02em; }
     .mov-header .page-head__sub { font-size: 15px; color: var(--text-muted); margin: 0; }
 
@@ -83,13 +87,16 @@
     <main class="content">
       <div class="prod-page-wrapper">
         
+        <!-- BOTÃO VOLTAR NO CANTO SUPERIOR ESQUERDO -->
+        <div class="back-link-wrapper">
+          <a href="estoque.html" style="color:var(--text-muted); text-decoration:none; display:flex; align-items:center; gap:6px; font-weight:600; font-size: 13px; transition: color 0.2s;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            Voltar para o estoque
+          </a>
+        </div>
+
+        <!-- TÍTULO CENTRALIZADO -->
         <header class="mov-header">
-          <div class="page-head__eyebrow">
-            <a href="estoque.html" style="color:var(--text-muted); text-decoration:none; display:flex; align-items:center; gap:6px; font-weight:600; font-size: 13px;">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-              Voltar para o estoque
-            </a>
-          </div>
           <h1 class="page-head__title" id="prod-name">Carregando...</h1>
           <p class="page-head__sub" id="prod-code">SKU: —</p>
         </header>
@@ -139,7 +146,6 @@
     </main>
   </div>
 
-  <!-- SCRIPTS DE NAVEGAÇÃO GLOBAL -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase.js"></script>
   <script src="js/auth.js"></script>
@@ -159,8 +165,6 @@
   <script src="js/nav/favorites.js"></script>
   <script src="js/nav/main.js"></script>
   <script src="js/permissions.js"></script>
-
-  <!-- SCRIPT DA PÁGINA -->
   <script src="js/estoque-produto.js"></script>
 </body>
 </html>

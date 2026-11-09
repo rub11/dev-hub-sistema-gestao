@@ -765,3 +765,34 @@ body[data-page="financeiro"] .fin-content.fin-hub {
 [data-theme="dark"] .fin-shortcut__icon--config { background: rgba(249,115,22,0.20); color: #fb923c; }
 [data-theme="dark"] .fin-shortcut__icon--fluxo  { background: rgba(20,184,166,0.20); color: #2dd4bf; }
 [data-theme="dark"] .fin-shortcut__icon--inad   { background: rgba(239,68,68,0.20);  color: #f87171; }
+
+
+
+/* =========================================================
+   NOVOS KPIs DO HUB (Combinado)
+   ========================================================= */
+.fin-kpi--receber { --kpi-color: #10b981; }
+.fin-kpi--receber .fin-kpi__icon { background: rgba(16, 185, 129, 0.12); color: #10b981; }
+
+.fin-kpi--saldo { --kpi-color: #8b5cf6; }
+.fin-kpi--saldo .fin-kpi__icon { background: rgba(139, 92, 246, 0.12); color: #8b5cf6; }
+
+/* =========================================================
+   FORÇAR ROLAGEM NA TELA INTEIRA (ANTI-TRAVAMENTO)
+   ========================================================= */
+html, body {
+  overflow-y: auto !important;
+  height: auto !important;
+}
+
+.app__body, .fin-content {
+  height: auto !important;
+  min-height: 100vh !important;
+  overflow-y: visible !important;
+}
+
+/* Se o body for travado com position: fixed por algum modal antigo */
+body.modal-open, body.no-scroll {
+  overflow-y: auto !important;
+  position: static !important;
+}

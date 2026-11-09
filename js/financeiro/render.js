@@ -1,11 +1,5 @@
 /* =========================================================
    DEV HUB · Financeiro · render
-   ---------------------------------------------------------
-   Renderização das tabelas, cards, movimentações,
-   transferências, totais e do filtro aplicado.
-   ---------------------------------------------------------
-   Depende de: state.js, custom-filters.js (applyCustomConditions)
-   Publica em: window.Fin
    ========================================================= */
 
 (function () {
@@ -242,7 +236,11 @@
           <td>${fmtDate(r.due_date)}</td>
           <td>
             <div class="fin-partner">
-              <span class="fin-partner__name">${escapeHTML(r.partner_name || '—')}</span>
+              ${r.partner_name ? `
+                <button type="button" class="fin-partner__name fin-link-btn" data-action="report" data-name="${escapeHTML(r.partner_name)}" data-doc="${escapeHTML(r.partner_doc || '')}" title="Ver relatório de ${escapeHTML(r.partner_name)}">
+                  ${escapeHTML(r.partner_name)}
+                </button>
+              ` : '<span class="fin-partner__name">—</span>'}
               ${r.partner_doc ? `<span class="fin-partner__meta">${escapeHTML(r.partner_doc)}</span>` : ''}
             </div>
           </td>
@@ -302,11 +300,20 @@
       return;
     }
     gridEl.innerHTML = rows.map(buildEntryCard).join('');
+    
     gridEl.querySelectorAll('.fin-card').forEach((card) => {
-      card.addEventListener('click', () => {
+      card.addEventListener('click', (e) => {
+        if (e.target.closest('[data-action="report"]')) return;
         const id = card.dataset.id;
         const row = state.entries.find((x) => x.id === id);
         if (row) window.Fin.openEntryModal?.(row);
+      });
+    });
+
+    gridEl.querySelectorAll('[data-action="report"]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        window.Fin.openCustomerReport?.(btn.dataset.name, btn.dataset.doc);
       });
     });
   }
@@ -347,7 +354,13 @@
           <span class="fin-card__date">${fmtDate(r.due_date)}</span>
         </header>
         <h4 class="fin-card__title">${escapeHTML(r.title_code || r.doc_number || '—')}</h4>
-        <p class="fin-card__partner">${escapeHTML(r.partner_name || '—')}</p>
+        <p class="fin-card__partner">
+          ${r.partner_name ? `
+            <button type="button" class="fin-link-btn" data-action="report" data-name="${escapeHTML(r.partner_name)}" data-doc="${escapeHTML(r.partner_doc || '')}" style="font-size:13px;">
+              ${escapeHTML(r.partner_name)}
+            </button>
+          ` : '—'}
+        </p>
         <div class="fin-card__value ${valueClass}">${sign} ${fmtBRL(r.amount_cents)}</div>
         <footer class="fin-card__foot">
           <span class="fin-badge fin-badge--${escapeHTML(r.status)}">${escapeHTML(stLabel)}</span>
@@ -378,10 +391,12 @@
         e.stopPropagation();
         const id = btn.dataset.id;
         const row = state.entries.find((x) => x.id === id);
-        if (!row) return;
+        if (!row && btn.dataset.action !== 'report') return;
+        
         if (btn.dataset.action === 'settle-one')  window.Fin.openSettleModal?.(row);
         if (btn.dataset.action === 'reverse-one') window.Fin.openReverseModal?.(row);
         if (btn.dataset.action === 'view-one')    window.Fin.openEntryModal?.(row);
+        if (btn.dataset.action === 'report')      window.Fin.openCustomerReport?.(btn.dataset.name, btn.dataset.doc);
       });
     });
 

@@ -17,12 +17,10 @@
   <script src="js/theme.js"></script>
   
   <style>
-    /* 1. RESET DE SEGURANÇA (Evita que o body empurre a navbar para baixo) */
     body {
       margin: 0 !important;
       padding: 0 !important;
       background-color: var(--bg);
-      /* Removemos qualquer flex do body para a navbar ficar no topo */
     }
 
     .app__body {
@@ -31,24 +29,29 @@
       padding: 0 !important;
     }
 
-    /* 2. ÁREA DE CONTEÚDO (Dá espaço para a navbar e centraliza horizontalmente) */
     main.content {
       width: 100% !important;
       display: flex !important;
-      justify-content: center !important; /* Centraliza na horizontal */
-      padding-top: 100px !important; /* Compensa a altura da navbar fixa */
+      justify-content: center !important;
+      padding-top: 70px !important; /* REDUZIDO: espaço menor no topo */
       padding-bottom: 60px !important;
     }
 
-    /* 3. WRAPPER DOS CARDS */
     .mov-page-wrapper {
       width: 100% !important;
-      max-width: 1040px !important; /* Largura para os dois cards */
+      max-width: 1040px !important;
       padding: 0 24px !important;
       box-sizing: border-box !important;
     }
 
-    /* CABEÇALHO DA PÁGINA */
+    /* BOTÃO VOLTAR - ALINHADO À ESQUERDA */
+    .back-link-wrapper {
+      display: flex;
+      justify-content: flex-start;
+      margin-bottom: 24px;
+    }
+
+    /* CABEÇALHO CENTRALIZADO APENAS COM O TÍTULO */
     .mov-header {
       display: flex;
       flex-direction: column;
@@ -57,11 +60,9 @@
       margin-bottom: 40px;
     }
 
-    .mov-header .page-head__eyebrow { margin-bottom: 16px; }
     .mov-header .page-head__title { font-size: 32px; font-weight: 800; margin: 0 0 8px 0; color: var(--text); letter-spacing: -0.02em; }
     .mov-header .page-head__sub { font-size: 15px; color: var(--text-muted); margin: 0; }
 
-    /* GRID LADO A LADO DOS CARDS */
     .mov-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -73,7 +74,6 @@
       .mov-grid { grid-template-columns: 1fr; }
     }
 
-    /* ESTILO DOS CARDS */
     .mov-card {
       display: flex;
       flex-direction: column;
@@ -98,30 +98,14 @@
 
     .mov-card h2 svg { color: var(--accent); }
 
-    /* LISTA VERTICAL DE PROPRIEDADES */
-    .mov-props {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      margin: 0;
-      flex: 1;
-    }
-
-    .mov-prop-item {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      padding-bottom: 16px;
-      border-bottom: 1px dashed var(--border);
-    }
-
+    .mov-props { display: flex; flex-direction: column; gap: 16px; margin: 0; flex: 1; }
+    .mov-prop-item { display: flex; flex-direction: column; gap: 4px; padding-bottom: 16px; border-bottom: 1px dashed var(--border); }
     .mov-prop-item:last-child { border-bottom: none; padding-bottom: 0; }
     .mov-prop-label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
     .mov-prop-value { font-size: 14.5px; color: var(--text); font-weight: 500; margin: 0; line-height: 1.4; word-break: break-word; }
     .mov-prop-value.highlight { font-size: 16px; font-weight: 700; }
     .mov-reason-box { background: var(--surface-2); padding: 14px; border-radius: 8px; font-size: 13.5px; color: var(--text-soft); line-height: 1.5; border: 1px solid var(--border); margin-top: 4px; }
 
-    /* TABELA DE ORIGEM (COMPRA) */
     .origem-table-wrap { margin-top: auto; padding-top: 20px; border-top: 1px solid var(--border); }
     .origem-table-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 12px; }
     .origem-table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -134,18 +118,20 @@
 </head>
 <body data-page="estoque">
   
-  <!-- Container principal que o sistema reconhece -->
   <div class="app__body">
     <main class="content">
       <div class="mov-page-wrapper">
         
+        <!-- BOTÃO VOLTAR NO CANTO SUPERIOR ESQUERDO -->
+        <div class="back-link-wrapper">
+          <a href="estoque.html" style="color:var(--text-muted); text-decoration:none; display:flex; align-items:center; gap:6px; font-weight:600; font-size: 13px; transition: color 0.2s;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            Voltar para o estoque
+          </a>
+        </div>
+
+        <!-- TÍTULO CENTRALIZADO -->
         <header class="mov-header">
-          <div class="page-head__eyebrow">
-            <a href="estoque.html" style="color:var(--text-muted); text-decoration:none; display:flex; align-items:center; gap:6px; font-weight:600; font-size: 13px;">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-              Voltar para o estoque
-            </a>
-          </div>
           <h1 class="page-head__title">Detalhes da Movimentação</h1>
           <p class="page-head__sub">Rastreabilidade completa de entrada e saída de estoque.</p>
         </header>
@@ -155,7 +141,6 @@
         <div id="mov-content" hidden>
           <div class="mov-grid">
             
-            <!-- Card 1 -->
             <div class="mov-card">
               <h2>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
@@ -202,7 +187,6 @@
               </dl>
             </div>
 
-            <!-- Card 2 -->
             <div class="mov-card">
               <h2>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
@@ -221,7 +205,6 @@
     </main>
   </div>
 
-  <!-- SCRIPTS DE NAVEGAÇÃO GLOBAL -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase.js"></script>
   <script src="js/auth.js"></script>
@@ -241,8 +224,6 @@
   <script src="js/nav/favorites.js"></script>
   <script src="js/nav/main.js"></script>
   <script src="js/permissions.js"></script>
-
-  <!-- SCRIPT DA PÁGINA -->
   <script src="js/estoque-movimentacao.js"></script>
 </body>
 </html>

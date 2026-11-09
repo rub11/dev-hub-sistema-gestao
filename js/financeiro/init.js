@@ -207,4 +207,30 @@
     loadTitulos
   });
 
+     /* =========================================================
+     DESBLOQUEADOR DE SCROLL DEFINITIVO
+     ========================================================= */
+  function forceUnlockScroll() {
+    document.body.style.overflow = '';
+    document.body.style.position = '';
+    document.documentElement.style.overflow = '';
+  }
+
+  // 1. Monitora se modais foram removidos da tela
+  const scrollObserver = new MutationObserver(() => {
+    const hasOpenModal = document.querySelector('.fin-modal');
+    if (!hasOpenModal) forceUnlockScroll();
+  });
+  if (document.body) {
+    scrollObserver.observe(document.body, { childList: true, subtree: true });
+  }
+
+  // 2. Monitora cliques e teclas para destravar a tela (caso um modal falhe ao fechar)
+  document.addEventListener('click', () => {
+    setTimeout(forceUnlockScroll, 100);
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') forceUnlockScroll();
+  });
+
 })();

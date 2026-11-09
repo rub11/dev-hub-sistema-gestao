@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Detalhes da Compra · DEV HUB</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  
+  <link rel="stylesheet" href="css/global.css" />
+  <link rel="stylesheet" href="css/theme.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/compras.css" />
+  <link rel="stylesheet" href="css/compras-detalhes.css" />
+  
+  <script src="js/theme.js"></script>
+</head>
+<body data-page="compras">
+  
+  <div class="app__body">
+    <main class="content">
+      <div class="det-page-wrapper">
+        
+        <div class="back-link-wrapper">
+          <a href="compras.html" style="color:var(--text-muted); text-decoration:none; display:flex; align-items:center; gap:6px; font-weight:600; font-size: 13px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            Voltar para compras
+          </a>
+        </div>
+
+        <header class="mov-header" id="det-header" hidden>
+          <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px;">
+            <h1 class="page-head__title" id="det-code" style="margin:0;">Carregando...</h1>
+            <span id="det-status"></span>
+          </div>
+          <p class="page-head__sub" id="det-supplier">—</p>
+        </header>
+
+        <div id="loading-msg" class="cmp-loading">Carregando informações da compra...</div>
+
+        <div id="det-content" hidden>
+          
+          <div class="det-grid">
+            <!-- Card 1: Dados Gerais -->
+            <div class="det-card">
+              <h2>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                Dados da Compra
+              </h2>
+              <dl class="det-props">
+                <div class="det-prop-item">
+                  <dt class="det-prop-label">Fornecedor</dt>
+                  <dd class="det-prop-value highlight" id="det-forn">—</dd>
+                </div>
+                <div class="det-prop-item">
+                  <dt class="det-prop-label">CNPJ / CPF</dt>
+                  <dd class="det-prop-value" id="det-doc">—</dd>
+                </div>
+                <div class="det-prop-item">
+                  <dt class="det-prop-label">Data da Compra</dt>
+                  <dd class="det-prop-value" id="det-date">—</dd>
+                </div>
+                <div class="det-prop-item">
+                  <dt class="det-prop-label">Previsão de Entrega</dt>
+                  <dd class="det-prop-value" id="det-expected">—</dd>
+                </div>
+                <div class="det-prop-item">
+                  <dt class="det-prop-label">Criado por</dt>
+                  <dd class="det-prop-value" id="det-created-by">—</dd>
+                </div>
+                <div class="det-prop-item">
+                  <dt class="det-prop-label">Observações</dt>
+                  <dd class="det-prop-value det-reason-box" id="det-notes">—</dd>
+                </div>
+              </dl>
+            </div>
+
+            <!-- Card 2: Resumo de Recebimento -->
+            <div class="det-card">
+              <h2>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                Resumo de Recebimento
+              </h2>
+              <dl class="det-props">
+                <div class="det-prop-item">
+                  <dt class="det-prop-label">Total de Itens Comprados</dt>
+                  <dd class="det-prop-value highlight" id="det-total-items">0</dd>
+                </div>
+                <div class="det-prop-item">
+                  <dt class="det-prop-label">Total de Itens Recebidos</dt>
+                  <dd class="det-prop-value highlight" style="color: var(--success);" id="det-received-items">0</dd>
+                </div>
+                <div class="det-prop-item">
+                  <dt class="det-prop-label">Itens Pendentes</dt>
+                  <dd class="det-prop-value highlight" style="color: var(--warning);" id="det-pending-items">0</dd>
+                </div>
+                <div class="det-prop-item">
+                  <dt class="det-prop-label">Status do Recebimento</dt>
+                  <dd class="det-prop-value" id="det-receipt-status">—</dd>
+                </div>
+              </dl>
+            </div>
+          </div>
+
+          <!-- Card 3: Financeiro -->
+          <div class="det-card" style="margin-top: 24px;">
+            <h2>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+              Resumo Financeiro
+            </h2>
+            <dl class="det-props" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;">
+              <div class="det-prop-item">
+                <dt class="det-prop-label">Valor Total</dt>
+                <dd class="det-prop-value highlight" id="det-total" style="color:var(--accent); font-size:24px;">R$ 0,00</dd>
+              </div>
+              <div class="det-prop-item">
+                <dt class="det-prop-label">Forma de Pagamento</dt>
+                <dd class="det-prop-value" id="det-payment-method">—</dd>
+              </div>
+              <div class="det-prop-item">
+                <dt class="det-prop-label">Condição</dt>
+                <dd class="det-prop-value" id="det-payment-terms">—</dd>
+              </div>
+              <div class="det-prop-item">
+                <dt class="det-prop-label">Parcelas</dt>
+                <dd class="det-prop-value" id="det-installments">—</dd>
+              </div>
+            </dl>
+          </div>
+
+          <!-- Card 4: Produtos -->
+          <div class="det-card" style="margin-top: 24px;">
+            <h2>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21 8-9-5-9 5v8l9 5 9-5z"/><path d="m3 8 9 5 9-5"/><path d="M12 21v-8"/></svg>
+              Produtos Adquiridos
+            </h2>
+            <div style="overflow-x:auto;">
+              <table class="det-table">
+                <thead>
+                  <tr>
+                    <th style="width: 60px;">Imagem</th>
+                    <th>Produto / Descrição</th>
+                    <th style="text-align:center;">Qtd. Comprada</th>
+                    <th style="text-align:center;">Qtd. Recebida</th>
+                    <th style="text-align:right;">Valor Unit.</th>
+                    <th style="text-align:right;">Total</th>
+                  </tr>
+                </thead>
+                <tbody id="det-items-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Card 5: Timeline Interativa -->
+          <div class="det-card" style="margin-top: 24px;">
+            <h2>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              Histórico da Compra
+            </h2>
+            <div class="timeline" id="det-timeline"></div>
+          </div>
+
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/nav/config.js"></script>
+  <script src="js/nav/state.js"></script>
+  <script src="js/nav/roles.js"></script>
+  <script src="js/nav/styles.js"></script>
+  <script src="js/nav/permission-modal.js"></script>
+  <script src="js/nav/tabs.js"></script>
+  <script src="js/nav/module-menu.js"></script>
+  <script src="js/nav/notifications.js"></script>
+  <script src="js/nav/user-menu.js"></script>
+  <script src="js/nav/favorites-modal.js"></script>
+  <script src="js/nav/search.js"></script>
+  <script src="js/nav/org-switcher.js"></script>
+  <script src="js/nav/bar.js"></script>
+  <script src="js/nav/favorites.js"></script>
+  <script src="js/nav/main.js"></script>
+  <script src="js/permissions.js"></script>
+
+  <script src="js/compras/state.js"></script>
+  <script src="js/compras/api.js"></script>
+  <script src="js/compras/detalhes.js"></script>
+</body>
+</html>

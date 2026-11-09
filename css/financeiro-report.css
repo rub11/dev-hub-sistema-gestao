@@ -1,0 +1,346 @@
+/* =========================================================
+   DEV HUB · Relatório de Cliente
+   ========================================================= */
+
+.fin-link-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--accent);
+  cursor: pointer;
+  text-align: left;
+  font-weight: 600;
+  transition: color .15s ease;
+}
+.fin-link-btn:hover { color: var(--accent-hover); text-decoration: underline; }
+
+/* =========================================================
+   MODAL
+   ========================================================= */
+.fin-report-dialog {
+  max-width: 1100px;
+  width: 95%;
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.fin-report-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.fin-report-head__main { flex: 1; min-width: 0; }
+
+.fin-report-head__partner {
+  margin: 4px 0 8px;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: var(--text-soft);
+}
+.fin-report-head__partner strong {
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 700;
+}
+.fin-report-head__doc {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.fin-report-head__contact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.fin-report-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-soft);
+}
+.fin-report-chip svg { width: 13px; height: 13px; color: var(--accent); }
+
+.fin-report-muted {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.fin-report-skel {
+  display: inline-block;
+  height: 12px;
+  width: 180px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--surface-2), var(--surface), var(--surface-2));
+  background-size: 200% 100%;
+  animation: rep-skel 1.2s ease-in-out infinite;
+}
+@keyframes rep-skel { 0%{background-position:0 0} 100%{background-position:-200% 0} }
+
+/* =========================================================
+   FILTROS
+   ========================================================= */
+.fin-report-filters {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr auto auto;
+  gap: 10px;
+  align-items: flex-end;
+  padding: 14px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+
+@media (max-width: 720px) {
+  .fin-report-filters { grid-template-columns: 1fr 1fr; }
+}
+
+.fin-report-filters .fin-field { display: flex; flex-direction: column; gap: 4px; }
+.fin-report-filters .fin-field label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--text-muted);
+}
+.fin-report-filters .fin-field input,
+.fin-report-filters .fin-field select {
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13.5px;
+}
+
+/* =========================================================
+   CARDS DE RESUMO
+   ========================================================= */
+.rep-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+@media (max-width: 900px) { .rep-summary-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 520px) { .rep-summary-grid { grid-template-columns: 1fr; } }
+
+.rep-card {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.rep-card__label {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--text-muted);
+}
+.rep-card__value {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -.02em;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rep-card__hint {
+  font-size: 11.5px;
+  color: var(--text-soft);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rep-card--neutral { border-left: 3px solid var(--text-muted); }
+.rep-card--warning { border-left: 3px solid #f59e0b; }
+.rep-card--warning .rep-card__value { color: #f59e0b; }
+.rep-card--success { border-left: 3px solid #10b981; }
+.rep-card--success .rep-card__value { color: #10b981; }
+.rep-card--danger  { border-left: 3px solid #ef4444; }
+.rep-card--danger  .rep-card__value { color: #ef4444; }
+.rep-card--info    { border-left: 3px solid #3b82f6; }
+.rep-card--info    .rep-card__value { color: #3b82f6; }
+.rep-card--purple  { border-left: 3px solid #8b5cf6; }
+.rep-card--purple  .rep-card__value { color: #8b5cf6; }
+
+/* =========================================================
+   TABS
+   ========================================================= */
+.fin-report-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  margin-bottom: 12px;
+  overflow-x: auto;
+}
+
+.fin-report-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text-soft);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .15s ease, color .15s ease;
+}
+.fin-report-tab:hover { color: var(--text); }
+.fin-report-tab.is-active {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 1px 3px rgba(0,0,0,.08);
+}
+
+.fin-report-tab__count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+.fin-report-tab.is-active .fin-report-tab__count {
+  background: var(--accent-soft);
+  color: var(--accent-hover);
+}
+
+/* =========================================================
+   PANES
+   ========================================================= */
+.fin-report-pane { display: none; }
+.fin-report-pane.is-active { display: block; }
+
+.fin-report-scroll {
+  max-height: 380px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.fin-report-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.fin-report-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--surface-2);
+  z-index: 1;
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.fin-report-table thead th.cell--num { text-align: right; }
+.fin-report-table tbody td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  vertical-align: middle;
+}
+.fin-report-table tbody tr:last-child td { border-bottom: 0; }
+.fin-report-table tbody tr:hover { background: var(--surface-2); }
+.fin-report-table td.cell--num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* =========================================================
+   DETALHES
+   ========================================================= */
+.rep-cell-title {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 13px;
+}
+.rep-cell-value { font-weight: 600; }
+.rep-cell-late  { color: var(--danger); font-weight: 700; }
+
+.rep-muted {
+  font-size: 11px;
+  color: var(--text-muted);
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rep-money--pos { color: #10b981; font-weight: 600; }
+.rep-money--neg { color: #ef4444; font-weight: 600; }
+
+.rep-empty {
+  text-align: center;
+  padding: 24px 12px !important;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+/* =========================================================
+   FOOTER
+   ========================================================= */
+.fin-modal--report .fin-modal__foot {
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+
+/* Garante que a tabela de títulos tenha rolagem interna e não trave a tela */
+.fin-panel__scroll {
+  max-height: calc(100vh - 380px) !important;
+  overflow-y: auto !important;
+  overflow-x: auto !important;
+}

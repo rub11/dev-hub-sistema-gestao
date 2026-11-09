@@ -1937,3 +1937,23 @@ body[data-page="financeiro"] select {
 .fin-tabpane:not(.is-active) {
   display: none !important;
 }
+
+/* =========================================================
+   FORÇAR ROLAGEM NA TELA INTEIRA (ANTI-TRAVAMENTO)
+   ========================================================= */
+html, body {
+  overflow-y: auto !important;
+  height: auto !important;
+}
+
+.app__body, .fin-content {
+  height: auto !important;
+  min-height: 100vh !important;
+  overflow-y: visible !important;
+}
+
+/* Se o body for travado com position: fixed por algum modal antigo */
+body.modal-open, body.no-scroll {
+  overflow-y: auto !important;
+  position: static !important;
+}
