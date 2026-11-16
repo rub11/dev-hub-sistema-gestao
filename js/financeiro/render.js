@@ -15,15 +15,16 @@
   const { setCount, setViewMode } = window.Fin;
 
   /* =========================================================
-     TRAVA DE COMPRA (DESATIVADA PARA TESTES)
+     TRAVA DE COMPRA
      ========================================================= */
   function isPurchaseBlocked(entry) {
-    return false; // Forçado false para permitir baixar qualquer título
+    return !!(entry && entry.purchase && entry.purchase.status !== 'recebida');
   }
 
   function canSettleEntry(entry) {
     if (!entry) return false;
     if (entry.status !== 'pendente') return false;
+    if (isPurchaseBlocked(entry)) return false;
     return true;
   }
 
@@ -31,8 +32,10 @@
      RENDER · ALL
      ========================================================= */
   function renderAll() {
-    setCount('count-pagar', state.entries.filter((e) => e.kind === 'despesa' && e.status === 'pendente').length);
-    setCount('count-receber', state.entries.filter((e) => e.kind === 'receita' && e.status === 'pendente').length);
+    setCount('count-pagar',
+      state.entries.filter((e) => e.kind === 'despesa' && e.status === 'pendente').length);
+    setCount('count-receber',
+      state.entries.filter((e) => e.kind === 'receita' && e.status === 'pendente').length);
     setCount('count-todos', state.entries.length);
     setCount('count-movimentos', state.movements.length);
     setCount('count-transferencias', state.transfers.length);
@@ -207,7 +210,8 @@
       const bal = Number(r.current_balance_cents || (r.amount_cents - (r.paid_cents || 0)));
       const amountClass = r.kind === 'receita' ? 'fin-money--positive' : 'fin-money--negative';
       const sign = r.kind === 'receita' ? '+' : '-';
-      const canSettle = canSettleEntry(r);
+      const purchaseBlocked = isPurchaseBlocked(r);
+      const canSettle       = canSettleEntry(r);
 
       const kindCell = showKind
         ? `<td><span class="fin-badge fin-badge--${r.kind}">${escapeHTML(KIND_LABEL[r.kind] || r.kind)}</span></td>`
@@ -215,7 +219,7 @@
 
       const checkboxCell = showKind
         ? ''
-        : `<td><input type="checkbox" class="fin-check-row" data-check="${r.id}" ${sel ? 'checked' : ''} /></td>`;
+        : `<td><input type="checkbox" data-check="${r.id}" ${sel ? 'checked' : ''} /></td>`;
 
       return `
         <tr data-id="${r.id}" class="${sel} fin-row-clickable">
@@ -224,6 +228,7 @@
           <td>
             <div class="fin-code">
               ${escapeHTML(r.title_code || r.doc_number || '—')}
+              ${purchaseBlocked ? `<span class="fin-badge fin-badge--aguardando" title="Compra ${escapeHTML(r.purchase.code || '')} ainda não foi recebida">Aguardando entrega</span>` : ''}
             </div>
             <div class="fin-partner__meta">${escapeHTML(r.notes || '')}</div>
           </td>
@@ -274,20 +279,6 @@
     }).join('');
 
     bindEntryRowActions(tbody);
-    
-    const checkAll = document.querySelector(`[data-main-pane="${tab}"] #fin-check-all`) || document.querySelector(`[data-main-pane="${tab}"] #fin-check-all-receber`);
-    if (checkAll) {
-      checkAll.checked = rows.length > 0 && rows.every(r => state.selected.has(r.id));
-      checkAll.addEventListener('change', (e) => {
-        if (e.target.checked) {
-          rows.forEach(r => state.selected.add(r.id));
-        } else {
-          rows.forEach(r => state.selected.delete(r.id));
-        }
-        renderEntries(state.tab === 'pagar' ? 'despesa' : 'receita', state.tab);
-        updateActionButtons();
-      });
-    }
   }
 
   /* =========================================================
@@ -333,6 +324,7 @@
     const kindLabel = KIND_LABEL[r.kind] || r.kind;
     const valueClass = r.kind === 'receita' ? 'fin-money--positive' : 'fin-money--negative';
     const sign = r.kind === 'receita' ? '+' : '-';
+    const purchaseBlocked = isPurchaseBlocked(r);
 
     let dueMeta = '';
     let dueClass = '';
@@ -372,7 +364,9 @@
         <div class="fin-card__value ${valueClass}">${sign} ${fmtBRL(r.amount_cents)}</div>
         <footer class="fin-card__foot">
           <span class="fin-badge fin-badge--${escapeHTML(r.status)}">${escapeHTML(stLabel)}</span>
-          <span class="fin-card__due ${dueClass}">${escapeHTML(dueMeta)}</span>
+          ${purchaseBlocked
+            ? `<span class="fin-badge fin-badge--aguardando" title="Compra ${escapeHTML(r.purchase.code || '')} ainda não foi recebida">Aguardando entrega</span>`
+            : `<span class="fin-card__due ${dueClass}">${escapeHTML(dueMeta)}</span>`}
         </footer>
       </button>
     `;
@@ -462,7 +456,7 @@
   }
 
   /* =========================================================
-     MOVIMENTAÇÕES E TRANSFERÊNCIAS
+     MOVIMENTAÇÕES
      ========================================================= */
   function renderMovements() {
     const tbody = $('#fin-tbody-movimentos');
@@ -476,7 +470,18 @@
     if (state.filters.dueTo)   rows = rows.filter((m) => m.movement_date <= state.filters.dueTo);
 
     if (!rows.length) {
-      tbody.innerHTML = `<tr><td colspan="8" style="padding:0;border:0"><div class="fin-empty"><div class="fin-empty__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="m7 15 3.5-4 3 2.5L20 7"/></svg></div><h3 class="fin-empty__title">Nenhuma movimentação</h3><p class="fin-empty__text">Não há movimentações no período selecionado.</p></div></td></tr>`;
+      tbody.innerHTML = `
+        <tr><td colspan="8" style="padding:0;border:0">
+          <div class="fin-empty">
+            <div class="fin-empty__icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="m7 15 3.5-4 3 2.5L20 7"/>
+              </svg>
+            </div>
+            <h3 class="fin-empty__title">Nenhuma movimentação</h3>
+            <p class="fin-empty__text">Não há movimentações no período selecionado.</p>
+          </div>
+        </td></tr>`;
       return;
     }
 
@@ -499,6 +504,9 @@
     }).join('');
   }
 
+  /* =========================================================
+     TRANSFERÊNCIAS
+     ========================================================= */
   function renderTransfers() {
     const tbody = $('#fin-tbody-transferencias');
     if (!tbody) return;
@@ -508,7 +516,19 @@
       rows = rows.filter((t) => set.has(t.from_account_id) || set.has(t.to_account_id));
     }
     if (!rows.length) {
-      tbody.innerHTML = `<tr><td colspan="6" style="padding:0;border:0"><div class="fin-empty"><div class="fin-empty__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 10 2 5l5-5"/><path d="M2 5h13a5 5 0 0 1 0 10h-3"/><path d="M17 14l5 5-5 5"/><path d="M22 19H9a5 5 0 0 1 0-10h3"/></svg></div><h3 class="fin-empty__title">Nenhuma transferência</h3><p class="fin-empty__text">Use o botão "Transferir" para mover saldo entre contas.</p></div></td></tr>`;
+      tbody.innerHTML = `
+        <tr><td colspan="6" style="padding:0;border:0">
+          <div class="fin-empty">
+            <div class="fin-empty__icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M7 10 2 5l5-5"/><path d="M2 5h13a5 5 0 0 1 0 10h-3"/>
+                <path d="M17 14l5 5-5 5"/><path d="M22 19H9a5 5 0 0 1 0-10h3"/>
+              </svg>
+            </div>
+            <h3 class="fin-empty__title">Nenhuma transferência</h3>
+            <p class="fin-empty__text">Use o botão "Transferir" para mover saldo entre contas.</p>
+          </div>
+        </td></tr>`;
       return;
     }
     tbody.innerHTML = rows.map((t) => {
@@ -559,30 +579,13 @@
     const n = state.selected.size;
     const pane = $(`.fin-main > .fin-tabpane[data-main-pane="${state.tab}"]`);
     if (!pane) return;
-    
     pane.querySelectorAll('.fin-actions [data-action]').forEach((btn) => {
       btn.disabled = n === 0;
     });
-
-    const settleBtn = pane.querySelector('.fin-actions [data-action="settle"]');
-    const reverseBtn = pane.querySelector('.fin-actions [data-action="reverse"]');
     const editBtn = pane.querySelector('.fin-actions [data-action="edit"]');
     const delBtn  = pane.querySelector('.fin-actions [data-action="delete"]');
-
     if (editBtn) editBtn.disabled = n !== 1;
     if (delBtn)  delBtn.disabled  = n !== 1;
-    
-    if (settleBtn) {
-      const ids = Array.from(state.selected);
-      const isOnlyOnePending = n === 1 && state.entries.find(x => x.id === ids[0])?.status === 'pendente';
-      settleBtn.disabled = !isOnlyOnePending;
-    }
-
-    if (reverseBtn) {
-      const ids = Array.from(state.selected);
-      const isOnlyOneSettled = n === 1 && state.entries.find(x => x.id === ids[0])?.status === 'baixado';
-      reverseBtn.disabled = !isOnlyOneSettled;
-    }
   }
 
   /* =========================================================

@@ -176,15 +176,13 @@
 
         <footer class="fin-modal__foot">
           <button type="button" class="fin-btn fin-btn--ghost" data-close>Fechar</button>
-          
-          <!-- BOTÃO QUE ABRE A CENTRAL DE EXPORTAÇÃO -->
-          <button type="button" class="fin-btn fin-btn--primary" id="rep-export-center">
+          <button type="button" class="fin-btn fin-btn--primary" id="rep-export-csv">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                  stroke-linecap="round" stroke-linejoin="round"
                  style="width:16px;height:16px;margin-right:4px;">
               <path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/>
             </svg>
-            Exportar Relatório
+            Exportar CSV
           </button>
         </footer>
       </div>
@@ -424,7 +422,47 @@
       q('#cnt-atrasos').textContent = atrasos.length;
     }
 
-    /* ---------- Ações dos botões de filtro ---------- */
+    /* ---------- Exportar CSV ---------- */
+    function exportCSV() {
+      const filtered = getFilteredEntries();
+      const SEP = ';';
+      const BOM = '\uFEFF';
+      const brl = (c) => ((Number(c) || 0) / 100).toFixed(2).replace('.', ',');
+
+      const rows = [];
+      rows.push(['Relatório do parceiro', partnerName, partnerDoc || ''].join(SEP));
+      rows.push(['Gerado em', new Date().toLocaleString('pt-BR')].join(SEP));
+      rows.push('');
+      rows.push(['Título', 'Vencimento', 'Status', 'Valor (R$)', 'Pago (R$)', 'Saldo (R$)'].join(SEP));
+
+      filtered
+        .slice()
+        .sort((a, b) => String(a.due_date || '').localeCompare(String(b.due_date || '')))
+        .forEach(e => {
+          const bal = Number(e.current_balance_cents || (e.amount_cents - (e.paid_cents || 0)));
+          rows.push([
+            e.title_code || e.doc_number || '',
+            e.due_date || '',
+            e.status || '',
+            brl(e.amount_cents),
+            brl(e.paid_cents),
+            brl(bal)
+          ].join(SEP));
+        });
+
+      const csv = BOM + rows.join('\r\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'relatorio_' + (partnerName || 'cliente').replace(/\s+/g, '_') + '_' + todayISO() + '.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      window.Fin.toast?.('CSV exportado.', 'success');
+    }
+
     q('#rep-filter-btn').addEventListener('click', renderReport);
     q('#rep-clear-btn').addEventListener('click', () => {
       q('#rep-start').value = '';
@@ -432,13 +470,7 @@
       q('#rep-status').value = '';
       renderReport();
     });
-
-    /* ---------- BOTÃO DE EXPORTAÇÃO INTEGRADO ---------- */
-    q('#rep-export-center').addEventListener('click', () => {
-      // Passa os dados filtrados e o nome do parceiro para a Central
-      const filtered = getFilteredEntries();
-      window.Fin.openExportCenter(filtered, `Relatório - ${partnerName}`);
-    });
+    q('#rep-export-csv').addEventListener('click', exportCSV);
 
     renderReport();
   }

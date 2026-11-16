@@ -18,6 +18,7 @@
   <link rel="stylesheet" href="css/theme.css" />
   <link rel="stylesheet" href="css/custom-select.css" />
   <link rel="stylesheet" href="css/vendas.css" />
+  <link rel="stylesheet" href="css/vendas-filtros.css" />
   <link rel="stylesheet" href="css/vendas-payments.css" />
 
   <script>
@@ -99,11 +100,11 @@
         <div class="page-head page-head--with-action">
           <div>
             <p class="page-head__eyebrow">
-              <span id="greeting-name">Olá...</span>
+              Olá, <span id="greeting-name">...</span>
               <span class="role-badge" id="greeting-role" hidden></span>
             </p>
             <h1 class="page-head__title">Vendas</h1>
-            <p class="page-head__sub">Acompanhe as vendas realizadas.</p>
+            <p class="page-head__sub">Acompanhe as vendas realizadas e o faturamento.</p>
           </div>
 
           <div class="page-head__actions">
@@ -116,34 +117,82 @@
           </div>
         </div>
 
+        <div class="sale-stats">
+          <div class="sale-stat">
+            <div class="sale-stat__label">Total do período</div>
+            <div class="sale-stat__value" id="stat-count">—</div>
+          </div>
+          <div class="sale-stat sale-stat--info">
+            <div class="sale-stat__label">Faturamento</div>
+            <div class="sale-stat__value sale-stat__value--money" id="stat-faturamento">—</div>
+          </div>
+          <div class="sale-stat sale-stat--warn">
+            <div class="sale-stat__label">A receber</div>
+            <div class="sale-stat__value sale-stat__value--money" id="stat-receber">—</div>
+          </div>
+          <div class="sale-stat sale-stat--ok">
+            <div class="sale-stat__label">Ticket médio</div>
+            <div class="sale-stat__value sale-stat__value--money" id="stat-ticket">—</div>
+          </div>
+        </div>
+
         <section class="panel" aria-labelledby="sales-title">
-          
-          <!-- TOOLBAR: Título, Busca e Filtros -->
           <div class="panel__head toolbar">
             <div class="toolbar__info">
               <h2 class="panel__title" id="sales-title">Lista de vendas</h2>
               <p class="panel__sub" id="sales-count">Carregando…</p>
             </div>
-            
+
             <div class="toolbar__actions">
-              <div class="search-box">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-                <input type="text" id="search-input" placeholder="Buscar venda..." autocomplete="off" />
+
+              <div class="search">
+                <span class="search__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+                       stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" />
+                  </svg>
+                </span>
+                <input type="search" id="search-input" class="search__input"
+                       placeholder="Buscar venda..."
+                       aria-label="Buscar vendas" autocomplete="off" />
               </div>
-              
-              <select id="filter-status" class="vf-select">
+
+              <select id="filter-status" class="vf-select" aria-label="Filtrar por status">
                 <option value="todos">Todos os status</option>
                 <option value="ativas">Ativas</option>
-                <option value="concluidas">Concluídas</option>
-                <option value="rejeitadas">Rejeitadas</option>
+                <option value="pendentes">Pendentes</option>
+                <option value="canceladas">Canceladas</option>
               </select>
-              
-              <select id="filter-periodo" class="vf-select">
+
+              <select id="filter-periodo" class="vf-select" aria-label="Filtrar por período">
                 <option value="todos">Todo período</option>
                 <option value="hoje">Hoje</option>
                 <option value="7dias">Últimos 7 dias</option>
                 <option value="30dias">Últimos 30 dias</option>
+                <option value="mes">Este mês</option>
               </select>
+
+              <select id="filter-pagamento" class="vf-select" aria-label="Filtrar por forma de pagamento">
+                <option value="todos">Todas formas</option>
+                <option value="pix">Pix</option>
+                <option value="cash">Dinheiro</option>
+                <option value="debit_card">Débito</option>
+                <option value="credit_card">Crédito</option>
+                <option value="boleto">Boleto</option>
+                <option value="other">Outro</option>
+              </select>
+
+              <button type="button" class="btn btn--ghost" id="approvals-btn" hidden>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
+                     style="width:16px;height:16px">
+                  <path d="M9 12l2 2 4-4" />
+                  <path d="M21 12c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V5l8-3 8 3v7z" />
+                </svg>
+                <span>Aprovações</span>
+                <span class="badge badge--warning" id="approvals-count" hidden>0</span>
+              </button>
+
             </div>
           </div>
 
@@ -178,7 +227,7 @@
                   <th scope="col">Forma</th>
                   <th scope="col">Status</th>
                   <th scope="col">Criada por</th>
-                  <th scope="col" class="cell--center">Ações</th>
+                  <th scope="col" class="cell--num">Ações</th>
                 </tr>
               </thead>
               <tbody id="sales-body"></tbody>
@@ -218,10 +267,12 @@
                     <label>Selecione o cliente</label>
                   </div>
                   
+                  <!-- Select Original Escondido (Usando hidden em vez de CSS inline) -->
                   <select id="sale-customer" hidden>
                     <option value="">Cliente não informado</option>
                   </select>
 
+                  <!-- Botão que abre o Modal de Busca -->
                   <button type="button" id="open-customer-picker" class="customer-picker-trigger">
                     <div class="customer-picker-trigger__left">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
@@ -420,6 +471,7 @@
                     <input type="number" id="sale-deposit" value="0" min="0" step="0.01" inputmode="decimal" />
                   </div>
 
+                  <!-- NOVO: Forma de pagamento do sinal -->
                   <div class="totals__row totals__row--field" id="deposit-method-row" hidden>
                     <label for="sale-deposit-method" class="totals__label">Forma do sinal</label>
                     <select id="sale-deposit-method" class="totals-input"></select>
@@ -431,6 +483,7 @@
                   </div>
                 </div>
 
+                <!-- ═══════════ PAGAMENTOS MÚLTIPLOS ═══════════ -->
                 <div class="field" id="payments-field">
                   <div class="field__label-row">
                     <label>Formas de pagamento <span class="required-star">*</span></label>
@@ -464,6 +517,7 @@
                     Aloque o valor total entre as formas de pagamento.
                   </p>
                 </div>
+                <!-- ═══════════ /PAGAMENTOS MÚLTIPLOS ═══════════ -->
 
                 <div class="field">
                   <label for="sale-notes">Observações</label>
@@ -593,11 +647,13 @@
       </header>
 
       <div class="modal__body" style="padding-top: 10px;">
+        <!-- Barra de Pesquisa do Modal -->
         <div class="customer-search-box">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
           <input type="text" id="customer-search-input" placeholder="Pesquisar por nome, CPF/CNPJ, e-mail ou telefone..." autocomplete="off" />
         </div>
 
+        <!-- Lista de Clientes -->
         <div class="customer-list" id="customer-list">
           <!-- Injetado via JS -->
         </div>
@@ -753,7 +809,7 @@
   <script src="js/nav/module-menu.js"></script>
   <script src="js/nav/notifications.js"></script>
   <script src="js/nav/user-menu.js"></script>
-  <script src="js/nav/favorites-modal.js"></script>
+<script src="js/nav/favorites-modal.js"></script>
   <script src="js/nav/search.js"></script>
   <script src="js/nav/org-switcher.js"></script>
   <script src="js/nav/bar.js"></script>
@@ -790,11 +846,13 @@
   <script src="js/scanner-modal.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
-  <!-- SCRIPT DE CORREÇÃO, FILTROS E MODO ORÇAMENTO -->
+  <script src="js/vendas/filtros.js"></script>
+
+  <!-- SCRIPT DE CORREÇÃO E MODO ORÇAMENTO -->
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       
-      // === 1. CORREÇÃO DO NOME DO USUÁRIO ("Olá, Olá") ===
+      // === 1. CORREÇÃO DO NOME DO USUÁRIO ===
       try {
         const rawUser = sessionStorage.getItem('devhub_user');
         if (rawUser) {
@@ -803,9 +861,7 @@
           const roleEl = document.getElementById('greeting-role');
           
           if (nameEl && user?.name) {
-            let rawName = user.name.replace(/^Olá,?\s*/i, '').trim();
-            let firstName = rawName.split(' ')[0];
-            nameEl.textContent = 'Olá, ' + firstName; 
+            nameEl.textContent = user.name.replace(/^Olá,?\s*/i, '').trim().split(' ')[0]; 
           }
           if (roleEl && user?.role) {
             roleEl.textContent = user.role.charAt(0).toUpperCase() + user.role.slice(1);
@@ -816,64 +872,7 @@
         console.warn('DEV HUB: Falha ao carregar dados do usuário local.', e);
       }
 
-      // === 2. FILTROS (Status e Período) ===
-      const filterStatus = document.getElementById('filter-status');
-      const filterPeriodo = document.getElementById('filter-periodo');
-      const tbody = document.getElementById('sales-body');
-
-      function applyFilters() {
-        if (!tbody) return;
-        const rows = tbody.querySelectorAll('tr');
-        const statusValue = filterStatus ? filterStatus.value : 'todos';
-        const periodoValue = filterPeriodo ? filterPeriodo.value : 'todos';
-        const today = new Date();
-        today.setHours(0,0,0,0);
-
-        rows.forEach(row => {
-          let show = true;
-          
-          // Filtro Status
-          if (statusValue !== 'todos') {
-            const badge = row.querySelector('.badge');
-            const text = badge ? badge.textContent.toLowerCase() : '';
-            if (statusValue === 'concluidas' && !text.includes('conclu')) show = false;
-            if (statusValue === 'rejeitadas' && !text.includes('rejei')) show = false;
-            if (statusValue === 'ativas' && (text.includes('conclu') || text.includes('rejei'))) show = false;
-          }
-
-          // Filtro Período
-          if (periodoValue !== 'todos' && show) {
-            const dataCell = row.children[2];
-            if (dataCell) {
-              const dateText = dataCell.textContent.split(',')[0].trim(); // "DD/MM/YYYY"
-              const parts = dateText.split('/');
-              if (parts.length === 3) {
-                const rowDate = new Date(parts[2], parts[1]-1, parts[0]);
-                rowDate.setHours(0,0,0,0);
-                const diffTime = Math.abs(today - rowDate);
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-                if (periodoValue === 'hoje' && diffDays !== 0) show = false;
-                if (periodoValue === '7dias' && diffDays > 7) show = false;
-                if (periodoValue === '30dias' && diffDays > 30) show = false;
-              }
-            }
-          }
-
-          row.style.display = show ? '' : 'none';
-        });
-      }
-
-      if (filterStatus) filterStatus.addEventListener('change', applyFilters);
-      if (filterPeriodo) filterPeriodo.addEventListener('change', applyFilters);
-
-      // Monitora quando o list.js renderizar as linhas para aplicar filtros iniciais
-      if (tbody) {
-        const observer = new MutationObserver(() => applyFilters());
-        observer.observe(tbody, { childList: true });
-      }
-
-      // === 3. LÓGICA DO MODO ORÇAMENTO ===
+      // === 2. LÓGICA DO MODO ORÇAMENTO ===
       const urlParams = new URLSearchParams(window.location.search);
       const isQuoteMode = urlParams.get('tipo') === 'orcamento';
 
@@ -892,7 +891,7 @@
         window.MODO_ORCAMENTO = true;
       }
 
-      // === 4. BOTÕES VOLTAR E CANCELAR ===
+      // === 3. BOTÕES VOLTAR E CANCELAR ===
       const backBtn = document.getElementById('back-to-list');
       const cancelBtn = document.getElementById('cancel-sale');
       const viewList = document.getElementById('view-list');
@@ -927,6 +926,7 @@
       
       if (!originalSelect || !modal) return;
 
+      // Função para abrir o modal
       function openModal() {
         modal.hidden = false;
         document.body.style.overflow = 'hidden';
@@ -935,15 +935,20 @@
         setTimeout(() => searchInput.focus(), 100);
       }
 
+      // Função para fechar o modal
       function closeModal() {
         modal.hidden = true;
         document.body.style.overflow = '';
       }
 
+      // Renderiza a lista de clientes baseado na busca
       function renderList(query) {
+        // Puxa os clientes do estado global (carregados pelo form.js)
         const customers = window.DH && window.DH.state && window.DH.state.customers ? window.DH.state.customers : [];
+        
         const q = query.toLowerCase().trim();
         
+        // Filtra por Nome, CPF/CNPJ, Email ou Telefone
         const filtered = customers.filter(c => {
           if (!q) return true;
           const name = (c.name || '').toLowerCase();
@@ -986,6 +991,7 @@
         });
       }
 
+      // Eventos
       triggerBtn.addEventListener('click', openModal);
       searchInput.addEventListener('input', (e) => renderList(e.target.value));
       
@@ -993,16 +999,19 @@
         el.addEventListener('click', closeModal);
       });
 
+      // Botão de novo parceiro
       newBtn.addEventListener('click', () => {
         closeModal();
         const oldNewBtn = document.getElementById('new-customer-btn');
         if (oldNewBtn) oldNewBtn.click();
       });
 
+      // Fecha ao apertar ESC
       document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && !modal.hidden) closeModal();
       });
 
+      // Sincroniza o texto do botão caso o form.js mude o select (ex: ao editar orçamento)
       const observer = new MutationObserver(() => {
         if (originalSelect.selectedIndex >= 0) {
           label.textContent = originalSelect.options[originalSelect.selectedIndex].textContent;
@@ -1012,4 +1021,5 @@
     });
   </script>
 </body>
+
 </html>
