@@ -40,9 +40,7 @@
       <button type="button" class="icon-btn menu-toggle" id="menu-toggle"
               aria-label="Abrir menu" aria-expanded="false" aria-controls="sidebar">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
-             stroke-linecap="round" aria-hidden="true">
-          <path d="M3.5 6.5h17M3.5 12h17M3.5 17.5h17" />
-        </svg>
+             stroke-linecap="round" aria-hidden="true"><path d="M3.5 6.5h17M3.5 12h17M3.5 17.5h17" /></svg>
       </button>
 
       <span class="topbar__brand">DEV HUB</span>
@@ -92,29 +90,22 @@
           <span class="role-badge" id="greeting-role" hidden></span>
         </p>
         <h1 class="page-head__title">Aprovações</h1>
-        <p class="page-head__sub">
-          Revise e aprove produtos cadastrados pelo estoque.
-        </p>
+        <p class="page-head__sub">Revise e aprove produtos cadastrados pelo estoque.</p>
       </div>
 
-      <!-- =====================================================
-           PRODUTOS PENDENTES
-           ===================================================== -->
-      <section class="panel" aria-labelledby="aprovar-produtos-title"
-               style="margin-bottom:24px;">
+      <section class="panel" aria-labelledby="aprovar-produtos-title" style="margin-bottom:24px;">
         <div class="panel__head toolbar">
           <div class="toolbar__info">
             <h2 class="panel__title" id="aprovar-produtos-title">
               Produtos aguardando aprovação
-              <span class="badge badge--warning" id="aprovar-produtos-badge"
-                    style="margin-left:8px;" hidden>0</span>
+              <span class="badge badge--warning" id="aprovar-produtos-badge" style="margin-left:8px;" hidden>0</span>
             </h2>
             <p class="panel__sub" id="aprovar-produtos-count">Carregando…</p>
           </div>
         </div>
 
         <div class="panel__body" style="padding:16px 20px;">
-          <div id="aprovar-produtos-list">
+          <div id="aprovar-produtos-list" role="status" aria-live="polite">
             <div class="state-block state-block--compact">
               <span class="spinner" aria-hidden="true"></span>
               <p>Carregando produtos pendentes…</p>
@@ -128,9 +119,6 @@
 
   <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="false"></div>
 
-  <!-- =========================================================
-       Scripts
-       ========================================================= -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase.js"></script>
   <script src="js/auth.js"></script>
@@ -146,118 +134,13 @@
   <script src="js/nav/module-menu.js"></script>
   <script src="js/nav/notifications.js"></script>
   <script src="js/nav/user-menu.js"></script>
-<script src="js/nav/favorites-modal.js"></script>
+  <script src="js/nav/favorites-modal.js"></script>
   <script src="js/nav/search.js"></script>
   <script src="js/nav/org-switcher.js"></script>
   <script src="js/nav/bar.js"></script>
-<script src="js/nav/favorites.js"></script>
+  <script src="js/nav/favorites.js"></script>
   <script src="js/nav/main.js"></script>
 
-  <!-- Módulo de aprovações -->
   <script src="js/aprovacoes/produtos-pendentes.js"></script>
-
-  <!-- Sessão / user info básica (esse arquivo não existia ainda) -->
-  <script>
-    (function () {
-      'use strict';
-      document.addEventListener('DOMContentLoaded', async () => {
-        const Auth = window.Auth;
-        if (!Auth || !Auth.isConfigured() || !window.db) return;
-
-        const session = await Auth.requireSession().catch(() => null);
-        if (!session) return;
-
-        const profile = await Auth.getProfile(session.user.id);
-
-        const meta = session.user.user_metadata || {};
-        const fullName =
-          (profile && profile.name) ||
-          meta.name || meta.full_name ||
-          (session.user.email ? session.user.email.split('@')[0] : '') ||
-          'Usuário';
-
-        const roleText = window.Auth.roleLabel((profile && profile.role) || meta.role || '');
-        const firstName = String(fullName).trim().split(/\s+/)[0] || 'Usuário';
-        const initial = firstName.charAt(0).toUpperCase() || '?';
-
-        const setText = (id, txt) => {
-          const el = document.getElementById(id);
-          if (el) el.textContent = txt;
-        };
-
-        setText('user-avatar', initial);
-        setText('user-name', fullName);
-        setText('user-role', roleText || session.user.email || '');
-        setText('greeting-name', 'Olá, ' + firstName);
-
-        const roleBadge = document.getElementById('greeting-role');
-        if (roleBadge) {
-          if (roleText) {
-            roleBadge.textContent = roleText;
-            roleBadge.hidden = false;
-          } else {
-            roleBadge.hidden = true;
-          }
-        }
-
-        // Logout
-        document.querySelectorAll('[data-action="logout"]').forEach((btn) => {
-          btn.addEventListener('click', async () => {
-            btn.disabled = true;
-            await window.Auth.signOut();
-          });
-        });
-
-        // Sidebar / user menu
-        setupSidebar();
-        setupUserMenu();
-
-        function setupSidebar() {
-          const toggle = document.getElementById('menu-toggle');
-          const overlay = document.getElementById('sidebar-overlay');
-          const sidebar = document.getElementById('sidebar');
-          if (!toggle || !overlay || !sidebar) return;
-
-          const open = () => {
-            document.body.classList.add('sidebar-open');
-            toggle.setAttribute('aria-expanded', 'true');
-            overlay.hidden = false;
-          };
-          const close = () => {
-            document.body.classList.remove('sidebar-open');
-            toggle.setAttribute('aria-expanded', 'false');
-            overlay.hidden = true;
-          };
-
-          toggle.addEventListener('click', () => {
-            document.body.classList.contains('sidebar-open') ? close() : open();
-          });
-          overlay.addEventListener('click', close);
-          document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') close();
-          });
-        }
-
-        function setupUserMenu() {
-          const trigger = document.getElementById('user-menu-trigger');
-          const panel = document.getElementById('user-menu-panel');
-          if (!trigger || !panel) return;
-
-          trigger.addEventListener('click', (e) => {
-            e.stopPropagation();
-            panel.hidden = !panel.hidden;
-            trigger.setAttribute('aria-expanded', String(!panel.hidden));
-          });
-          document.addEventListener('click', (e) => {
-            if (panel.hidden) return;
-            if (panel.contains(e.target) || trigger.contains(e.target)) return;
-            panel.hidden = true;
-            trigger.setAttribute('aria-expanded', 'false');
-          });
-        }
-      });
-    })();
-  </script>
-
 </body>
 </html>

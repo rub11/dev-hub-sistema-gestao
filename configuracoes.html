@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
   <title>Configurações · DEV HUB</title>
 
   <script src="js/theme.js"></script>
@@ -95,7 +96,7 @@
         <p class="page-head__sub">Gerencie seu perfil, segurança e preferências.</p>
       </div>
 
-      <div id="settings-loading" class="state-block">
+      <div id="settings-loading" class="state-block" role="status" aria-live="polite">
         <span class="spinner" aria-hidden="true"></span>
         <p>Carregando informações...</p>
       </div>
@@ -104,7 +105,7 @@
 
         <section class="settings-grid">
 
-          <!-- ---------- Foto do perfil ---------- -->
+          <!-- Foto do perfil -->
           <article class="settings-card">
             <header class="settings-card__head">
               <h2 class="settings-card__title">Foto do perfil</h2>
@@ -135,7 +136,7 @@
             </div>
           </article>
 
-          <!-- ---------- Perfil ---------- -->
+          <!-- Perfil -->
           <article class="settings-card">
             <header class="settings-card__head">
               <h2 class="settings-card__title">Perfil do usuário</h2>
@@ -177,7 +178,7 @@
             </form>
           </article>
 
-          <!-- ---------- Conta ---------- -->
+          <!-- Conta -->
           <article class="settings-card">
             <header class="settings-card__head">
               <h2 class="settings-card__title">Informações da conta</h2>
@@ -206,7 +207,7 @@
             </div>
           </article>
 
-          <!-- ---------- Segurança ---------- -->
+          <!-- Segurança -->
           <article class="settings-card">
             <header class="settings-card__head">
               <h2 class="settings-card__title">Segurança</h2>
@@ -226,7 +227,7 @@
             </div>
           </article>
 
-          <!-- ---------- Sessão ---------- -->
+          <!-- Sessão -->
           <article class="settings-card settings-card--full">
             <header class="settings-card__head">
               <h2 class="settings-card__title">Sessão</h2>
@@ -252,7 +253,7 @@
     </main>
   </div>
 
-  <!-- ================= MODAL: ALTERAR SENHA ================= -->
+  <!-- MODAL: ALTERAR SENHA -->
   <div class="modal" id="password-modal" hidden>
     <div class="modal__backdrop" data-close-modal></div>
 
@@ -328,7 +329,7 @@
     </div>
   </div>
 
-  <!-- ================= MODAL: CONFIRMAR SAÍDA ================= -->
+  <!-- MODAL: CONFIRMAR SAÍDA -->
   <div class="modal" id="signout-modal" hidden>
     <div class="modal__backdrop" data-close-modal></div>
 
@@ -365,6 +366,8 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase.js"></script>
   <script src="js/auth.js"></script>
+  <script src="js/permissions.js"></script>
+
   <script src="js/nav/config.js"></script>
   <script src="js/nav/state.js"></script>
   <script src="js/nav/roles.js"></script>
@@ -374,13 +377,14 @@
   <script src="js/nav/module-menu.js"></script>
   <script src="js/nav/notifications.js"></script>
   <script src="js/nav/user-menu.js"></script>
-<script src="js/nav/favorites-modal.js"></script>
+  <script src="js/nav/favorites-modal.js"></script>
   <script src="js/nav/search.js"></script>
   <script src="js/nav/org-switcher.js"></script>
-<script src="js/nav/bar.js"></script>
-<script src="js/nav/favorites.js"></script>
+  <script src="js/nav/bar.js"></script>
+  <script src="js/nav/favorites.js"></script>
   <script src="js/nav/main.js"></script>
-  <script src="js/permissions.js"></script>
+
+  <!-- Configurações (script específico da página) -->
   <script src="js/configuracoes.js"></script>
 </body>
 </html>

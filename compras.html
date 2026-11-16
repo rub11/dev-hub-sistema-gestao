@@ -12,18 +12,91 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 
   <link rel="stylesheet" href="css/global.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/clientes.css" />
   <link rel="stylesheet" href="css/theme.css" />
   <link rel="stylesheet" href="css/custom-select.css" />
   <link rel="stylesheet" href="css/compras.css" />
+
+  <script>
+    (function () {
+      try {
+        if (!/[?&]blocked=1/.test(location.search)) {
+          document.documentElement.classList.add('layout-topnav');
+        }
+      } catch (e) {}
+    })();
+  </script>
 </head>
 
-<body data-page="compras">
+<body class="layout-topnav" data-page="compras">
+
+  <a class="skip-link" href="#main">Pular para o conteúdo principal</a>
+
+  <aside class="sidebar" id="sidebar" aria-label="Menu principal"></aside>
+  <div class="sidebar-overlay" id="sidebar-overlay" hidden></div>
+
   <div class="app__body">
 
-    <main class="content cmp-content">
+    <header class="topbar">
+      <button type="button" class="icon-btn menu-toggle" id="menu-toggle"
+              aria-label="Abrir menu" aria-expanded="false" aria-controls="sidebar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+             stroke-linecap="round" aria-hidden="true"><path d="M3.5 6.5h17M3.5 12h17M3.5 17.5h17" /></svg>
+      </button>
+
+      <span class="topbar__brand">DEV HUB</span>
+
+      <div class="topbar__actions">
+        <button type="button" class="icon-btn" id="notifications-btn"
+                aria-label="Notificações (em breve)" title="Em breve" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M18 8.5a6 6 0 1 0-12 0c0 6.5-2.5 8.5-2.5 8.5h17S18 15 18 8.5" />
+            <path d="M13.7 20.5a2 2 0 0 1-3.4 0" />
+          </svg>
+        </button>
+
+        <div class="user-menu">
+          <button type="button" class="user-menu__trigger" id="user-menu-trigger"
+                  aria-haspopup="true" aria-expanded="false" aria-controls="user-menu-panel">
+            <span class="avatar" id="user-avatar" aria-hidden="true">–</span>
+            <span class="user-menu__meta">
+              <span class="user-menu__name" id="user-name">Carregando…</span>
+              <span class="user-menu__role" id="user-role"></span>
+            </span>
+            <svg class="user-menu__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </button>
+
+          <div class="user-menu__panel" id="user-menu-panel" role="menu" hidden>
+            <a class="menu-item" role="menuitem" href="configuracoes.html">Configurações</a>
+            <div class="menu-item__sep" role="separator"></div>
+            <button type="button" class="menu-item menu-item--danger" role="menuitem" data-action="logout">
+              Sair
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="content cmp-content" id="main">
+
+      <div id="global-alert" class="alert" role="alert" hidden></div>
+
+      <div class="page-head">
+        <p class="page-head__eyebrow">
+          <span id="greeting-name">Olá</span>
+          <span class="role-badge" id="greeting-role" hidden></span>
+        </p>
+        <h1 class="page-head__title">Compras</h1>
+        <p class="page-head__sub">Gerencie pedidos, fornecedores e recebimentos.</p>
+      </div>
 
       <!-- ====================== HEADER ====================== -->
-      <header class="cmp-page-head">
+      <header class="cmp-page-head" style="margin-top:8px;">
         <div class="cmp-page-head__text">
           <span class="cmp-page-head__eyebrow">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -33,8 +106,6 @@
             </svg>
             Suprimentos
           </span>
-          <h1 class="cmp-page-head__title">Compras</h1>
-          <p class="cmp-page-head__sub">Gerencie pedidos, fornecedores e recebimentos.</p>
         </div>
 
         <div class="cmp-page-head__actions">
@@ -101,36 +172,35 @@
     </main>
   </div>
 
-   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="false"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase.js"></script>
   <script src="js/auth.js"></script>
-  <script src="js/nav/config.js"></script>
-<script src="js/nav/state.js"></script>
-<script src="js/nav/roles.js"></script>
-<script src="js/nav/styles.js"></script>
-<script src="js/nav/permission-modal.js"></script>
-<script src="js/nav/tabs.js"></script>
-<script src="js/nav/module-menu.js"></script>
-<script src="js/nav/notifications.js"></script>
-<script src="js/nav/user-menu.js"></script>
-<script src="js/nav/favorites-modal.js"></script>
-<script src="js/nav/search.js"></script>
-<script src="js/nav/org-switcher.js"></script>
-<script src="js/nav/bar.js"></script>
-<script src="js/nav/favorites.js"></script>
-<script src="js/nav/main.js"></script>
   <script src="js/permissions.js"></script>
-  
+
+  <script src="js/nav/config.js"></script>
+  <script src="js/nav/state.js"></script>
+  <script src="js/nav/roles.js"></script>
+  <script src="js/nav/styles.js"></script>
+  <script src="js/nav/permission-modal.js"></script>
+  <script src="js/nav/tabs.js"></script>
+  <script src="js/nav/module-menu.js"></script>
+  <script src="js/nav/notifications.js"></script>
+  <script src="js/nav/user-menu.js"></script>
+  <script src="js/nav/favorites-modal.js"></script>
+  <script src="js/nav/search.js"></script>
+  <script src="js/nav/org-switcher.js"></script>
+  <script src="js/nav/bar.js"></script>
+  <script src="js/nav/favorites.js"></script>
+  <script src="js/nav/main.js"></script>
+
   <script src="js/custom-select.js"></script>
 
-  <!-- compras — ordem importa! -->
   <script src="js/compras/state.js"></script>
   <script src="js/compras/api.js"></script>
   <script src="js/compras/supplier-modal.js"></script>
   <script src="js/compras/list.js"></script>
-  <script src="js/compras/nova.js"></script>
-  <script src="js/compras/receber.js"></script>
-  <script src="js/compras/fornecedores.js"></script>
   <script src="js/compras/init.js"></script>
 </body>
 </html>

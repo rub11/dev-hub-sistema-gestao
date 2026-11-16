@@ -1,21 +1,9 @@
 /* =========================================================
    DEV HUB · Topnav (barra de abas estilo navegador)
-   Arquivo: topnav.css
-   ---------------------------------------------------------
-   IMPORTANTE: requer que as variáveis CSS abaixo já estejam
-   definidas em theme.css / global.css:
-     --surface, --surface-2, --border, --text, --text-soft,
-     --text-muted, --accent, --accent-hover, --accent-soft,
-     --accent-ring, --danger, --danger-soft, --transition
-   ---------------------------------------------------------
-   ATUALIZAÇÃO DE MARCA:
-   • Brand mark e avatar do usuário migrados do gradiente
-     indigo (#6366f1 → #4338ca) para o Laranja da raposa
-     (#FB923C → #EA580C).
    ========================================================= */
 
 /* =====================================================
-   ESCONDE O SIDEBAR / TOPBAR ANTIGOS
+   ESCONDE SIDEBAR / TOPBAR ANTIGOS
    ===================================================== */
 html.layout-topnav .sidebar,
 html.layout-topnav .sidebar-overlay,
@@ -68,7 +56,7 @@ body.layout-topnav .app__body {
   width: 32px;
   height: 32px;
   border-radius: 9px;
-  background: linear-gradient(135deg, #FB923C 0%, #EA580C 100%);
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
   color: #ffffff;
   font-size: 11px;
   font-weight: 800;
@@ -369,7 +357,7 @@ body.layout-topnav .app__body {
   height: 32px;
   flex: none;
   border-radius: 50%;
-  background: linear-gradient(135deg, #FB923C 0%, #EA580C 100%);
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
   color: #ffffff;
   font-size: 12px;
   font-weight: 700;
@@ -422,7 +410,7 @@ body.layout-topnav .app__body {
   transform: rotate(180deg);
 }
 
-/* ---------- Dropdown do usuário (FIXED para não ser cortado) ---------- */
+/* ---------- Dropdown do usuário ---------- */
 .app-tabs__user-menu {
   position: fixed;
   top: 0;
@@ -433,7 +421,7 @@ body.layout-topnav .app__body {
   border: 1px solid var(--border);
   border-radius: 12px;
   background: var(--surface);
-  box-shadow: 0 12px 32px -8px rgba(16, 24, 40, 0.24);
+  box-shadow: var(--shadow-md);
   animation: tnav-pop 140ms ease-out;
 }
 .app-tabs__user-menu[hidden] { display: none !important; }
@@ -493,7 +481,7 @@ body.layout-topnav .app__body {
   border: 1px solid var(--border);
   border-radius: 12px;
   background: var(--surface);
-  box-shadow: 0 12px 32px -8px rgba(16, 24, 40, 0.24);
+  box-shadow: var(--shadow-md);
   z-index: 9999;
   animation: tnav-pop 140ms ease-out;
 }
@@ -611,10 +599,10 @@ body.layout-topnav .app__body {
    Dark mode
    ===================================================== */
 [data-theme="dark"] .app-tabs {
-  background: rgba(0, 0, 0, 0.20);
+  background: var(--surface-2);
 }
 [data-theme="dark"] .app-tabs__search {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--surface);
 }
 
 /* =====================================================

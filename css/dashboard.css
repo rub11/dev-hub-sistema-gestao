@@ -1,10 +1,5 @@
 /* =========================================================
    DEV HUB · Dashboard (Padronizado Laranja)
-   ---------------------------------------------------------
-   CORREÇÕES APLICADAS:
-   1. Cores roxas/azuis removidas do Menu Lateral, Avatar e Quick Cards.
-   2. Bloco de "hacks" removido e estilos integrados.
-   3. Tokens de sidebar integrados.
    ========================================================= */
 
 :root {
@@ -13,7 +8,7 @@
 }
 
 /* =========================================================
-   Sidebar
+   Sidebar (sempre escura — identidade)
    ========================================================= */
 .sidebar {
   position: fixed;
@@ -56,7 +51,8 @@
   font-weight: 600;
   letter-spacing: 0.09em;
   text-transform: uppercase;
-  color: #5c6675;
+  color: var(--sidebar-text);
+  opacity: 0.7;
 }
 
 .nav__sep {
@@ -94,14 +90,13 @@
   color: #ffffff;
 }
 
-/* Item ativo agora tem fundo Laranja translúcido */
 .nav__item.is-active {
-  background: rgba(249, 115, 22, 0.16);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
   color: #ffffff;
 }
-.nav__item.is-active .nav__icon { 
-  color: var(--accent); 
-  opacity: 1; 
+.nav__item.is-active .nav__icon {
+  color: var(--accent);
+  opacity: 1;
 }
 
 .nav__item[aria-disabled="true"] {
@@ -109,14 +104,14 @@
   cursor: not-allowed;
 }
 
-.nav__item--danger:hover { color: #fda29b; }
+.nav__item--danger:hover { color: var(--danger); }
 
 .nav__badge {
   margin-left: auto;
   padding: 1px 7px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.07);
-  color: #8a94a3;
+  color: var(--sidebar-text);
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.02em;
@@ -137,7 +132,7 @@
 
 @keyframes dh-fade {
   from { opacity: 0; }
-  to { opacity: 1; }
+  to   { opacity: 1; }
 }
 
 /* =========================================================
@@ -163,7 +158,7 @@
   gap: 14px;
   height: var(--topbar-h);
   padding: 0 24px;
-  background: rgba(255, 255, 255, 0.86);
+  background: color-mix(in srgb, var(--surface) 86%, transparent);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--border);
@@ -230,7 +225,6 @@
   border-color: var(--border);
 }
 
-/* Avatar padronizado com o Laranja */
 .avatar {
   display: grid;
   place-items: center;
@@ -243,6 +237,14 @@
   font-size: 13px;
   font-weight: 600;
   text-transform: uppercase;
+  overflow: hidden;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .user-menu__meta {
@@ -349,11 +351,10 @@
   flex: 1 1 auto;
   width: 100%;
   max-width: 1320px;
-  margin: 0 auto; /* Centralizado */
+  margin: 0 auto;
   padding: 28px 24px 48px;
 }
 
-/* ---------- Cabeçalho da página ---------- */
 .page-head { margin-bottom: 24px; }
 
 .page-head__eyebrow {
@@ -391,7 +392,9 @@
   color: var(--text-soft);
 }
 
-/* ---------- Cards de indicadores ---------- */
+/* =========================================================
+   Cards de indicadores
+   ========================================================= */
 .stats {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -548,7 +551,6 @@ th.cell--num { text-align: right; }
   }
 
   .app__body { margin-left: 0; }
-
   .menu-toggle { display: inline-flex; }
   .topbar__brand { display: block; }
   .topbar { padding: 0 16px; }
@@ -573,9 +575,7 @@ th.cell--num { text-align: right; }
 }
 
 /* =========================================================
-   ⚠️ QUICK ANALYSES (LEGADO)
-   ---------------------------------------------------------
-   Se você não usa essas classes, pode deletar este bloco.
+   Quick Analyses (LEGADO — remover se não usar)
    ========================================================= */
 .quick-grid {
   display: grid;
@@ -617,28 +617,10 @@ th.cell--num { text-align: right; }
 }
 .quick-card__icon svg { width: 16px; height: 16px; }
 
-/* Cores padronizadas para Laranja/Âmbar */
-.quick-card__icon--sales {
-  background: rgba(249, 115, 22, 0.14);
-  color: var(--accent);
-}
-.quick-card__icon--customers {
-  background: rgba(6, 118, 71, 0.12);
-  color: #067647;
-}
-.quick-card__icon--finance {
-  background: rgba(181, 71, 8, 0.14);
-  color: #b54708;
-}
-.quick-card__icon--products {
-  background: rgba(245, 158, 11, 0.14);
-  color: #d97706;
-}
-
-[data-theme="dark"] .quick-card__icon--sales     { background: #431407; color: #fdba74; }
-[data-theme="dark"] .quick-card__icon--customers { background: #052e16; color: #6ee7b7; }
-[data-theme="dark"] .quick-card__icon--finance   { background: #431407; color: #fdba74; }
-[data-theme="dark"] .quick-card__icon--products  { background: #451a03; color: #fcd34d; }
+.quick-card__icon--sales     { background: var(--accent-soft); color: var(--accent); }
+.quick-card__icon--customers { background: var(--success-soft); color: var(--success); }
+.quick-card__icon--finance   { background: var(--warning-soft); color: var(--warning); }
+.quick-card__icon--products  { background: var(--warning-soft); color: var(--warning); }
 
 .quick-card__title {
   margin: 0 0 2px;
@@ -673,11 +655,7 @@ th.cell--num { text-align: right; }
   font-size: 14px;
 }
 
-.quick-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
+.quick-list { list-style: none; margin: 0; padding: 0; }
 .quick-list li {
   display: flex;
   align-items: center;
@@ -725,7 +703,7 @@ th.cell--num { text-align: right; }
 }
 
 /* =========================================================
-   PRODUTOS POR FAIXA DE PREÇO (LEGADO)
+   Produtos por faixa de preço (LEGADO)
    ========================================================= */
 .price-filter { margin-bottom: 14px; }
 
@@ -739,10 +717,7 @@ th.cell--num { text-align: right; }
   .price-filter__fields { grid-template-columns: 1fr; }
 }
 
-.price-filter__actions {
-  display: flex;
-  gap: 8px;
-}
+.price-filter__actions { display: flex; gap: 8px; }
 
 .price-result {
   margin-top: 8px;
@@ -755,9 +730,7 @@ th.cell--num { text-align: right; }
   font-size: 13.5px;
   color: var(--text-muted);
 }
-.price-result__summary strong {
-  color: var(--text);
-}
+.price-result__summary strong { color: var(--text); }
 
 .price-result__actions {
   margin-top: 14px;

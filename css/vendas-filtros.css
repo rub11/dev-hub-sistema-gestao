@@ -1,7 +1,5 @@
 /* =========================================================
    DEV HUB · Vendas · filtros e stats
-   ---------------------------------------------------------
-   Marca: Laranja da raposa (#F97316 / #EA580C).
    ========================================================= */
 
 /* =========================================================
@@ -23,7 +21,6 @@
   margin-top: 6px;
 }
 
-
 /* =========================================================
    STATS
    ========================================================= */
@@ -37,9 +34,18 @@
 .sale-stat {
   padding: 16px 18px;
   border-radius: 14px;
-  background: linear-gradient(180deg, #15100b 0%, #0d0906 100%);
-  border: 1px solid rgba(255,255,255,.08);
-  box-shadow: 0 4px 18px -10px rgba(0,0,0,.5);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+[data-theme="dark"] .sale-stat {
+  background: linear-gradient(
+    180deg,
+    var(--surface) 0%,
+    color-mix(in srgb, var(--surface) 85%, black) 100%
+  );
+  box-shadow: 0 4px 18px -10px rgba(0, 0, 0, 0.5);
 }
 
 .sale-stat__label {
@@ -47,7 +53,7 @@
   font-weight: 600;
   letter-spacing: .1em;
   text-transform: uppercase;
-  color: #8d8278;
+  color: var(--text-muted);
   margin-bottom: 6px;
 }
 
@@ -57,23 +63,23 @@
   font-weight: 700;
   line-height: 1;
   letter-spacing: -.03em;
-  color: #f2ede6;
+  color: var(--text);
 }
 
 .sale-stat__value--money { font-size: 20px; }
 
-.sale-stat--info .sale-stat__value { color: #fdba74; text-shadow: 0 0 20px rgba(249,115,22,.4); }
-.sale-stat--warn .sale-stat__value { color: #fbbf24; text-shadow: 0 0 20px rgba(245,158,11,.4); }
-.sale-stat--ok .sale-stat__value   { color: #4ade80; text-shadow: 0 0 20px rgba(34,197,94,.4); }
+.sale-stat--info .sale-stat__value { color: var(--accent); }
+.sale-stat--warn .sale-stat__value { color: var(--warning); }
+.sale-stat--ok   .sale-stat__value { color: var(--success); }
 
 /* =========================================================
    SELECTS DE FILTRO
    ========================================================= */
 .vf-select {
   appearance: none;
-  background: rgba(255,255,255,.03);
-  border: 1px solid rgba(255,255,255,.1);
-  color: #d4c8bd;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  color: var(--text);
   border-radius: 9px;
   padding: 8px 32px 8px 12px;
   font-size: 12.5px;
@@ -81,24 +87,32 @@
   font-weight: 500;
   cursor: pointer;
   transition: all .15s ease;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238d8278' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23667085' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
   background-repeat: no-repeat;
   background-position: right 10px center;
   min-width: 140px;
 }
-.vf-select:hover {
-  border-color: rgba(255,255,255,.18);
-  background-color: rgba(255,255,255,.05);
-  color: #f2ede6;
+
+[data-theme="dark"] .vf-select {
+  background-color: var(--surface-2);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a8b0ba' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
 }
+
+.vf-select:hover {
+  border-color: var(--border-strong);
+  background-color: var(--surface-2);
+  color: var(--text);
+}
+
 .vf-select:focus {
   outline: none;
-  border-color: rgba(249,115,22,.5);
-  box-shadow: 0 0 0 3px rgba(249,115,22,.15);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-ring);
 }
+
 .vf-select option {
-  background: #0d0906;
-  color: #f2ede6;
+  background: var(--surface);
+  color: var(--text);
 }
 
 /* =========================================================

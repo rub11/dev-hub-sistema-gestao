@@ -3,24 +3,89 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
   <title>Nova compra · DEV HUB</title>
+
   <script src="js/theme.js"></script>
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  
+
   <link rel="stylesheet" href="css/global.css" />
-  <link rel="stylesheet" href="css/theme.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
   <link rel="stylesheet" href="css/clientes.css" />
+  <link rel="stylesheet" href="css/theme.css" />
   <link rel="stylesheet" href="css/custom-select.css" />
   <link rel="stylesheet" href="css/supplier-picker.css" />
-  
   <link rel="stylesheet" href="css/compras-nova.css" />
+
+  <script>
+    (function () {
+      try {
+        if (!/[?&]blocked=1/.test(location.search)) {
+          document.documentElement.classList.add('layout-topnav');
+        }
+      } catch (e) {}
+    })();
+  </script>
 </head>
-<body data-page="compras-nova">
+
+<body class="layout-topnav" data-page="compras-nova">
+
+  <a class="skip-link" href="#main">Pular para o conteúdo principal</a>
+
+  <aside class="sidebar" id="sidebar" aria-label="Menu principal"></aside>
+  <div class="sidebar-overlay" id="sidebar-overlay" hidden></div>
+
   <div class="app__body">
-    <main class="content">
-      
+
+    <header class="topbar">
+      <button type="button" class="icon-btn menu-toggle" id="menu-toggle"
+              aria-label="Abrir menu" aria-expanded="false" aria-controls="sidebar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+             stroke-linecap="round" aria-hidden="true"><path d="M3.5 6.5h17M3.5 12h17M3.5 17.5h17" /></svg>
+      </button>
+
+      <span class="topbar__brand">DEV HUB</span>
+
+      <div class="topbar__actions">
+        <button type="button" class="icon-btn" id="notifications-btn"
+                aria-label="Notificações (em breve)" title="Em breve" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M18 8.5a6 6 0 1 0-12 0c0 6.5-2.5 8.5-2.5 8.5h17S18 15 18 8.5" />
+            <path d="M13.7 20.5a2 2 0 0 1-3.4 0" />
+          </svg>
+        </button>
+
+        <div class="user-menu">
+          <button type="button" class="user-menu__trigger" id="user-menu-trigger"
+                  aria-haspopup="true" aria-expanded="false" aria-controls="user-menu-panel">
+            <span class="avatar" id="user-avatar" aria-hidden="true">–</span>
+            <span class="user-menu__meta">
+              <span class="user-menu__name" id="user-name">Carregando…</span>
+              <span class="user-menu__role" id="user-role"></span>
+            </span>
+            <svg class="user-menu__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </button>
+
+          <div class="user-menu__panel" id="user-menu-panel" role="menu" hidden>
+            <a class="menu-item" role="menuitem" href="configuracoes.html">Configurações</a>
+            <div class="menu-item__sep" role="separator"></div>
+            <button type="button" class="menu-item menu-item--danger" role="menuitem" data-action="logout">Sair</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="content" id="main">
+
+      <div id="global-alert" class="alert" role="alert" hidden></div>
+
       <header class="page-head">
         <div class="page-head__eyebrow">
           <a href="compras.html" style="color:inherit; text-decoration:none;">← Voltar para compras</a>
@@ -54,7 +119,7 @@
         <section class="cmp-section cmp-section--supplier">
           <div class="supplier-header">
             <h2 class="supplier-header__title">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16"/><path d="M15 21V9h4a2 2 0 0 1 2 2v10"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18"/><path d="M5 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16"/><path d="M15 21V9h4a2 2 0 0 1 2 2v10"/></svg>
               Fornecedor
             </h2>
             <p class="supplier-header__sub">Selecione um fornecedor para vincular à operação.</p>
@@ -67,7 +132,7 @@
 
             <button type="button" id="open-supplier-picker" class="supplier-picker-trigger">
               <div class="supplier-picker-trigger__left">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" class="supplier-picker-trigger__icon"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" class="supplier-picker-trigger__icon" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
                 <span id="supplier-picker-label">Pesquisar ou selecionar fornecedor...</span>
               </div>
             </button>
@@ -111,16 +176,13 @@
                 <h2 class="cmp-items-card__big-total" id="items-header-total">R$ 0,00</h2>
               </div>
               <button type="button" class="btn btn--primary" id="cmp-add-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
                 Adicionar item
               </button>
             </div>
 
-            <div class="cmp-items-card__list" id="cmp-items-body">
-              <!-- JS injeta os cards aqui -->
-            </div>
+            <div class="cmp-items-card__list" id="cmp-items-body"></div>
 
-            <!-- RESUMO DOS ITENS (REFORMULADO) -->
             <div class="cmp-items-card__footer" style="padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
               <div class="cmp-items-summary">
                 <div class="cmp-items-summary__item">
@@ -141,14 +203,12 @@
                 <strong id="items-footer-grand-total">R$ 0,00</strong>
               </div>
             </div>
-            
           </div>
         </section>
 
-        <!-- VALORES (REFORMULADO) -->
+        <!-- VALORES -->
         <section class="cmp-section">
           <h2 class="cmp-section__title">Valores da operação</h2>
-          
           <div class="cmp-values-panel">
             <div class="cmp-values-row">
               <span class="cmp-values-label">Subtotal</span>
@@ -157,7 +217,7 @@
 
             <div class="cmp-values-row cmp-values-row--action" id="btn-open-shipping">
               <span class="cmp-values-label">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;margin-right:6px;vertical-align:text-top;"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;margin-right:6px;vertical-align:text-top;" aria-hidden="true"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
                 Frete
               </span>
               <span class="cmp-values-value cmp-values-value--action" id="cmp-shipping-display">Não informado</span>
@@ -165,7 +225,7 @@
 
             <div class="cmp-values-row cmp-values-row--action" id="btn-open-discount">
               <span class="cmp-values-label">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;margin-right:6px;vertical-align:text-top;"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;margin-right:6px;vertical-align:text-top;" aria-hidden="true"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
                 Desconto
               </span>
               <span class="cmp-values-value cmp-values-value--action" id="cmp-discount-display">Adicionar desconto</span>
@@ -279,7 +339,7 @@
 
       <div class="modal__body" id="supplier-view-search" style="padding-top: 10px;">
         <div class="supplier-search-box">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
           <input type="text" id="supplier-search-input" placeholder="Pesquisar por nome ou CNPJ..." autocomplete="off" />
         </div>
         <div class="supplier-list" id="supplier-list"></div>
@@ -292,22 +352,10 @@
             <div><h3 class="supplier-details__name" id="sd-name">Nome do Fornecedor</h3></div>
           </div>
           <div class="supplier-details__grid">
-            <div class="supplier-details__item">
-              <span class="supplier-details__label">CNPJ / CPF</span>
-              <span class="supplier-details__value supplier-details__value--mono" id="sd-doc">—</span>
-            </div>
-            <div class="supplier-details__item">
-              <span class="supplier-details__label">Telefone</span>
-              <span class="supplier-details__value" id="sd-phone">—</span>
-            </div>
-            <div class="supplier-details__item">
-              <span class="supplier-details__label">E-mail</span>
-              <span class="supplier-details__value" id="sd-email">—</span>
-            </div>
-            <div class="supplier-details__item">
-              <span class="supplier-details__label">Endereço</span>
-              <span class="supplier-details__value" id="sd-address">—</span>
-            </div>
+            <div class="supplier-details__item"><span class="supplier-details__label">CNPJ / CPF</span><span class="supplier-details__value supplier-details__value--mono" id="sd-doc">—</span></div>
+            <div class="supplier-details__item"><span class="supplier-details__label">Telefone</span><span class="supplier-details__value" id="sd-phone">—</span></div>
+            <div class="supplier-details__item"><span class="supplier-details__label">E-mail</span><span class="supplier-details__value" id="sd-email">—</span></div>
+            <div class="supplier-details__item"><span class="supplier-details__label">Endereço</span><span class="supplier-details__value" id="sd-address">—</span></div>
           </div>
         </div>
       </div>
@@ -316,7 +364,7 @@
         <div id="footer-search" style="display: contents;">
           <p style="margin:0; font-size:12.5px; color:var(--text-muted)">Não achou quem procurava?</p>
           <button type="button" class="btn btn--primary" id="supplier-picker-new-btn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><path d="M12 5v14M5 12h14"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
             <span>Cadastrar novo fornecedor</span>
           </button>
         </div>
@@ -324,7 +372,7 @@
         <div id="footer-details" style="display: none; width: 100%; justify-content: space-between;">
           <button type="button" class="btn btn--ghost" id="supplier-picker-back-btn">← Voltar</button>
           <button type="button" class="btn btn--primary" id="supplier-picker-confirm-btn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><path d="M20 6 9 17l-5-5"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
             <span>Adicionar Fornecedor</span>
           </button>
         </div>
@@ -335,11 +383,11 @@
   <!-- MODAL DE CADASTRO DE FORNECEDOR -->
   <div class="cmp-modal" id="supplier-modal" hidden>
     <div class="cmp-modal__backdrop" data-close></div>
-    <div class="cmp-modal__dialog cmp-modal__dialog--lg">
+    <div class="cmp-modal__dialog cmp-modal__dialog--lg" role="dialog" aria-modal="true" aria-labelledby="supplier-modal-title">
       <header class="cmp-modal__head">
-        <h3 class="cmp-modal__title">Novo fornecedor</h3>
+        <h3 class="cmp-modal__title" id="supplier-modal-title">Novo fornecedor</h3>
         <button type="button" class="cmp-modal__close" aria-label="Fechar" data-close>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
         </button>
       </header>
 
@@ -362,22 +410,10 @@
             <label for="sup-name">Razão social / Nome *</label>
             <input id="sup-name" type="text" />
           </div>
-          <div class="field">
-            <label for="sup-fantasy">Nome fantasia</label>
-            <input id="sup-fantasy" type="text" />
-          </div>
-          <div class="field">
-            <label for="sup-email">E-mail</label>
-            <input id="sup-email" type="email" />
-          </div>
-          <div class="field">
-            <label for="sup-phone">Telefone</label>
-            <input id="sup-phone" type="text" />
-          </div>
-          <div class="field">
-            <label for="sup-contact">Contato responsável</label>
-            <input id="sup-contact" type="text" placeholder="Nome de quem atende" />
-          </div>
+          <div class="field"><label for="sup-fantasy">Nome fantasia</label><input id="sup-fantasy" type="text" /></div>
+          <div class="field"><label for="sup-email">E-mail</label><input id="sup-email" type="email" /></div>
+          <div class="field"><label for="sup-phone">Telefone</label><input id="sup-phone" type="text" /></div>
+          <div class="field"><label for="sup-contact">Contato responsável</label><input id="sup-contact" type="text" placeholder="Nome de quem atende" /></div>
           <div class="field" style="grid-column: 1 / -1">
             <label for="sup-address">Endereço</label>
             <input id="sup-address" type="text" placeholder="Rua, número, bairro, cidade/UF, CEP" />
@@ -399,14 +435,14 @@
   <!-- MODAL: ITEM DA COMPRA -->
   <div class="cmp-modal" id="item-modal" hidden>
     <div class="cmp-modal__backdrop" data-close-item></div>
-    <div class="cmp-modal__dialog cmp-modal__dialog--md">
+    <div class="cmp-modal__dialog cmp-modal__dialog--md" role="dialog" aria-modal="true" aria-labelledby="item-modal-title">
       <header class="cmp-modal__head">
         <div>
           <h3 class="cmp-modal__title" id="item-modal-title">Adicionar novo item</h3>
           <p style="margin:4px 0 0; font-size:12.5px; color:var(--text-muted);">Defina as informações do produto para a operação.</p>
         </div>
         <button type="button" class="cmp-modal__close" aria-label="Fechar" data-close-item>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
         </button>
       </header>
 
@@ -426,11 +462,11 @@
 
         <div class="item-modal__block">
           <span class="item-modal__block-title">INFORMAÇÕES DO PRODUTO</span>
-          
+
           <div class="field item-modal__search-field" id="wrapper-product-search">
             <label for="item-product-search">Produto / Descrição *</label>
             <div class="item-modal__search-wrap">
-              <svg class="item-modal__search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              <svg class="item-modal__search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
               <input type="text" id="item-product-search" placeholder="Pesquisar produto ou digitar descrição..." autocomplete="off" />
               <div class="item-modal__search-dropdown" id="product-dropdown" hidden></div>
             </div>
@@ -445,7 +481,7 @@
           <div class="cmp-grid cmp-grid--2" style="margin-top: 16px;">
             <div class="field">
               <label for="item-qty">Quantidade *</label>
-              <input type="number" id="item-qty" min="1" max="999999" step="1" required value="1" inputmode="numeric" maxlength="10" />
+              <input type="number" id="item-qty" min="1" max="999999" step="1" required value="1" inputmode="numeric" />
             </div>
             <div class="field">
               <label for="item-unit">Unidade de Medida</label>
@@ -514,7 +550,8 @@
                   <option value="M²">M² - Metro quadrado</option>
                   <option value="KM²">KM² - Quilômetro quadrado</option>
                   <option value="HA">HA - Hectare</option>
-                  <option value="A">A - Are</option>
+                  <!-- FIX: era "A" (colidia com Ampere) -->
+                  <option value="ARE">ARE - Are</option>
                 </optgroup>
                 <optgroup label="Comercialização">
                   <option value="FDO">FDO - Fardo</option>
@@ -544,7 +581,8 @@
                   <option value="W">W - Watt</option>
                   <option value="KW">KW - Quilowatt</option>
                   <option value="V">V - Volt</option>
-                  <option value="A">A - Ampere</option>
+                  <!-- FIX: era "A" (colidia com Are) -->
+                  <option value="AMP_ELET">AMP_ELET - Ampere</option>
                   <option value="KW/H">KW/H - Quilowatt-hora</option>
                   <option value="UNID">UNID - Unidade técnica</option>
                 </optgroup>
@@ -586,7 +624,7 @@
       <footer class="cmp-modal__foot">
         <button type="button" class="cmp-btn cmp-btn--ghost" data-close-item>Cancelar</button>
         <button type="submit" form="item-form" class="cmp-btn cmp-btn--primary" id="item-save-btn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
           <span class="btn__label">Salvar item</span>
         </button>
       </footer>
@@ -596,14 +634,14 @@
   <!-- MODAL: CONFIGURAR FRETE -->
   <div class="cmp-modal" id="shipping-modal" hidden>
     <div class="cmp-modal__backdrop" data-close-shipping></div>
-    <div class="cmp-modal__dialog cmp-modal__dialog--md">
+    <div class="cmp-modal__dialog cmp-modal__dialog--md" role="dialog" aria-modal="true" aria-labelledby="shipping-modal-title">
       <header class="cmp-modal__head">
         <div>
-          <h3 class="cmp-modal__title">Configurar Frete</h3>
+          <h3 class="cmp-modal__title" id="shipping-modal-title">Configurar Frete</h3>
           <p style="margin:4px 0 0; font-size:12.5px; color:var(--text-muted);">Defina as condições do frete para esta operação.</p>
         </div>
         <button type="button" class="cmp-modal__close" aria-label="Fechar" data-close-shipping>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
         </button>
       </header>
 
@@ -616,7 +654,6 @@
               <span>O frete não será contabilizado na operação</span>
             </div>
           </label>
-
           <label class="cmp-radio-card">
             <input type="radio" name="shipping-type" value="free">
             <div class="cmp-radio-card__content">
@@ -624,7 +661,6 @@
               <span>O valor do frete será R$ 0,00</span>
             </div>
           </label>
-          
           <label class="cmp-radio-card">
             <input type="radio" name="shipping-type" value="paid">
             <div class="cmp-radio-card__content">
@@ -650,31 +686,22 @@
   <!-- MODAL: CONFIGURAR DESCONTO -->
   <div class="cmp-modal" id="discount-modal" hidden>
     <div class="cmp-modal__backdrop" data-close-discount></div>
-    <div class="cmp-modal__dialog cmp-modal__dialog--md">
+    <div class="cmp-modal__dialog cmp-modal__dialog--md" role="dialog" aria-modal="true" aria-labelledby="discount-modal-title">
       <header class="cmp-modal__head">
         <div>
-          <h3 class="cmp-modal__title">Adicionar Desconto</h3>
+          <h3 class="cmp-modal__title" id="discount-modal-title">Adicionar Desconto</h3>
           <p style="margin:4px 0 0; font-size:12.5px; color:var(--text-muted);">Aplique um desconto global na operação.</p>
         </div>
         <button type="button" class="cmp-modal__close" aria-label="Fechar" data-close-discount>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
         </button>
       </header>
 
       <div class="cmp-modal__body">
         <div class="cmp-discount-summary">
-          <div class="cmp-discount-summary__row">
-            <span>Subtotal</span>
-            <span id="disc-modal-subtotal">R$ 0,00</span>
-          </div>
-          <div class="cmp-discount-summary__row" style="color: var(--danger);">
-            <span>Desconto aplicado</span>
-            <span id="disc-modal-discount">- R$ 0,00</span>
-          </div>
-          <div class="cmp-discount-summary__row cmp-discount-summary__row--total">
-            <span>Total</span>
-            <span id="disc-modal-total">R$ 0,00</span>
-          </div>
+          <div class="cmp-discount-summary__row"><span>Subtotal</span><span id="disc-modal-subtotal">R$ 0,00</span></div>
+          <div class="cmp-discount-summary__row" style="color: var(--danger);"><span>Desconto aplicado</span><span id="disc-modal-discount">- R$ 0,00</span></div>
+          <div class="cmp-discount-summary__row cmp-discount-summary__row--total"><span>Total</span><span id="disc-modal-total">R$ 0,00</span></div>
         </div>
 
         <div class="field" style="margin-top: 16px;">
@@ -685,7 +712,7 @@
 
       <footer class="cmp-modal__foot" style="justify-content: space-between;">
         <button type="button" class="cmp-btn cmp-btn--ghost" id="btn-remove-discount" style="color: var(--danger); border-color: transparent; display: none;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
           Remover desconto
         </button>
         <div style="display: flex; gap: 10px; margin-left: auto;">
@@ -696,9 +723,13 @@
     </div>
   </div>
 
+  <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="false"></div>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase.js"></script>
   <script src="js/auth.js"></script>
+  <script src="js/permissions.js"></script>
+
   <script src="js/nav/config.js"></script>
   <script src="js/nav/state.js"></script>
   <script src="js/nav/roles.js"></script>
@@ -714,8 +745,7 @@
   <script src="js/nav/bar.js"></script>
   <script src="js/nav/favorites.js"></script>
   <script src="js/nav/main.js"></script>
-  <script src="js/permissions.js"></script>
-  
+
   <script src="js/custom-select.js"></script>
 
   <script src="js/compras/state.js"></script>

@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
   <title>Orçamentos · DEV HUB</title>
 
   <script src="js/theme.js"></script>
@@ -48,7 +49,7 @@
 
       <div class="topbar__actions">
         <button type="button" class="icon-btn" id="notifications-btn"
-                aria-label="Notificações" title="Em breve" disabled>
+                aria-label="Notificações (em breve)" title="Em breve" disabled>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M18 8.5a6 6 0 1 0-12 0c0 6.5-2.5 8.5-2.5 8.5h17S18 15 18 8.5" />
@@ -71,14 +72,9 @@
           </button>
 
           <div class="user-menu__panel" id="user-menu-panel" role="menu" hidden>
-            <button type="button" class="menu-item" role="menuitem" aria-disabled="true">
-              Perfil <span class="menu-item__tag">Em breve</span>
-            </button>
             <a class="menu-item" role="menuitem" href="configuracoes.html">Configurações</a>
             <div class="menu-item__sep" role="separator"></div>
-            <button type="button" class="menu-item menu-item--danger" role="menuitem" data-action="logout">
-              Sair
-            </button>
+            <button type="button" class="menu-item menu-item--danger" role="menuitem" data-action="logout">Sair</button>
           </div>
         </div>
       </div>
@@ -99,13 +95,10 @@
         </div>
 
         <div class="page-head__actions">
-          <!-- 👇 AQUI ESTÁ A CORREÇÃO: Adicionado o onclick para o modo orçamento 👇 -->
-          <button type="button" class="btn btn--primary" id="new-quote-btn" onclick="window.location.href='vendas.html?tipo=orcamento'">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
-                 style="width:16px;height:16px"><path d="M12 5v14M5 12h14"/></svg>
+          <a href="vendas.html?tipo=orcamento" class="btn btn--primary" id="new-quote-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:16px;height:16px"><path d="M12 5v14M5 12h14"/></svg>
             <span>Novo orçamento</span>
-          </button>
+          </a>
         </div>
       </div>
 
@@ -129,26 +122,18 @@
       </div>
 
       <section class="panel">
-
         <div class="panel__head toolbar">
-
           <div class="toolbar__info">
             <h2 class="panel__title">Lista de orçamentos</h2>
             <p class="panel__sub" id="orc-count">Carregando…</p>
           </div>
 
           <div class="toolbar__actions">
-
             <div class="search">
               <span class="search__icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
-                     stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" />
-                </svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
               </span>
-              <input type="search" id="orc-search" class="search__input"
-                     placeholder="Buscar orçamento..."
-                     aria-label="Buscar orçamentos" autocomplete="off" />
+              <input type="search" id="orc-search" class="search__input" placeholder="Buscar orçamento..." aria-label="Buscar orçamentos" autocomplete="off" />
             </div>
 
             <select id="orc-filter-status" class="orc-select" aria-label="Filtrar por status">
@@ -165,22 +150,18 @@
               <option value="30dias">Últimos 30 dias</option>
               <option value="mes">Este mês</option>
             </select>
-
           </div>
         </div>
 
-        <div id="orc-loading" class="state-block">
-          <span class="spinner" aria-hidden="true"></span>
-          <p>Carregando orçamentos...</p>
+        <div id="orc-loading" class="state-block" role="status" aria-live="polite">
+          <span class="spinner" aria-hidden="true"></span><p>Carregando orçamentos...</p>
         </div>
 
         <div id="orc-empty" class="state-block" hidden>
           <div class="state-block__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
-                 stroke-linecap="round" stroke-linejoin="round">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
               <path d="M14 2.5H7A2 2 0 0 0 5 4.5v15a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7.5z"/>
-              <path d="M14 2.5v5h5"/>
-              <path d="M9 13h6M9 17h4"/>
+              <path d="M14 2.5v5h5"/><path d="M9 13h6M9 17h4"/>
             </svg>
           </div>
           <h3 id="orc-empty-title">Nenhum orçamento encontrado.</h3>
@@ -192,20 +173,14 @@
             <caption class="sr-only">Lista de orçamentos</caption>
             <thead>
               <tr>
-                <th scope="col">Nº</th>
-                <th scope="col">Cliente</th>
-                <th scope="col">Data</th>
-                <th scope="col">Válido até</th>
-                <th scope="col" class="cell--num">Total</th>
-                <th scope="col">Status</th>
-                <th scope="col">Criado por</th>
-                <th scope="col" class="cell--num">Ações</th>
+                <th scope="col">Nº</th><th scope="col">Cliente</th><th scope="col">Data</th>
+                <th scope="col">Válido até</th><th scope="col" class="cell--num">Total</th>
+                <th scope="col">Status</th><th scope="col">Criado por</th><th scope="col" class="cell--num">Ações</th>
               </tr>
             </thead>
             <tbody id="orc-body"></tbody>
           </table>
         </div>
-
       </section>
 
     </main>
@@ -227,7 +202,7 @@
   <script src="js/nav/module-menu.js"></script>
   <script src="js/nav/notifications.js"></script>
   <script src="js/nav/user-menu.js"></script>
-<script src="js/nav/favorites-modal.js"></script>
+  <script src="js/nav/favorites-modal.js"></script>
   <script src="js/nav/search.js"></script>
   <script src="js/nav/org-switcher.js"></script>
   <script src="js/nav/bar.js"></script>
@@ -236,18 +211,18 @@
 
   <script src="js/orcamentos.js"></script>
 
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
+  <!-- Greeting do usuário: cross-tab via localStorage, fallback sessionStorage -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
       try {
-        const rawUser = sessionStorage.getItem('devhub_user');
-        if (rawUser) {
-          const user = JSON.parse(rawUser);
-          const nameEl = document.getElementById('greeting-name');
-          if (nameEl && user.name) {
-            nameEl.textContent = 'Olá, ' + user.name.split(' ')[0];
-          }
-        }
-      } catch (e) {}
+        const raw = localStorage.getItem('devhub_user') || sessionStorage.getItem('devhub_user');
+        if (!raw) return;
+        const user = JSON.parse(raw);
+        if (!user || !user.name) return;
+        const firstName = String(user.name).trim().split(/\s+/)[0];
+        const nameEl = document.getElementById('greeting-name');
+        if (nameEl && firstName) nameEl.textContent = 'Olá, ' + firstName;
+      } catch (e) { /* noop */ }
     });
   </script>
 

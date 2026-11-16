@@ -3,7 +3,7 @@
    ========================================================= */
 
 .welcome {
-  max-width: 800px; /* Diminuí a largura máxima pois agora é só um campo de busca */
+  max-width: 800px;
   margin: 0 auto;
   padding: 60px 0 80px;
   display: flex;
@@ -39,10 +39,11 @@
 }
 
 .welcome__name {
-  background: linear-gradient(135deg, #F97316 0%, #EA580C 100%);
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
-  color: #F97316;
+  color: var(--accent);
 }
 
 .welcome__sub {
@@ -75,8 +76,8 @@
 }
 
 .welcome__search:focus-within {
-  border-color: #F97316;
-  box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.15);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-ring);
 }
 
 .welcome__search-icon {
@@ -127,7 +128,7 @@
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
-  box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-md);
   max-height: 380px;
   overflow-y: auto;
   padding: 8px;
@@ -207,16 +208,34 @@
 }
 
 mark {
-  background: rgba(249, 115, 22, 0.2);
+  background: var(--accent-soft);
   color: var(--accent-hover);
   border-radius: 2px;
   padding: 0 2px;
 }
 
-/* Modo Escuro / Claro (ajustes finos) */
-[data-theme="light"] .welcome__search { background: #ffffff; }
-[data-theme="light"] .welcome__search-results { background: #ffffff; border-color: #e2e8f0; }
-[data-theme="light"] .welcome__result-item:hover { background: #f8fafc; }
-[data-theme="light"] .welcome__result-icon { background: #fff7ed; color: #f97316; }
-[data-theme="light"] .welcome__result-kbd { background: #f1f5f9; border-color: #e2e8f0; }
-[data-theme="light"] .welcome__badge { background: #f1f5f9; border-color: #e2e8f0; color: #64748b; }
+/* Modo claro — ajustes finos */
+[data-theme="light"] .welcome__search {
+  background: var(--surface);
+  border-color: var(--border);
+}
+[data-theme="light"] .welcome__search-results {
+  background: var(--surface);
+  border-color: var(--border);
+}
+[data-theme="light"] .welcome__result-item:hover {
+  background: var(--surface-2);
+}
+[data-theme="light"] .welcome__result-icon {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+[data-theme="light"] .welcome__result-kbd {
+  background: var(--surface-2);
+  border-color: var(--border);
+}
+[data-theme="light"] .welcome__badge {
+  background: var(--surface-2);
+  border-color: var(--border);
+  color: var(--text-muted);
+}

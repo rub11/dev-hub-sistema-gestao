@@ -1,7 +1,5 @@
 /* =========================================================
    DEV HUB · Vendas · Pagamentos múltiplos
-   ---------------------------------------------------------
-   Marca: Laranja da raposa (#F97316 / #EA580C).
    ========================================================= */
 
 #payments-field {
@@ -23,15 +21,15 @@
   gap: 8px;
   align-items: center;
   padding: 10px 12px;
-  background: rgba(255, 255, 255, .02);
-  border: 1px solid rgba(255, 255, 255, .06);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
   border-radius: 10px;
   transition: border-color .15s ease, background .15s ease;
 }
 
 .payment-row:hover {
-  background: rgba(255, 255, 255, .03);
-  border-color: rgba(255, 255, 255, .1);
+  background: var(--surface);
+  border-color: var(--border-strong);
 }
 
 .payment-row__select {
@@ -39,8 +37,8 @@
   height: 38px;
   padding: 0 34px 0 12px;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, .08);
-  background-color: rgba(0, 0, 0, .2);
+  border: 1px solid var(--border);
+  background-color: var(--surface);
   color: var(--text);
   font-family: inherit;
   font-size: 13.5px;
@@ -54,8 +52,12 @@
   transition: border-color .15s ease, box-shadow .15s ease;
 }
 
+[data-theme="dark"] .payment-row__select {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a8b0ba' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+}
+
 .payment-row__select:hover {
-  border-color: rgba(255, 255, 255, .15);
+  border-color: var(--border-strong);
 }
 
 .payment-row__select:focus {
@@ -89,8 +91,8 @@
   height: 38px;
   padding: 0 12px 0 32px;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, .08);
-  background: rgba(0, 0, 0, .2);
+  border: 1px solid var(--border);
+  background: var(--surface);
   color: var(--text);
   font-family: inherit;
   font-size: 13.5px;
@@ -101,7 +103,7 @@
 }
 
 .payment-row__amount input:hover {
-  border-color: rgba(255, 255, 255, .15);
+  border-color: var(--border-strong);
 }
 
 .payment-row__amount input:focus {
@@ -110,8 +112,8 @@
 }
 
 .payment-row__amount input.is-invalid {
-  border-color: #ef4444;
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, .15);
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px var(--danger-soft);
 }
 
 /* Botão remover */
@@ -129,8 +131,8 @@
 }
 
 .payment-row__remove:hover:not(:disabled) {
-  background: rgba(239, 68, 68, .12);
-  color: #f87171;
+  background: var(--danger-soft);
+  color: var(--danger);
 }
 
 .payment-row__remove:disabled {
@@ -143,14 +145,14 @@
   height: 14px;
 }
 
-/* Parcelamento (embaixo, ocupando linha toda) */
+/* Parcelamento */
 .payment-row__installments {
   grid-column: 1 / -1;
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 10px 4px 0;
-  border-top: 1px dashed rgba(255, 255, 255, .06);
+  border-top: 1px dashed var(--border);
   margin-top: 4px;
 }
 
@@ -166,8 +168,8 @@
   height: 34px;
   padding: 0 30px 0 12px;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, .08);
-  background-color: rgba(0, 0, 0, .2);
+  border: 1px solid var(--border);
+  background-color: var(--surface);
   color: var(--text);
   font-family: inherit;
   font-size: 12.5px;
@@ -178,6 +180,10 @@
   background-repeat: no-repeat;
   background-position: right 10px center;
   background-size: 12px;
+}
+
+[data-theme="dark"] .payment-row__installments select {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a8b0ba' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
 }
 
 .payment-row__installments select option {
@@ -199,8 +205,12 @@
   margin-top: 4px;
   padding: 12px 14px;
   border-radius: 10px;
-  background: linear-gradient(135deg, rgba(249, 115, 22, .05), rgba(234, 88, 12, .03));
-  border: 1px solid rgba(249, 115, 22, .15);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--accent) 6%, var(--surface)),
+    color-mix(in srgb, var(--accent-hover) 4%, var(--surface))
+  );
+  border: 1px solid color-mix(in srgb, var(--accent) 18%, transparent);
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -224,13 +234,13 @@
 .payments-summary__row--status {
   padding-top: 8px;
   margin-top: 4px;
-  border-top: 1px solid rgba(249, 115, 22, .15);
+  border-top: 1px solid color-mix(in srgb, var(--accent) 18%, transparent);
   font-weight: 600;
 }
 
-.payments-summary__row--ok strong   { color: #4ade80; }
-.payments-summary__row--warn strong { color: #fbbf24; }
-.payments-summary__row--err strong  { color: #f87171; }
+.payments-summary__row--ok strong   { color: var(--success); }
+.payments-summary__row--warn strong { color: var(--warning); }
+.payments-summary__row--err strong  { color: var(--danger); }
 
 /* Mobile */
 @media (max-width: 640px) {
@@ -242,8 +252,8 @@
       "install install";
     gap: 8px;
   }
-  .payment-row__select      { grid-area: select; }
-  .payment-row__amount      { grid-area: amount; }
-  .payment-row__remove      { grid-area: remove; }
+  .payment-row__select       { grid-area: select; }
+  .payment-row__amount       { grid-area: amount; }
+  .payment-row__remove       { grid-area: remove; }
   .payment-row__installments { grid-area: install; }
 }
