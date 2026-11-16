@@ -787,6 +787,7 @@ body[data-page="financeiro"] .fin-content.fin-hub {
 
 [data-theme="dark"] .fin-shortcut__icon--config { background: rgba(249,115,22,0.20); color: #fb923c; }
 [data-theme="dark"] .fin-shortcut__icon--fluxo  { background: rgba(20,184,166,0.20); color: #2dd4bf; }
+<<<<<<< HEAD
 [data-theme="dark"] .fin-shortcut__icon--inad   { background: rgba(239,68,68,0.20);  color: #f87171; }
 
 /* =========================================================
@@ -1180,3 +1181,6 @@ body[data-page="financeiro-titulos"] .fin-content {
     grid-template-columns: 1fr;
   }
 }
+=======
+[data-theme="dark"] .fin-shortcut__icon--inad   { background: rgba(239,68,68,0.20);  color: #f87171; }
+>>>>>>> parent of 10170ba (......)
