@@ -13,7 +13,7 @@
 
   const {
     $, $$, escapeHTML,
-    state
+    state, toast
   } = window.Fin;
 
   /* =========================================================
@@ -69,14 +69,10 @@
     const search = document.querySelector(`[data-acc-search="${accTarget}"]`);
     const term = (search ? search.value : '').trim().toLowerCase();
 
-    const filtered = term
-      ? options.filter((o) => o.label.toLowerCase().includes(term))
-      : options;
+    const filtered = term ? options.filter((o) => o.label.toLowerCase().includes(term)) : options;
 
     if (!filtered.length) {
-      listEl.innerHTML = `<div class="fin-side__acc-empty">${
-        options.length ? 'Nada encontrado.' : 'Nenhuma opção disponível.'
-      }</div>`;
+      listEl.innerHTML = `<div class="fin-side__acc-empty">${options.length ? 'Nada encontrado.' : 'Nenhuma opção disponível.'}</div>`;
       return;
     }
 
@@ -193,41 +189,57 @@
     document.addEventListener('click', async (e) => {
       const btn = e.target.closest('.fin-actions [data-action]');
       if (!btn) return;
+      
       const action = btn.dataset.action;
       const ids = Array.from(state.selected);
       const rows = ids.map((id) => state.entries.find((x) => x.id === id)).filter(Boolean);
 
       if (action === 'settle') {
-        if (rows.length !== 1) { window.Fin.toast?.('Selecione 1 título para baixar.', 'error'); return; }
-        if (rows[0].status !== 'pendente') { window.Fin.toast?.('Só é possível baixar títulos pendentes.', 'error'); return; }
+        if (rows.length !== 1) { toast?.('Selecione 1 título para baixar.', 'error'); return; }
+        if (rows[0].status !== 'pendente') { toast?.('Só é possível baixar títulos pendentes.', 'error'); return; }
         if (window.Fin.isPurchaseBlocked(rows[0])) {
-          window.Fin.toast?.('Esta conta só pode ser baixada após a entrega da compra.', 'error');
+          toast?.('Esta conta só pode ser baixada após a entrega da compra.', 'error');
           return;
         }
         window.Fin.openSettleModal?.(rows[0]);
       }
+      
       if (action === 'reverse') {
-        if (rows.length !== 1) { window.Fin.toast?.('Selecione 1 título para estornar.', 'error'); return; }
-        if (rows[0].status !== 'baixado') { window.Fin.toast?.('Só é possível estornar títulos baixados.', 'error'); return; }
+        if (rows.length !== 1) { toast?.('Selecione 1 título para estornar.', 'error'); return; }
+        if (rows[0].status !== 'baixado') { toast?.('Só é possível estornar títulos baixados.', 'error'); return; }
         window.Fin.openReverseModal?.(rows[0]);
       }
+      
       if (action === 'edit') {
-        if (rows.length !== 1) { window.Fin.toast?.('Selecione 1 título.', 'error'); return; }
+        if (rows.length !== 1) { toast?.('Selecione 1 título.', 'error'); return; }
         window.Fin.openEntryModal?.(rows[0]);
       }
+      
       if (action === 'delete') {
-        if (rows.length !== 1) { window.Fin.toast?.('Selecione 1 título.', 'error'); return; }
-        if (!confirm('Excluir este título? Esta ação não pode ser desfeita.')) return;
+        if (rows.length !== 1) { toast?.('Selecione 1 título.', 'error'); return; }
+        if (!confirm(`Excluir o título "${rows[0].title_code || rows[0].doc_number}"? Esta ação não pode ser desfeita.`)) return;
         try {
-          const { error } = await window.Fin.db().from('financial_entries')
-            .delete().eq('id', rows[0].id);
+          const { error } = await window.Fin.db().from('financial_entries').delete().eq('id', rows[0].id);
           if (error) throw error;
-          window.Fin.toast?.('Título excluído.', 'success');
+          toast?.('Título excluído com sucesso.', 'success');
           state.selected.clear();
-          await window.Fin.loadAll?.();
+          await window.Fin.loadTitulos?.();
         } catch (ex) {
           console.error('[fin] falha ao excluir:', ex);
-          window.Fin.toast?.(ex.message || 'Erro ao excluir o título.', 'error');
+          toast?.(ex.message || 'Erro ao excluir o título.', 'error');
+        }
+      }
+
+      /* --- INTEGRAÇÃO COM A CENTRAL DE EXPORTAÇÃO --- */
+      if (action === 'export') {
+        // Se houver títulos selecionados, exporta só eles. Se não, abre a central com todos os títulos.
+        const dataToExport = rows.length > 0 ? rows : state.entries;
+        const title = rows.length > 0 ? 'Títulos Selecionados' : 'Todos os Títulos';
+        
+        if (window.Fin.openExportCenter) {
+          window.Fin.openExportCenter(dataToExport, title);
+        } else {
+          toast?.('Módulo de exportação não carregado.', 'error');
         }
       }
     });
@@ -236,8 +248,20 @@
     if (newBtn) {
       newBtn.addEventListener('click', () => {
         if (state.tab === 'transferencias') { window.Fin.openTransferModal?.(); return; }
-        if (state.tab === 'movimentos')     { window.Fin.toast?.('Lançamento de movimentação em breve.', 'error'); return; }
+        if (state.tab === 'movimentos')     { toast?.('Lançamento de movimentação em breve.', 'error'); return; }
         window.Fin.openEntryModal?.(null);
+      });
+    }
+
+    // Botão específico da aba de recebimentos
+    const exportRecBtn = document.getElementById('fin-export-center-btn-receber');
+    if (exportRecBtn) {
+      exportRecBtn.addEventListener('click', () => {
+        const ids = Array.from(state.selected);
+        const rows = ids.map((id) => state.entries.find((x) => x.id === id)).filter(Boolean);
+        const dataToExport = rows.length > 0 ? rows : state.entries.filter(e => e.kind === 'receita');
+        const title = rows.length > 0 ? 'Recebimentos Selecionados' : 'Todos os Recebimentos';
+        window.Fin.openExportCenter?.(dataToExport, title);
       });
     }
   }
@@ -248,8 +272,7 @@
   function bindShortcuts() {
     document.addEventListener('keydown', (e) => {
       const tag = (e.target && e.target.tagName) || '';
-      const typing = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT'
-                  || (e.target && e.target.isContentEditable);
+      const typing = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (e.target && e.target.isContentEditable);
       if (typing) return;
 
       if (e.key === 'n' || e.key === 'N') {

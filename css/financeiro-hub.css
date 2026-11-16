@@ -91,7 +91,6 @@ body[data-page="financeiro"] .fin-content.fin-hub {
   padding: 0 20px;
   border: 0;
   border-radius: 999px;
-  /* Botão Atualizar agora em Laranja */
   background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
   color: #ffffff;
   font-family: inherit;
@@ -167,13 +166,11 @@ body[data-page="financeiro"] .fin-content.fin-hub {
    ========================================================= */
 .fin-overview {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  /* ALTERAÇÃO AQUI: auto-fit para suportar mais de 5 cartões de forma fluida */
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 14px;
 }
 
-@media (max-width: 1200px) {
-  .fin-overview { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-}
 @media (max-width: 720px) {
   .fin-overview { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 }
@@ -266,7 +263,7 @@ body[data-page="financeiro"] .fin-content.fin-hub {
 
 /* ---------- Variantes de cor ---------- */
 
-/* Vermelho — Total a Pagar */
+/* Vermelho — Total a Pagar / Despesas */
 .fin-kpi--pagar {
   border-color: rgba(239, 68, 68, 0.35);
   background:
@@ -275,7 +272,7 @@ body[data-page="financeiro"] .fin-content.fin-hub {
 }
 .fin-kpi--pagar .fin-kpi__icon { background: rgba(239, 68, 68, 0.16); color: #f87171; }
 
-/* Amarelo — Vencendo Hoje */
+/* Amarelo — Vencendo Hoje / Contas Próximas */
 .fin-kpi--hoje {
   border-color: rgba(245, 158, 11, 0.35);
   background:
@@ -293,16 +290,16 @@ body[data-page="financeiro"] .fin-content.fin-hub {
 }
 .fin-kpi--vencidas .fin-kpi__icon { background: rgba(220, 38, 38, 0.18); color: #f87171; }
 
-/* Verde — Total Pago */
-.fin-kpi--pago {
+/* Verde — Total Pago / Recebido */
+.fin-kpi--pago, .fin-kpi--receber {
   border-color: rgba(16, 185, 129, 0.35);
   background:
     radial-gradient(circle at 100% 0%, rgba(16, 185, 129, 0.14) 0%, transparent 55%),
     var(--surface);
 }
-.fin-kpi--pago .fin-kpi__icon { background: rgba(16, 185, 129, 0.18); color: #34d399; }
+.fin-kpi--pago .fin-kpi__icon, .fin-kpi--receber .fin-kpi__icon { background: rgba(16, 185, 129, 0.18); color: #34d399; }
 
-/* Laranja — Boletos (Trocado de Azul para Laranja) */
+/* Laranja — Boletos */
 .fin-kpi--boletos {
   border-color: rgba(249, 115, 22, 0.35);
   background:
@@ -310,6 +307,33 @@ body[data-page="financeiro"] .fin-content.fin-hub {
     var(--surface);
 }
 .fin-kpi--boletos .fin-kpi__icon { background: rgba(249, 115, 22, 0.18); color: #fb923c; }
+
+/* Roxo — Saldo / Resultado Líquido / Saldo Disponível */
+.fin-kpi--saldo, .fin-kpi--resultado {
+  border-color: rgba(139, 92, 246, 0.35);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(139, 92, 246, 0.14) 0%, transparent 55%),
+    var(--surface);
+}
+.fin-kpi--saldo .fin-kpi__icon, .fin-kpi--resultado .fin-kpi__icon { background: rgba(139, 92, 246, 0.18); color: #a78bfa; }
+
+/* Verde Água — Saldo Disponível */
+.fin-kpi--saldo-disp {
+  border-color: rgba(16, 185, 129, 0.35);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(16, 185, 129, 0.14) 0%, transparent 55%),
+    var(--surface);
+}
+.fin-kpi--saldo-disp .fin-kpi__icon { background: rgba(16, 185, 129, 0.18); color: #34d399; }
+
+/* Vermelho Escuro — Inadimplência */
+.fin-kpi--inadimplencia {
+  border-color: rgba(220, 38, 38, 0.42);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(220, 38, 38, 0.16) 0%, transparent 55%),
+    var(--surface);
+}
+.fin-kpi--inadimplencia .fin-kpi__icon { background: rgba(220, 38, 38, 0.18); color: #f87171; }
 
 /* =========================================================
    SHORTCUTS · Acessos rápidos
@@ -448,29 +472,28 @@ body[data-page="financeiro"] .fin-content.fin-hub {
 }
 
 [data-theme="dark"] .fin-kpi--pagar {
-  background:
-    radial-gradient(circle at 100% 0%, rgba(239, 68, 68, 0.16) 0%, transparent 55%),
-    #12151a;
+  background: radial-gradient(circle at 100% 0%, rgba(239, 68, 68, 0.16) 0%, transparent 55%), #12151a;
 }
 [data-theme="dark"] .fin-kpi--hoje {
-  background:
-    radial-gradient(circle at 100% 0%, rgba(245, 158, 11, 0.16) 0%, transparent 55%),
-    #12151a;
+  background: radial-gradient(circle at 100% 0%, rgba(245, 158, 11, 0.16) 0%, transparent 55%), #12151a;
 }
 [data-theme="dark"] .fin-kpi--vencidas {
-  background:
-    radial-gradient(circle at 100% 0%, rgba(220, 38, 38, 0.18) 0%, transparent 55%),
-    #12151a;
+  background: radial-gradient(circle at 100% 0%, rgba(220, 38, 38, 0.18) 0%, transparent 55%), #12151a;
 }
-[data-theme="dark"] .fin-kpi--pago {
-  background:
-    radial-gradient(circle at 100% 0%, rgba(16, 185, 129, 0.16) 0%, transparent 55%),
-    #12151a;
+[data-theme="dark"] .fin-kpi--pago, [data-theme="dark"] .fin-kpi--receber {
+  background: radial-gradient(circle at 100% 0%, rgba(16, 185, 129, 0.16) 0%, transparent 55%), #12151a;
 }
 [data-theme="dark"] .fin-kpi--boletos {
-  background:
-    radial-gradient(circle at 100% 0%, rgba(249, 115, 22, 0.16) 0%, transparent 55%),
-    #12151a;
+  background: radial-gradient(circle at 100% 0%, rgba(249, 115, 22, 0.16) 0%, transparent 55%), #12151a;
+}
+[data-theme="dark"] .fin-kpi--saldo, [data-theme="dark"] .fin-kpi--resultado {
+  background: radial-gradient(circle at 100% 0%, rgba(139, 92, 246, 0.16) 0%, transparent 55%), #12151a;
+}
+[data-theme="dark"] .fin-kpi--saldo-disp {
+  background: radial-gradient(circle at 100% 0%, rgba(16, 185, 129, 0.16) 0%, transparent 55%), #12151a;
+}
+[data-theme="dark"] .fin-kpi--inadimplencia {
+  background: radial-gradient(circle at 100% 0%, rgba(220, 38, 38, 0.18) 0%, transparent 55%), #12151a;
 }
 
 /* =========================================================
@@ -766,17 +789,6 @@ body[data-page="financeiro"] .fin-content.fin-hub {
 [data-theme="dark"] .fin-shortcut__icon--fluxo  { background: rgba(20,184,166,0.20); color: #2dd4bf; }
 [data-theme="dark"] .fin-shortcut__icon--inad   { background: rgba(239,68,68,0.20);  color: #f87171; }
 
-
-
-/* =========================================================
-   NOVOS KPIs DO HUB (Combinado)
-   ========================================================= */
-.fin-kpi--receber { --kpi-color: #10b981; }
-.fin-kpi--receber .fin-kpi__icon { background: rgba(16, 185, 129, 0.12); color: #10b981; }
-
-.fin-kpi--saldo { --kpi-color: #8b5cf6; }
-.fin-kpi--saldo .fin-kpi__icon { background: rgba(139, 92, 246, 0.12); color: #8b5cf6; }
-
 /* =========================================================
    FORÇAR ROLAGEM NA TELA INTEIRA (ANTI-TRAVAMENTO)
    ========================================================= */
@@ -795,4 +807,376 @@ html, body {
 body.modal-open, body.no-scroll {
   overflow-y: auto !important;
   position: static !important;
+}
+
+
+/* =========================================================
+   CHARTS · Análise e Desempenho
+   ========================================================= */
+.fin-charts {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.fin-charts__title {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.fin-charts__grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 900px) {
+  .fin-charts__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.fin-chart-card {
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.fin-chart-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 26px -12px rgba(0, 0, 0, 0.3);
+}
+
+.fin-chart-card--wide {
+  grid-column: 1 / -1;
+}
+
+.fin-chart-card__head {
+  margin-bottom: 20px;
+}
+
+.fin-chart-card__title {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.fin-chart-card__sub {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.fin-chart-card__body {
+  position: relative;
+  width: 100%;
+  /* Altura fixa para manter os gráficos uniformes */
+  height: 260px; 
+}
+
+.fin-chart-card--wide .fin-chart-card__body {
+  height: 300px;
+}
+
+/* Dark mode */
+[data-theme="dark"] .fin-chart-card {
+  background: #12151a;
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+
+/* =========================================================
+   CORES DOS NOVOS ATALHOS (Mockup)
+   ========================================================= */
+
+/* Despesas (Vermelho) */
+.fin-shortcut__icon--despesas { color: #f87171; background: rgba(239, 68, 68, 0.14); }
+
+/* Receitas (Verde) */
+.fin-shortcut__icon--receitas { color: #34d399; background: rgba(16, 185, 129, 0.14); }
+
+/* Relatórios (Roxo) */
+.fin-shortcut__icon--relatorios { color: #a78bfa; background: rgba(139, 92, 246, 0.14); }
+
+/* Bancos (Azul) */
+.fin-shortcut__icon--bancos { color: #60a5fa; background: rgba(59, 130, 246, 0.14); }
+
+/* Categorias (Amarelo) */
+.fin-shortcut__icon--categorias { color: #fbbf24; background: rgba(245, 158, 11, 0.14); }
+
+/* Orçamentos (Laranja) */
+.fin-shortcut__icon--orcamentos { color: #fb923c; background: rgba(249, 115, 22, 0.14); }
+
+/* Outros da lista */
+.fin-shortcut__icon--dre { color: #a78bfa; background: rgba(139, 92, 246, 0.14); }
+.fin-shortcut__icon--fluxo { color: #2dd4bf; background: rgba(20, 184, 166, 0.14); }
+.fin-shortcut__icon--conc { color: #60a5fa; background: rgba(59, 130, 246, 0.14); }
+.fin-shortcut__icon--centros { color: #f472b6; background: rgba(236, 72, 153, 0.14); }
+.fin-shortcut__icon--parcelamentos { color: #94a3b8; background: rgba(148, 163, 184, 0.14); }
+
+/* Dark Mode Overrides para os novos */
+[data-theme="dark"] .fin-shortcut__icon--despesas { background: rgba(239,68,68,0.20); color: #f87171; }
+[data-theme="dark"] .fin-shortcut__icon--receitas { background: rgba(16,185,129,0.20); color: #34d399; }
+[data-theme="dark"] .fin-shortcut__icon--relatorios { background: rgba(139,92,246,0.20); color: #a78bfa; }
+[data-theme="dark"] .fin-shortcut__icon--bancos { background: rgba(59,130,246,0.20); color: #60a5fa; }
+[data-theme="dark"] .fin-shortcut__icon--categorias { background: rgba(245,158,11,0.20); color: #fbbf24; }
+[data-theme="dark"] .fin-shortcut__icon--orcamentos { background: rgba(249,115,22,0.20); color: #fb923c; }
+[data-theme="dark"] .fin-shortcut__icon--dre { background: rgba(139,92,246,0.20); color: #a78bfa; }
+[data-theme="dark"] .fin-shortcut__icon--fluxo { background: rgba(20,184,166,0.20); color: #2dd4bf; }
+[data-theme="dark"] .fin-shortcut__icon--conc { background: rgba(59,130,246,0.20); color: #60a5fa; }
+[data-theme="dark"] .fin-shortcut__icon--centros { background: rgba(236,72,153,0.20); color: #f472b6; }
+[data-theme="dark"] .fin-shortcut__icon--parcelamentos { background: rgba(148,163,184,0.20); color: #94a3b8; }
+
+/* =========================================================
+   INTELIGÊNCIA FINANCEIRA (ALERTAS)
+   ========================================================= */
+.fin-intelligence {
+  margin-top: 16px;
+}
+
+.fin-intel__card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+}
+
+.fin-intel__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.fin-intel__title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+
+.fin-intel__badge {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #10b981; /* Verde */
+  background: rgba(16, 185, 129, 0.1);
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.fin-intel__list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.fin-intel__item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.fin-intel__icon {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  flex: none;
+}
+
+.fin-intel__icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.fin-intel__content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fin-intel__item-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+}
+
+.fin-intel__item-desc {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.fin-intel__empty {
+  font-size: 13px;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 20px 0;
+}
+
+/* Variações de Cores dos Alertas */
+.fin-intel__item--warning .fin-intel__icon { color: #f59e0b; background: rgba(245, 158, 11, 0.1); }
+.fin-intel__item--trend-up .fin-intel__icon { color: #10b981; background: rgba(16, 185, 129, 0.1); }
+.fin-intel__item--forecast .fin-intel__icon { color: #3b82f6; background: rgba(59, 130, 246, 0.1); }
+.fin-intel__item--success .fin-intel__icon { color: #10b981; background: rgba(16, 185, 129, 0.1); }
+
+/* Dark Mode */
+[data-theme="dark"] .fin-intel__card {
+  background: #12151a;
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+/* =========================================================
+   PERSONALIZAÇÃO DO DASHBOARD
+   ========================================================= */
+
+/* Efeito de Arrastar */
+.fin-kpi {
+  cursor: grab;
+}
+.fin-kpi:active {
+  cursor: grabbing;
+}
+.fin-kpi--ghost {
+  opacity: 0.4;
+  border: 2px dashed var(--accent) !important;
+  background: color-mix(in srgb, var(--accent) 5%, transparent) !important;
+}
+.fin-kpi--drag {
+  transform: scale(1.02);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.4);
+  z-index: 100;
+}
+
+/* Modo Compacto */
+body.compact-dashboard .fin-kpi {
+  padding: 10px 12px 0;
+}
+body.compact-dashboard .fin-kpi__value {
+  font-size: 18px;
+}
+body.compact-dashboard .fin-kpi__hint {
+  display: none;
+}
+body.compact-dashboard .fin-kpi__spark {
+  height: 24px;
+  margin-top: 4px;
+}
+body.compact-dashboard .fin-overview {
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+
+
+/* =========================================================
+   PERSONALIZAÇÃO DO DASHBOARD
+   ========================================================= */
+
+/* Efeito de Arrastar */
+.fin-kpi {
+  cursor: grab;
+}
+.fin-kpi:active {
+  cursor: grabbing;
+}
+.fin-kpi--ghost {
+  opacity: 0.4;
+  border: 2px dashed var(--accent) !important;
+  background: color-mix(in srgb, var(--accent) 5%, transparent) !important;
+}
+.fin-kpi--drag {
+  transform: scale(1.02);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.4);
+  z-index: 100;
+}
+
+/* Modo Compacto */
+body.compact-dashboard .fin-kpi {
+  padding: 10px 12px 0;
+}
+body.compact-dashboard .fin-kpi__value {
+  font-size: 18px;
+}
+body.compact-dashboard .fin-kpi__hint {
+  display: none;
+}
+body.compact-dashboard .fin-kpi__spark {
+  height: 24px;
+  margin-top: 4px;
+}
+body.compact-dashboard .fin-overview {
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+
+/* =========================================================
+   CORREÇÃO DE OVERFLOW DOS GRÁFICOS (CHART.JS)
+   ========================================================= */
+
+/* 1. Impede que qualquer coisa vaze para os lados no container principal */
+body[data-page="financeiro"] .fin-content,
+body[data-page="financeiro-titulos"] .fin-content {
+  overflow-x: hidden !important;
+}
+
+/* 2. O Grid dos gráficos precisa permitir que as colunas encolham */
+.fin-charts__grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  min-width: 0; /* Importante para o Grid não estourar */
+}
+
+/* 3. O Card do gráfico precisa esconder o excesso e ter largura máxima */
+.fin-chart-card {
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  min-width: 0; /* Impede que o card estique além da conta */
+  max-width: 100%;
+  overflow: hidden; /* Corta qualquer coisa que tentar sair do card */
+}
+
+/* 4. O corpo do gráfico (wrapper do canvas) */
+.fin-chart-card__body {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  flex: 1;
+  min-height: 280px; /* Altura mínima para o gráfico aparecer */
+}
+
+/* 5. Força o canvas a respeitar o tamanho do pai */
+.fin-chart-card__body canvas {
+  width: 100% !important;
+  max-width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
+/* Ajuste para telas menores */
+@media (max-width: 900px) {
+  .fin-charts__grid {
+    grid-template-columns: 1fr;
+  }
 }

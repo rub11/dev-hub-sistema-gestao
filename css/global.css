@@ -1076,3 +1076,60 @@ body.layout-topnav .app__body {
 [data-theme="dark"]  .theme-toggle__moon { opacity: 0; transform: rotate(45deg); }
 [data-theme="light"] .theme-toggle__sun  { opacity: 0; transform: rotate(-45deg); }
 [data-theme="light"] .theme-toggle__moon { opacity: 1; transform: rotate(0); }
+
+/* =========================================================
+   LAYOUT GLOBAL: EFEITO JANELA FLUTUANTE (APP WINDOW)
+   ========================================================= */
+
+/* 1. Fundo geral escuro */
+body {
+  background-color: #050505 !important;
+}
+
+/* 2. Container padrão para TODAS as páginas */
+main.content,
+.fin-content, 
+.appr-content, 
+.cmp-content,
+.adm-content,
+.dash-content,
+.clientes-content,
+.relatorios-content {
+  margin: 24px auto !important;
+  max-width: 1440px !important; /* Limita a largura em monitores grandes */
+  width: calc(100% - 48px) !important;
+  min-height: calc(100vh - 48px) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 24px !important;
+  background: var(--bg, #0b0d12) !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6) !important;
+  padding: 32px !important;
+  box-sizing: border-box !important;
+  position: relative !important;
+}
+
+/* 3. Correção para a tela do financeiro que estava com position: fixed */
+body[data-page="financeiro"] .fin-content {
+  position: relative !important; 
+  inset: auto !important;
+  height: auto !important;
+  overflow: visible !important;
+}
+
+/* 4. Ajuste Mobile (Telas menores) */
+@media (max-width: 900px) {
+  main.content,
+  .fin-content, 
+  .appr-content, 
+  .cmp-content,
+  .adm-content,
+  .dash-content,
+  .clientes-content,
+  .relatorios-content {
+    margin: 12px auto !important;
+    width: calc(100% - 24px) !important;
+    min-height: calc(100vh - 24px) !important;
+    padding: 20px !important;
+    border-radius: 16px !important;
+  }
+}

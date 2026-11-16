@@ -132,6 +132,12 @@
   color: var(--text);
   font-family: inherit;
   font-size: 13.5px;
+  color-scheme: dark; /* Correção do calendário */
+}
+
+.fin-report-filters .fin-field select option {
+  background-color: #1e1e21;
+  color: #ffffff;
 }
 
 /* =========================================================
@@ -336,7 +342,6 @@
   justify-content: flex-end;
   gap: 8px;
 }
-
 
 /* Garante que a tabela de títulos tenha rolagem interna e não trave a tela */
 .fin-panel__scroll {

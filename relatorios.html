@@ -3,10 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Relatórios · DEV HUB</title>
+  <title>Central de Relatórios · DEV HUB</title>
 
   <script src="js/theme.js"></script>
-
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -79,488 +78,65 @@
     </header>
 
     <main class="content" id="main">
-
       <div id="global-alert" class="alert" role="alert" hidden></div>
 
-      <!-- ===================== HEAD ===================== -->
-      <div class="page-head page-head--split">
+      <!-- HEADER DA CENTRAL -->
+      <div class="page-head page-head--split" style="margin-bottom: 24px;">
         <div class="page-head__main">
           <p class="page-head__eyebrow">
             <span id="greeting-name">Olá</span>
             <span class="role-badge" id="greeting-role" hidden></span>
           </p>
-          <h1 class="page-head__title">Relatórios</h1>
-          <p class="page-head__sub">Analise as vendas, produtos, clientes e movimentações do seu negócio.</p>
-        </div>
-
-        <div class="page-head__actions">
-          <button type="button" class="btn btn--ghost" id="import-hub-btn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
-                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
-                 style="width:16px;height:16px">
-              <path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/>
-            </svg>
-            <span>Importar</span>
-          </button>
-          <button type="button" class="btn btn--ghost" id="export-pdf-btn" disabled>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
-                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
-                 style="width:16px;height:16px">
-              <path d="M14 2.5H7A2 2 0 0 0 5 4.5v15a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7.5z"/>
-              <path d="M14 2.5v5h5"/>
-              <path d="M9 13h6M9 17h4"/>
-            </svg>
-            <span>Exportar PDF</span>
-          </button>
-          <button type="button" class="btn btn--ghost" id="export-sales-btn" disabled>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
-                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
-                 style="width:16px;height:16px">
-              <path d="M12 3v12" /><path d="m7 10 5 5 5-5" /><path d="M5 21h14" />
-            </svg>
-            <span>Vendas CSV</span>
-          </button>
-          <button type="button" class="btn btn--ghost" id="export-products-btn" disabled>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
-                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
-                 style="width:16px;height:16px">
-              <path d="M12 3v12" /><path d="m7 10 5 5 5-5" /><path d="M5 21h14" />
-            </svg>
-            <span>Produtos CSV</span>
-          </button>
+          <h1 class="page-head__title">Central de Relatórios</h1>
+          <p class="page-head__sub">Acesse, filtre e exporte relatórios gerenciais, financeiros e de auditoria.</p>
         </div>
       </div>
 
-      <!-- ===================== PERIOD BAR ===================== -->
-      <section class="period-bar" aria-label="Filtro de período">
-        <div class="segmented segmented--buttons" role="group" aria-label="Período">
-          <button type="button" class="segmented__btn is-active" data-period="30d">30 dias</button>
-          <button type="button" class="segmented__btn" data-period="today">Hoje</button>
-          <button type="button" class="segmented__btn" data-period="7d">7 dias</button>
-          <button type="button" class="segmented__btn" data-period="month">Este mês</button>
-          <button type="button" class="segmented__btn" data-period="last_month">Mês anterior</button>
-          <button type="button" class="segmented__btn" data-period="custom">Personalizado</button>
+      <!-- BARRA DE BUSCA -->
+      <div style="display:flex; justify-content:center; margin-bottom: 32px;">
+        <div style="position:relative; width:100%; max-width: 640px;">
+          <svg style="position:absolute; left:16px; top:50%; transform:translateY(-50%); width:20px; height:20px; color:var(--text-muted);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+          </svg>
+          <input type="search" id="report-search" placeholder="Buscar relatório (ex: DRE, Inadimplência, Fluxo de Caixa)..." 
+                 style="width:100%; height:48px; padding:0 16px 0 48px; border:1px solid var(--border); border-radius:999px; background:var(--surface); color:var(--text); font-family:inherit; font-size:14.5px; outline:none; transition:border-color 0.2s;"
+                 onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" />
         </div>
-        <div class="period-custom" id="period-custom" hidden>
-          <div class="period-custom__field">
-            <label for="period-start">De</label>
-            <input type="date" id="period-start" />
-          </div>
-          <div class="period-custom__field">
-            <label for="period-end">Até</label>
-            <input type="date" id="period-end" />
-          </div>
-          <button type="button" class="btn btn--primary" id="apply-custom-period">Aplicar</button>
-        </div>
-        <p class="period-range" id="period-range">—</p>
+      </div>
+
+      <!-- GRID DE CARDS -->
+      <section class="reports-grid" id="reports-grid">
+        <!-- Injetado via JS -->
       </section>
 
-      <!-- ===================== LOADING ===================== -->
-      <div id="report-loading" class="state-block">
-        <span class="spinner" aria-hidden="true"></span>
-        <p>Carregando relatórios...</p>
-      </div>
-
-      <!-- ===================== CONTEÚDO ===================== -->
-      <div id="report-content" hidden>
-
-        <!-- ===================== TOOLBAR DE VENDAS ===================== -->
-        <div class="sales-toolbar" role="region" aria-label="Filtros da seção de vendas">
-          <div class="sales-toolbar__info">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
-                 stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/>
-              <path d="M2.5 3.5h2.3l2.3 11.6a1.8 1.8 0 0 0 1.8 1.4h8.8a1.8 1.8 0 0 0 1.8-1.4L21 7.5H6"/>
-            </svg>
-            <span>Seção de vendas · <strong id="sales-toolbar-count">—</strong></span>
-          </div>
-          <div class="sales-toolbar__actions">
-            <div class="field field--inline">
-              <label for="status-filter" class="sr-only">Situação das vendas</label>
-              <select id="status-filter" class="control-select">
-                <option value="valid">Só válidas</option>
-                <option value="">Todas as vendas</option>
-                <option value="canceled">Só canceladas</option>
-                <option value="pending">Só pendentes</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <!-- ---------- KPIs de vendas ---------- -->
-        <section class="stats" aria-label="Resumo de vendas">
-          <article class="stat">
-            <div class="stat__top">
-              <span class="stat__label">Total de vendas</span>
-              <span class="stat__icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-                     stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="9" cy="20" r="1.4" /><circle cx="18" cy="20" r="1.4" />
-                  <path d="M2.5 3.5h2.3l2.3 11.6a1.8 1.8 0 0 0 1.8 1.4h8.8a1.8 1.8 0 0 0 1.8-1.4L21 7.5H6" />
-                </svg>
-              </span>
-            </div>
-            <p class="stat__value" id="kpi-sales-count">—</p>
-            <span class="stat__delta" id="delta-sales-count"></span>
-          </article>
-
-          <article class="stat">
-            <div class="stat__top">
-              <span class="stat__label">Faturamento</span>
-              <span class="stat__icon stat__icon--success" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-                     stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M12 2v20M17 6.5a5 5 0 0 0-5-3.5c-3 0-5 1.5-5 4 0 3 2 3.5 5 4.5s5 1.5 5 4.5c0 2.5-2 4-5 4a5 5 0 0 1-5-3.5" />
-                </svg>
-              </span>
-            </div>
-            <p class="stat__value" id="kpi-revenue">—</p>
-            <span class="stat__delta" id="delta-revenue"></span>
-          </article>
-
-          <article class="stat">
-            <div class="stat__top">
-              <span class="stat__label">Ticket médio</span>
-              <span class="stat__icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-                     stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M3 3v16a2 2 0 0 0 2 2h16" />
-                  <path d="m7 15 3.5-4 3 2.5L20 7" />
-                </svg>
-              </span>
-            </div>
-            <p class="stat__value" id="kpi-ticket">—</p>
-            <span class="stat__delta" id="delta-ticket"></span>
-          </article>
-
-          <article class="stat">
-            <div class="stat__top">
-              <span class="stat__label">Descontos concedidos</span>
-              <span class="stat__icon stat__icon--warning" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-                     stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8Z" />
-                  <circle cx="7.5" cy="7.5" r="1.2" />
-                </svg>
-              </span>
-            </div>
-            <p class="stat__value" id="kpi-discounts">—</p>
-            <span class="stat__delta" id="delta-discounts"></span>
-          </article>
-        </section>
-
-        <!-- ---------- Evolução de vendas ---------- -->
-        <section class="panel" aria-labelledby="chart-title">
-          <div class="panel__head">
-            <div>
-              <h2 class="panel__title" id="chart-title">Evolução das vendas</h2>
-              <p class="panel__sub">Quantidade e faturamento por dia no período selecionado.</p>
-            </div>
-          </div>
-          <div class="chart-wrap" id="chart-wrap">
-            <canvas id="chart-evolution" aria-label="Gráfico de evolução das vendas" role="img"></canvas>
-            <div id="chart-empty" class="state-block" hidden>
-              <p>Sem dados suficientes para exibir o gráfico no período.</p>
-            </div>
-          </div>
-        </section>
-
-        <!-- ---------- Formas de pagamento (cards + pizza lado a lado) ---------- -->
-        <section class="panel" aria-labelledby="payments-title">
-          <div class="panel__head">
-            <div>
-              <h2 class="panel__title" id="payments-title">Formas de pagamento</h2>
-              <p class="panel__sub">Distribuição das vendas por forma de pagamento.</p>
-            </div>
-          </div>
-
-          <div class="panel__body">
-            <div id="payments-empty" class="state-block state-block--compact" hidden>
-              <p>Nenhuma venda registrada no período.</p>
-            </div>
-            <div class="payments-layout" id="payments-layout">
-              <div class="payments-grid" id="payments-grid"></div>
-              <div class="payments-chart-wrap">
-                <canvas id="chart-payments" aria-label="Gráfico de formas de pagamento" role="img"></canvas>
-                <div id="payments-chart-empty" class="state-block state-block--compact" hidden>
-                  <p>Sem dados.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- ---------- Top produtos + Top clientes ---------- -->
-        <div class="report-grid">
-          <section class="panel" aria-labelledby="top-products-title">
-            <div class="panel__head">
-              <div>
-                <h2 class="panel__title" id="top-products-title">Produtos mais vendidos</h2>
-                <p class="panel__sub">Top 10 por quantidade vendida no período.</p>
-              </div>
-            </div>
-            <div id="top-products-empty" class="state-block state-block--compact" hidden>
-              <p>Nenhum produto vendido no período.</p>
-            </div>
-            <div class="table-wrap" id="top-products-wrap" hidden>
-              <table>
-                <caption class="sr-only">Produtos mais vendidos</caption>
-                <thead>
-                  <tr>
-                    <th scope="col">Produto</th>
-                    <th scope="col" class="cell--num">Qtd. vendida</th>
-                    <th scope="col" class="cell--num">Faturamento</th>
-                  </tr>
-                </thead>
-                <tbody id="top-products-body"></tbody>
-              </table>
-            </div>
-          </section>
-
-          <section class="panel" aria-labelledby="top-customers-title">
-            <div class="panel__head">
-              <div>
-                <h2 class="panel__title" id="top-customers-title">Clientes que mais compraram</h2>
-                <p class="panel__sub">Top 10 por valor total no período.</p>
-              </div>
-            </div>
-            <div id="top-customers-empty" class="state-block state-block--compact" hidden>
-              <p>Nenhuma compra registrada no período.</p>
-            </div>
-            <div class="table-wrap" id="top-customers-wrap" hidden>
-              <table>
-                <caption class="sr-only">Clientes que mais compraram</caption>
-                <thead>
-                  <tr>
-                    <th scope="col">Cliente</th>
-                    <th scope="col" class="cell--num">Compras</th>
-                    <th scope="col" class="cell--num">Total gasto</th>
-                  </tr>
-                </thead>
-                <tbody id="top-customers-body"></tbody>
-              </table>
-            </div>
-          </section>
-        </div>
-
-        <!-- ---------- Indicadores de clientes ---------- -->
-        <section class="stats stats--three" aria-label="Indicadores de clientes">
-          <article class="stat">
-            <div class="stat__top">
-              <span class="stat__label">Total de clientes</span>
-              <span class="stat__icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-                     stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M16 20v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20" />
-                  <circle cx="9" cy="7.5" r="3.5" />
-                  <path d="M22 20v-1.5a4 4 0 0 0-3-3.87" />
-                </svg>
-              </span>
-            </div>
-            <p class="stat__value" id="kpi-total-customers">—</p>
-          </article>
-          <article class="stat">
-            <div class="stat__top">
-              <span class="stat__label">Compraram no período</span>
-              <span class="stat__icon stat__icon--success" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-                     stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M20 6 9 17l-5-5" />
-                </svg>
-              </span>
-            </div>
-            <p class="stat__value" id="kpi-buying-customers">—</p>
-          </article>
-          <article class="stat">
-            <div class="stat__top">
-              <span class="stat__label">Novos no período</span>
-              <span class="stat__icon stat__icon--warning" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-                     stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M12 5v14M5 12h14" />
-                </svg>
-              </span>
-            </div>
-            <p class="stat__value" id="kpi-new-customers">—</p>
-          </article>
-        </section>
-
-        <!-- ---------- Estoque ---------- -->
-        <section class="stats" aria-label="Resumo de estoque">
-          <article class="stat">
-            <div class="stat__top">
-              <span class="stat__label">Total de produtos</span>
-              <span class="stat__icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-                     stroke-linecap="round" stroke-linejoin="round">
-                  <path d="m21 8-9-5-9 5v8l9 5 9-5z" />
-                  <path d="m3 8 9 5 9-5" />
-                  <path d="M12 21v-8" />
-                </svg>
-              </span>
-            </div>
-            <p class="stat__value" id="kpi-total-products">—</p>
-          </article>
-          <article class="stat">
-            <div class="stat__top">
-              <span class="stat__label">Com estoque</span>
-              <span class="stat__icon stat__icon--success" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-                     stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M20 6 9 17l-5-5" />
-                </svg>
-              </span>
-            </div>
-            <p class="stat__value" id="kpi-with-stock">—</p>
-          </article>
-          <article class="stat">
-            <div class="stat__top">
-              <span class="stat__label">Estoque baixo</span>
-              <span class="stat__icon stat__icon--warning" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-                     stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M10.3 3.6 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0Z" />
-                  <path d="M12 9v4M12 17h.01" />
-                </svg>
-              </span>
-            </div>
-            <p class="stat__value" id="kpi-low-stock">—</p>
-          </article>
-          <article class="stat">
-            <div class="stat__top">
-              <span class="stat__label">Sem estoque</span>
-              <span class="stat__icon stat__icon--danger" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
-                     stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="12" cy="12" r="9" />
-                  <path d="M15 9l-6 6M9 9l6 6" />
-                </svg>
-              </span>
-            </div>
-            <p class="stat__value" id="kpi-out-stock">—</p>
-          </article>
-        </section>
-
-        <section class="panel" aria-labelledby="stock-table-title">
-          <div class="panel__head">
-            <div>
-              <h2 class="panel__title" id="stock-table-title">Situação do estoque</h2>
-              <p class="panel__sub">Todos os produtos cadastrados.</p>
-            </div>
-          </div>
-          <div id="stock-table-empty" class="state-block state-block--compact" hidden>
-            <p>Nenhum produto cadastrado.</p>
-          </div>
-          <div class="table-wrap" id="stock-table-wrap" hidden>
-            <table>
-              <caption class="sr-only">Situação atual do estoque</caption>
-              <thead>
-                <tr>
-                  <th scope="col">Produto</th>
-                  <th scope="col">Código</th>
-                  <th scope="col" class="cell--num">Estoque atual</th>
-                  <th scope="col" class="cell--num">Estoque mínimo</th>
-                  <th scope="col">Situação</th>
-                </tr>
-              </thead>
-              <tbody id="stock-table-body"></tbody>
-            </table>
-          </div>
-        </section>
-
-        <!-- ---------- Movimentações ---------- -->
-        <section class="panel" aria-labelledby="movements-title">
-          <div class="panel__head toolbar">
-            <div class="toolbar__info">
-              <h2 class="panel__title" id="movements-title">Movimentações de estoque</h2>
-              <p class="panel__sub" id="movements-count">—</p>
-            </div>
-            <div class="toolbar__actions">
-              <div class="field field--inline">
-                <label for="movement-type-filter" class="sr-only">Filtrar por tipo</label>
-                <select id="movement-type-filter" class="control-select">
-                  <option value="">Todos os tipos</option>
-                  <option value="entrada">Entrada</option>
-                  <option value="saida">Saída</option>
-                  <option value="ajuste">Ajuste</option>
-                </select>
-              </div>
-            </div>
-          </div>
-          <div id="movements-empty" class="state-block state-block--compact" hidden>
-            <p>Nenhuma movimentação registrada no período.</p>
-          </div>
-          <div class="table-wrap" id="movements-wrap" hidden>
-            <table>
-              <caption class="sr-only">Movimentações de estoque no período</caption>
-              <thead>
-                <tr>
-                  <th scope="col">Data</th>
-                  <th scope="col">Produto</th>
-                  <th scope="col">Tipo</th>
-                  <th scope="col" class="cell--num">Qtd.</th>
-                  <th scope="col" class="cell--num">Anterior</th>
-                  <th scope="col" class="cell--num">Novo</th>
-                  <th scope="col">Motivo</th>
-                </tr>
-              </thead>
-              <tbody id="movements-body"></tbody>
-            </table>
-          </div>
-        </section>
-
-      </div>
     </main>
   </div>
 
   <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="false"></div>
 
-  <!-- =========================================================
-       Scripts
-       ========================================================= -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/supabase.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/permissions.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+  <!-- Scripts Base -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/permissions.js"></script>
+  
+  <script src="js/nav/config.js"></script>
+  <script src="js/nav/state.js"></script>
+  <script src="js/nav/roles.js"></script>
+  <script src="js/nav/styles.js"></script>
+  <script src="js/nav/permission-modal.js"></script>
+  <script src="js/nav/tabs.js"></script>
+  <script src="js/nav/module-menu.js"></script>
+  <script src="js/nav/notifications.js"></script>
+  <script src="js/nav/user-menu.js"></script>
+  <script src="js/nav/favorites-modal.js"></script>
+  <script src="js/nav/search.js"></script>
+  <script src="js/nav/org-switcher.js"></script>
+  <script src="js/nav/bar.js"></script>
+  <script src="js/nav/favorites.js"></script>
+  <script src="js/nav/main.js"></script>
 
-<script src="js/nav/config.js"></script>
-<script src="js/nav/state.js"></script>
-<script src="js/nav/roles.js"></script>
-<script src="js/nav/styles.js"></script>
-<script src="js/nav/permission-modal.js"></script>
-<script src="js/nav/tabs.js"></script>
-<script src="js/nav/module-menu.js"></script>
-<script src="js/nav/notifications.js"></script>
-<script src="js/nav/user-menu.js"></script>
-<script src="js/nav/favorites-modal.js"></script>
-<script src="js/nav/search.js"></script>
-<script src="js/nav/org-switcher.js"></script>
-<script src="js/nav/bar.js"></script>
-<script src="js/nav/favorites.js"></script>
-<script src="js/nav/main.js"></script>
-
-<script src="js/relatorios/config.js"></script>
-<script src="js/relatorios/state.js"></script>
-<script src="js/relatorios/utils.js"></script>
-<script src="js/relatorios/ui.js"></script>
-<script src="js/relatorios/session.js"></script>
-<script src="js/relatorios/period.js"></script>
-<script src="js/relatorios/filters.js"></script>
-<script src="js/relatorios/data.js"></script>
-<script src="js/relatorios/kpis.js"></script>
-<script src="js/relatorios/chart.js"></script>
-<script src="js/relatorios/payments.js"></script>
-<script src="js/relatorios/rankings.js"></script>
-<script src="js/relatorios/stock-table.js"></script>
-<script src="js/relatorios/movements.js"></script>
-<script src="js/relatorios/export-csv.js"></script>
-<script src="js/relatorios/export-pdf.js"></script>
-<script src="js/relatorios/import-hub.js"></script>
-<script src="js/relatorios/import-sales.js"></script>   <!-- ⬅️ FALTAVA ESSE -->
-<script src="js/relatorios/main.js"></script>
+  <!-- Script exclusivo da Central de Relatórios -->
+  <script src="js/relatorios/central.js"></script>
 </body>
 </html>
