@@ -169,11 +169,15 @@
     const kind = mode === 'receber' ? 'receita' : 'despesa';
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     const inPeriod = (dateStr) => {
       if (ignoreDate) return true;
       if (!dateStr) return false;
       return dateStr >= mStart && dateStr <= mEnd;
     };
+=======
+    const entries = state.entries.filter((e) => e.kind === kind);
+>>>>>>> parent of 10170ba (......)
 =======
     const entries = state.entries.filter((e) => e.kind === kind);
 >>>>>>> parent of 10170ba (......)
@@ -220,6 +224,7 @@
      ========================================================= */
   const SPARKS = {
 <<<<<<< HEAD
+<<<<<<< HEAD
     receber: `<svg class="fin-kpi__spark" viewBox="0 0 100 30" preserveAspectRatio="none"><defs><linearGradient id="spark-receber" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#10b981" stop-opacity="0.32"/><stop offset="100%" stop-color="#10b981" stop-opacity="0"/></linearGradient></defs><path d="M0,22 C10,8 18,16 26,18 C34,20 40,12 50,15 C58,18 66,10 74,13 C82,16 90,8 100,14 L100,30 L0,30 Z" fill="url(#spark-receber)"/><path d="M0,22 C10,8 18,16 26,18 C34,20 40,12 50,15 C58,18 66,10 74,13 C82,16 90,8 100,14" fill="none" stroke="#10b981" stroke-width="1.4"/></svg>`,
     pagar: `<svg class="fin-kpi__spark" viewBox="0 0 100 30" preserveAspectRatio="none"><defs><linearGradient id="spark-pagar" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ef4444" stop-opacity="0.32"/><stop offset="100%" stop-color="#ef4444" stop-opacity="0"/></linearGradient></defs><path d="M0,22 C10,8 18,16 26,18 C34,20 40,12 50,15 C58,18 66,10 74,13 C82,16 90,8 100,14 L100,30 L0,30 Z" fill="url(#spark-pagar)"/><path d="M0,22 C10,8 18,16 26,18 C34,20 40,12 50,15 C58,18 66,10 74,13 C82,16 90,8 100,14" fill="none" stroke="#ef4444" stroke-width="1.4"/></svg>`,
     hoje: `<svg class="fin-kpi__spark" viewBox="0 0 100 30" preserveAspectRatio="none"><rect x="4" y="16" width="6" height="14" rx="1.2" fill="#f59e0b" opacity="0.55"/><rect x="16" y="10" width="6" height="20" rx="1.2" fill="#f59e0b" opacity="0.75"/><rect x="28" y="13" width="6" height="17" rx="1.2" fill="#f59e0b" opacity="0.65"/><rect x="40" y="6" width="6" height="24" rx="1.2" fill="#f59e0b" opacity="0.95"/><rect x="52" y="11" width="6" height="19" rx="1.2" fill="#f59e0b" opacity="0.7"/><rect x="64" y="3" width="6" height="27" rx="1.2" fill="#f59e0b" opacity="1"/><rect x="76" y="9" width="6" height="21" rx="1.2" fill="#f59e0b" opacity="0.8"/><rect x="88" y="14" width="6" height="16" rx="1.2" fill="#f59e0b" opacity="0.5"/></svg>`,
@@ -231,6 +236,8 @@
     resultado: `<svg class="fin-kpi__spark" viewBox="0 0 100 30" preserveAspectRatio="none"><defs><linearGradient id="spark-resultado" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.32"/><stop offset="100%" stop-color="#8b5cf6" stop-opacity="0"/></linearGradient></defs><path d="M0,25 C25,20 35,10 50,15 C65,20 75,5 100,10 L100,30 L0,30 Z" fill="url(#spark-resultado)"/><path d="M0,25 C25,20 35,10 50,15 C65,20 75,5 100,10" fill="none" stroke="#8b5cf6" stroke-width="1.4"/></svg>`,
     inadimplencia: `<svg class="fin-kpi__spark" viewBox="0 0 100 30" preserveAspectRatio="none"><defs><linearGradient id="spark-inadimplencia" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ef4444" stop-opacity="0.32"/><stop offset="100%" stop-color="#ef4444" stop-opacity="0"/></linearGradient></defs><path d="M0,15 C20,15 30,25 50,22 C70,19 80,28 100,25 L100,30 L0,30 Z" fill="url(#spark-inadimplencia)"/><path d="M0,15 C20,15 30,25 50,22 C70,19 80,28 100,25" fill="none" stroke="#ef4444" stroke-width="1.4"/></svg>`
 =======
+=======
+>>>>>>> parent of 10170ba (......)
     noMes: `
       <svg class="fin-kpi__spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true">
         <defs><linearGradient id="spark-pagar" x1="0" y1="0" x2="0" y2="1">
@@ -284,6 +291,9 @@
         <path d="M0,22 C8,20 15,14 24,16 C32,18 40,24 50,22 C58,20 66,12 74,14 C82,16 90,20 100,18 L100,30 L0,30 Z" fill="url(#spark-boletos)"/>
         <path d="M0,22 C8,20 15,14 24,16 C32,18 40,24 50,22 C58,20 66,12 74,14 C82,16 90,20 100,18" fill="none" stroke="#3b82f6" stroke-width="1.4" stroke-linecap="round"/>
       </svg>`
+<<<<<<< HEAD
+>>>>>>> parent of 10170ba (......)
+=======
 >>>>>>> parent of 10170ba (......)
   };
 
@@ -292,6 +302,7 @@
     hoje:     '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
     vencidas: '<path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/>',
     pago:     '<path d="M20 6 9 17l-5-5"/>',
+<<<<<<< HEAD
 <<<<<<< HEAD
     boletos:  '<rect x="2.5" y="6" width="19" height="12" rx="2"/><path d="M2.5 10h19"/>',
     saldo:    '<path d="M12 2v20M17 6.5a5 5 0 0 0-5-3.5c-3 0-5 1.5-5 4 0 3 2 3.5 5 4.5s5 1.5 5 4.5c0 2.5-2 4-5 4a5 5 0 0 1-5-3.5"/>',
@@ -303,6 +314,9 @@
     'vencendo-hoje': '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
     'vencido':       '<path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/>',
     'saldo-previsto': '<path d="M12 2v20M17 6.5a5 5 0 0 0-5-3.5c-3 0-5 1.5-5 4 0 3 2 3.5 5 4.5s5 1.5 5 4.5c0 2.5-2 4-5 4a5 5 0 0 1-5-3.5"/>'
+=======
+    boletos:  '<rect x="2.5" y="6" width="19" height="12" rx="2"/><path d="M2.5 10h19"/>'
+>>>>>>> parent of 10170ba (......)
 =======
     boletos:  '<rect x="2.5" y="6" width="19" height="12" rx="2"/><path d="M2.5 10h19"/>'
 >>>>>>> parent of 10170ba (......)
@@ -321,6 +335,7 @@
     const data = computeOverview(mode || 'pagar');
 
     const plural = (n, sing, plur) => n === 1 ? `1 ${sing}` : `${n} ${plur}`;
+<<<<<<< HEAD
 <<<<<<< HEAD
 
     // ── MODO HUB (Resumo combinado, Ignora o Mês) ──
@@ -377,6 +392,8 @@
 
     // ── MODOS ESPECÍFICOS (Pagar / Receber) ──
     const data = computeOverview(mode, false);
+=======
+>>>>>>> parent of 10170ba (......)
     const isReceber = mode === 'receber';
 
     const cards = [

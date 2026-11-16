@@ -1937,6 +1937,7 @@ body[data-page="financeiro"] select {
 .fin-tabpane:not(.is-active) {
   display: none !important;
 <<<<<<< HEAD
+<<<<<<< HEAD
 }
 
 /* =========================================================
@@ -2211,6 +2212,8 @@ select option:checked {
 .fin-action-btn.is-disabled:hover {
   background-color: transparent !important;
   border-color: var(--border) !important;
+=======
+>>>>>>> parent of 10170ba (......)
 =======
 >>>>>>> parent of 10170ba (......)
 }
