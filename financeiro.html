@@ -4,14 +4,24 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Financeiro · DEV HUB</title>
+  
   <script src="js/theme.js"></script>
+  
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  
   <link rel="stylesheet" href="css/global.css" />
   <link rel="stylesheet" href="css/theme.css" />
   <link rel="stylesheet" href="css/financeiro.css" />
   <link rel="stylesheet" href="css/financeiro-hub.css" />
+  
+  <!-- NOVO CSS DO INSIGHTS -->
+  <link rel="stylesheet" href="css/insights.css" />
+  
+  <!-- Bibliotecas externas: Gráficos e Drag & Drop -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 </head>
 <body data-page="financeiro">
   <div class="app__body">
@@ -25,216 +35,274 @@
 
       <div class="fin-hub__toolbar">
         <button type="button" class="fin-hub__refresh" id="fin-refresh">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/>
-          </svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
           <span>Atualizar</span>
         </button>
 
-      <div class="fin-period" id="fin-period">
-  <button type="button"
-          class="fin-period__trigger"
-          id="fin-period-trigger"
-          aria-haspopup="dialog"
-          aria-expanded="false"
-          aria-controls="fin-period-panel">
-    <svg class="fin-period__trigger-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-      <rect x="3" y="4.5" width="18" height="16" rx="2"/>
-      <path d="M3 9h18M8 2.5V6M16 2.5V6"/>
-    </svg>
-    <span class="fin-period__trigger-label" id="fin-period-label">—</span>
-    <svg class="fin-period__trigger-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-      <path d="m6 9 6 6 6-6"/>
-    </svg>
-  </button>
+        <div style="display:flex; gap:12px;">
+          <button type="button" class="fin-hub__refresh" id="fin-customize-btn" style="background:var(--surface-2); color:var(--text); border:1px solid var(--border); box-shadow:none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            <span>Personalizar</span>
+          </button>
 
-  <div class="fin-period__panel" id="fin-period-panel" role="dialog" aria-labelledby="fin-period-label" hidden>
-    <!-- Atalhos -->
-    <div class="fin-period__shortcuts">
-      <button type="button" class="fin-period__shortcut" data-shortcut="current">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
-        Este mês
-      </button>
-      <button type="button" class="fin-period__shortcut" data-shortcut="last">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-        Mês passado
-      </button>
-      <button type="button" class="fin-period__shortcut" data-shortcut="last2">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m11 17-5-5 5-5M18 17l-5-5 5-5"/></svg>
-        Mês retrasado
-      </button>
-      <button type="button" class="fin-period__shortcut" data-shortcut="next">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-        Mês que vem
-      </button>
-    </div>
+          <!-- Seletor de Período -->
+          <div class="fin-period" id="fin-period">
+            <button type="button" class="fin-period__trigger" id="fin-period-trigger" aria-haspopup="dialog" aria-expanded="false" aria-controls="fin-period-panel">
+              <svg class="fin-period__trigger-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9h18M8 2.5V6M16 2.5V6"/></svg>
+              <span class="fin-period__trigger-label" id="fin-period-label">—</span>
+              <svg class="fin-period__trigger-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
 
-    <!-- Navegação de ano -->
-    <div class="fin-period__nav">
-      <button type="button" class="fin-period__nav-btn" data-nav="prev" aria-label="Ano anterior">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-      </button>
-      <span class="fin-period__nav-year" id="fin-period-year">2026</span>
-      <button type="button" class="fin-period__nav-btn" data-nav="next" aria-label="Próximo ano">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-      </button>
-    </div>
-
-    <!-- Grid 3×4 de meses -->
-    <div class="fin-period__grid" id="fin-period-grid"></div>
-  </div>
-</div>
-
-
+            <div class="fin-period__panel" id="fin-period-panel" role="dialog" aria-labelledby="fin-period-label" hidden>
+              <div class="fin-period__shortcuts">
+                <button type="button" class="fin-period__shortcut" data-shortcut="current">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> Este mês
+                </button>
+                <button type="button" class="fin-period__shortcut" data-shortcut="last">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg> Mês passado
+                </button>
+                <button type="button" class="fin-period__shortcut" data-shortcut="last2">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m11 17-5-5 5-5M18 17l-5-5 5-5"/></svg> Mês retrasado
+                </button>
+                <button type="button" class="fin-period__shortcut" data-shortcut="next">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg> Mês que vem
+                </button>
+              </div>
+              <div class="fin-period__nav">
+                <button type="button" class="fin-period__nav-btn" data-nav="prev" aria-label="Ano anterior">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                </button>
+                <span class="fin-period__nav-year" id="fin-period-year">2026</span>
+                <button type="button" class="fin-period__nav-btn" data-nav="next" aria-label="Próximo ano">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                </button>
+              </div>
+              <div class="fin-period__grid" id="fin-period-grid"></div>
+            </div>
+          </div>
+        </div>
       </div>
 
+      <!-- GRID DE KPIs (Arrastáveis) -->
       <section class="fin-overview" id="fin-overview" aria-label="Resumo financeiro">
         <div class="fin-overview__loading">Carregando resumo…</div>
       </section>
 
+      <!-- ATIVIDADES E DEV HUB INSIGHTS -->
+      <div style="display:grid; grid-template-columns: 1fr 2fr; gap:20px; margin-bottom:32px;">
+        
+        <!-- Atividades Recentes -->
+        <section class="fin-panel" style="margin:0;">
+          <div class="fin-actions" style="padding:16px;">
+            <h2 style="font-size:14px; font-weight:600; margin:0;">Atividades Recentes</h2>
+          </div>
+          <div id="fin-recent-activities" style="padding:16px; display:flex; flex-direction:column; gap:12px;"></div>
+        </section>
+
+        <!-- DEV HUB INSIGHTS (Substituiu a Central de Inteligência) -->
+        <section class="insights-card" aria-label="DEV HUB Insights">
+          <div class="insights-header">
+            <div class="insights-brand">
+              <div class="insights-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2a5 5 0 0 0-5 5v2.5A5 5 0 0 0 12 14a5 5 0 0 0 5-4.5V7a5 5 0 0 0-5-5z"/>
+                  <path d="M12 14v8"/>
+                  <path d="M8 22h8"/>
+                  <path d="M9 7h.01M15 7h.01"/>
+                </svg>
+              </div>
+              <div class="insights-title">
+                <strong>DEV HUB INSIGHTS</strong>
+                <span>Inteligência e análise empresarial</span>
+              </div>
+            </div>
+            <span class="insights-badge">Premium</span>
+          </div>
+
+          <blockquote class="insights-quote" id="insights-quote">
+            Analisando seus dados...
+          </blockquote>
+
+          <div class="insights-divider"></div>
+
+          <div>
+            <h3 class="insights-list-title">Análises disponíveis</h3>
+            <ul class="insights-list">
+              <li>Saúde financeira da empresa.</li>
+              <li>Tendência de receitas.</li>
+              <li>Tendência de despesas.</li>
+              <li>Previsão de saldo.</li>
+              <li>Comparação de desempenho.</li>
+              <li>Identificação de riscos.</li>
+              <li>Sugestões de economia.</li>
+              <li>Resumo executivo automático.</li>
+            </ul>
+          </div>
+
+          <div class="insights-footer">
+            As análises utilizam dados reais da empresa, sem inventar previsões ou resultados.
+          </div>
+        </section>
+      </div>
+
+      <!-- ATALHOS -->
       <section class="fin-shortcuts" aria-label="Atalhos financeiros">
         <h2 class="fin-shortcuts__title">Acessos rápidos</h2>
-
-
         <div class="fin-shortcuts__grid">
+          
           <a class="fin-shortcut" href="financeiro-titulos.html?tab=pagar">
-            <span class="fin-shortcut__icon fin-shortcut__icon--pagar" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M14 2.5H7A2 2 0 0 0 5 4.5v15a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7.5z"/>
-                <path d="M14 2.5v5h5"/>
-                <path d="M12 11v6M9 14l3 3 3-3"/>
-              </svg>
-            </span>
+            <span class="fin-shortcut__icon fin-shortcut__icon--pagar" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2.5H7A2 2 0 0 0 5 4.5v15a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7.5z"/><path d="M14 2.5v5h5"/><path d="M12 11v6M9 14l3 3 3-3"/></svg></span>
             <span class="fin-shortcut__label">Contas a Pagar</span>
           </a>
-
+          
           <a class="fin-shortcut" href="financeiro-titulos.html?tab=receber">
-            <span class="fin-shortcut__icon fin-shortcut__icon--receber" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="7" width="18" height="13" rx="2"/>
-                <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                <path d="M12 11v6M9 14l3-3 3 3"/>
-              </svg>
-            </span>
+            <span class="fin-shortcut__icon fin-shortcut__icon--receber" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M12 11v6M9 14l3-3 3 3"/></svg></span>
             <span class="fin-shortcut__label">Contas a Receber</span>
           </a>
-
+          
           <a class="fin-shortcut" href="financeiro-titulos.html?tab=todos">
-            <span class="fin-shortcut__icon fin-shortcut__icon--todos" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21.21 15.89A10 10 0 1 1 8 2.83"/>
-                <path d="M22 12A10 10 0 0 0 12 2v10z"/>
-              </svg>
-            </span>
+            <span class="fin-shortcut__icon fin-shortcut__icon--todos" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></span>
             <span class="fin-shortcut__label">Todos os Títulos</span>
           </a>
-
-          <a class="fin-shortcut" href="financeiro-titulos.html?tab=movimentos">
+          
+          <a class="fin-shortcut" href="painel-executivo.html">
             <span class="fin-shortcut__icon fin-shortcut__icon--mov" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M3 12h4l3-9 4 18 3-9h4"/>
-              </svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
             </span>
-            <span class="fin-shortcut__label">Movimentações</span>
+            <span class="fin-shortcut__label">Painel Executivo (IA)</span>
           </a>
 
-          <a class="fin-shortcut" href="financeiro-titulos.html?tab=transferencias">
-            <span class="fin-shortcut__icon fin-shortcut__icon--transf" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="9"/>
-                <path d="M15 9.5a3.5 3.5 0 1 0 0 5"/>
-                <path d="M18 9v6"/>
-              </svg>
-            </span>
-            <span class="fin-shortcut__label">Transferências</span>
+          <a class="fin-shortcut" href="gestao-empresarial.html">
+            <span class="fin-shortcut__icon fin-shortcut__icon--config" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg></span>
+            <span class="fin-shortcut__label">Gestão Empresarial</span>
           </a>
-
+          
+          <a class="fin-shortcut" href="relatorios.html">
+            <span class="fin-shortcut__icon fin-shortcut__icon--relatorios" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg></span>
+            <span class="fin-shortcut__label">Central de Relatórios</span>
+          </a>
+          
           <a class="fin-shortcut" href="contas-bancarias.html">
-            <span class="fin-shortcut__icon fin-shortcut__icon--contas" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="2.5" y="6" width="19" height="12" rx="2"/>
-                <path d="M2.5 10h19"/>
-                <path d="M17 14.5h.01"/>
-              </svg>
-            </span>
-            <span class="fin-shortcut__label">Contas Bancárias</span>
+            <span class="fin-shortcut__icon fin-shortcut__icon--bancos" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M3 10h18"/><path d="M5 6l7-3 7 3"/><path d="M4 10v11"/><path d="M20 10v11"/><path d="M8 14v3"/><path d="M12 14v3"/><path d="M16 14v3"/></svg></span>
+            <span class="fin-shortcut__label">Bancos</span>
           </a>
-
-          <a class="fin-shortcut" href="cadastros.html">
+          
+          <a class="fin-shortcut" href="seguranca.html">
             <span class="fin-shortcut__icon fin-shortcut__icon--config" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="3"/>
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-              </svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
             </span>
-            <span class="fin-shortcut__label">Cadastros Financeiros</span>
+            <span class="fin-shortcut__label">Segurança e Controle</span>
           </a>
 
           <a class="fin-shortcut fin-shortcut--soon" href="#" aria-disabled="true" tabindex="-1">
             <span class="fin-shortcut__badge">Em breve</span>
-            <span class="fin-shortcut__icon fin-shortcut__icon--fluxo" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M3 3v18h18"/>
-                <path d="m7 15 3-4 3 2 5-7"/>
-              </svg>
-            </span>
-            <span class="fin-shortcut__label">Fluxo de Caixa</span>
-          </a>
-
-          <a class="fin-shortcut fin-shortcut--soon" href="#" aria-disabled="true" tabindex="-1">
-            <span class="fin-shortcut__badge">Em breve</span>
-            <span class="fin-shortcut__icon fin-shortcut__icon--inad" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="9"/>
-                <path d="M12 8v4"/>
-                <path d="M12 16h.01"/>
-              </svg>
-            </span>
+            <span class="fin-shortcut__icon fin-shortcut__icon--inad" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg></span>
             <span class="fin-shortcut__label">Inadimplência</span>
           </a>
-
-          <a class="fin-shortcut fin-shortcut--soon" href="#" aria-disabled="true" tabindex="-1">
-            <span class="fin-shortcut__badge">Em breve</span>
-            <span class="fin-shortcut__icon fin-shortcut__icon--conc" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="4" y="10" width="16" height="11" rx="2"/>
-                <path d="M8 10V7a4 4 0 0 1 8 0v3"/>
-                <path d="M12 15v2"/>
-              </svg>
-            </span>
-            <span class="fin-shortcut__label">Conciliação Bancária</span>
-          </a>
         </div>
+      </section>
 
-
+      <!-- GRÁFICOS -->
+      <section class="fin-charts" aria-label="Gráficos Financeiros">
+        <h2 class="fin-charts__title">Análise e Desempenho</h2>
+        <div class="fin-charts__grid">
+          <div class="fin-chart-card fin-chart-card--wide">
+            <div class="fin-chart-card__head">
+              <h3 class="fin-chart-card__title">Evolução financeira mensal</h3>
+              <p class="fin-chart-card__sub">Comparação entre receitas, despesas e resultado líquido nos últimos 12 meses.</p>
+            </div>
+            <div class="fin-chart-card__body"><canvas id="chart-evolucao"></canvas></div>
+          </div>
+          <div class="fin-chart-card">
+            <div class="fin-chart-card__head">
+              <h3 class="fin-chart-card__title">Despesas por categoria</h3>
+              <p class="fin-chart-card__sub">Distribuição de gastos por natureza.</p>
+            </div>
+            <div class="fin-chart-card__body"><canvas id="chart-categorias"></canvas></div>
+          </div>
+          <div class="fin-chart-card">
+            <div class="fin-chart-card__head">
+              <h3 class="fin-chart-card__title">Contas a pagar x receber</h3>
+              <p class="fin-chart-card__sub">Compara os compromissos e recebimentos do período.</p>
+            </div>
+            <div class="fin-chart-card__body"><canvas id="chart-pagar-receber"></canvas></div>
+          </div>
+          <div class="fin-chart-card">
+            <div class="fin-chart-card__head">
+              <h3 class="fin-chart-card__title">Fluxo de caixa projetado</h3>
+              <p class="fin-chart-card__sub">Previsão de entradas e saídas para os próximos dias.</p>
+            </div>
+            <div class="fin-chart-card__body"><canvas id="chart-fluxo"></canvas></div>
+          </div>
+          <div class="fin-chart-card">
+            <div class="fin-chart-card__head">
+              <h3 class="fin-chart-card__title">Comparativo entre meses</h3>
+              <p class="fin-chart-card__sub">Mês atual vs Mês anterior.</p>
+            </div>
+            <div class="fin-chart-card__body"><canvas id="chart-comparativo"></canvas></div>
+          </div>
+        </div>
       </section>
 
     </main>
   </div>
 
+  <!-- MODAL DE PERSONALIZAÇÃO -->
+  <div id="fin-customize-modal" class="fin-modal" hidden>
+    <div class="fin-modal__backdrop" data-close></div>
+    <div class="fin-modal__dialog">
+      <header class="fin-modal__head">
+        <h3 class="fin-modal__title">Personalizar Dashboard</h3>
+        <button class="fin-modal__close" data-close aria-label="Fechar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      </header>
+      <div class="fin-modal__body" style="gap:16px;">
+        <label class="fin-side__switch">
+          <input type="checkbox" id="fin-compact-mode" />
+          <span class="fin-side__switch-track"></span>
+          <span class="fin-side__switch-label">Ativar Modo Compacto</span>
+        </label>
+        <hr style="border-color:var(--border); margin:0;">
+        <p style="font-size:12px; color:var(--text-muted); margin:0;">Escolha quais indicadores devem aparecer:</p>
+        <div id="fin-customize-list" style="display:flex; flex-direction:column; gap:10px;"></div>
+      </div>
+      <footer class="fin-modal__foot">
+        <button type="button" class="fin-btn fin-btn--ghost" data-close>Fechar</button>
+        <button type="button" class="fin-btn fin-btn--primary" id="fin-customize-save">Salvar Preferências</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- SCRIPTS BASE (Supabase, Auth, Nav, Permissões) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/nav/config.js"></script>
-<script src="js/nav/state.js"></script>
-<script src="js/nav/roles.js"></script>
-<script src="js/nav/styles.js"></script>
-<script src="js/nav/permission-modal.js"></script>
-<script src="js/nav/tabs.js"></script>
-<script src="js/nav/module-menu.js"></script>
-<script src="js/nav/notifications.js"></script>
-<script src="js/nav/user-menu.js"></script>
-<script src="js/nav/favorites-modal.js"></script>
-<script src="js/nav/search.js"></script>
-<script src="js/nav/org-switcher.js"></script>
-<script src="js/nav/bar.js"></script>
-<script src="js/nav/favorites.js"></script>
-<script src="js/nav/main.js"></script>
+  <script src="js/nav/state.js"></script>
+  <script src="js/nav/roles.js"></script>
+  <script src="js/nav/styles.js"></script>
+  <script src="js/nav/permission-modal.js"></script>
+  <script src="js/nav/tabs.js"></script>
+  <script src="js/nav/module-menu.js"></script>
+  <script src="js/nav/notifications.js"></script>
+  <script src="js/nav/user-menu.js"></script>
+  <script src="js/nav/favorites-modal.js"></script>
+  <script src="js/nav/search.js"></script>
+  <script src="js/nav/org-switcher.js"></script>
+  <script src="js/nav/bar.js"></script>
+  <script src="js/nav/favorites.js"></script>
+  <script src="js/nav/main.js"></script>
   <script src="js/permissions.js"></script>
 
+  <!-- SCRIPTS DO MÓDULO FINANCEIRO -->
   <script src="js/financeiro/state.js"></script>
   <script src="js/financeiro/api.js"></script>
   <script src="js/financeiro/overview.js"></script>
+  <script src="js/financeiro/charts.js"></script>
+  
+  <!-- NOVO SCRIPT DO INSIGHTS -->
+  <script src="js/financeiro/insights.js"></script>
+  
+  <script src="js/financeiro/dashboard-custom.js"></script>
   <script src="js/financeiro/init.js"></script>
 </body>
 </html>

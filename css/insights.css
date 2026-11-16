@@ -1,0 +1,148 @@
+/* =========================================================
+   DEV HUB INSIGHTS
+   ========================================================= */
+
+.insights-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Efeito de brilho roxo no canto */
+.insights-card::before {
+  content: '';
+  position: absolute;
+  top: -50px;
+  left: -50px;
+  width: 150px;
+  height: 150px;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.insights-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.insights-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.insights-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #8b5cf6; /* Roxo */
+  color: #fff;
+  display: grid;
+  place-items: center;
+  flex: none;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.insights-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.insights-title {
+  display: flex;
+  flex-direction: column;
+}
+
+.insights-title strong {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.05em;
+}
+
+.insights-title span {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.insights-badge {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #a78bfa;
+  background: rgba(139, 92, 246, 0.15);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  padding: 4px 10px;
+  border-radius: 999px;
+  letter-spacing: 0.05em;
+}
+
+.insights-quote {
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--text);
+  font-style: italic;
+  padding: 16px;
+  background: var(--surface-2);
+  border-left: 3px solid #8b5cf6;
+  border-radius: 0 8px 8px 0;
+  margin: 0;
+}
+
+.insights-divider {
+  height: 1px;
+  background: var(--border);
+  width: 100%;
+}
+
+.insights-list-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+
+.insights-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+@media (max-width: 600px) {
+  .insights-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+.insights-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--text-soft);
+}
+
+.insights-list li::before {
+  content: '•';
+  color: #8b5cf6;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.insights-footer {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: center;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border);
+}

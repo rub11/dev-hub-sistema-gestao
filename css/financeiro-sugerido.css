@@ -1,0 +1,228 @@
+/* =========================================================
+   LAYOUT SUGERIDO - WIDGET FINANCEIRO
+   ========================================================= */
+
+.sugerido-container {
+  width: 100%;
+  max-width: 600px;
+  background: #161618; /* Fundo do card principal */
+  border: 1px solid #2a2a2e;
+  border-radius: 12px;
+  padding: 24px;
+  font-family: 'Inter', sans-serif;
+  color: #ffffff;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+}
+
+/* Header */
+.sugerido-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #2a2a2e;
+}
+
+.sugerido-header__brand strong {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.sugerido-badge {
+  font-size: 10px;
+  font-weight: 600;
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+/* Sections */
+.sugerido-section {
+  background: #1e1e21; /* Fundo dos blocos internos */
+  border: 1px solid #2a2a2e;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+/* Executivo */
+.sugerido-exec {
+  background: transparent;
+  border: none;
+  padding: 0 0 16px 0;
+  margin-bottom: 0;
+}
+.sugerido-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #888;
+  letter-spacing: 0.1em;
+  display: block;
+  margin-bottom: 4px;
+}
+.sugerido-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+}
+.sugerido-period {
+  display: inline-block;
+  font-size: 12px;
+  color: #888;
+  background: #1e1e21;
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid #2a2a2e;
+}
+
+/* KPIs */
+.sugerido-kpis {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.sugerido-kpi {
+  background: #1e1e21;
+  border: 1px solid #2a2a2e;
+  border-radius: 8px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.sugerido-kpi__label {
+  font-size: 11px;
+  color: #a0a0a5;
+}
+.sugerido-kpi__value {
+  font-size: 18px;
+  font-weight: 600;
+}
+.sugerido-kpi__value--green { color: #10b981; }
+.sugerido-kpi__value--red { color: #ef4444; }
+
+/* Gráfico */
+.sugerido-chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+.sugerido-chart-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+}
+.sugerido-chart-sub {
+  font-size: 11px;
+  color: #888;
+  margin: 4px 0 0 0;
+}
+.sugerido-chart-body {
+  height: 160px;
+  width: 100%;
+}
+
+/* Radar */
+.sugerido-radar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.sugerido-radar-badge {
+  font-size: 10px;
+  font-weight: 700;
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.1);
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+.sugerido-radar-text {
+  font-size: 12px;
+  color: #a0a0a5;
+  margin: 0;
+}
+
+/* Acessos Rápidos */
+.sugerido-shortcuts-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  text-align: center;
+}
+.sugerido-shortcut {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: #161618;
+  border-radius: 8px;
+  text-decoration: none;
+  color: #a0a0a5;
+  transition: background 0.2s, color 0.2s;
+}
+.sugerido-shortcut:hover {
+  background: #2a2a2e;
+  color: #fff;
+}
+.sugerido-shortcut svg {
+  width: 20px;
+  height: 20px;
+}
+.sugerido-shortcut span {
+  font-size: 11px;
+  font-weight: 500;
+}
+
+/* Movimentações */
+.sugerido-mov-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.sugerido-mov-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #2a2a2e;
+}
+.sugerido-mov-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+.sugerido-mov-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.sugerido-mov-info strong {
+  font-size: 12.5px;
+  font-weight: 500;
+}
+.sugerido-mov-info span {
+  font-size: 11px;
+  color: #888;
+}
+.sugerido-mov-value {
+  font-size: 13px;
+  font-weight: 600;
+}
+.sugerido-mov-value--red { color: #ef4444; }
+.sugerido-mov-value--green { color: #10b981; }
+
+/* Footer */
+.sugerido-footer {
+  text-align: center;
+  font-size: 10.5px;
+  color: #666;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #2a2a2e;
+}
